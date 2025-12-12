@@ -1,0 +1,92 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, update, delete: if isOwner(userId);
+      allow create: if request.auth != null;
+    }
+    
+    match /contacts/{contactId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /invoices/{invoiceId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /invoiceLineItems/{itemId} {
+      allow read, write: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
+    }
+    
+    match /serviceItems/{itemId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /taxTypes/{typeId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /incomeTransactions/{transactionId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /expenseTransactions/{transactionId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /payableBills/{billId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /payrollRuns/{runId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /payrollRuns/{runId}/details/{detailId} {
+      allow read, write: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
+    }
+
+    match /payrollRemittances/{remittanceId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /assets/{assetId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /equityTransactions/{transactionId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /companies/{companyId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /expenseCategories/{categoryId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /incomeCategories/{categoryId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /industries/{industryId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    // Fallback rule for any other path
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+    
+    

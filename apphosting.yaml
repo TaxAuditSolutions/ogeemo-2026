@@ -1,0 +1,14 @@
+# apphosting.yaml
+run:
+  build:
+    - npm i
+    - npm run build
+  start:
+    - npm run start
+# This section tells App Hosting to securely fetch the secret from Secret Manager
+# and make it available as an environment variable to the running server.
+secretEnvironmentVariables:
+  - key: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: firebase-service-account-key
+# Pin to a specific version of Node.js
+runtime: nodejs20

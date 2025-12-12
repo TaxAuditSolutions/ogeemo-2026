@@ -1,0 +1,11 @@
+# Environment variables
+.env*
+
+# Firebase cache and logs
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Next.js cache
+.next/
+node_modules

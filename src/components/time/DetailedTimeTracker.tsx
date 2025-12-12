@@ -1,0 +1,1 @@
+// This component has been removed and its functionality has been integrated directly into the Event Manager view (time-manager-view.tsx) to create a more unified and robust user experience. This file can be deleted.

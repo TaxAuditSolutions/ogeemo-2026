@@ -1,0 +1,364 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific information and preferences.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" }
+      }
+    },
+    "Contact": {
+        "title": "Contact",
+        "description": "Represents a contact, which can be a person or a business.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "businessName": { "type": "string" },
+            "craProgramAccountNumber": { "type": "string" },
+            "userId": { "type": "string" }
+        },
+        "required": ["name", "userId"]
+    },
+    "Invoice": {
+        "title": "Invoice",
+        "description": "Represents an invoice for a client.",
+        "type": "object",
+        "properties": {
+            "invoiceNumber": { "type": "string" },
+            "businessNumber": { "type": "string" },
+            "companyName": { "type": "string" },
+            "contactId": { "type": "string" },
+            "originalAmount": { "type": "number" },
+            "amountPaid": { "type": "number" },
+            "dueDate": { "type": "string", "format": "date-time" },
+            "invoiceDate": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["outstanding", "paid", "partially_paid", "overdue"] },
+            "notes": { "type": "string" },
+            "taxRate": { "type": "number" },
+            "taxType": { "type": "string" },
+            "userId": { "type": "string" }
+        },
+        "required": ["invoiceNumber", "companyName", "contactId", "originalAmount", "amountPaid", "dueDate", "invoiceDate", "status", "userId"]
+    },
+    "InvoiceLineItem": {
+        "title": "Invoice Line Item",
+        "description": "Represents a single line item on an invoice.",
+        "type": "object",
+        "properties": {
+            "invoiceId": { "type": "string" },
+            "description": { "type": "string" },
+            "quantity": { "type": "number" },
+            "price": { "type": "number" }
+        },
+        "required": ["invoiceId", "description", "quantity", "price"]
+    },
+    "ServiceItem": {
+        "title": "Service Item",
+        "description": "A reusable item for invoices, such as a service or product with a predefined price.",
+        "type": "object",
+        "properties": {
+            "description": { "type": "string" },
+            "price": { "type": "number" },
+            "taxType": { "type": "string" },
+            "taxRate": { "type": "number" },
+            "userId": { "type": "string" }
+        },
+        "required": ["description", "price", "userId"]
+    },
+    "TaxType": {
+        "title": "Tax Type",
+        "description": "A user-defined tax type with a name and rate.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "rate": { "type": "number" },
+            "userId": { "type": "string" }
+        },
+        "required": ["name", "rate", "userId"]
+    },
+    "IncomeTransaction": {
+        "title": "Income Transaction",
+        "description": "Records an income transaction.",
+        "type": "object",
+        "properties": {
+            "date": { "type": "string", "format": "date" },
+            "company": { "type": "string" },
+            "description": { "type": "string" },
+            "totalAmount": { "type": "number", "description": "The total amount of the transaction including tax." },
+            "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
+            "taxAmount": { "type": "number", "description": "The amount of tax collected." },
+            "taxRate": { "type": "number", "description": "The tax rate applied." },
+            "incomeCategory": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
+            "depositedTo": { "type": "string" },
+            "explanation": { "type": "string" },
+            "documentNumber": { "type": "string" },
+            "documentUrl": { "type": "string", "format": "uri" },
+            "type": { "type": "string", "enum": ["business", "personal"] },
+            "userId": { "type": "string" }
+        },
+        "required": ["date", "company", "totalAmount", "incomeCategory", "userId"]
+    },
+    "ExpenseTransaction": {
+        "title": "Expense Transaction",
+        "description": "Records an expense transaction.",
+        "type": "object",
+        "properties": {
+            "date": { "type": "string", "format": "date" },
+            "company": { "type": "string" },
+            "description": { "type": "string" },
+            "totalAmount": { "type": "number", "description": "The total amount of the transaction including tax." },
+            "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
+            "taxAmount": { "type": "number", "description": "The amount of tax paid." },
+            "taxRate": { "type": "number", "description": "The tax rate applied." },
+            "category": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
+            "explanation": { "type": "string" },
+            "documentNumber": { "type": "string" },
+            "documentUrl": { "type": "string", "format": "uri" },
+            "type": { "type": "string", "enum": ["business", "personal"] },
+            "userId": { "type": "string" }
+        },
+        "required": ["date", "company", "totalAmount", "category", "userId"]
+    },
+    "PayableBill": {
+        "title": "Payable Bill",
+        "description": "Represents an outstanding bill from a vendor.",
+        "type": "object",
+        "properties": {
+            "vendor": { "type": "string" },
+            "invoiceNumber": { "type": "string" },
+            "dueDate": { "type": "string", "format": "date" },
+            "totalAmount": { "type": "number" },
+            "preTaxAmount": { "type": "number" },
+            "taxAmount": { "type": "number" },
+            "taxRate": { "type": "number" },
+            "category": { "type": "string" },
+            "description": { "type": "string" },
+            "documentUrl": { "type": "string", "format": "uri" },
+            "userId": { "type": "string" }
+        },
+        "required": ["vendor", "dueDate", "totalAmount", "category", "userId"]
+    },
+    "PayrollRun": {
+      "title": "Payroll Run",
+      "description": "Represents a single, processed payroll run.",
+      "type": "object",
+      "properties": {
+        "payPeriodStart": { "type": "string", "format": "date" },
+        "payPeriodEnd": { "type": "string", "format": "date" },
+        "payDate": { "type": "string", "format": "date" },
+        "totalGrossPay": { "type": "number" },
+        "totalDeductions": { "type": "number" },
+        "totalNetPay": { "type": "number" },
+        "employeeCount": { "type": "integer" },
+        "userId": { "type": "string" }
+      },
+      "required": ["payPeriodStart", "payPeriodEnd", "payDate", "totalGrossPay", "totalDeductions", "totalNetPay", "employeeCount", "userId"]
+    },
+    "PayrollRunDetail": {
+      "title": "Payroll Run Detail",
+      "description": "Represents the payroll details for a single employee within a payroll run.",
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "grossPay": { "type": "number" },
+        "deductions": { "type": "number" },
+        "netPay": { "type": "number" }
+      },
+      "required": ["runId", "employeeId", "employeeName", "grossPay", "deductions", "netPay"]
+    },
+    "PayrollRemittance": {
+        "title": "Payroll Remittance",
+        "description": "Represents a payroll source deduction remittance to be paid to a government agency.",
+        "type": "object",
+        "properties": {
+            "payPeriodStart": { "type": "string", "format": "date" },
+            "payPeriodEnd": { "type": "string", "format": "date" },
+            "dueDate": { "type": "string", "format": "date" },
+            "amount": { "type": "number" },
+            "status": { "type": "string", "enum": ["Due", "Paid"] },
+            "paidDate": { "type": "string", "format": "date" },
+            "userId": { "type": "string" }
+        },
+        "required": ["payPeriodStart", "payPeriodEnd", "dueDate", "amount", "status", "userId"]
+    },
+    "Asset": {
+        "title": "Capital Asset",
+        "description": "Represents a capital asset owned by the business.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "assetClass": { "type": "string" },
+            "purchaseDate": { "type": "string", "format": "date" },
+            "cost": { "type": "number" },
+            "undepreciatedCapitalCost": { "type": "number" },
+            "applyHalfYearRule": { "type": "boolean" },
+            "userId": { "type": "string" }
+        },
+        "required": ["name", "purchaseDate", "cost", "undepreciatedCapitalCost", "userId"]
+    },
+    "EquityTransaction": {
+        "title": "Equity Transaction",
+        "description": "Represents an owner's contribution or draw.",
+        "type": "object",
+        "properties": {
+            "date": { "type": "string", "format": "date" },
+            "description": { "type": "string" },
+            "amount": { "type": "number" },
+            "type": { "type": "string", "enum": ["contribution", "draw"] },
+            "userId": { "type": "string" }
+        },
+        "required": ["date", "amount", "type", "userId"]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Represents a company, client, or vendor.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "userId"]
+    },
+    "ExpenseCategory": {
+      "title": "Expense Category",
+      "description": "Represents a user-defined expense category.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "categoryNumber": { "type": "string", "description": "The unique ID for the category, like a CRA line number." },
+        "isArchived": { "type": "boolean", "description": "Whether the category is archived and hidden from view." },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "userId"]
+    },
+    "IncomeCategory": {
+      "title": "Income Category",
+      "description": "Represents a user-defined income category.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "categoryNumber": { "type": "string", "description": "The unique ID for the category, like a CRA line number." },
+        "isArchived": { "type": "boolean", "description": "Whether the category is archived and hidden from view." },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "userId"]
+    },
+    "Industry": {
+      "title": "Industry",
+      "description": "Represents a custom NAICS industry category.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "description": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["code", "description", "userId"]
+    },
+    "Loan": {
+        "title": "Loan",
+        "description": "Represents a loan, either payable to a creditor or receivable from a debtor.",
+        "type": "object",
+        "properties": {
+            "loanType": { "type": "string", "enum": ["payable", "receivable"] },
+            "counterparty": { "type": "string", "description": "The name of the lender (for payables) or borrower (for receivables)." },
+            "originalAmount": { "type": "number" },
+            "outstandingBalance": { "type": "number" },
+            "interestRate": { "type": "number", "description": "Annual interest rate in percentage." },
+            "termMonths": { "type": "number", "description": "The total term of the loan in months." },
+            "monthlyPayment": { "type": "number" },
+            "startDate": { "type": "string", "format": "date" },
+            "userId": { "type": "string" }
+        },
+        "required": ["loanType", "counterparty", "originalAmount", "outstandingBalance", "startDate", "userId"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile data."
+    },
+    "/contacts/{contactId}": {
+        "schema": { "$ref": "#/entities/Contact" },
+        "description": "Collection of all contacts."
+    },
+    "/invoices/{invoiceId}": {
+        "schema": { "$ref": "#/entities/Invoice" },
+        "description": "Collection of all invoices."
+    },
+    "/invoiceLineItems/{itemId}": {
+        "schema": { "$ref": "#/entities/InvoiceLineItem" },
+        "description": "Collection of all invoice line items."
+    },
+    "/serviceItems/{itemId}": {
+        "schema": { "$ref": "#/entities/ServiceItem" },
+        "description": "Collection of reusable invoice items."
+    },
+    "/taxTypes/{typeId}": {
+        "schema": { "$ref": "#/entities/TaxType" },
+        "description": "Collection of user-defined tax types."
+    },
+    "/incomeTransactions/{transactionId}": {
+        "schema": { "$ref": "#/entities/IncomeTransaction" },
+        "description": "Collection of all income transactions."
+    },
+    "/expenseTransactions/{transactionId}": {
+        "schema": { "$ref": "#/entities/ExpenseTransaction" },
+        "description": "Collection of all expense transactions."
+    },
+    "/payableBills/{billId}": {
+        "schema": { "$ref": "#/entities/PayableBill" },
+        "description": "Collection of all payable bills."
+    },
+    "/payrollRuns/{runId}": {
+      "schema": { "$ref": "#/entities/PayrollRun" },
+      "description": "Stores historical payroll run summaries."
+    },
+    "/payrollRuns/{runId}/details/{detailId}": {
+        "schema": { "$ref": "#/entities/PayrollRunDetail" },
+        "description": "Stores individual employee details for a specific payroll run."
+    },
+    "/payrollRemittances/{remittanceId}": {
+        "schema": { "$ref": "#/entities/PayrollRemittance" },
+        "description": "Collection of all payroll remittances."
+    },
+    "/assets/{assetId}": {
+        "schema": { "$ref": "#/entities/Asset" },
+        "description": "Collection of all capital assets."
+    },
+    "/equityTransactions/{transactionId}": {
+        "schema": { "$ref": "#/entities/EquityTransaction" },
+        "description": "Collection of all equity transactions."
+    },
+    "/companies/{companyId}": {
+      "schema": { "$ref": "#/entities/Company" },
+      "description": "Stores company, client, or vendor names for use in transactions."
+    },
+    "/expenseCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/ExpenseCategory" },
+      "description": "Stores user-defined expense categories."
+    },
+    "/incomeCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/IncomeCategory" },
+      "description": "Stores user-defined income categories."
+    },
+    "/industries/{industryId}": {
+      "schema": { "$ref": "#/entities/Industry" },
+      "description": "Stores user-defined custom industries."
+    },
+    "/loans/{loanId}": {
+        "schema": { "$ref": "#/entities/Loan" },
+        "description": "Collection of all business loans, both payable and receivable."
+    }
+  }
+}

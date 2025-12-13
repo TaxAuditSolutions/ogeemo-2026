@@ -47,7 +47,7 @@ import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Contact } from '@/data/contacts';
 
-export default function LogCommunicationPage() {
+export default function LogEmailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +135,7 @@ export default function LogCommunicationPage() {
         sourceLink: sourceLink,
       });
       toast({
-        title: 'Communication Logged',
+        title: 'Email Logged',
         description: `The email record has been saved to the "${contact.name}" folder in your Document Manager.`,
         action: (
             <Button variant="link" asChild>
@@ -190,7 +190,7 @@ export default function LogCommunicationPage() {
             </Link>
           </Button>
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Log Communication
+            Log an Email
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Copy and paste an email to create a permanent record for a contact.

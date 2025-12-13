@@ -22,6 +22,7 @@ import {
   Briefcase,
   ListTodo,
   ShieldCheck,
+  ClipboardList,
 } from "lucide-react";
 import { AccountingPageHeader } from "../accounting/page-header";
 
@@ -39,7 +40,7 @@ export function ReportsHubView() {
       title: "All Project Tasks",
       description: "A list of all tasks and events, including those scheduled on your calendar.",
       href: "/all-project-tasks",
-      cta: "View All Tasks",
+      cta: "Open Tasks List",
     },
     {
       icon: Activity,
@@ -75,6 +76,13 @@ export function ReportsHubView() {
       description: "Generate a statement of business activities based on your income and expense ledger data.",
       cta: "View Statement",
       href: "/accounting/reports/income-statement",
+    },
+    {
+        icon: ClipboardList,
+        title: "Accrual Adjustments",
+        description: "View unpaid invoices and bills to help prepare accrual-based financial statements for tax purposes.",
+        cta: "View Adjustments",
+        href: "/accounting/reports/accrual-adjustments",
     },
      {
       icon: ShieldCheck,

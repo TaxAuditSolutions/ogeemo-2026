@@ -1,15 +1,60 @@
+
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Folder,
+  FileText,
+  Plus,
+  Trash2,
+  Edit,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Save,
+  Printer,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Save, Eraser, LoaderCircle, Printer } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from '@/context/auth-context';
-import { findOrCreateFileFolder, updateFile, addTextFileClient, getFileById } from '@/services/file-service';
+import { findOrCreateFileFolder, getFilesForFolder, updateFile, addTextFileClient, deleteFiles } from '@/services/file-service';
+import { fetchFileContent } from '@/app/actions/file-actions';
+import { type FileItem, type FolderItem } from '@/data/files';
+import { LoaderCircle } from 'lucide-react';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getIncomeTransactions, type IncomeTransaction } from '@/services/accounting-service';
-import { fetchFileContent } from '@/app/actions/file-actions';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
 
 const TEST_FOLDER_NAME = "Bug Repair Tests";
 
@@ -119,14 +164,14 @@ export default function BugRepairPage() {
           </p>
       </header>
       
-      <Card className="w-full max-w-4xl flex-1 flex flex-col" ref={contentRef}>
+      <Card className="w-full max-w-4xl flex-1 flex flex-col">
         <CardHeader>
           <CardTitle>Sandbox Editor</CardTitle>
           <CardDescription>
             This editor saves HTML content to the dedicated "{TEST_FOLDER_NAME}" folder in your Document Manager.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
+        <CardContent className="flex-1 flex flex-col" ref={contentRef}>
           <div
             ref={editorRef}
             contentEditable
@@ -136,7 +181,7 @@ export default function BugRepairPage() {
         </CardContent>
         <div className="p-4 border-t flex justify-end gap-2">
             <Button variant="outline" onClick={handlePrint} disabled={isSaving}><Printer className="mr-2 h-4 w-4" /> Print</Button>
-            <Button variant="outline" onClick={handleClear} disabled={isSaving}><Eraser className="mr-2 h-4 w-4" /> Clear</Button>
+            <Button variant="outline" onClick={handleClear} disabled={isSaving}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
             <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save

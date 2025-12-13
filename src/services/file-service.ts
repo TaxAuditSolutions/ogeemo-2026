@@ -59,7 +59,7 @@ export async function getFiles(userId?: string): Promise<FileItem[]> {
   return snapshot.docs.map(docToFile);
 }
 
-export async function getFileContentFromStorage(auth: Auth, storagePath: string): Promise<string> {
+export async function getAdminFileContentFromStorage(auth: Auth, storagePath: string): Promise<string> {
     if (!storagePath) {
         console.warn("Storage path is empty, returning empty content.");
         return '';
@@ -107,7 +107,7 @@ export async function getFileById(fileId: string): Promise<FileItem | null> {
     if ((fileData.type === 'text/plain' || fileData.type === 'application/vnd.ogeemo-flowchart+json') && fileData.storagePath) {
         try {
             const { auth } = await initializeFirebase();
-            const content = await getFileContentFromStorage(auth, fileData.storagePath);
+            const content = await getAdminFileContentFromStorage(auth, fileData.storagePath);
             fileData.content = content;
         } catch (error) {
             console.error(`Failed to fetch content for ${fileId}:`, error);

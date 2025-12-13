@@ -15,7 +15,6 @@ import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHea
 const ProjectTimelineView = dynamic(
   () => import('@/components/tasks/project-timeline-view').then((mod) => mod.ProjectTimelineView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const LedgersView = dynamic(
   () => import('@/components/accounting/ledgers-view').then((mod) => mod.LedgersView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

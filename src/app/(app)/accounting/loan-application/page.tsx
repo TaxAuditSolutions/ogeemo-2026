@@ -7,7 +7,6 @@ import { LoaderCircle } from 'lucide-react';
 const LoanApplicationView = dynamic(
   () => import('@/components/accounting/loan-application-view').then((mod) => mod.LoanApplicationView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

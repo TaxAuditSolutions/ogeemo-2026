@@ -24,7 +24,6 @@ const ActivityReportSkeleton = () => (
 const ActivityReportView = dynamic(
   () => import('@/components/dashboard/activity-report-view').then((mod) => mod.ActivityReportView),
   {
-    ssr: false,
     loading: () => <ActivityReportSkeleton />,
   }
 );

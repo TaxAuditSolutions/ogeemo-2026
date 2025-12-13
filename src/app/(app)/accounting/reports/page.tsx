@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const ReportsHubView = dynamic(
   () => import('@/components/reports/reports-hub-view').then((mod) => mod.ReportsHubView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -6,7 +7,6 @@ import { LoaderCircle } from 'lucide-react';
 const InvoiceGeneratorView = dynamic(
   () => import('@/components/accounting/invoice-generator-view').then((mod) => mod.InvoiceGeneratorView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

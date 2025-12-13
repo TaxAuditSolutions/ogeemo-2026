@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const FormsView = dynamic(
   () => import('@/components/forms/forms-view').then((mod) => mod.FormsView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

@@ -19,7 +19,6 @@ const AccountingToolsSkeleton = () => (
 const AccountingToolsHub = dynamic(
   () => import('@/components/accounting/accounting-tools-view').then((mod) => mod.AccountingToolsView),
   {
-    ssr: false,
     loading: () => <AccountingToolsSkeleton />,
   }
 );

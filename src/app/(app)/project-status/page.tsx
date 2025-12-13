@@ -26,7 +26,6 @@ const ProjectStatusSkeleton = () => (
 const ProjectStatusView = dynamic(
   () => import('@/components/dashboard/project-status-view').then((mod) => mod.ProjectStatusView),
   {
-    ssr: false,
     loading: () => <ProjectStatusSkeleton />,
   }
 );

@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const ResearchHubView = dynamic(
   () => import('@/components/research/research-hub-view').then((mod) => mod.ResearchHubView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

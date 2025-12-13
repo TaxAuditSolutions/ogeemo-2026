@@ -7,7 +7,6 @@ import { CalendarSkeleton } from '@/components/calendar/calendar-skeleton';
 const CalendarView = dynamic(
   () => import('@/components/calendar/calendar-view').then((mod) => mod.CalendarView),
   {
-    ssr: false,
     loading: () => <CalendarSkeleton />,
   }
 );

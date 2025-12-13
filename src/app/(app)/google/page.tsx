@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const GoogleIntegrationView = dynamic(
   () => import('@/components/google/google-integration-view').then((mod) => mod.GoogleIntegrationView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

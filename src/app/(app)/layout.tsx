@@ -23,7 +23,6 @@ import { SidebarViewProvider } from '@/context/sidebar-view-context';
 const ClientLayout = dynamic(
   () => import('@/components/layout/client-layout').then((mod) => mod.ClientLayout),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-screen w-full items-center justify-center">
         <LoaderCircle className="h-10 w-10 animate-spin text-primary" />

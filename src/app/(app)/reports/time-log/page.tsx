@@ -8,7 +8,6 @@ import { ReportsPageHeader } from '@/components/reports/page-header';
 const TimeLogReport = dynamic(
   () => import('@/components/reports/time-log-report').then((mod) => mod.TimeLogReport),
   {
-    ssr: false,
     loading: () => <div className="p-4"><p>Loading Report...</p></div>,
   }
 );

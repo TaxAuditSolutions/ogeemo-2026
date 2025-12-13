@@ -5,7 +5,6 @@ import { LoaderCircle } from 'lucide-react';
 const PayrollSettingsView = dynamic(
   () => import('@/components/accounting/payroll-settings-view').then((mod) => mod.PayrollSettingsView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

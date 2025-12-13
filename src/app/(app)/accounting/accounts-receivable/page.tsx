@@ -1,3 +1,4 @@
+
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -7,7 +8,6 @@ import { AccountingPageHeader } from '@/components/accounting/page-header';
 const InvoicePaymentsView = dynamic(
   () => import('@/components/accounting/invoice-payments-view').then((mod) => mod.InvoicePaymentsView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

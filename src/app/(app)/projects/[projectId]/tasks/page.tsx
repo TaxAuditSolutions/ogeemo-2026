@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +11,6 @@ import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHea
 const ProjectTasksView = dynamic(
   () => import('@/components/tasks/project-tasks-view').then((mod) => mod.ProjectTasksView),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">

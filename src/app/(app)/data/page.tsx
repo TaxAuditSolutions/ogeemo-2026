@@ -27,7 +27,6 @@ const DataSkeleton = () => (
 const DataView = dynamic(
   () => import('@/components/data/data-view').then((mod) => mod.DataView),
   {
-    ssr: false,
     loading: () => <DataSkeleton />,
   }
 );

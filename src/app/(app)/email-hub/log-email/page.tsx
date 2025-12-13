@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -185,7 +184,7 @@ export default function LogEmailPage() {
       <div className="p-4 sm:p-6 flex flex-col h-full">
         <header className="relative text-center mb-6 w-full">
           <Button asChild variant="outline" className="absolute left-0 top-1/2 -translate-y-1/2">
-            <Link href="/ogeemail">
+            <Link href="/email-hub">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Hub
             </Link>
           </Button>

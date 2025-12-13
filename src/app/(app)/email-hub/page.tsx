@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -31,7 +30,7 @@ const workflowSteps = [
     {
         step: 3,
         title: "Log Communication in Ogeemo",
-        description: "Return to Ogeemo and click the 'Log Communication' button below. This will take you to a dedicated form.",
+        description: "Return to Ogeemo and click the 'Log an Email' button below. This will take you to a dedicated form.",
         icon: BookOpen,
     },
     {
@@ -42,7 +41,7 @@ const workflowSteps = [
     }
 ];
 
-export default function OgeeMailPage() {
+export default function EmailHubPage() {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);
 
     return (
@@ -79,10 +78,10 @@ export default function OgeeMailPage() {
                      </Card>
                       <Card className="flex flex-col items-center justify-center text-center p-6">
                         <LinkIcon className="h-10 w-10 text-primary mb-4"/>
-                        <CardTitle>Log Communication</CardTitle>
+                        <CardTitle>Log an Email</CardTitle>
                         <CardDescription className="mt-2">Save a copy of an important email to a contact's record.</CardDescription>
                         <Button asChild className="mt-4 w-full">
-                            <Link href="/ogeemail/compose">Log an Email <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                            <Link href="/email-hub/log-email">Log an Email <ArrowRight className="ml-2 h-4 w-4"/></Link>
                         </Button>
                      </Card>
                 </div>

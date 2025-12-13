@@ -21,10 +21,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useSidebarView } from '@/context/sidebar-view-context';
 
 const groupedMenuItems = {
-    Workspace: { icon: Briefcase, items: ['/action-manager', '/calendar', '/tasks', '/files', '/ogeemail'] },
+    Workspace: { icon: Briefcase, items: ['/action-manager', '/calendar', '/all-project-tasks', '/document-manager', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm'] },
-    Operations: { icon: Bot, items: ['/projects', '/time', '/accounting'] },
-    Growth: { icon: BarChart3, items: ['/reports', '/marketing-manager', '/research', '/ideas'] },
+    Operations: { icon: Bot, items: ['/projects', '/master-mind', '/accounting'] },
+    Growth: { icon: BarChart3, items: ['/reports', '/marketing-manager', '/research', '/idea-board'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup'] },
 };
 

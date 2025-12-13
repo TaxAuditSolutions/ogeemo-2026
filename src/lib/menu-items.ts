@@ -96,7 +96,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/image-generator", label: "Image Generation", icon: ImageIcon },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/logout", label: "Logout", icon: LogOut },
-  { href: "/ogeemail", label: "Email Hub", icon: Mail },
+  { href: "/email-hub", label: "Email Hub", icon: Mail },
   { href: "/contacts", label: "Contacts", icon: Contact },
   { href: "/projects", label: "Projects", icon: Briefcase },
   { href: "/all-project-tasks", label: "All Project Tasks", icon: ListTodo },

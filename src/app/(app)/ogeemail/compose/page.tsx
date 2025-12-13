@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -104,6 +105,10 @@ export default function LogCommunicationPage() {
   }
 
   const handleSaveLog = async () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Not logged in' });
+      return;
+    }
     if (!selectedContactId || !from.trim() || !subject.trim()) {
       toast({
         variant: 'destructive',
@@ -122,7 +127,7 @@ export default function LogCommunicationPage() {
 
     setIsSaving(true);
     try {
-      await saveEmailForContact(user!.uid, contact.name, {
+      const savedFile = await saveEmailForContact(user.uid, contact.name, {
         to: contact.name,
         from: from,
         subject: subject,
@@ -131,7 +136,14 @@ export default function LogCommunicationPage() {
       });
       toast({
         title: 'Communication Logged',
-        description: 'The email record has been saved.',
+        description: `The email record has been saved to the "${contact.name}" folder in your Document Manager.`,
+        action: (
+            <Button variant="link" asChild>
+                <Link href={`/document-manager?folderId=${savedFile.folderId}`}>
+                    View File
+                </Link>
+            </Button>
+        )
       });
       resetForm();
     } catch (error: any) {

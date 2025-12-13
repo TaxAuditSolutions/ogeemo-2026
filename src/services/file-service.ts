@@ -16,10 +16,11 @@ import {
     getDoc,
     setDoc,
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString } from 'firebase/storage';
 import { initializeFirebase } from '@/lib/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
+import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 
 
 const FILES_COLLECTION = 'files';
@@ -236,16 +237,62 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
 }
 
 
-export async function saveEmailForContact(userId: string, contactName: string, email: { to: string, from: string, subject: string; body: string; sourceLink?: string; }): Promise<void> {
-    console.log("--- Placeholder: saveEmailForContact ---");
-    console.log("User ID:", userId);
-    console.log("Contact Name:", contactName);
-    console.log("Email to save:", email);
-    console.log("This function will eventually save this email as an HTML file in the contact's folder in the Document Manager.");
-    console.log("--- End Placeholder ---");
-    // This is a placeholder. The real implementation will be done in Phase 2.
-    // No actual file saving will happen here.
-    return Promise.resolve();
+export async function saveEmailForContact(userId: string, contactName: string, email: { to: string, from: string, subject: string; body: string; sourceLink?: string; }): Promise<FileItem> {
+    const db = await getDb();
+    const storage = await getAppStorage();
+
+    // 1. Find or create a folder for the contact
+    const contactFolder = await findOrCreateGenericFolder(userId, contactName, 'fileManagerFolders');
+    if (!contactFolder) {
+        throw new Error("Could not find or create a folder for the contact.");
+    }
+
+    // 2. Sanitize file name and create HTML content
+    const sanitizedSubject = (email.subject || "Untitled Email").replace(/[^\w\s-]/g, '');
+    const dateStamp = new Date().toISOString().split('T')[0];
+    const fileName = `${sanitizedSubject} - ${dateStamp}.html`;
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${email.subject}</title>
+            <style>
+                body { font-family: sans-serif; line-height: 1.6; }
+                .email-header { background-color: #f2f2f2; padding: 10px; border-bottom: 1px solid #ddd; }
+                .email-body { padding: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="email-header">
+                <p><strong>From:</strong> ${email.from}</p>
+                <p><strong>To:</strong> ${email.to}</p>
+                <p><strong>Subject:</strong> ${email.subject}</p>
+                ${email.sourceLink ? `<p><strong>Source:</strong> <a href="${email.sourceLink}" target="_blank">View Original Email</a></p>` : ''}
+            </div>
+            <div class="email-body">
+                ${email.body}
+            </div>
+        </body>
+        </html>
+    `;
+
+    // 3. Upload content to Firebase Storage
+    const storagePath = `userFiles/${userId}/${contactFolder.id}/${Date.now()}-${fileName}`;
+    const fileRef = storageRef(storage, storagePath);
+    await uploadString(fileRef, htmlContent, 'raw', { contentType: 'text/html' });
+
+    // 4. Create a record in Firestore
+    const newFileRecord: Omit<FileItem, 'id'> = {
+        name: fileName,
+        type: 'text/html',
+        size: htmlContent.length,
+        modifiedAt: new Date(),
+        folderId: contactFolder.id,
+        userId: userId,
+        storagePath: storagePath,
+    };
+    
+    return addFileRecord(newFileRecord);
 }
 
 export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
@@ -348,15 +395,7 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 // This function has been deprecated and its functionality moved to `file-manager-folders.ts`
 // It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
-    const db = await getDb();
-    const q = query(collection(db, 'fileManagerFolders'), where("userId", "==", userId), where("name", "==", folderName));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as FolderItem;
-    }
-    const newFolderData = { name: folderName, userId, parentId: null, createdAt: new Date() };
-    const docRef = await addDoc(collection(db, 'fileManagerFolders'), newFolderData);
-    return { id: docRef.id, ...newFolderData };
+    return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
 }
     
 

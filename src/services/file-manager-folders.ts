@@ -17,7 +17,7 @@ import {
 import { initializeFirebase } from '@/lib/firebase';
 import type { FolderItem } from '@/data/files';
 
-const FOLDERS_COLLECTION = 'fileManagerFolders'; // The new, unique collection name
+const FOLDERS_COLLECTION = 'fileManagerFolders';
 
 async function getDb() {
     const { db } = await initializeFirebase();
@@ -69,3 +69,17 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 
     await batch.commit();
 }
+
+
+export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
+    const db = await getDb();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+        return docToFolder(snapshot.docs[0]);
+    }
+    const newFolderData = { name: folderName, userId, parentId: null, createdAt: new Date() };
+    const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
+    return { id: docRef.id, ...newFolderData };
+}
+

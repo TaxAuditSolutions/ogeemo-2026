@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -40,11 +39,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, getFolders, addContact, type Contact, type FolderData } from '@/services/contact-service';
+import { getContacts, type FolderData } from '@/services/contact-service';
 import { saveEmailForContact } from '@/services/file-service';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import type { Contact } from '@/data/contacts';
 
 export default function LogCommunicationPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -77,12 +77,9 @@ export default function LogCommunicationPage() {
     }
     setIsLoading(true);
     try {
-      const [fetchedContacts, fetchedFolders] = await Promise.all([
-          getContacts(user.uid),
-          getFolders(user.uid),
-      ]);
+      // For this repurposed component, we only need contacts.
+      const fetchedContacts = await getContacts(user.uid);
       setContacts(fetchedContacts);
-      setFolders(fetchedFolders);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -164,14 +161,12 @@ export default function LogCommunicationPage() {
     if (subject) query.append('title', subject);
     if (body) query.append('notes', body);
     if (selectedContactId) query.append('contactId', selectedContactId);
-    if (selectedProjectId) query.append('projectId', selectedProjectId); // Assuming selectedProjectId state exists
     
     router.push(`/master-mind?${query.toString()}`);
   };
 
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
-  const selectedProjectId = 'project-placeholder'; // Placeholder for project selection if added later
 
   return (
     <>
@@ -195,7 +190,7 @@ export default function LogCommunicationPage() {
             <CardTitle>Log an Email</CardTitle>
             <CardDescription>
               This information will be saved as a document in the contact's
-              folder within the File Manager.
+              folder within the Document Manager.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 flex-1 flex flex-col">
@@ -315,6 +310,7 @@ export default function LogCommunicationPage() {
         onOpenChange={setIsContactFormOpen}
         contactToEdit={null}
         folders={folders}
+        onFoldersChange={setFolders}
         onSave={handleContactSave}
       />
       

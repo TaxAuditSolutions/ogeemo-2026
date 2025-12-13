@@ -60,7 +60,7 @@ import {
   Activity,
   Wrench,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
 
 export interface MenuItem {

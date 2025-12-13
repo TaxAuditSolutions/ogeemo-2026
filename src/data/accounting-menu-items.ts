@@ -20,6 +20,7 @@ import {
     Info,
     Landmark,
     DollarSign,
+    BookOpen,
 } from 'lucide-react';
 import type { MenuItem } from '@/lib/menu-items';
 
@@ -31,6 +32,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/ledgers?tab=expenses", icon: TrendingDown, label: "Manage Expenses" },
     { href: "/accounting/ledgers", icon: BookText, label: "General Ledger" },
     { href: "/accounting/cash-accounting", icon: DollarSign, label: "Cash Accounting" },
+    { href: "/accounting/accrual-accounting", icon: BookOpen, label: "Accrual Accounting" },
     { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement"},
     { href: "/accounting/tax/sales-tax", icon: Percent, label: "Sales Tax Calculator" },
     { href: "/accounting/accounts-payable", icon: FileInput, label: "Accounts Payable" },

@@ -63,14 +63,18 @@ export function CashAccountingView() {
             
             <Card className="max-w-4xl mx-auto">
                 <CardHeader>
-                    <CardTitle>About Cash Accounting</CardTitle>
+                    <CardTitle>Cash vs. Accrual Accounting</CardTitle>
                 </CardHeader>
                 <CardContent className="prose prose-sm dark:prose-invert max-w-none">
                     <p>
-                        Cash accounting is a method where revenues and expenses are recorded only when cash is actually received or paid out. It's the simplest form of accounting and is often used by small businesses and freelancers.
+                        Ogeemo simplifies bookkeeping by using a cash-based approach. Here's what that means:
                     </p>
+                    <ul>
+                        <li><strong>Cash Accounting:</strong> You record income when you receive the money and expenses when you pay them. It's straightforward and reflects your actual cash flow. The ledgers on this page are for tracking physical cash.</li>
+                        <li><strong>Accrual Accounting:</strong> You record income when you earn it (e.g., when you send an invoice) and expenses when you incur them (e.g., when you receive a bill), regardless of when money changes hands. This gives a more accurate picture of profitability over time but is more complex.</li>
+                    </ul>
                     <p>
-                        Use this manager to track all physical cash transactions. When you deposit this cash into your bank, you can then create a corresponding "Owner's Deposit" entry in the main ledger to reconcile.
+                        Ogeemo's core BKS Ledgers operate on the cash basis, making your books easier to manage and keeping them audit-ready by default.
                     </p>
                 </CardContent>
             </Card>

@@ -1,6 +1,8 @@
+'use client';
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
+import { AccountingPageHeader } from '@/components/accounting/page-header';
 
 const InvoicePaymentsView = dynamic(
   () => import('@/components/accounting/invoice-payments-view').then((mod) => mod.InvoicePaymentsView),
@@ -18,5 +20,10 @@ const InvoicePaymentsView = dynamic(
 );
 
 export default function AccountsReceivablePage() {
-  return <InvoicePaymentsView />;
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      <AccountingPageHeader pageTitle="Accounts Receivable" />
+      <InvoicePaymentsView />
+    </div>
+  );
 }

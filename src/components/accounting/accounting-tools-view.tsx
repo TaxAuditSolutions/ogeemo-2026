@@ -20,7 +20,8 @@ import {
   Plus,
   Settings,
 } from 'lucide-react';
-import { getActionChips, type ActionChipData } from '@/services/project-service';
+import { getActionChips as getQuickNavItems, type ActionChipData } from '@/services/project-service';
+import accountingMenuItems from '@/data/accounting-menu-items';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
@@ -62,29 +63,18 @@ export function AccountingToolsView() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  const hubFeatureHrefs = [
+    "/accounting/bks",
+    "/accounting/accounts-receivable",
+    "/accounting/accounts-payable",
+    "/accounting/payroll",
+    "/accounting/reports",
+    "/accounting/tax",
+  ];
+  
+  const hubFeatures = accountingMenuItems.filter(item => hubFeatureHrefs.includes(item.href));
 
-  const loadItems = useCallback(async () => {
-    if (user) {
-      setIsLoading(true);
-      try {
-        const items = await getActionChips(user.uid, 'accountingQuickNavItems');
-        setQuickNavItems(items);
-      } catch (error) {
-        console.error("Failed to load quick nav items:", error);
-        toast({ variant: 'destructive', title: 'Failed to load navigation', description: error instanceof Error ? error.message : 'An unknown error occurred.'});
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    loadItems();
-    window.addEventListener('accountingChipsUpdated', loadItems);
-    return () => window.removeEventListener('accountingChipsUpdated', loadItems);
-  }, [loadItems]);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -96,7 +86,7 @@ export function AccountingToolsView() {
             </h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Your central command for managing finances. Below are your quick-access links.
+          Your central command for managing finances. Use the cards below to navigate to key areas, or customize your quick navigation menu.
         </p>
          <div className="mt-4">
             <Button asChild>
@@ -108,35 +98,18 @@ export function AccountingToolsView() {
         </div>
       </header>
       
-      {isLoading ? (
-        <div className="flex justify-center items-center h-48">
-            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : quickNavItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {quickNavItems.map((item) => (
-            <FeatureCard 
-              key={item.id}
-              icon={item.icon}
-              title={item.label}
-              description={`Manage ${item.label.toLowerCase()}.`}
-              href={typeof item.href === 'string' ? item.href : item.href.pathname || '#'}
-              cta={item.label === 'Matchbook Loan Summary' ? 'Go to Summary' : `Go to ${item.label}`}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg max-w-3xl mx-auto">
-          <p className="font-semibold">Your Quick Navigation is empty.</p>
-          <p className="text-sm">Add some shortcuts to get started.</p>
-          <Button variant="link" asChild className="mt-2">
-             <Link href="/accounting/manage-navigation">
-               <Plus className="mr-2 h-4 w-4" />
-               Add a shortcut
-             </Link>
-          </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        {hubFeatures.map((item) => (
+          <FeatureCard 
+            key={item.href}
+            icon={item.icon}
+            title={item.label}
+            description={`Manage ${item.label.toLowerCase()}.`} // Generic description
+            href={item.href}
+            cta={`Go to ${item.label}`}
+          />
+        ))}
       </div>
-      )}
     </div>
   );
 }

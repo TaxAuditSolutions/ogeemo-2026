@@ -61,7 +61,7 @@ export function PayrollHubView() {
     { icon: Users, title: "Manage Employees", description: "Add, edit, and manage all your employee profiles and payroll information.", href: "/accounting/payroll/employees", cta: "Go to Employees" },
     { icon: PlayCircle, title: "Run Payroll", description: "Start a new payroll run, calculate earnings, deductions, and issue payments.", href: "/accounting/payroll/run", cta: "Start New Run" },
     { icon: History, title: "Payroll History & Reports", description: "View past payroll runs, generate pay stubs, and create detailed reports.", href: "/accounting/payroll/history", cta: "View History" },
-    { icon: Landmark, title: "Tax Forms & Remittances", description: "Manage and record your tax payments for payroll and sales tax.", href: "/accounting/tax", cta: "Manage Taxes" },
+    { icon: Landmark, title: "Tax Remittances", description: "View and manage your payroll tax and source deduction remittances.", href: "/accounting/tax/payroll-remittances", cta: "Manage Remittances" },
     { icon: Settings, title: "Payroll Settings", description: "Configure company details, pay schedules, and payroll-related accounts.", href: "/accounting/payroll/settings", cta: "Configure Settings" },
   ];
 

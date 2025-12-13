@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
 
@@ -89,14 +90,16 @@ export function AccountingPageHeader({ pageTitle, hubPath = '/accounting', hubLa
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {navItems.map(item => (
-                <DropdownMenuItem key={item.id} asChild>
-                  <Link href={typeof item.href === 'string' ? item.href : item.href.pathname || '#'}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+              <ScrollArea className="h-[400px]">
+                {navItems.map(item => (
+                  <DropdownMenuItem key={item.id} asChild>
+                    <Link href={typeof item.href === 'string' ? item.href : item.href.pathname || '#'}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </ScrollArea>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/accounting/manage-navigation">Manage Quick Nav</Link>

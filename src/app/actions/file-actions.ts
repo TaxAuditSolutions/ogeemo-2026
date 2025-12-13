@@ -2,7 +2,7 @@
 'use server';
 
 import { getFileContentFromStorage } from '@/services/file-service';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 import { type Auth } from 'firebase/auth';
 
@@ -35,7 +35,7 @@ export async function fetchFileContent(fileId: string): Promise<{ content?: stri
              return { error: 'File has no content associated with it.' };
         }
 
-        const content = await getFileContentFromStorage(mockAuth, storagePath);
+        const content = await getFileContentFromStorage(auth, storagePath);
         return { content };
 
     } catch (error: any) {

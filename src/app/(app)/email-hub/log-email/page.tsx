@@ -40,6 +40,11 @@ import {
   Calendar as CalendarIcon,
   Edit,
   Plus,
+  Info,
+  Contact,
+  Folder,
+  Briefcase,
+  FileDigit,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +89,7 @@ export default function LogEmailPage() {
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
   const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
 
   const { user } = useAuth();
@@ -256,9 +262,12 @@ export default function LogEmailPage() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Hub
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            Log an Email
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-3xl font-bold font-headline text-primary">Log an Email</h1>
+             <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
+                <Info className="h-5 w-5 text-muted-foreground" />
+             </Button>
+          </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Copy and paste an email to create a permanent record for a contact. To save the log to the calendar, you must click the button called Log time &amp; Schedule. To save to the client folder click the save log button
           </p>
@@ -457,6 +466,51 @@ export default function LogEmailPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>How the Email Hub Integrates with Ogeemo</DialogTitle>
+                <DialogDescription>
+                    The Email Hub is the bridge between your external communications and your internal workspace.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+                <div className="flex items-start gap-4">
+                    <Contact className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Contact History</h4>
+                        <p className="text-sm text-muted-foreground">Each logged email is tied to a specific contact, building a complete, chronological history of your communication with them.</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-4">
+                    <Folder className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Document Manager</h4>
+                        <p className="text-sm text-muted-foreground">Every log is saved as a permanent file, automatically organized into a dedicated folder for that contact, creating a single source of truth.</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-4">
+                    <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Task & Project Management</h4>
+                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button to instantly send an email's details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-4">
+                    <FileDigit className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Accounting</h4>
+                        <p className="text-sm text-muted-foreground">Time logged against tasks created from emails becomes a billable entry, which can be automatically pulled into an invoice for that client, ensuring you get paid for all your work.</p>
+                    </div>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={() => setIsInfoDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
+

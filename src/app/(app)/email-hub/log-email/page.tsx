@@ -37,6 +37,7 @@ import {
   Save,
   Link as LinkIcon,
   Clock,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +47,9 @@ import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Contact } from '@/data/contacts';
+import { format, set } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LogEmailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -60,12 +64,20 @@ export default function LogEmailPage() {
   const [body, setBody] = useState('');
   const [sourceLink, setSourceLink] = useState('');
   
+  // Date/Time State
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [startHour, setStartHour] = useState<string>(String(new Date().getHours()));
+  const [startMinute, setStartMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [endHour, setEndHour] = useState<string>(String(new Date().getHours() + 1));
+  const [endMinute, setEndMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+  
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
-
-
-  // Popover State
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+  const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
+  const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
+
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -78,7 +90,6 @@ export default function LogEmailPage() {
     }
     setIsLoading(true);
     try {
-      // For this repurposed component, we only need contacts.
       const fetchedContacts = await getContacts(user.uid);
       setContacts(fetchedContacts);
     } catch (error: any) {
@@ -172,9 +183,35 @@ export default function LogEmailPage() {
     if (subject) query.append('title', subject);
     if (body) query.append('notes', body);
     if (selectedContactId) query.append('contactId', selectedContactId);
+
+    if (startDate) {
+        const finalStartDate = set(startDate, { hours: parseInt(startHour), minutes: parseInt(startMinute) });
+        query.append('start', finalStartDate.toISOString());
+
+        let finalEndDate: Date;
+        const finalEndDateDatePart = endDate || finalStartDate;
+        const finalEndHour = endHour || startHour;
+        const finalEndMinute = endMinute || startMinute;
+        finalEndDate = set(finalEndDateDatePart, { hours: parseInt(finalEndHour), minutes: parseInt(finalEndMinute) });
+
+        if (finalEndDate <= finalStartDate) {
+            finalEndDate = new Date(finalStartDate.getTime() + 30 * 60000); // Default to 30 min duration
+        }
+        query.append('end', finalEndDate.toISOString());
+    }
     
     router.push(`/master-mind?${query.toString()}`);
   };
+
+  const hourOptions = Array.from({ length: 24 }, (_, i) => {
+    const d = set(new Date(), { hours: i });
+    return { value: String(i), label: format(d, 'h a') };
+  });
+
+  const minuteOptions = Array.from({ length: 12 }, (_, i) => {
+    const minutes = i * 5;
+    return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` };
+  });
 
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -192,13 +229,13 @@ export default function LogEmailPage() {
             Log an Email
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Copy and paste an email to create a permanent record for a contact. To save the log to the calendar, you must click the button called Log time & Schedule. To save to the client folder click the save log button
+            Copy and paste an email to create a permanent record for a contact. To save the log to the calendar, you must click the button called Log time &amp; Schedule. To save to the client folder click the save log button
           </p>
         </header>
 
         <Card className="w-full flex-1 flex flex-col">
           <CardHeader>
-            <CardTitle>Log an Email</CardTitle>
+            <CardTitle>Email Details</CardTitle>
             <CardDescription>
               This information will be saved as a document in the contact's
               folder within the Document Manager.
@@ -302,6 +339,46 @@ export default function LogEmailPage() {
                 className="flex-1"
               />
             </div>
+             <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="text-base">Scheduling (Optional)</CardTitle>
+                <CardDescription>Schedule this email as a task or event on your calendar.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                      <Label>Start Time</Label>
+                       <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
+                          <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+                              </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={startDate} onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} initialFocus /></PopoverContent>
+                      </Popover>
+                      <div className="flex-1 flex gap-2">
+                          <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                      </div>
+                  </div>
+                   <div className="space-y-2">
+                      <Label>End Time</Label>
+                       <Popover open={isEndPopoverOpen} onOpenChange={setIsEndPopoverOpen}>
+                          <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
+                              </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={endDate} onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} initialFocus /></PopoverContent>
+                      </Popover>
+                      <div className="flex-1 flex gap-2">
+                          <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                      </div>
+                  </div>
+              </CardContent>
+            </Card>
           </CardContent>
           <CardFooter className="justify-between">
              <Button onClick={handleLogTime}>

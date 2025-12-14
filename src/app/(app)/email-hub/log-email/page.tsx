@@ -43,12 +43,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, type FolderData, getFolders as getContactFolders } from '@/services/contact-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { saveEmailForContact } from '@/services/file-service';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { Contact } from '@/data/contacts';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, set } from 'date-fns';

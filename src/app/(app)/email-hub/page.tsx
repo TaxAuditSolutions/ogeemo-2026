@@ -37,7 +37,7 @@ const workflowSteps = [
     {
         step: 4,
         title: "Paste & Save",
-        description: "Paste the email details into the structured fields. This creates a permanent, searchable record in your Document Manager, linked to the correct contact.",
+        description: "Paste the email details. This saves the log and allows you to schedule it as a task on your calendar.",
         icon: Save,
     }
 ];

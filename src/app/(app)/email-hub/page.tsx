@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -133,7 +134,7 @@ export default function EmailHubPage() {
                             <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                             <div>
                                 <h4 className="font-semibold">Task & Project Management</h4>
-                                <p className="text-sm text-muted-foreground">Use the "Log Time & Schedule" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
+                                <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events. Scheduled events will automatically appear on your Calendar.</p>
                             </div>
                         </div>
                          <div className="flex items-start gap-4">

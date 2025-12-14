@@ -159,3 +159,30 @@ export async function findOrCreateFolder(userId: string, folderName: string) {
     // This function will now do nothing to prevent unintended side-effects.
     return { id: 'deprecated', name: folderName, userId, parentId: null, createdAt: new Date() };
 }
+
+export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
+    const db = await getDb();
+    
+    const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
+    const masterRef = doc(db, CONTACTS_COLLECTION, masterContactId);
+
+    const sourceDoc = await getDoc(sourceRef);
+    const masterDoc = await getDoc(masterRef);
+
+    if (!sourceDoc.exists() || !masterDoc.exists()) {
+        throw new Error("One or both contacts not found.");
+    }
+    
+    // For this version, we will simply delete the source contact.
+    // In a future version, you could merge fields here before deleting.
+    // For example:
+    // const masterData = masterDoc.data();
+    // const sourceData = sourceDoc.data();
+    // const mergedData = { ...masterData };
+    // if (!masterData.phone && sourceData.phone) {
+    //   mergedData.phone = sourceData.phone;
+    // }
+    // await updateDoc(masterRef, mergedData);
+
+    await deleteDoc(sourceRef);
+}

@@ -24,6 +24,7 @@ import {
   Presentation,
   Users,
   Plus,
+  GitMerge,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -62,7 +65,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Contact } from '@/data/contacts';
 import { type FolderData } from '@/services/contact-folder-service';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact } from '@/services/contact-service';
+import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -80,6 +83,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import Link from 'next/link';
+import MergeContactsDialog from './MergeContactsDialog';
+
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -122,6 +127,10 @@ export function ContactsView() {
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
+
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -251,6 +260,21 @@ export function ContactsView() {
       setFolderToDelete(folder);
   };
   
+  const handleMergeClick = (contact: Contact) => {
+    setContactToMerge(contact);
+    setIsMergeDialogOpen(true);
+  };
+
+  const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
+    try {
+        await mergeContacts(sourceContactId, masterContactId);
+        setContacts(prev => prev.filter(c => c.id !== sourceContactId));
+        toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+    }
+  };
+
 
   const handleConfirmDeleteFolder = async () => {
     if (!user || !folderToDelete) return;
@@ -544,7 +568,6 @@ export function ContactsView() {
                                   </TableHead>
                                   <TableHead>Name</TableHead>
                                   <TableHead>Email</TableHead>
-                                  <TableHead>Company</TableHead>
                                   <TableHead>Phone</TableHead>
                                   {selectedFolderId === 'all' && <TableHead>Folder</TableHead>}
                                   <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
@@ -566,7 +589,6 @@ export function ContactsView() {
                                         </button>
                                       </TableCell>
                                       <TableCell>{contact.email}</TableCell>
-                                      <TableCell>{contact.businessName}</TableCell>
                                       <TableCell>{primaryPhoneNumber}</TableCell>
                                       {selectedFolderId === 'all' && <TableCell>{folderName}</TableCell>}
                                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -575,6 +597,7 @@ export function ContactsView() {
                                               <DropdownMenuContent align="end">
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><BookOpen className="mr-2 h-4 w-4" />Open</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => handleMergeClick(contact)}><GitMerge className="mr-2 h-4 w-4"/>Merge</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.preventDefault(); setContactToDelete(contact); }}> <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                               </DropdownMenuContent>
@@ -654,6 +677,16 @@ export function ContactsView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {contactToMerge && (
+        <MergeContactsDialog
+          isOpen={isMergeDialogOpen}
+          onOpenChange={setIsMergeDialogOpen}
+          sourceContact={contactToMerge}
+          allContacts={contacts}
+          onMergeConfirm={handleMergeConfirm}
+        />
+      )}
     </>
   );
 }

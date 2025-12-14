@@ -383,7 +383,7 @@ export default function LogEmailPage() {
           <CardFooter className="justify-between">
              <Button onClick={handleLogTime}>
               <Clock className="mr-2 h-4 w-4" />
-              Log Time & Schedule
+              Log Time &amp; Schedule
             </Button>
             <Button onClick={handleSaveLog} disabled={isSaving}>
               {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}

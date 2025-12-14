@@ -43,12 +43,6 @@ import {
   AlertDialogTitle,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { format as formatDate, set, addMinutes, parseISO } from 'date-fns';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -401,16 +395,15 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     setEndHour(String(eventEndDate.getHours()));
                     setEndMinute(String(eventEndDate.getMinutes()));
                 }
-            } else {
-                 const title = searchParams.get('title');
-                 const notes = searchParams.get('notes');
-                 const contactId = searchParams.get('contactId');
-                 const projectId = searchParams.get('projectId');
-                 if (title) setSubject(title);
-                 if (notes) setNotes(notes);
-                 if (contactId) setSelectedContactId(contactId);
-                 if (projectId) setSelectedProjectId(projectId);
             }
+             const title = searchParams.get('title');
+             const notesParam = searchParams.get('notes');
+             const contactId = searchParams.get('contactId');
+             const projectId = searchParams.get('projectId');
+             if (title) setSubject(title);
+             if (notesParam) setNotes(notesParam);
+             if (contactId) setSelectedContactId(contactId);
+             if (projectId) setSelectedProjectId(projectId);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -788,5 +781,3 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         </>
     );
 }
-
-    

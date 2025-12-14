@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -192,7 +193,7 @@ export default function LogEmailPage() {
             Log an Email
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Copy and paste an email to create a permanent record for a contact.
+            Copy and paste an email to create a permanent record for a contact. To save the log to the calendar, you must click the button called Log time & Schedule. To save to the client folder click the save log button
           </p>
         </header>
 

@@ -39,6 +39,7 @@ import {
   Clock,
   Calendar as CalendarIcon,
   Edit,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';

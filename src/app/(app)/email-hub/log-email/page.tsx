@@ -135,11 +135,11 @@ export default function LogEmailPage() {
       toast({ variant: 'destructive', title: 'Not logged in' });
       return { success: false };
     }
-    if (!selectedContactId || !from.trim() || !subject.trim()) {
+    if (!selectedContactId || !subject.trim()) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a contact and enter "From" and "Subject" fields.',
+        description: 'Please select a contact and enter a subject.',
       });
       return { success: false };
     }
@@ -295,7 +295,7 @@ export default function LogEmailPage() {
                           className="w-full justify-between"
                           disabled={isLoading}
                         >
-                          {selectedContact?.name || 'Select a contact...'}
+                          <span className="truncate">{selectedContact?.name || 'Select a contact...'}</span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -396,8 +396,8 @@ export default function LogEmailPage() {
                           <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={startDate} onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} initialFocus /></PopoverContent>
                       </Popover>
                       <div className="flex-1 flex gap-2">
-                          <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
-                          <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                       </div>
                   </div>
                    <div className="space-y-2">
@@ -412,8 +412,8 @@ export default function LogEmailPage() {
                           <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={endDate} onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} initialFocus /></PopoverContent>
                       </Popover>
                       <div className="flex-1 flex gap-2">
-                          <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
-                          <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                       </div>
                   </div>
               </CardContent>

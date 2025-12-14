@@ -210,13 +210,6 @@ export default function LogEmailPage() {
     router.push(`/master-mind?${query.toString()}`);
   };
 
-  const handleSaveLog = async () => {
-    const saveResult = await saveEmailToFile();
-    if (saveResult.success) {
-      resetForm();
-    }
-  };
-
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
     if (isEditing) {
         setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
@@ -419,14 +412,10 @@ export default function LogEmailPage() {
               </CardContent>
             </Card>
           </CardContent>
-          <CardFooter className="justify-between">
-             <Button onClick={handleLogTime}>
-              <Clock className="mr-2 h-4 w-4" />
-              Log Time &amp; Schedule
-            </Button>
-            <Button onClick={handleSaveLog} disabled={isSaving}>
+          <CardFooter className="justify-end">
+            <Button onClick={handleLogTime} disabled={isSaving}>
               {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-              Save Log
+              Save to Calendar and client log
             </Button>
           </CardFooter>
         </Card>

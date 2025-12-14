@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -29,6 +29,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -40,7 +41,6 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { format as formatDate, set, addMinutes, parseISO } from 'date-fns';
 import { Calendar } from '../ui/calendar';
@@ -570,7 +570,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                             <CardHeader className="text-center">
                                 <div className="flex justify-center items-center gap-2">
                                 <CheckCircle className="h-6 w-6 text-primary" />
-                                <CardTitle>Final Step: Review &amp; Schedule Your Logged Email</CardTitle>
+                                <CardTitle>Final Step: Review & Schedule Your Logged Email</CardTitle>
                                 </div>
                                 <CardDescription>Confirm the details below are correct. You can add more information or adjust the schedule before saving.</CardDescription>
                             </CardHeader>
@@ -799,3 +799,5 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         </>
     );
 }
+
+    

@@ -104,25 +104,24 @@ export default function LogEmailPage() {
       setSourceLink('');
   }
 
-  const handleSaveLog = async () => {
+  const saveEmailToFile = async (): Promise<boolean> => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Not logged in' });
-      return;
+      return false;
     }
     if (!selectedContactId || !from.trim() || !subject.trim()) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description:
-          'Please select a contact and enter "From" and "Subject" fields.',
+        description: 'Please select a contact and enter "From" and "Subject" fields.',
       });
-      return;
+      return false;
     }
 
     const contact = contacts.find(c => c.id === selectedContactId);
     if (!contact) {
-         toast({ variant: 'destructive', title: 'Invalid Contact' });
-         return;
+      toast({ variant: 'destructive', title: 'Invalid Contact' });
+      return false;
     }
 
     setIsSaving(true);
@@ -145,30 +144,30 @@ export default function LogEmailPage() {
             </Button>
         )
       });
-      resetForm();
+      return true;
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Save Failed',
-        description: error.message,
-      });
+      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-    if (isEditing) {
-        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-    } else {
-        setContacts(prev => [...prev, savedContact]);
+
+  const handleSaveLog = async () => {
+    const success = await saveEmailToFile();
+    if (success) {
+      resetForm();
     }
-    setSelectedContactId(savedContact.id);
-    setFrom(savedContact.email || '');
-    setIsContactFormOpen(false);
   };
-  
-  const handleLogTime = () => {
+
+  const handleLogTime = async () => {
+    const success = await saveEmailToFile();
+    if (!success) {
+        return; // Stop if saving the file fails
+    }
+    
+    // Proceed to redirect to Master Mind
     const query = new URLSearchParams();
     if (subject) query.append('title', subject);
     if (body) query.append('notes', body);
@@ -323,7 +322,15 @@ export default function LogEmailPage() {
         contactToEdit={null}
         folders={folders}
         onFoldersChange={setFolders}
-        onSave={handleContactSave}
+        onSave={(contact, isEditing) => {
+            if (isEditing) {
+                setContacts(prev => prev.map(c => c.id === contact.id ? contact : c));
+            } else {
+                setContacts(prev => [...prev, contact]);
+            }
+            setSelectedContactId(contact.id);
+            setIsContactFormOpen(false);
+        }}
       />
       
       <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>

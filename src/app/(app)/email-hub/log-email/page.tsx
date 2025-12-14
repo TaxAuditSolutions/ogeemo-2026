@@ -38,27 +38,33 @@ import {
   Link as LinkIcon,
   Clock,
   Calendar as CalendarIcon,
+  Edit,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, type FolderData } from '@/services/contact-service';
+import { getContacts, type FolderData, getFolders as getContactFolders } from '@/services/contact-service';
 import { saveEmailForContact } from '@/services/file-service';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Contact } from '@/data/contacts';
+import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, set } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LogEmailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [folders, setFolders] = useState<FolderData[]>([]);
+  const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   // Form State
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [from, setFrom] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -90,8 +96,16 @@ export default function LogEmailPage() {
     }
     setIsLoading(true);
     try {
-      const fetchedContacts = await getContacts(user.uid);
+      const [fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
+        getContacts(user.uid),
+        getContactFolders(user.uid),
+        getCompanies(user.uid),
+        getIndustries(user.uid),
+      ]);
       setContacts(fetchedContacts);
+      setContactFolders(fetchedFolders);
+      setCompanies(fetchedCompanies);
+      setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -165,20 +179,12 @@ export default function LogEmailPage() {
   };
 
 
-  const handleSaveLog = async () => {
-    const success = await saveEmailToFile();
-    if (success) {
-      resetForm();
-    }
-  };
-
   const handleLogTime = async () => {
     const success = await saveEmailToFile();
     if (!success) {
         return; // Stop if saving the file fails
     }
     
-    // Proceed to redirect to Master Mind
     const query = new URLSearchParams();
     if (subject) query.append('title', subject);
     if (body) query.append('notes', body);
@@ -201,6 +207,37 @@ export default function LogEmailPage() {
     }
     
     router.push(`/master-mind?${query.toString()}`);
+  };
+
+  const handleSaveLog = async () => {
+    const success = await saveEmailToFile();
+    if (success) {
+      resetForm();
+    }
+  };
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+    if (isEditing) {
+        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+        if (selectedContactId === savedContact.id) {
+          setFrom(savedContact.email || '');
+        }
+    } else {
+        setContacts(prev => [...prev, savedContact]);
+    }
+    setSelectedContactId(savedContact.id);
+    setIsContactFormOpen(false);
+    setContactToEdit(null);
+  };
+  
+  const handleEditContact = () => {
+    if (selectedContactId) {
+      const contact = contacts.find(c => c.id === selectedContactId);
+      if (contact) {
+        setContactToEdit(contact);
+        setIsContactFormOpen(true);
+      }
+    }
   };
 
   const hourOptions = Array.from({ length: 24 }, (_, i) => {
@@ -299,7 +336,8 @@ export default function LogEmailPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                     <Button type="button" onClick={() => setIsContactFormOpen(true)}>Add New</Button>
+                     <Button type="button" variant="outline" size="icon" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}>Add</Button>
+                     <Button type="button" variant="outline" size="icon" onClick={handleEditContact} disabled={!selectedContactId}><Edit className="h-4 w-4"/></Button>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -396,18 +434,14 @@ export default function LogEmailPage() {
        <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
-        contactToEdit={null}
-        folders={folders}
-        onFoldersChange={setFolders}
-        onSave={(contact, isEditing) => {
-            if (isEditing) {
-                setContacts(prev => prev.map(c => c.id === contact.id ? contact : c));
-            } else {
-                setContacts(prev => [...prev, contact]);
-            }
-            setSelectedContactId(contact.id);
-            setIsContactFormOpen(false);
-        }}
+        contactToEdit={contactToEdit}
+        folders={contactFolders}
+        onFoldersChange={setContactFolders}
+        onSave={handleContactSave}
+        companies={companies}
+        onCompaniesChange={setCompanies}
+        customIndustries={customIndustries}
+        onCustomIndustriesChange={setCustomIndustries}
       />
       
       <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>

@@ -39,6 +39,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -800,4 +801,4 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     );
 }
 
-    
+  

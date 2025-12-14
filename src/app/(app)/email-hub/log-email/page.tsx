@@ -372,6 +372,7 @@ export default function LogEmailPage() {
             </div>
             <div className="space-y-2 flex-1 flex flex-col">
               <Label htmlFor="body">Body</Label>
+              <p className="text-xs text-muted-foreground">Plain text only. Formatting and images will not be saved.</p>
               <Textarea
                 id="body"
                 placeholder="Paste the email body here..."

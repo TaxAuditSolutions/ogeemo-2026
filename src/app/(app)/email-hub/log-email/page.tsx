@@ -129,10 +129,10 @@ export default function LogEmailPage() {
       setSourceLink('');
   }
 
-  const saveEmailToFile = async (): Promise<boolean> => {
+  const saveEmailToFile = async (): Promise<{ success: boolean, fileId?: string, folderId?: string }> => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Not logged in' });
-      return false;
+      return { success: false };
     }
     if (!selectedContactId || !from.trim() || !subject.trim()) {
       toast({
@@ -140,13 +140,13 @@ export default function LogEmailPage() {
         title: 'Missing Information',
         description: 'Please select a contact and enter "From" and "Subject" fields.',
       });
-      return false;
+      return { success: false };
     }
 
     const contact = contacts.find(c => c.id === selectedContactId);
     if (!contact) {
       toast({ variant: 'destructive', title: 'Invalid Contact' });
-      return false;
+      return { success: false };
     }
 
     setIsSaving(true);
@@ -169,10 +169,10 @@ export default function LogEmailPage() {
             </Button>
         )
       });
-      return true;
+      return { success: true, fileId: savedFile.id, folderId: savedFile.folderId };
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-      return false;
+      return { success: false };
     } finally {
       setIsSaving(false);
     }
@@ -180,8 +180,8 @@ export default function LogEmailPage() {
 
 
   const handleLogTime = async () => {
-    const success = await saveEmailToFile();
-    if (!success) {
+    const saveResult = await saveEmailToFile();
+    if (!saveResult.success) {
         return; // Stop if saving the file fails
     }
     
@@ -210,8 +210,8 @@ export default function LogEmailPage() {
   };
 
   const handleSaveLog = async () => {
-    const success = await saveEmailToFile();
-    if (success) {
+    const saveResult = await saveEmailToFile();
+    if (saveResult.success) {
       resetForm();
     }
   };
@@ -336,7 +336,7 @@ export default function LogEmailPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                     <Button type="button" variant="outline" size="icon" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}>Add</Button>
+                     <Button type="button" variant="outline" size="icon" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="h-4 w-4"/></Button>
                      <Button type="button" variant="outline" size="icon" onClick={handleEditContact} disabled={!selectedContactId}><Edit className="h-4 w-4"/></Button>
                   </div>
                 </div>

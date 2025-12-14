@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Edit, MessageSquare, RefreshCw, BellRing, Mail } from 'lucide-react';
+import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Edit, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
@@ -29,7 +29,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -112,6 +111,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [editSessionNotes, setEditSessionNotes] = React.useState('');
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isReviewMode, setIsReviewMode] = useState(false);
 
 
     const { user } = useAuth();
@@ -357,6 +357,13 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             const eventIdParam = searchParams.get('eventId');
             const startParam = searchParams.get('start');
             const endParam = searchParams.get('end');
+            const titleParam = searchParams.get('title');
+
+            if (!eventIdParam && (startParam || titleParam)) {
+                setIsReviewMode(true);
+            } else {
+                setIsReviewMode(false);
+            }
 
             if (eventIdParam) {
                 const eventData = await getTaskById(eventIdParam);
@@ -396,11 +403,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     setEndMinute(String(eventEndDate.getMinutes()));
                 }
             }
-             const title = searchParams.get('title');
+             
              const notesParam = searchParams.get('notes');
              const contactId = searchParams.get('contactId');
              const projectId = searchParams.get('projectId');
-             if (title) setSubject(title);
+             if (titleParam) setSubject(titleParam);
              if (notesParam) setNotes(notesParam);
              if (contactId) setSelectedContactId(contactId);
              if (projectId) setSelectedProjectId(projectId);
@@ -558,6 +565,17 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                 </header>
 
                 <div className="w-full max-w-4xl space-y-6">
+                    {isReviewMode && (
+                        <Card className="bg-primary/10 border-primary">
+                            <CardHeader className="text-center">
+                                <div className="flex justify-center items-center gap-2">
+                                <CheckCircle className="h-6 w-6 text-primary" />
+                                <CardTitle>Final Step: Review &amp; Schedule Your Logged Email</CardTitle>
+                                </div>
+                                <CardDescription>Confirm the details below are correct. You can add more information or adjust the schedule before saving.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
                     <Card>
                         <CardContent className="pt-6 space-y-4">
                             <div className="space-y-2">

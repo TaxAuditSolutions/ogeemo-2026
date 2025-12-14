@@ -269,7 +269,7 @@ export default function LogEmailPage() {
              </Button>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Copy and paste an email to create a permanent record for a contact. To save the log to the calendar, you must click the button called Log time &amp; Schedule. To save to the client folder click the save log button
+            Copy and paste an email to create a permanent record for a contact. Clicking 'Save to Calendar and client log' saves the email and lets you schedule it as a task.
           </p>
         </header>
 
@@ -513,4 +513,3 @@ export default function LogEmailPage() {
     </>
   );
 }
-

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -60,7 +61,7 @@ export default function HrHubPage() {
       title: "Employee Directory & Records",
       description: "Manage employee profiles, contact info, and employment details.",
       href: "/accounting/payroll/employees",
-      cta: "Manage Employees",
+      cta: "Manage Workers",
     },
     {
       icon: Banknote,

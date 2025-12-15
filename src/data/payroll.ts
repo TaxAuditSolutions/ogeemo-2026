@@ -4,6 +4,7 @@ export interface Employee {
     name: string;
     email: string;
     sin?: string;
+    workerType: 'employee' | 'contractor';
     payType: 'hourly' | 'salary';
     payRate: number;
     address?: string;
@@ -23,6 +24,7 @@ export const mockEmployees: Omit<Employee, 'id' | 'userId'>[] = [
     {
         name: "Alice Johnson",
         email: "alice.j@example.com",
+        workerType: "employee",
         payType: "salary",
         payRate: 75000,
         address: "123 Maple St, Springfield, USA",
@@ -35,6 +37,7 @@ export const mockEmployees: Omit<Employee, 'id' | 'userId'>[] = [
     {
         name: "Bob Williams",
         email: "bob.w@example.com",
+        workerType: "contractor",
         payType: "hourly",
         payRate: 25.50,
         address: "456 Oak Ave, Springfield, USA",
@@ -47,6 +50,7 @@ export const mockEmployees: Omit<Employee, 'id' | 'userId'>[] = [
     {
         name: "Charlie Brown",
         email: "charlie.b@example.com",
+        workerType: "employee",
         payType: "hourly",
         payRate: 22.00,
         address: "789 Pine Ln, Springfield, USA",

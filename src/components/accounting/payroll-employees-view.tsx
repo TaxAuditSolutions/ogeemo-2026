@@ -56,11 +56,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from '../ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Badge } from '../ui/badge';
 
 const employeeSchema = z.object({
     name: z.string().min(2, "Name is required."),
     email: z.string().email("Invalid email address.").optional().or(z.literal('')),
     sin: z.string().optional(),
+    workerType: z.enum(["employee", "contractor"]),
     payType: z.enum(["hourly", "salary"]),
     payRate: z.coerce.number().min(0, "Pay rate must be positive."),
     address: z.string().optional(),
@@ -81,6 +84,7 @@ const defaultFormValues: EmployeeFormData = {
     name: "",
     email: "",
     sin: "",
+    workerType: "employee",
     payType: "hourly" as "hourly" | "salary",
     payRate: 0,
     hasContract: false,
@@ -161,10 +165,10 @@ export function PayrollEmployeesView() {
         try {
             if (employeeToEdit) {
                 await updateEmployee(employeeToEdit.id, employeeData);
-                toast({ title: "Employee Updated" });
+                toast({ title: "Worker Updated" });
             } else {
                 await addEmployee({ ...employeeData, userId: user.uid });
-                toast({ title: "Employee Added" });
+                toast({ title: "Worker Added" });
             }
             
             if (shouldAddAnother) {
@@ -184,7 +188,7 @@ export function PayrollEmployeesView() {
         if (!employeeToDelete) return;
         try {
             await deleteEmployee(employeeToDelete.id);
-            toast({ title: "Employee Deleted", variant: "destructive" });
+            toast({ title: "Worker Deleted", variant: "destructive" });
             setEmployeeToDelete(null);
             loadEmployees();
         } catch (error: any) {
@@ -195,20 +199,20 @@ export function PayrollEmployeesView() {
     return (
         <>
         <div className="p-4 sm:p-6 space-y-6">
-            <AccountingPageHeader pageTitle="Manage Employees" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
+            <AccountingPageHeader pageTitle="Manage Workers" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Manage Employees</h1>
-                <p className="text-muted-foreground">Add, edit, and manage your employee records.</p>
+                <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
+                <p className="text-muted-foreground">Add, edit, and manage your employee and contractor records.</p>
             </header>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Employee List</CardTitle>
-                        <CardDescription>All active employees in your organization.</CardDescription>
+                        <CardTitle>Worker List</CardTitle>
+                        <CardDescription>All employees and contractors in your organization.</CardDescription>
                     </div>
                     <Button variant="outline" onClick={() => handleOpenForm()}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
                     </Button>
                 </CardHeader>
                 <CardContent>
@@ -219,7 +223,7 @@ export function PayrollEmployeesView() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
+                                <TableHead>Type</TableHead>
                                 <TableHead>Pay Type</TableHead>
                                 <TableHead className="text-right">Pay Rate</TableHead>
                                 <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -229,7 +233,7 @@ export function PayrollEmployeesView() {
                             {employees.map(emp => (
                             <TableRow key={emp.id}>
                                 <TableCell className="font-medium">{emp.name}</TableCell>
-                                <TableCell>{emp.email}</TableCell>
+                                <TableCell><Badge variant={emp.workerType === 'employee' ? 'default' : 'secondary'}>{emp.workerType}</Badge></TableCell>
                                 <TableCell className="capitalize">{emp.payType}</TableCell>
                                 <TableCell className="text-right font-mono">
                                     {emp.payRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -258,13 +262,39 @@ export function PayrollEmployeesView() {
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
                 <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-                    <DialogTitle className="text-2xl font-bold text-orange-500">{employeeToEdit ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
-                    <DialogDescription>Fill in the details for your employee.</DialogDescription>
+                    <DialogTitle className="text-2xl font-bold text-orange-500">{employeeToEdit ? 'Edit Worker' : 'Add New Worker'}</DialogTitle>
+                    <DialogDescription>Fill in the details for this individual.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="flex-1 flex flex-col min-h-0">
                         <ScrollArea className="flex-1">
                            <div className="p-6 space-y-6">
+                                <FormField
+                                    control={form.control}
+                                    name="workerType"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-3">
+                                        <FormLabel>Worker Type</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            className="flex gap-4"
+                                            >
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="employee" /></FormControl>
+                                                <FormLabel className="font-normal">Employee</FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="contractor" /></FormControl>
+                                                <FormLabel className="font-normal">Independent Contractor</FormLabel>
+                                            </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                     {/* Left Column */}
                                     <div className="space-y-4">
@@ -319,7 +349,7 @@ export function PayrollEmployeesView() {
 
         <AlertDialog open={!!employeeToDelete} onOpenChange={() => setEmployeeToDelete(null)}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the employee "{employeeToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker "{employeeToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

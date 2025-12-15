@@ -73,9 +73,9 @@ export default function HrHubPage() {
     {
       icon: Clock,
       title: "Time Tracking & Timesheets",
-      description: "Log work hours and review employee timesheets.",
-      href: "/master-mind",
-      cta: "Go to Time Manager",
+      description: "Review and report on employee timesheets and logged work hours.",
+      href: "/reports/time-log",
+      cta: "View Time Log Report",
     },
     {
       icon: CalendarOff,

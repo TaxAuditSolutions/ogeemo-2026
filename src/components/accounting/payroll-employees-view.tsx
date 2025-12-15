@@ -238,7 +238,11 @@ export function PayrollEmployeesView() {
                         <TableBody>
                             {employees.map(emp => (
                             <TableRow key={emp.id}>
-                                <TableCell className="font-medium">{emp.name}</TableCell>
+                                <TableCell className="font-medium">
+                                    <button className="text-left hover:underline" onClick={() => handleOpenForm(emp)}>
+                                        {emp.name}
+                                    </button>
+                                </TableCell>
                                 <TableCell><Badge variant={emp.workerType === 'employee' ? 'default' : 'secondary'}>{emp.workerType}</Badge></TableCell>
                                 <TableCell className="capitalize">{emp.payType}</TableCell>
                                 <TableCell className="text-right font-mono">

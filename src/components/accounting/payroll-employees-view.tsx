@@ -42,7 +42,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink } from "lucide-react";
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -105,6 +105,7 @@ export function PayrollEmployeesView() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
     const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+    const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -201,7 +202,12 @@ export function PayrollEmployeesView() {
         <div className="p-4 sm:p-6 space-y-6">
             <AccountingPageHeader pageTitle="Manage Workers" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
+                <div className="flex items-center justify-center gap-2">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
+                    <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
+                        <Info className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                </div>
                 <p className="text-muted-foreground">Add, edit, and manage your employee and contractor records.</p>
             </header>
 
@@ -262,7 +268,7 @@ export function PayrollEmployeesView() {
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
                 <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-                    <DialogTitle className="text-2xl font-bold text-orange-500">{employeeToEdit ? 'Edit Worker' : 'Add New Worker'}</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-primary">{employeeToEdit ? 'Edit Worker' : 'Add New Worker'}</DialogTitle>
                     <DialogDescription>Fill in the details for this individual.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -353,6 +359,41 @@ export function PayrollEmployeesView() {
                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Employee vs. Independent Contractor</DialogTitle>
+                    <DialogDescription>
+                        Understanding the difference is crucial for compliance. Here are some key factors based on CRA guidelines.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <p>The CRA looks at the total working relationship to determine employment status. There is no single deciding factor, but here are the main things they consider:</p>
+                        <ul>
+                            <li><strong>Control:</strong> Does the payer have the right to control what work is done and how it's done? (More control suggests an employee).</li>
+                            <li><strong>Tools and Equipment:</strong> Does the worker provide their own tools? (Using own tools suggests a contractor).</li>
+                            <li><strong>Financial Risk/Opportunity:</strong> Can the worker make a profit or incur a loss? (Financial risk suggests a contractor).</li>
+                            <li><strong>Integration:</strong> Is the worker's role a vital and integral part of the business? (High integration suggests an employee).</li>
+                        </ul>
+                        <h4 className="font-semibold">Key Differences in Ogeemo</h4>
+                        <ul>
+                            <li><strong>Employees:</strong> Will have payroll deductions (tax, CPP, EI) calculated and remitted through the payroll system. They receive a T4 slip.</li>
+                            <li><strong>Independent Contractors:</strong> Are paid their full invoice amount. No deductions are taken. They are responsible for their own tax remittances and receive a T4A slip if they earn over $500.</li>
+                        </ul>
+                         <Button asChild variant="link" className="p-0 h-auto">
+                            <a href="https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/rc4110.html" target="_blank" rel="noopener noreferrer">
+                                Read Official CRA Guide <ExternalLink className="ml-1 h-4 w-4" />
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={() => setIsInfoDialogOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         </>
     );
 }

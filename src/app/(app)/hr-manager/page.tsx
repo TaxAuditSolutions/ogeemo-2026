@@ -19,6 +19,7 @@ import {
   Clock,
   CalendarOff,
   Folder,
+  FileText,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -76,6 +77,13 @@ export default function HrHubPage() {
       description: "Enter hours worked for employees and contractors for payroll processing.",
       href: "/hr-manager/log-time",
       cta: "Log Time",
+    },
+    {
+        icon: FileText,
+        title: "Time Log Report",
+        description: "Review and report on employee timesheets and logged work hours.",
+        href: "/reports/time-log",
+        cta: "View Time Log Report"
     },
     {
       icon: CalendarOff,

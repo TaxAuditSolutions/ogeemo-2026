@@ -29,6 +29,7 @@ const FeatureDetail = ({
   </AccordionItem>
 );
 
+
 export default function HrManagerPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">

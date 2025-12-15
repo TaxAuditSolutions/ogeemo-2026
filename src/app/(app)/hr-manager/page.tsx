@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -45,7 +46,7 @@ export default function HrManagerPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card>
             <CardHeader>
-                <CardTitle>Core Features (Coming Soon)</CardTitle>
+                <CardTitle>Core Features (Under construction)</CardTitle>
                 <CardDescription>A simple yet powerful set of tools to manage your team effectively.</CardDescription>
             </CardHeader>
             <CardContent>

@@ -22,13 +22,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import { ChevronsUpDown, Check } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const emptyLog = {
     employeeId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
-    hours: '',
+    startTime: { hour: '9', minute: '0' },
+    endTime: { hour: '17', minute: '0' },
     description: '',
 };
 
@@ -63,31 +66,41 @@ export default function LogEmployeeTimePage() {
     }, [loadEmployees]);
 
     const handleSaveLog = async () => {
-        if (!user || !newLog.employeeId || !newLog.date || !newLog.hours) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select an employee and enter the date and hours worked.' });
+        if (!user || !newLog.employeeId || !newLog.date) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select an employee and a date.' });
             return;
         }
-        
+
         setIsSaving(true);
         try {
-            const durationSeconds = parseFloat(newLog.hours) * 3600;
             const logDate = new Date(newLog.date);
+            const startTime = set(logDate, { hours: parseInt(newLog.startTime.hour), minutes: parseInt(newLog.startTime.minute) });
+            const endTime = set(logDate, { hours: parseInt(newLog.endTime.hour), minutes: parseInt(newLog.endTime.minute) });
+
+            if (endTime <= startTime) {
+                toast({ variant: 'destructive', title: 'Invalid Times', description: 'End time must be after start time.' });
+                setIsSaving(false);
+                return;
+            }
+
+            const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
             
             const taskData = {
                 title: `Time Log: ${employees.find(e => e.id === newLog.employeeId)?.name}`,
                 description: newLog.description,
-                start: logDate,
+                start: startTime,
+                end: endTime,
                 duration: durationSeconds,
                 workerId: newLog.employeeId,
                 userId: user.uid,
                 status: 'done' as const,
-                isBillable: false, // Payroll time is not client-billable
+                isBillable: false,
                 position: 0,
             };
 
             await addTask(taskData);
             
-            toast({ title: "Time Logged", description: `${newLog.hours} hours logged for the selected employee.` });
+            toast({ title: "Time Logged", description: `Time entry for the selected employee has been saved.` });
             setNewLog(emptyLog);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -95,6 +108,10 @@ export default function LogEmployeeTimePage() {
             setIsSaving(false);
         }
     };
+    
+    const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i), label: format(set(new Date(), { hours: i }), 'h a') }));
+    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` }; });
+
 
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
@@ -108,7 +125,7 @@ export default function LogEmployeeTimePage() {
             </header>
             <Card className="w-full max-w-lg">
                 <CardHeader>
-                    <CardTitle>New Time Log</CardTitle>
+                    <CardTitle>New Time Card Entry</CardTitle>
                     <CardDescription>This will create a time entry that can be used to calculate gross pay during a payroll run.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -139,22 +156,44 @@ export default function LogEmployeeTimePage() {
                             </PopoverContent>
                         </Popover>
                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="log-date">Date Worked</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !newLog.date && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {newLog.date ? format(new Date(newLog.date), "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={newLog.date ? new Date(newLog.date) : undefined} onSelect={(date) => date && setNewLog(p => ({ ...p, date: format(date, 'yyyy-MM-dd') }))} initialFocus /></PopoverContent>
+                        </Popover>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="log-date">Date Worked</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !newLog.date && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {newLog.date ? format(new Date(newLog.date), "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={newLog.date ? new Date(newLog.date) : undefined} onSelect={(date) => date && setNewLog(p => ({ ...p, date: format(date, 'yyyy-MM-dd') }))} initialFocus /></PopoverContent>
-                            </Popover>
+                            <Label>Start Time</Label>
+                            <div className="flex gap-2">
+                                <Select value={newLog.startTime.hour} onValueChange={(v) => setNewLog(p => ({...p, startTime: {...p.startTime, hour: v}}))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                                 <Select value={newLog.startTime.minute} onValueChange={(v) => setNewLog(p => ({...p, startTime: {...p.startTime, minute: v}}))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="hours-worked">Hours Worked</Label>
-                            <Input id="hours-worked" type="number" placeholder="e.g., 8" value={newLog.hours} onChange={(e) => setNewLog(p => ({ ...p, hours: e.target.value }))} />
+                            <Label>End Time</Label>
+                            <div className="flex gap-2">
+                                <Select value={newLog.endTime.hour} onValueChange={(v) => setNewLog(p => ({...p, endTime: {...p.endTime, hour: v}}))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                                 <Select value={newLog.endTime.minute} onValueChange={(v) => setNewLog(p => ({...p, endTime: {...p.endTime, minute: v}}))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
                     <div className="space-y-2">

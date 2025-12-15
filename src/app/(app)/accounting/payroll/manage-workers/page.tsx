@@ -9,13 +9,13 @@ const PayrollEmployeesView = dynamic(
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Employee Manager...</p>
+          <p className="text-muted-foreground">Loading Worker Manager...</p>
         </div>
       </div>
     ),
   }
 );
 
-export default function ManageEmployeesPage() {
+export default function ManageWorkersPage() {
   return <PayrollEmployeesView />;
 }

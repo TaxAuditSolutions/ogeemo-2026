@@ -43,6 +43,13 @@ export function ReportsHubView() {
       cta: "Open Tasks List",
     },
     {
+      icon: Clock,
+      title: "Employee Time Log Report",
+      description: "Generate detailed reports on all logged time for employees and contractors for payroll.",
+      cta: "Generate Time Report",
+      href: "/reports/time-log",
+    },
+    {
       icon: Activity,
       title: "Activity Report",
       description: "A high-level overview of your workspace, including key metrics and recent activities.",
@@ -55,13 +62,6 @@ export function ReportsHubView() {
       description: "Perform deep, conditional searches across all your data to find exactly what you need.",
       cta: "Go to Advanced Search",
       href: "/reports/search",
-    },
-    {
-      icon: Clock,
-      title: "Time Log Report",
-      description: "Generate detailed reports on all logged time, both billable and non-billable.",
-      cta: "Generate Time Report",
-      href: "/reports/time-log",
     },
     {
       icon: UserCheck,

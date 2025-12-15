@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, addDays, isWithinInterval } from 'date-fns';
+import { format, addDays, isWithinInterval, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
@@ -159,7 +159,7 @@ export function RunPayrollView() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const [allTasks, setAllTasks] = useState<TaskEvent[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-  const [payPeriod, setPayPeriod] = useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 14) });
+  const [payPeriod, setPayPeriod] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: new Date() });
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();

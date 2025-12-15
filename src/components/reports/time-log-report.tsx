@@ -135,7 +135,7 @@ export function TimeLogReport() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="space-y-6">
                  <header className="text-center">
                     <div className="flex items-center justify-center gap-2">
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
@@ -242,7 +242,7 @@ export function TimeLogReport() {
                             )}
                         </CardContent>
                         <CardFooter className="print:hidden justify-end space-x-2">
-                            <Button asChild variant="secondary">
+                           <Button asChild variant="secondary">
                               <Link href="/accounting/invoices/create">
                                 <FileDigit className="mr-2 h-4 w-4" />
                                 Go to Invoicing

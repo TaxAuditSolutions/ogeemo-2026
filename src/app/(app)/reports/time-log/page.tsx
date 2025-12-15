@@ -3,7 +3,7 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ReportsPageHeader } from '@/components/reports/page-header';
+import { ReportsPageHeader } from "@/components/reports/page-header";
 
 const TimeLogReport = dynamic(
   () => import('@/components/reports/time-log-report').then((mod) => mod.TimeLogReport),

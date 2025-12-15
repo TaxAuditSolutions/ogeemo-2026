@@ -23,7 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +60,7 @@ import { ScrollArea } from '../ui/scroll-area';
 const employeeSchema = z.object({
     name: z.string().min(2, "Name is required."),
     email: z.string().email("Invalid email address.").optional().or(z.literal('')),
+    sin: z.string().optional(),
     payType: z.enum(["hourly", "salary"]),
     payRate: z.coerce.number().min(0, "Pay rate must be positive."),
     address: z.string().optional(),
@@ -76,9 +77,10 @@ const employeeSchema = z.object({
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
 
-const defaultFormValues = {
+const defaultFormValues: EmployeeFormData = {
     name: "",
     email: "",
+    sin: "",
     payType: "hourly" as "hourly" | "salary",
     payRate: 0,
     hasContract: false,
@@ -150,6 +152,7 @@ export function PayrollEmployeesView() {
         const employeeData = {
             ...data,
             email: data.email || "",
+            sin: data.sin || "",
             hireDate: data.hireDate ? new Date(data.hireDate) : null,
             startDate: data.startDate ? new Date(data.startDate) : null,
             notes: data.notes || "",
@@ -275,13 +278,14 @@ export function PayrollEmployeesView() {
                                     </div>
                                     {/* Right Column */}
                                     <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField control={form.control} name="hireDate" render={({ field }) => ( <FormItem><FormLabel>Date Hired</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                            <FormField control={form.control} name="startDate" render={({ field }) => ( <FormItem><FormLabel>Work Started</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                        </div>
+                                        <FormField control={form.control} name="sin" render={({ field }) => ( <FormItem><FormLabel>Social Insurance Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField control={form.control} name="payType" render={({ field }) => ( <FormItem><FormLabel>Pay Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="hourly">Hourly</SelectItem><SelectItem value="salary">Salary</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                             <FormField control={form.control} name="payRate" render={({ field }) => ( <FormItem><FormLabel>Pay Rate</FormLabel><div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span><FormControl><Input type="number" className="pl-7" {...field} /></FormControl></div><FormMessage /></FormItem> )} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField control={form.control} name="hireDate" render={({ field }) => ( <FormItem><FormLabel>Date Hired</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                            <FormField control={form.control} name="startDate" render={({ field }) => ( <FormItem><FormLabel>Work Started</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                         </div>
                                         <div className="border p-4 rounded-md space-y-4">
                                              <h3 className="text-sm font-semibold mb-2">Emergency Contact</h3>

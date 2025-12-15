@@ -72,10 +72,10 @@ export default function HrHubPage() {
     },
     {
       icon: Clock,
-      title: "Time Tracking & Timesheets",
-      description: "Review and report on employee timesheets and logged work hours.",
-      href: "/reports/time-log",
-      cta: "View Time Log Report",
+      title: "Log Employee Time",
+      description: "Enter hours worked for employees and contractors for payroll processing.",
+      href: "/hr-manager/log-time",
+      cta: "Log Time",
     },
     {
       icon: CalendarOff,

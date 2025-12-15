@@ -25,6 +25,7 @@ export interface Event {
   userId: string;
   attendees?: string[];
   contactId?: string | null;
+  workerId?: string | null; // Added for payroll tracking
   isScheduled?: boolean;
   duration?: number; // in seconds, CUMULATIVE total
   isBillable?: boolean;

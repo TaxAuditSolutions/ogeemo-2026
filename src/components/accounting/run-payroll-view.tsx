@@ -32,16 +32,18 @@ import {
   DollarSign,
   LoaderCircle,
   ChevronDown,
+  Calculator,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isWithinInterval } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { getEmployees, type Employee, savePayrollRun } from '@/services/payroll-service';
+import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -56,6 +58,7 @@ type PayrollEmployee = Employee & {
     grossPay?: number;
     deductions?: number;
     netPay?: number;
+    hoursWorked?: number;
 };
 
 const formatCurrency = (amount: number) => {
@@ -133,7 +136,7 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
                         <DropdownMenuContent align="end">
                             {navItems.map(item => (
                                 <DropdownMenuItem key={item.id} asChild>
-                                <Link href={item.href}>
+                                <Link href={typeof item.href === 'string' ? item.href : (item.href?.pathname || '#')}>
                                     <item.icon className="mr-2 h-4 w-4" />
                                     <span>{item.label}</span>
                                 </Link>
@@ -154,6 +157,7 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
 
 export function RunPayrollView() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
+  const [allTasks, setAllTasks] = useState<TaskEvent[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [payPeriod, setPayPeriod] = useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 14) });
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
@@ -169,15 +173,19 @@ export function RunPayrollView() {
         };
         setIsLoading(true);
         try {
-            const fetchedEmployees = await getEmployees(user.uid);
+            const [fetchedEmployees, fetchedTasks] = await Promise.all([
+                getEmployees(user.uid),
+                getTasksForUser(user.uid)
+            ]);
+            setAllTasks(fetchedTasks);
             setEmployees(fetchedEmployees.map(e => ({
                 ...e,
                 grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined,
             })));
             setSelectedEmployeeIds(fetchedEmployees.map(e => e.id));
         } catch (error) {
-            console.error("Failed to load employees:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load employee data.' });
+            console.error("Failed to load payroll data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load employee or task data.' });
         } finally {
             setIsLoading(false);
         }
@@ -196,6 +204,26 @@ export function RunPayrollView() {
         : [...prev, employeeId]
     );
   };
+  
+  const handleCalculateHours = (employeeId: string) => {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee || employee.payType !== 'hourly' || !payPeriod?.from || !payPeriod?.to) return;
+    
+    const tasksInPeriod = allTasks.filter(task =>
+        task.workerId === employeeId &&
+        task.start &&
+        isWithinInterval(task.start, { start: payPeriod.from, end: payPeriod.to })
+    );
+
+    const totalSeconds = tasksInPeriod.reduce((sum, task) => sum + (task.duration || 0), 0);
+    const totalHours = totalSeconds / 3600;
+
+    const grossPay = totalHours * employee.payRate;
+
+    setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, hoursWorked: totalHours, grossPay: parseFloat(grossPay.toFixed(2)) } : emp));
+    toast({ title: "Hours Calculated", description: `${totalHours.toFixed(2)} hours logged for ${employee.name}.` });
+  };
+
 
   const handlePayValueChange = (employeeId: string, field: 'grossPay' | 'deductions', value: string) => {
     setEmployees((prev) =>
@@ -391,14 +419,25 @@ export function RunPayrollView() {
                 <TableRow key={emp.id}>
                   <TableCell className="font-medium">{emp.name}</TableCell>
                   <TableCell>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={emp.grossPay ?? ''}
-                      onChange={(e) =>
-                        handlePayValueChange(emp.id, 'grossPay', e.target.value)
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={emp.grossPay ?? ''}
+                          onChange={(e) =>
+                            handlePayValueChange(emp.id, 'grossPay', e.target.value)
+                          }
+                          className="w-32"
+                        />
+                        {emp.payType === 'hourly' && (
+                            <Button variant="outline" size="sm" onClick={() => handleCalculateHours(emp.id)}>
+                                <Calculator className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                     {emp.hoursWorked !== undefined && (
+                        <p className="text-xs text-muted-foreground mt-1">{emp.hoursWorked.toFixed(2)} hrs logged</p>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Input

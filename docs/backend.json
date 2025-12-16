@@ -278,6 +278,23 @@
             "userId": { "type": "string" }
         },
         "required": ["loanType", "counterparty", "originalAmount", "outstandingBalance", "startDate", "userId"]
+    },
+    "LeaveRequest": {
+      "title": "Leave Request",
+      "description": "Represents a worker's request for time off.",
+      "type": "object",
+      "properties": {
+        "workerId": { "type": "string" },
+        "workerName": { "type": "string" },
+        "leaveType": { "type": "string", "enum": ["Vacation", "Sick", "Personal", "Unpaid"] },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Denied"] },
+        "adminNotes": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["workerId", "workerName", "leaveType", "startDate", "endDate", "status", "userId"]
     }
   },
   "auth": {
@@ -359,6 +376,10 @@
     "/loans/{loanId}": {
         "schema": { "$ref": "#/entities/Loan" },
         "description": "Collection of all business loans, both payable and receivable."
+    },
+    "/leaveRequests/{leaveRequestId}": {
+        "schema": { "$ref": "#/entities/LeaveRequest" },
+        "description": "Stores worker time off and leave requests."
     }
   }
 }

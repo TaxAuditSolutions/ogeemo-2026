@@ -15,16 +15,22 @@ import {
 
 interface ReportsPageHeaderProps {
   pageTitle: string;
+  hubPath?: string;
+  hubLabel?: string;
 }
 
-export function ReportsPageHeader({ pageTitle }: ReportsPageHeaderProps) {
+export function ReportsPageHeader({ 
+    pageTitle, 
+    hubPath = "/reports", 
+    hubLabel = "Reports Hub" 
+}: ReportsPageHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/reports">Reports Manager</Link>
+              <Link href={hubPath}>{hubLabel}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -34,9 +40,9 @@ export function ReportsPageHeader({ pageTitle }: ReportsPageHeaderProps) {
         </BreadcrumbList>
       </Breadcrumb>
       <Button asChild variant="outline">
-        <Link href="/reports">
+        <Link href={hubPath}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Hub
+          Back to {hubLabel}
         </Link>
       </Button>
     </div>

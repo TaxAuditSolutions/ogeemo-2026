@@ -17,9 +17,14 @@ export default function TimeLogReportPage() {
   return (
     <>
         <div className="p-4 sm:p-6 space-y-6">
-            <ReportsPageHeader pageTitle="Time Log Report" />
+            <ReportsPageHeader 
+                pageTitle="Worker Time Log Report" 
+                hubPath="/hr-manager" 
+                hubLabel="HR Hub" 
+            />
             <TimeLogReport />
         </div>
     </>
   );
 }
+

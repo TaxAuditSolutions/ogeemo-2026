@@ -63,11 +63,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, MoreVertical, Check, ThumbsUp, ThumbsDown, MessageSquare, LoaderCircle, ChevronsUpDown, CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, set, startOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getLeaveRequests, addLeaveRequest, updateLeaveRequest, type LeaveRequest } from '@/services/leave-service';
+import { addTask } from '@/services/project-service';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { cn } from '@/lib/utils';
 
@@ -180,11 +181,28 @@ export default function TimeOffPage() {
     };
     
     const handleUpdateStatus = async () => {
-        if (!requestToUpdate) return;
+        if (!requestToUpdate || !user) return;
         
         try {
             const { request, newStatus } = requestToUpdate;
             await updateLeaveRequest(request.id, { status: newStatus, adminNotes });
+            
+            if (newStatus === 'Approved') {
+                const calendarEventData = {
+                    title: `${request.leaveType}: ${request.workerName}`,
+                    start: startOfDay(new Date(request.startDate)),
+                    end: startOfDay(addDays(new Date(request.endDate), 1)), // Make it an all-day event for the range
+                    status: 'done' as const, // The leave itself is 'done' once approved
+                    isScheduled: true,
+                    isBillable: false,
+                    workerId: request.workerId,
+                    userId: user.uid,
+                    position: 0,
+                    description: `Approved time off. Reason: ${request.reason || 'N/A'}`
+                };
+                await addTask(calendarEventData);
+            }
+            
             setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: newStatus, adminNotes } : r));
             toast({ title: 'Request Updated', description: `The request has been ${newStatus.toLowerCase()}.` });
         } catch (error: any) {
@@ -198,9 +216,9 @@ export default function TimeOffPage() {
     return (
         <>
         <div className="p-4 sm:p-6 space-y-6">
-            <AccountingPageHeader pageTitle="Time Off & Leave" hubPath="/hr-manager" hubLabel="HR Hub" />
+            <AccountingPageHeader pageTitle="Time Off &amp; Leave" hubPath="/hr-manager" hubLabel="HR Hub" />
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Time Off & Leave Management</h1>
+                <h1 className="text-3xl font-bold font-headline text-primary">Time Off &amp; Leave Management</h1>
                 <p className="text-muted-foreground">Review, approve, and manage all worker time off requests.</p>
             </header>
             <Card>

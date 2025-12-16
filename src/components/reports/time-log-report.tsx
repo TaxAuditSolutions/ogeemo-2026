@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -11,12 +10,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, FileDigit, Info } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, FileDigit, Info, Clock } from 'lucide-react';
 import { format, startOfMonth, startOfYear } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
-import { getEmployees, type Employee } from '@/services/payroll-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
 import { cn } from '@/lib/utils';
 import {
@@ -50,7 +49,7 @@ const endOfDay = (date: Date) => {
 };
 
 export function TimeLogReport() {
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [employees, setEmployees] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
@@ -78,7 +77,7 @@ export function TimeLogReport() {
             setIsLoading(true);
             try {
                 const [workers, entries] = await Promise.all([
-                    getEmployees(user.uid),
+                    getWorkers(user.uid),
                     getTasksForUser(user.uid),
                 ]);
                 setEmployees(workers);
@@ -139,11 +138,6 @@ export function TimeLogReport() {
     return (
         <>
             <div className="space-y-6">
-                 <header className="text-center">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Employee Time Log Report</h1>
-                    <p className="text-muted-foreground">Review logged work hours for payroll and analysis.</p>
-                </header>
-
                 <Card className="print:hidden">
                     <CardHeader>
                         <CardTitle>Select a Worker & Date Range</CardTitle>
@@ -192,6 +186,14 @@ export function TimeLogReport() {
                             <Button variant="ghost" onClick={clearDates} className="w-full">Clear Dates</Button>
                         </div>
                     </CardContent>
+                    <CardFooter>
+                        <Button asChild>
+                            <Link href="/hr-manager/log-time">
+                                <Clock className="mr-2 h-4 w-4" />
+                                Log a Time Entry
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 <div ref={contentRef}>

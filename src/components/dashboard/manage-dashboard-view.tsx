@@ -124,6 +124,7 @@ export function ManageDashboardView() {
     if (user) {
       await updateActionChips(user.uid, newUserChips);
       await updateAvailableActionChips(user.uid, newAvailableChips);
+      window.dispatchEvent(new Event('chipsUpdated'));
     }
   }, [user]);
 
@@ -166,9 +167,8 @@ export function ManageDashboardView() {
   }, [handleStateUpdate]);
 
   const handleActionAdded = () => {
-    // After a chip is added via the dialog, reload all chips from the DB
-    // to ensure the UI is in sync with the source of truth.
     loadChips();
+    window.dispatchEvent(new Event('chipsUpdated'));
   };
   
   const handleActionEdited = (editedChip: ActionChipData) => {
@@ -176,6 +176,7 @@ export function ManageDashboardView() {
           userChips: prevState.userChips.map(c => c.id === editedChip.id ? editedChip : c),
           availableChips: prevState.availableChips.map(c => c.id === editedChip.id ? editedChip : c),
       }));
+      window.dispatchEvent(new Event('chipsUpdated'));
   };
 
   const handleTrashChip = async (chipToTrash: ActionChipData) => {
@@ -218,6 +219,7 @@ export function ManageDashboardView() {
     if (!user) return;
     try {
       await updateActionChips(user.uid, chipsState.userChips);
+      window.dispatchEvent(new Event('chipsUpdated'));
       toast({
         title: "Dashboard Order Saved",
         description: "Your new dashboard layout has been saved.",
@@ -301,5 +303,3 @@ export function ManageDashboardView() {
     </>
   );
 }
-
-    

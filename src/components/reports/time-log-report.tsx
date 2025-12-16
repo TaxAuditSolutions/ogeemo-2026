@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -12,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, FileDigit, Info, Clock } from 'lucide-react';
 import { format, startOfMonth, startOfYear } from 'date-fns';
+import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
@@ -49,7 +51,7 @@ const endOfDay = (date: Date) => {
 };
 
 export function TimeLogReport() {
-    const [employees, setEmployees] = useState<Worker[]>([]);
+    const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
@@ -80,7 +82,7 @@ export function TimeLogReport() {
                     getWorkers(user.uid),
                     getTasksForUser(user.uid),
                 ]);
-                setEmployees(workers);
+                setWorkers(workers);
                 setAllEntries(entries);
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -133,7 +135,7 @@ export function TimeLogReport() {
         }
     };
     
-    const selectedWorker = employees.find(c => c.id === selectedWorkerId);
+    const selectedWorker = workers.find(c => c.id === selectedWorkerId);
 
     return (
         <>
@@ -153,7 +155,7 @@ export function TimeLogReport() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty><CommandGroup>{employees.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                    <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty><CommandGroup>{workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -186,7 +188,7 @@ export function TimeLogReport() {
                             <Button variant="ghost" onClick={clearDates} className="w-full">Clear Dates</Button>
                         </div>
                     </CardContent>
-                    <CardFooter>
+                     <CardFooter>
                         <Button asChild>
                             <Link href="/hr-manager/log-time">
                                 <Clock className="mr-2 h-4 w-4" />

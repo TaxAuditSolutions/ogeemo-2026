@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -104,9 +105,7 @@ export function FieldAppView() {
         setElapsedTime(0);
         setNotes('');
         startTimeRef.current = null;
-        if (isClockedIn && !isTimerPaused) {
-            startTimer();
-        }
+        stopTimer(); // Stop the timer after logging a session
         toast({ title: "Session Logged" });
     };
     

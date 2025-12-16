@@ -44,6 +44,7 @@ export function CalendarEvent({
   onToggleComplete,
 }: CalendarEventProps) {
   const isCompleted = event.status === 'done';
+  const isAllDay = event.isScheduled && (!event.start || !event.end || (event.end.getTime() - event.start.getTime()) >= (24 * 60 * 60 * 1000 - 60000));
   const router = useRouter();
 
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -71,7 +72,7 @@ export function CalendarEvent({
       ref={drag}
       className={cn(
         'relative rounded-md p-1 group flex items-center justify-between border w-full my-0.5',
-        isCompleted
+        isCompleted && !isAllDay
           ? 'bg-muted text-muted-foreground border-gray-300'
           : 'bg-primary/20 text-black border-tan',
         isDragging && 'opacity-50 cursor-grabbing',
@@ -82,7 +83,7 @@ export function CalendarEvent({
         className="flex-1 overflow-hidden px-2 py-1"
         onClick={() => onEdit(event)}
       >
-        <p className={cn('text-xs font-semibold', isCompleted && 'line-through')}>
+        <p className={cn('text-xs font-semibold', isCompleted && !isAllDay && 'line-through')}>
           {event.title}
         </p>
       </div>

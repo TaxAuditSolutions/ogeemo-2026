@@ -11,6 +11,10 @@ import {
   isWithinInterval,
   addMinutes,
   differenceInMinutes,
+  isSameDay,
+  startOfWeek,
+  eachDayOfInterval,
+  parseISO,
 } from 'date-fns';
 import {
   ChevronLeft,
@@ -273,7 +277,7 @@ export function CalendarView() {
     const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
     
     const slotEvents = allEvents.filter(event => 
-        event.start && isWithinInterval(event.start, { start: slotStartTime, end: slotEndTime })
+        event.start && event.isScheduled && isWithinInterval(event.start, { start: slotStartTime, end: slotEndTime })
     );
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -298,7 +302,7 @@ export function CalendarView() {
         className={cn(
             "relative h-full flex items-start p-1 gap-1 group", 
             isOver && canDrop && "bg-primary/20",
-            slot < slotsPerHour - 1 && "border-b border-b-gray-200" // Add bottom border to all but the last slot
+            slot < slotsPerHour - 1 && "border-b border-b-gray-200"
         )}
       >
         <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20" onClick={handleSlotClick}>
@@ -316,6 +320,26 @@ export function CalendarView() {
           ))}
         </div>
       </div>
+    );
+  };
+
+  const getEventsForDay = (date: Date) => {
+    return allEvents.filter(
+        event => event.isScheduled && event.start && isSameDay(event.start, date)
+    );
+  };
+  
+  const isAllDayEvent = (event: Event): boolean => {
+    if (!event.start || !event.end) return false;
+    // An event is all-day if it starts at the beginning of the day
+    // and ends at the beginning of the next day (or later), with zeroed time.
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    return (
+        start.getHours() === 0 &&
+        start.getMinutes() === 0 &&
+        start.getSeconds() === 0 &&
+        differenceInMinutes(end, start) >= 24 * 60 -1
     );
   };
 
@@ -521,13 +545,28 @@ export function CalendarView() {
 
         <div className="flex flex-1 min-h-0 border-black border rounded-lg overflow-hidden flex-col bg-white">
           <div className="grid grid-cols-[5rem,1fr] flex-shrink-0">
-            <div className="border-r-black border-r border-b border-b-black h-14"></div>
+            <div className="border-r-black border-r border-b border-b-black h-auto"></div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))` }}>
-              {visibleDates.map((date, index) => (
-                <div key={index} className={cn("text-center py-3 border-b border-b-black", index < visibleDates.length - 1 && "border-r border-r-black")}>
-                   <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
-                </div>
-              ))}
+              {visibleDates.map((date, index) => {
+                const dayEvents = getEventsForDay(date);
+                const allDayEvents = dayEvents.filter(isAllDayEvent);
+                return (
+                    <div key={index} className={cn("text-center py-3 border-b border-b-black", index < visibleDates.length - 1 && "border-r border-r-black")}>
+                        <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
+                         <div className="h-auto p-1 border-t mt-2 space-y-1">
+                            {allDayEvents.map(event => (
+                                <CalendarEvent
+                                    key={event.id}
+                                    event={event}
+                                    onEdit={handleEditEvent}
+                                    onDelete={setEventToDelete}
+                                    onToggleComplete={handleToggleComplete}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                );
+              })}
             </div>
           </div>
           
@@ -536,7 +575,6 @@ export function CalendarView() {
                 const slotsPerHour = slotsConfig[hour] || 1;
                 return (
                     <div key={hour} className="flex border-b border-black">
-                        {/* Time Gutter Cell */}
                         <div className="w-[5rem] flex-shrink-0 border-r-black border-r flex items-center justify-center p-1">
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -554,7 +592,6 @@ export function CalendarView() {
                             </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-                        {/* Grid Content for the hour */}
                         <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))` }}>
                             {visibleDates.map((date, index) => (
                                 <div 

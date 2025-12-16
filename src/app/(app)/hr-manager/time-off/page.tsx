@@ -63,7 +63,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, MoreVertical, Check, ThumbsUp, ThumbsDown, MessageSquare, LoaderCircle, ChevronsUpDown, CalendarIcon } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -101,7 +100,10 @@ export default function TimeOffPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<LeaveRequest>>({ leaveType: 'Vacation', status: 'Pending' });
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
+    const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
+    const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
 
     const [requestToUpdate, setRequestToUpdate] = useState<{ request: LeaveRequest, newStatus: 'Approved' | 'Denied' } | null>(null);
     const [adminNotes, setAdminNotes] = useState('');
@@ -135,13 +137,18 @@ export default function TimeOffPage() {
     
     const handleOpenForm = () => {
         setFormData({ leaveType: 'Vacation', status: 'Pending' });
-        setDateRange(undefined);
+        setStartDate(undefined);
+        setEndDate(undefined);
         setIsFormOpen(true);
     };
 
     const handleSaveRequest = async () => {
-        if (!user || !formData.workerId || !dateRange?.from || !dateRange?.to) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker and a date range.'});
+        if (!user || !formData.workerId || !startDate || !endDate) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker and both start and end dates.'});
+            return;
+        }
+        if (endDate < startDate) {
+            toast({ variant: 'destructive', title: 'Invalid Dates', description: 'End date cannot be before the start date.'});
             return;
         }
 
@@ -156,8 +163,8 @@ export default function TimeOffPage() {
             workerId: worker.id,
             workerName: worker.name,
             leaveType: formData.leaveType || 'Personal',
-            startDate: format(dateRange.from, 'yyyy-MM-dd'),
-            endDate: format(dateRange.to, 'yyyy-MM-dd'),
+            startDate: format(startDate, 'yyyy-MM-dd'),
+            endDate: format(endDate, 'yyyy-MM-dd'),
             reason: formData.reason || '',
             status: 'Pending',
         };
@@ -283,9 +290,35 @@ export default function TimeOffPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="space-y-2">
-                        <Label>Date Range</Label>
-                        <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateRange?.from ? dateRange.to ? `${format(dateRange.from, 'PPP')} - ${format(dateRange.to, 'PPP')}` : format(dateRange.from, 'PPP') : <span>Pick a date range</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar initialFocus mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={2}/></PopoverContent></Popover>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Start Date</Label>
+                            <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPopoverOpen(false); }} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>End Date</Label>
+                             <Popover open={isEndPopoverOpen} onOpenChange={setIsEndPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPopoverOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <Label>Reason (Optional)</Label>

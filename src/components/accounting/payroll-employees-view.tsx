@@ -46,7 +46,7 @@ import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalL
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, type Employee } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker } from '@/services/payroll-service';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -59,7 +59,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Badge } from '../ui/badge';
 
-const employeeSchema = z.object({
+const workerSchema = z.object({
     name: z.string().min(2, "Name is required."),
     email: z.string().email("Invalid email address.").optional().or(z.literal('')),
     sin: z.string().optional(),
@@ -78,9 +78,9 @@ const employeeSchema = z.object({
     notes: z.string().optional(),
 });
 
-type EmployeeFormData = z.infer<typeof employeeSchema>;
+type WorkerFormData = z.infer<typeof workerSchema>;
 
-const defaultFormValues: EmployeeFormData = {
+const defaultFormValues: WorkerFormData = {
     name: "",
     email: "",
     sin: "",
@@ -100,50 +100,50 @@ const defaultFormValues: EmployeeFormData = {
 };
 
 export function PayrollEmployeesView() {
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [workers, setWorkers] = useState<Worker[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
-    const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+    const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
+    const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const form = useForm<EmployeeFormData>({
-        resolver: zodResolver(employeeSchema),
+    const form = useForm<WorkerFormData>({
+        resolver: zodResolver(workerSchema),
         defaultValues: defaultFormValues,
     });
 
-    const loadEmployees = useCallback(async () => {
+    const loadWorkers = useCallback(async () => {
         if (!user) {
             setIsLoading(false);
             return;
         }
         setIsLoading(true);
         try {
-            const fetchedEmployees = await getEmployees(user.uid);
-            setEmployees(fetchedEmployees);
+            const fetchedWorkers = await getWorkers(user.uid);
+            setWorkers(fetchedWorkers);
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to load employees', description: error.message });
+            toast({ variant: 'destructive', title: 'Failed to load workers', description: error.message });
         } finally {
             setIsLoading(false);
         }
     }, [user, toast]);
 
     useEffect(() => {
-        loadEmployees();
-    }, [loadEmployees]);
+        loadWorkers();
+    }, [loadWorkers]);
 
-    const handleOpenForm = (employee: Employee | null = null) => {
-        setEmployeeToEdit(employee);
-        if (employee) {
+    const handleOpenForm = (worker: Worker | null = null) => {
+        setWorkerToEdit(worker);
+        if (worker) {
             form.reset({
-                ...employee,
-                email: employee.email || "",
-                hireDate: employee.hireDate ? new Date(employee.hireDate).toISOString().split('T')[0] : '',
-                startDate: employee.startDate ? new Date(employee.startDate).toISOString().split('T')[0] : '',
-                notes: employee.notes || "",
+                ...worker,
+                email: worker.email || "",
+                hireDate: worker.hireDate ? new Date(worker.hireDate).toISOString().split('T')[0] : '',
+                startDate: worker.startDate ? new Date(worker.startDate).toISOString().split('T')[0] : '',
+                notes: worker.notes || "",
             });
         } else {
             form.reset(defaultFormValues);
@@ -151,10 +151,10 @@ export function PayrollEmployeesView() {
         setIsFormOpen(true);
     };
 
-    const onSubmit = async (data: EmployeeFormData, shouldAddAnother = false) => {
+    const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
         if (!user) return;
         
-        const employeeData = {
+        const workerData = {
             ...data,
             email: data.email || "",
             sin: data.sin || "",
@@ -164,21 +164,21 @@ export function PayrollEmployeesView() {
         };
 
         try {
-            if (employeeToEdit) {
-                await updateEmployee(employeeToEdit.id, employeeData);
+            if (workerToEdit) {
+                await updateWorker(workerToEdit.id, workerData);
                 toast({ title: "Worker Updated" });
             } else {
-                await addEmployee({ ...employeeData, userId: user.uid });
+                await addWorker({ ...workerData, userId: user.uid });
                 toast({ title: "Worker Added" });
             }
             
             if (shouldAddAnother) {
                 form.reset(defaultFormValues);
-                setEmployeeToEdit(null);
-                loadEmployees(); // Refresh list in the background
+                setWorkerToEdit(null);
+                loadWorkers(); // Refresh list in the background
             } else {
                 setIsFormOpen(false);
-                loadEmployees();
+                loadWorkers();
             }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -186,12 +186,12 @@ export function PayrollEmployeesView() {
     };
     
     const handleConfirmDelete = async () => {
-        if (!employeeToDelete) return;
+        if (!workerToDelete) return;
         try {
-            await deleteEmployee(employeeToDelete.id);
+            await deleteWorker(workerToDelete.id);
             toast({ title: "Worker Deleted", variant: "destructive" });
-            setEmployeeToDelete(null);
-            loadEmployees();
+            setWorkerToDelete(null);
+            loadWorkers();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         }
@@ -236,7 +236,7 @@ export function PayrollEmployeesView() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {employees.map(emp => (
+                            {workers.map(emp => (
                             <TableRow key={emp.id}>
                                 <TableCell className="font-medium">
                                     <button className="text-left hover:underline" onClick={() => handleOpenForm(emp)}>
@@ -256,7 +256,7 @@ export function PayrollEmployeesView() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onSelect={() => handleOpenForm(emp)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => setEmployeeToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -272,7 +272,7 @@ export function PayrollEmployeesView() {
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
                 <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-                    <DialogTitle className="text-2xl font-bold text-primary">{employeeToEdit ? 'Edit Worker' : 'Add New Worker'}</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-primary">{workerToEdit ? 'Edit Worker' : 'Add New Worker'}</DialogTitle>
                     <DialogDescription>Fill in the details for this individual.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -339,13 +339,13 @@ export function PayrollEmployeesView() {
                                 </div>
                                 <div className="space-y-4">
                                      <FormField control={form.control} name="specialNeeds" render={({ field }) => ( <FormItem><FormLabel>Special Needs or Accommodations</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes Regarding Employee</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes Regarding Worker</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
                            </div>
                         </ScrollArea>
                         <DialogFooter className="p-6 border-t mt-auto">
                             <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                            {!employeeToEdit && (
+                            {!workerToEdit && (
                                 <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, true))}>
                                     Save & Add Another
                                 </Button>
@@ -357,9 +357,9 @@ export function PayrollEmployeesView() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!employeeToDelete} onOpenChange={() => setEmployeeToDelete(null)}>
+        <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker "{employeeToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker "{workerToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

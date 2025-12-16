@@ -1,5 +1,5 @@
 
-export interface Employee {
+export interface Worker {
     id: string;
     name: string;
     email: string;
@@ -20,7 +20,7 @@ export interface Employee {
     userId: string;
 }
 
-export const mockEmployees: Omit<Employee, 'id' | 'userId'>[] = [
+export const mockWorkers: Omit<Worker, 'id' | 'userId'>[] = [
     {
         name: "Alice Johnson",
         email: "alice.j@example.com",

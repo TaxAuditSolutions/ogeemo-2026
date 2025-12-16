@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getEmployees, type Employee } from '@/services/payroll-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
 import { addTask } from '@/services/project-service';
 import { LoaderCircle, Clock, User, Calendar as CalendarIcon, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -45,36 +45,36 @@ const emptyLogEntry: Omit<TimeLogEntry, 'id'> = {
 };
 
 export default function LogEmployeeTimePage() {
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [workers, setWorkers] = useState<Worker[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     const [timeEntries, setTimeEntries] = useState<TimeLogEntry[]>([{ id: Date.now(), ...emptyLogEntry }]);
     
     const [isSaving, setIsSaving] = useState(false);
-    const [isEmployeePopoverOpen, setIsEmployeePopoverOpen] = useState(false);
+    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const loadEmployees = useCallback(async () => {
+    const loadWorkers = useCallback(async () => {
         if (!user) {
             setIsLoading(false);
             return;
         }
         setIsLoading(true);
         try {
-            const fetchedEmployees = await getEmployees(user.uid);
-            setEmployees(fetchedEmployees);
+            const fetchedWorkers = await getWorkers(user.uid);
+            setWorkers(fetchedWorkers);
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to load employees', description: error.message });
+            toast({ variant: 'destructive', title: 'Failed to load workers', description: error.message });
         } finally {
             setIsLoading(false);
         }
     }, [user, toast]);
 
     useEffect(() => {
-        loadEmployees();
-    }, [loadEmployees]);
+        loadWorkers();
+    }, [loadWorkers]);
 
     const handleAddEntry = () => {
         setTimeEntries(prev => [...prev, { id: Date.now(), ...emptyLogEntry }]);
@@ -98,8 +98,8 @@ export default function LogEmployeeTimePage() {
     };
 
     const handleSaveAllLogs = async () => {
-        if (!user || !selectedEmployeeId) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select an employee.' });
+        if (!user || !selectedWorkerId) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker.' });
             return;
         }
         if (timeEntries.length === 0) {
@@ -128,12 +128,12 @@ export default function LogEmployeeTimePage() {
                 const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
                 
                 const taskData = {
-                    title: `Time Log: ${employees.find(e => e.id === selectedEmployeeId)?.name}`,
+                    title: `Time Log: ${workers.find(e => e.id === selectedWorkerId)?.name}`,
                     description: entry.description,
                     start: startTime,
                     end: endTime,
                     duration: durationSeconds,
-                    workerId: selectedEmployeeId,
+                    workerId: selectedWorkerId,
                     userId: user.uid,
                     status: 'done' as const,
                     isBillable: false,
@@ -167,8 +167,8 @@ export default function LogEmployeeTimePage() {
     return (
         <div className="p-4 sm:p-6 flex flex-col items-center h-full">
             <header className="w-full max-w-4xl text-center mb-6 relative">
-                <h1 className="text-3xl font-bold font-headline text-primary">Log Employee Time</h1>
-                <p className="text-muted-foreground">Log hours for an employee or contractor for payroll.</p>
+                <h1 className="text-3xl font-bold font-headline text-primary">Log Worker Time</h1>
+                <p className="text-muted-foreground">Log hours for a worker or contractor for payroll.</p>
                 <div className="absolute top-1/2 left-0 -translate-y-1/2">
                     <Button asChild variant="outline">
                         <Link href="/hr-manager">
@@ -181,15 +181,15 @@ export default function LogEmployeeTimePage() {
             <Card className="w-full max-w-4xl">
                 <CardHeader>
                     <CardTitle>New Time Card Entry</CardTitle>
-                    <CardDescription>Select an employee and add one or more time entries. This will create time logs that can be used to calculate gross pay during a payroll run.</CardDescription>
+                    <CardDescription>Select a worker and add one or more time entries. This will create time logs that can be used to calculate gross pay during a payroll run.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2 max-w-sm">
-                        <Label>Employee / Contractor</Label>
-                        <Popover open={isEmployeePopoverOpen} onOpenChange={setIsEmployeePopoverOpen}>
+                        <Label>Worker</Label>
+                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    {selectedEmployeeId ? employees.find(e => e.id === selectedEmployeeId)?.name : "Select a worker..."}
+                                    {selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -199,9 +199,9 @@ export default function LogEmployeeTimePage() {
                                     <CommandList>
                                         <CommandEmpty>No worker found.</CommandEmpty>
                                         <CommandGroup>
-                                            {employees.map(emp => (
-                                                <CommandItem key={emp.id} value={emp.name} onSelect={() => { setSelectedEmployeeId(emp.id); setIsEmployeePopoverOpen(false); }}>
-                                                    <Check className={cn("mr-2 h-4 w-4", selectedEmployeeId === emp.id ? "opacity-100" : "opacity-0")} />
+                                            {workers.map(emp => (
+                                                <CommandItem key={emp.id} value={emp.name} onSelect={() => { setSelectedWorkerId(emp.id); setIsWorkerPopoverOpen(false); }}>
+                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === emp.id ? "opacity-100" : "opacity-0")} />
                                                     {emp.name}
                                                 </CommandItem>
                                             ))}
@@ -272,7 +272,7 @@ export default function LogEmployeeTimePage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleSaveAllLogs} disabled={isSaving || !selectedEmployeeId} className="w-full">
+                    <Button onClick={handleSaveAllLogs} disabled={isSaving || !selectedWorkerId} className="w-full">
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                         Log All Entries ({timeEntries.length})
                     </Button>

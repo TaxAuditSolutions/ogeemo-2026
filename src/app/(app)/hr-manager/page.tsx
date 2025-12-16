@@ -59,8 +59,8 @@ export default function HrHubPage() {
   const features: FeatureCardProps[] = [
     {
       icon: Users,
-      title: "Employee Directory & Records",
-      description: "Manage employee profiles, contact info, and employment details.",
+      title: "Worker Directory & Records",
+      description: "Manage worker profiles, contact info, and employment details.",
       href: "/accounting/payroll/manage-workers",
       cta: "Manage Workers",
     },
@@ -73,7 +73,7 @@ export default function HrHubPage() {
     },
     {
       icon: Clock,
-      title: "Log Employee Time",
+      title: "Log Worker Time",
       description: "Enter hours worked for employees and contractors for payroll processing.",
       href: "/hr-manager/log-time",
       cta: "Log Time",
@@ -81,14 +81,14 @@ export default function HrHubPage() {
     {
         icon: FileText,
         title: "Time Log Report",
-        description: "Review and report on employee timesheets and logged work hours.",
+        description: "Review and report on worker timesheets and logged work hours.",
         href: "/reports/time-log",
         cta: "View Time Log Report"
     },
     {
       icon: CalendarOff,
       title: "Time Off & Leave Management",
-      description: "Manage employee vacation, sick leave, and other time off requests.",
+      description: "Manage worker vacation, sick leave, and other time off requests.",
       href: "/hr-manager/time-off",
       cta: "Manage Leave",
     },

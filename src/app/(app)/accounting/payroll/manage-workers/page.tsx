@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
 
-const PayrollEmployeesView = dynamic(
+const PayrollWorkersView = dynamic(
   () => import('@/components/accounting/payroll-employees-view').then((mod) => mod.PayrollEmployeesView),
   {
     loading: () => (
@@ -17,5 +17,5 @@ const PayrollEmployeesView = dynamic(
 );
 
 export default function ManageWorkersPage() {
-  return <PayrollEmployeesView />;
+  return <PayrollWorkersView />;
 }

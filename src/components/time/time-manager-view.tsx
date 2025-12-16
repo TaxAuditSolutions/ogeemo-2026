@@ -367,11 +367,16 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             const startParam = searchParams.get('start');
             const endParam = searchParams.get('end');
             const titleParam = searchParams.get('title');
+            const isAllDayParam = searchParams.get('isAllDay');
 
             if (!eventIdParam && (startParam || titleParam)) {
                 setIsReviewMode(true);
             } else {
                 setIsReviewMode(false);
+            }
+
+            if (isAllDayParam === 'true') {
+                setIsAllDay(true);
             }
 
             if (eventIdParam) {

@@ -269,9 +269,9 @@ export function CalendarView() {
   
   const isAllDayEvent = (event: Event): boolean => {
     if (!event.start || !event.end) return false;
-    const start = new Date(event.start);
-    const end = new Date(event.end);
-    return differenceInMinutes(end, start) >= 24 * 60 - 1;
+    // An all-day event should ideally not have specific times and span at least one full day.
+    // The check for differenceInMinutes is a more robust way to identify all-day events.
+    return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
   };
   
   if (!isClient) {
@@ -279,11 +279,12 @@ export function CalendarView() {
   }
   
   const TimeSlot = ({ date, hour, slot, slotsPerHour }: { date: Date; hour: number; slot: number, slotsPerHour: number }) => {
+    const slotDuration = 60 / slotsPerHour;
     const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
     const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
     
     const slotEvents = allEvents.filter(event => 
-        event.start && event.isScheduled && !isAllDayEvent(event) && isWithinInterval(event.start, { start: slotStartTime, end: slotEndTime })
+        event.start && event.isScheduled && !isAllDayEvent(event) && isWithinInterval(new Date(event.start), { start: slotStartTime, end: slotEndTime })
     );
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -330,17 +331,20 @@ export function CalendarView() {
   };
 
   const getEventsForDay = (date: Date) => {
-      const todayStart = startOfDay(date);
-      const todayEnd = addDays(todayStart, 1);
-      return allEvents.filter(event => 
-          event.isScheduled && 
-          event.start &&
-          event.end &&
-          (isWithinInterval(todayStart, { start: event.start, end: event.end }) ||
-           isWithinInterval(event.start, { start: todayStart, end: todayEnd }))
-      );
+    const dayStart = startOfDay(date);
+    const dayEnd = addDays(dayStart, 1);
+    return allEvents.filter(event =>
+      event.isScheduled &&
+      event.start &&
+      event.end &&
+      isWithinInterval(dayStart, { start: new Date(event.start), end: new Date(event.end) })
+    );
   };
-  
+
+  const handleAllDayClick = (date: Date) => {
+      const startTimeString = date.toISOString();
+      router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
+  };
 
   const slotsPerHour = slotsConfig[0] || 1;
   const slotDuration = 60 / slotsPerHour;
@@ -550,11 +554,11 @@ export function CalendarView() {
             <div className="grid" style={{ gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))` }}>
               {visibleDates.map((date, index) => {
                 const dayEvents = getEventsForDay(date);
-                const allDayEvents = dayEvents.filter(isAllDayEvent);
+                const allDayEvents = dayEvents.filter(event => isAllDayEvent(event));
                 return (
                     <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
                         <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
-                         <div className="h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem]">
+                        <div className="h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors" onClick={() => handleAllDayClick(date)}>
                             {allDayEvents.map(event => (
                                 <CalendarEvent
                                     key={event.id}

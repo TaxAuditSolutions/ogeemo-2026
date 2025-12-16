@@ -363,18 +363,19 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             ]);
             setContactFolders(fetchedFolders);
             
-            const eventIdParam = searchParams.get('eventId');
-            const startParam = searchParams.get('start');
-            const endParam = searchParams.get('end');
-            const titleParam = searchParams.get('title');
-            const isAllDayParam = searchParams.get('isAllDay');
-
-            if (!eventIdParam && (startParam || titleParam)) {
+            const sourceParam = searchParams.get('source');
+            if (sourceParam === 'log-email') {
                 setIsReviewMode(true);
             } else {
                 setIsReviewMode(false);
             }
 
+            const eventIdParam = searchParams.get('eventId');
+            const startParam = searchParams.get('start');
+            const endParam = searchParams.get('end');
+            const titleParam = searchParams.get('title');
+            const isAllDayParam = searchParams.get('isAllDay');
+            
             if (isAllDayParam === 'true') {
                 setIsAllDay(true);
             }
@@ -584,7 +585,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                             <CardHeader className="text-center">
                                 <div className="flex justify-center items-center gap-2">
                                 <CheckCircle className="h-6 w-6 text-primary" />
-                                <CardTitle>Final Step: Review & Schedule Your Logged Email</CardTitle>
+                                <CardTitle>Final Step: Review &amp; Schedule Your Logged Email</CardTitle>
                                 </div>
                                 <CardDescription>Confirm the details below are correct. You can add more information or adjust the schedule before saving.</CardDescription>
                             </CardHeader>

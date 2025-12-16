@@ -193,6 +193,7 @@ export default function LogEmailPage() {
     }
     
     const query = new URLSearchParams();
+    query.append('source', 'log-email'); // Add this specific parameter
     if (subject) query.append('title', subject);
     if (body) query.append('notes', body);
     if (selectedContactId) query.append('contactId', selectedContactId);
@@ -494,8 +495,8 @@ export default function LogEmailPage() {
                  <div className="flex items-start gap-4">
                     <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Task & Project Management</h4>
-                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button to instantly send an email's details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
+                        <h4 className="font-semibold">Task &amp; Project Management</h4>
+                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button to instantly send an email's details to the Task &amp; Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">

@@ -20,6 +20,7 @@ import {
   CalendarOff,
   Folder,
   FileText,
+  X,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -103,7 +104,7 @@ export default function HrHubPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <header className="text-center mb-6">
+      <header className="text-center mb-6 relative">
         <div className="flex justify-center items-center gap-4 mb-2">
             <Users className="h-10 w-10 text-primary" />
             <h1 className="text-4xl font-bold font-headline text-primary">
@@ -113,6 +114,13 @@ export default function HrHubPage() {
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Your central command for managing your most valuable asset: your people.
         </p>
+        <div className="absolute top-0 right-0">
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/action-manager" aria-label="Close and return to Action Manager">
+              <X className="h-5 w-5" />
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

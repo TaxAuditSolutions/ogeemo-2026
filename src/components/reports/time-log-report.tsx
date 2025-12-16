@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, FileDigit, Info } from 'lucide-react';
 import { format, startOfMonth, startOfYear } from 'date-fns';
-import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
@@ -273,4 +272,3 @@ export function TimeLogReport() {
         </>
     );
 }
-

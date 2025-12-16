@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -31,7 +31,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -42,6 +41,8 @@ import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { TaskCreationInfoDialog } from './task-creation-info-dialog';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 const statusDisplayMap: Record<string, string> = {
     todo: 'To Do',
@@ -70,9 +71,18 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                      <p className="text-sm text-muted-foreground">{project?.name || "Unassigned"}</p>
                 </div>
                  <div className="col-span-1 text-center">
-                    <Badge variant="outline" className={cn(statusColorMap[task.status] || 'bg-gray-100 text-gray-800')}>
-                        {statusDisplayMap[task.status] || 'Unknown'}
-                    </Badge>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Badge variant="outline" className={cn(statusColorMap[task.status] || 'bg-gray-100 text-gray-800')}>
+                                    {statusDisplayMap[task.status] || 'Unknown'}
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{task.status === 'done' ? 'This task is completed.' : `Status: ${statusDisplayMap[task.status]}`}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
                  <div className="col-span-1 text-center">
                     <p className="text-sm text-muted-foreground">

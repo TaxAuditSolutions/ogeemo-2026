@@ -266,18 +266,24 @@ export function CalendarView() {
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new time.'});
       }
   };
+
+  const isAllDayEvent = (event: Event): boolean => {
+    if (!event.start || !event.end) return false;
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    return differenceInMinutes(end, start) >= 24 * 60 - 1;
+  };
   
   if (!isClient) {
     return <CalendarSkeleton />;
   }
   
   const TimeSlot = ({ date, hour, slot, slotsPerHour }: { date: Date; hour: number; slot: number, slotsPerHour: number }) => {
-    const slotDuration = 60 / slotsPerHour;
     const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
     const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
     
     const slotEvents = allEvents.filter(event => 
-        event.start && event.isScheduled && isWithinInterval(event.start, { start: slotStartTime, end: slotEndTime })
+        event.start && event.isScheduled && !isAllDayEvent(event) && isWithinInterval(event.start, { start: slotStartTime, end: slotEndTime })
     );
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -329,20 +335,9 @@ export function CalendarView() {
     );
   };
   
-  const isAllDayEvent = (event: Event): boolean => {
-    if (!event.start || !event.end) return false;
-    // An event is all-day if it starts at the beginning of the day
-    // and ends at the beginning of the next day (or later), with zeroed time.
-    const start = new Date(event.start);
-    const end = new Date(event.end);
-    return (
-        start.getHours() === 0 &&
-        start.getMinutes() === 0 &&
-        start.getSeconds() === 0 &&
-        differenceInMinutes(end, start) >= 24 * 60 -1
-    );
-  };
 
+  const slotsPerHour = slotsConfig[0] || 1;
+  const slotDuration = 60 / slotsPerHour;
 
   return (
     <>
@@ -551,9 +546,9 @@ export function CalendarView() {
                 const dayEvents = getEventsForDay(date);
                 const allDayEvents = dayEvents.filter(isAllDayEvent);
                 return (
-                    <div key={index} className={cn("text-center py-3 border-b border-b-black", index < visibleDates.length - 1 && "border-r border-r-black")}>
+                    <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
                         <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
-                         <div className="h-auto p-1 border-t mt-2 space-y-1">
+                         <div className="h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem]">
                             {allDayEvents.map(event => (
                                 <CalendarEvent
                                     key={event.id}

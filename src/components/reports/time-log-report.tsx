@@ -36,6 +36,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ReportsPageHeader } from "@/components/reports/page-header";
+
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -78,11 +80,11 @@ export function TimeLogReport() {
             }
             setIsLoading(true);
             try {
-                const [workers, entries] = await Promise.all([
+                const [fetchedWorkers, entries] = await Promise.all([
                     getWorkers(user.uid),
                     getTasksForUser(user.uid),
                 ]);
-                setWorkers(workers);
+                setWorkers(fetchedWorkers);
                 setAllEntries(entries);
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -140,6 +142,10 @@ export function TimeLogReport() {
     return (
         <>
             <div className="space-y-6">
+                <header className="text-center">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
+                </header>
+
                 <Card className="print:hidden">
                     <CardHeader>
                         <CardTitle>Select a Worker & Date Range</CardTitle>
@@ -160,7 +166,7 @@ export function TimeLogReport() {
                             </Popover>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label>Start Date</Label>
                                 <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -201,10 +207,8 @@ export function TimeLogReport() {
                 <div ref={contentRef}>
                     <Card className="print:border-none print:shadow-none">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl">Worker Time Log Report</CardTitle>
-                            <CardDescription>
-                                A summary of logged time for {selectedWorker ? selectedWorker.name : 'the selected worker'} for the period of {startDate ? format(startDate, "PPP") : 'the beginning of time'} to {endDate ? format(endDate, "PPP") : 'today'}.
-                            </CardDescription>
+                            <CardTitle className="text-2xl">Summary of Logged Times</CardTitle>
+                            <CardDescription>Time Log Events. Click the Log a time entry to add a new event.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? (

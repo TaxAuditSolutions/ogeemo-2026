@@ -43,9 +43,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { format as formatDate, set, addMinutes, parseISO } from 'date-fns';
+import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
+
 
 export interface StoredTimerState {
     eventId: string;
@@ -80,6 +82,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
     const [endHour, setEndHour] = React.useState<string | undefined>(undefined);
     const [endMinute, setEndMinute] = React.useState<string | undefined>(undefined);
+    const [isAllDay, setIsAllDay] = React.useState(false);
     
     const [isStartPickerOpen, setIsStartPickerOpen] = React.useState(false);
     const [isEndPickerOpen, setIsEndPickerOpen] = React.useState(false);
@@ -224,17 +227,22 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         let isScheduled = false;
 
         if (startDate) {
-            const hour = startHour ? parseInt(startHour) : new Date().getHours();
-            const minute = startMinute ? parseInt(startMinute) : new Date().getMinutes();
-            start = set(startDate, { hours: hour, minutes: minute });
-            
-            const finalEndDate = endDate || startDate;
-            const finalEndHour = endHour ? parseInt(endHour) : hour;
-            const finalEndMinute = endMinute ? parseInt(endMinute) : minute;
-            end = set(finalEndDate, { hours: finalEndHour, minutes: finalEndMinute });
+            if (isAllDay) {
+                start = startOfDay(startDate);
+                end = endOfDay(endDate || startDate);
+            } else {
+                const hour = startHour ? parseInt(startHour) : new Date().getHours();
+                const minute = startMinute ? parseInt(startMinute) : new Date().getMinutes();
+                start = set(startDate, { hours: hour, minutes: minute });
+                
+                const finalEndDate = endDate || startDate;
+                const finalEndHour = endHour ? parseInt(endHour) : hour;
+                const finalEndMinute = endMinute ? parseInt(endMinute) : minute;
+                end = set(finalEndDate, { hours: finalEndHour, minutes: finalEndMinute });
 
-            if (end <= start) {
-                end = addMinutes(start, 30);
+                if (end <= start) {
+                    end = addMinutes(start, 30);
+                }
             }
             isScheduled = true;
         }
@@ -269,7 +277,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, selectedProjectId, selectedContactId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
+    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
 
     const handleLogCurrentSession = async () => {
         if (!timerState || !timerState.isActive || elapsedSeconds <= 0) {
@@ -657,28 +665,39 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                         </CardContent>
                     </Card>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <Card>
-                            <CardHeader><CardTitle className="text-base">Set Start Time</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
-                                    <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, 'PPP') : <span>Pick a start date</span>}</Button></PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
-                                </Popover>
-                                <div className="flex gap-2"><Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader><CardTitle className="text-base">Set End Time</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
-                                    <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, 'PPP') : <span>Pick an end date</span>}</Button></PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
-                                </Popover>
-                                <div className="flex gap-2"><Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <Card>
+                        <CardHeader><CardTitle className="text-base">Scheduling</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="all-day" checked={isAllDay} onCheckedChange={(checked) => setIsAllDay(!!checked)} />
+                                <Label htmlFor="all-day">All-day event</Label>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Start Time</Label>
+                                    <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, 'PPP') : <span>Pick a start date</span>}</Button></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
+                                    </Popover>
+                                    <div className="flex gap-2">
+                                        <Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                        <Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>End Time</Label>
+                                    <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, 'PPP') : <span>Pick an end date</span>}</Button></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
+                                    </Popover>
+                                    <div className="flex gap-2">
+                                        <Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                        <Select value={endMinute} onValueChange={setEndMinute} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader><CardTitle className="text-base">Billing Status</CardTitle></CardHeader>
@@ -802,3 +821,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
 }
 
   
+
+
+    

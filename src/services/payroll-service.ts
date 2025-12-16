@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -14,10 +15,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/lib/firebase';
-import { type Employee, mockEmployees } from '@/data/payroll';
+import { type Worker, mockWorkers } from '@/data/payroll';
 import { addExpenseTransaction, addRemittance } from './accounting-service';
 
-const EMPLOYEES_COLLECTION = 'payrollEmployees';
+const WORKERS_COLLECTION = 'payrollWorkers';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const PAYROLL_RUNS_COLLECTION = 'payrollRuns';
 
@@ -26,52 +27,51 @@ async function getDb() {
     return db;
 }
 
-// --- Employee Types & Functions ---
-const docToEmployee = (doc: any): Employee => {
+// --- Worker Types & Functions ---
+const docToWorker = (doc: any): Worker => {
     const data = doc.data();
     return {
         id: doc.id,
         ...data,
         hireDate: data.hireDate ? (data.hireDate as Timestamp).toDate() : null,
         startDate: data.startDate ? (data.startDate as Timestamp).toDate() : null,
-    } as Employee;
+    } as Worker;
 };
 
-export async function getEmployees(userId: string): Promise<Employee[]> {
+export async function getWorkers(userId: string): Promise<Worker[]> {
     const db = await getDb();
-    const q = query(collection(db, EMPLOYEES_COLLECTION), where("userId", "==", userId));
+    const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     
-    // If the user has no employees, populate with mock data for demo purposes.
     if (snapshot.empty) {
         const batch = writeBatch(db);
-        const newEmployees: Employee[] = [];
-        mockEmployees.forEach(emp => {
-            const docRef = doc(collection(db, EMPLOYEES_COLLECTION));
-            batch.set(docRef, { ...emp, userId });
-            newEmployees.push({ ...emp, id: docRef.id, userId });
+        const newWorkers: Worker[] = [];
+        mockWorkers.forEach(worker => {
+            const docRef = doc(collection(db, WORKERS_COLLECTION));
+            batch.set(docRef, { ...worker, userId });
+            newWorkers.push({ ...worker, id: docRef.id, userId });
         });
         await batch.commit();
-        return newEmployees;
+        return newWorkers;
     }
 
-    return snapshot.docs.map(docToEmployee);
+    return snapshot.docs.map(docToWorker);
 }
 
-export async function addEmployee(data: Omit<Employee, 'id'>): Promise<Employee> {
+export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     const db = await getDb();
-    const docRef = await addDoc(collection(db, EMPLOYEES_COLLECTION), data);
+    const docRef = await addDoc(collection(db, WORKERS_COLLECTION), data);
     return { id: docRef.id, ...data };
 }
 
-export async function updateEmployee(id: string, data: Partial<Omit<Employee, 'id' | 'userId'>>): Promise<void> {
+export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' | 'userId'>>): Promise<void> {
     const db = await getDb();
-    await updateDoc(doc(db, EMPLOYEES_COLLECTION, id), data);
+    await updateDoc(doc(db, WORKERS_COLLECTION, id), data);
 }
 
-export async function deleteEmployee(id: string): Promise<void> {
+export async function deleteWorker(id: string): Promise<void> {
     const db = await getDb();
-    await deleteDoc(doc(db, EMPLOYEES_COLLECTION, id));
+    await deleteDoc(doc(db, WORKERS_COLLECTION, id));
 }
 
 

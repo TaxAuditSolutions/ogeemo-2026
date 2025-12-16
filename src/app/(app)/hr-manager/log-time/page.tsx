@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getEmployees, type Employee } from '@/services/payroll-service';
 import { addTask } from '@/services/project-service';
-import { LoaderCircle, Clock, User, Calendar as CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { LoaderCircle, Clock, User, Calendar as CalendarIcon, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
@@ -26,6 +26,8 @@ import { format, set } from 'date-fns';
 import { ChevronsUpDown, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
+
 
 interface TimeLogEntry {
     id: number;
@@ -164,9 +166,17 @@ export default function LogEmployeeTimePage() {
 
     return (
         <div className="p-4 sm:p-6 flex flex-col items-center h-full">
-            <header className="text-center mb-6">
+            <header className="w-full max-w-4xl text-center mb-6 relative">
                 <h1 className="text-3xl font-bold font-headline text-primary">Log Employee Time</h1>
                 <p className="text-muted-foreground">Log hours for an employee or contractor for payroll.</p>
+                <div className="absolute top-1/2 left-0 -translate-y-1/2">
+                    <Button asChild variant="outline">
+                        <Link href="/hr-manager">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to HR Hub
+                        </Link>
+                    </Button>
+                </div>
             </header>
             <Card className="w-full max-w-4xl">
                 <CardHeader>

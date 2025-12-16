@@ -266,7 +266,7 @@ export function CalendarView() {
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new time.'});
       }
   };
-
+  
   const isAllDayEvent = (event: Event): boolean => {
     if (!event.start || !event.end) return false;
     const start = new Date(event.start);
@@ -330,9 +330,15 @@ export function CalendarView() {
   };
 
   const getEventsForDay = (date: Date) => {
-    return allEvents.filter(
-        event => event.isScheduled && event.start && isSameDay(event.start, date)
-    );
+      const todayStart = startOfDay(date);
+      const todayEnd = addDays(todayStart, 1);
+      return allEvents.filter(event => 
+          event.isScheduled && 
+          event.start &&
+          event.end &&
+          (isWithinInterval(todayStart, { start: event.start, end: event.end }) ||
+           isWithinInterval(event.start, { start: todayStart, end: todayEnd }))
+      );
   };
   
 

@@ -1,15 +1,15 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Play, Pause, Square, LogIn, LogOut, ArrowLeft, GripVertical } from 'lucide-react';
+import { Clock, Play, Pause, Square, LogIn, LogOut, ArrowLeft, GripVertical, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { Logo } from '../logo';
+import { Separator } from '../ui/separator';
 
 interface LoggedSession {
     id: number;
@@ -17,6 +17,12 @@ interface LoggedSession {
     endTime: Date;
     duration: string;
     notes: string;
+}
+
+interface LoggedLocation {
+    id: number;
+    timestamp: Date;
+    coords: { lat: number; lng: number };
 }
 
 const formatTime = (totalSeconds: number): string => {
@@ -33,6 +39,7 @@ export function FieldAppView() {
     const [elapsedTime, setElapsedTime] = useState(0);
     const [notes, setNotes] = useState('');
     const [loggedSessions, setLoggedSessions] = useState<LoggedSession[]>([]);
+    const [loggedLocations, setLoggedLocations] = useState<LoggedLocation[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const startTimeRef = useRef<Date | null>(null);
 
@@ -40,7 +47,9 @@ export function FieldAppView() {
     const router = useRouter();
 
     const startTimer = useCallback(() => {
-        startTimeRef.current = new Date();
+        if (!startTimeRef.current) {
+            startTimeRef.current = new Date();
+        }
         timerRef.current = setInterval(() => {
             setElapsedTime(prev => prev + 1);
         }, 1000);
@@ -66,6 +75,7 @@ export function FieldAppView() {
         setIsClockedIn(false);
         setIsTimerPaused(false);
         stopTimer();
+        setLoggedLocations([]); // Clear locations on clock out
         toast({ title: "Clocked Out", description: "Your work day has ended." });
     };
 
@@ -93,11 +103,28 @@ export function FieldAppView() {
         setLoggedSessions(prev => [newSession, ...prev]);
         setElapsedTime(0);
         setNotes('');
-        if (isClockedIn) {
-            stopTimer();
+        startTimeRef.current = null;
+        if (isClockedIn && !isTimerPaused) {
             startTimer();
         }
         toast({ title: "Session Logged" });
+    };
+    
+    const handleLogLocation = () => {
+        const mockLat = 44.6488 + (Math.random() - 0.5) * 0.01;
+        const mockLng = -63.5752 + (Math.random() - 0.5) * 0.01;
+        
+        const newLocation: LoggedLocation = {
+            id: Date.now(),
+            timestamp: new Date(),
+            coords: { lat: mockLat, lng: mockLng }
+        };
+        
+        setLoggedLocations(prev => [newLocation, ...prev]);
+        toast({
+            title: "Location Logged (Mock)",
+            description: `Lat: ${mockLat.toFixed(4)}, Lng: ${mockLng.toFixed(4)}`
+        });
     };
 
     useEffect(() => {
@@ -149,35 +176,61 @@ export function FieldAppView() {
                                     onChange={(e) => setNotes(e.target.value)}
                                     rows={4}
                                 />
-                                <Button className="w-full" onClick={handleLogSession}>
-                                    <Square className="mr-2 h-5 w-5" /> Log Current Session
-                                </Button>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <Button className="w-full" onClick={handleLogLocation}>
+                                        <MapPin className="mr-2 h-5 w-5" /> Log Location
+                                    </Button>
+                                    <Button className="w-full" onClick={handleLogSession}>
+                                        <Square className="mr-2 h-5 w-5" /> Log Current Session
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </CardContent>
                 </Card>
                 <Card className="w-full max-w-2xl mt-6">
                     <CardHeader>
-                        <CardTitle>Today's Logged Sessions</CardTitle>
+                        <CardTitle>Today's Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {loggedSessions.length > 0 ? (
-                            <div className="space-y-4">
-                                {loggedSessions.map(session => (
-                                    <div key={session.id} className="flex items-start gap-4 p-3 border rounded-md">
-                                        <div className="text-center">
-                                            <p className="font-bold">{session.duration}</p>
-                                            <p className="text-xs text-muted-foreground">{format(session.startTime, 'p')}</p>
+                        <div>
+                            <h3 className="font-semibold mb-2">Logged Time Sessions</h3>
+                            {loggedSessions.length > 0 ? (
+                                <div className="space-y-4">
+                                    {loggedSessions.map(session => (
+                                        <div key={session.id} className="flex items-start gap-4 p-3 border rounded-md">
+                                            <div className="text-center">
+                                                <p className="font-bold">{session.duration}</p>
+                                                <p className="text-xs text-muted-foreground">{format(session.startTime, 'p')}</p>
+                                            </div>
+                                            <p className="text-sm">{session.notes || "No notes for this session."}</p>
                                         </div>
-                                        <p className="text-sm">{session.notes || "No notes for this session."}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center text-muted-foreground p-8">
-                                <p>No sessions logged yet today.</p>
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center text-muted-foreground p-8">
+                                    <p>No sessions logged yet today.</p>
+                                </div>
+                            )}
+                        </div>
+                        <Separator className="my-6" />
+                         <div>
+                            <h3 className="font-semibold mb-2">Logged Locations (Mock)</h3>
+                            {loggedLocations.length > 0 ? (
+                                <div className="space-y-2">
+                                    {loggedLocations.map(location => (
+                                        <div key={location.id} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                                            <span className="text-muted-foreground">{format(location.timestamp, 'p')}</span>
+                                            <span className="font-mono">{location.coords.lat.toFixed(4)}, {location.coords.lng.toFixed(4)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center text-muted-foreground p-8">
+                                    <p>No locations logged yet today.</p>
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </main>

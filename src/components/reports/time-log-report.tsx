@@ -201,9 +201,9 @@ export function TimeLogReport() {
                 <div ref={contentRef}>
                     <Card className="print:border-none print:shadow-none">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl">{selectedWorker?.name || "Worker"} - Time Log Report</CardTitle>
+                            <CardTitle className="text-2xl">Worker Time Log Report</CardTitle>
                             <CardDescription>
-                                {startDate ? endDate ? `${format(startDate, "PPP")} to ${format(endDate, "PPP")}` : `On ${format(startDate, "PPP")}` : "All Time"}
+                                A summary of logged time for {selectedWorker ? selectedWorker.name : 'the selected worker'} for the period of {startDate ? format(startDate, "PPP") : 'the beginning of time'} to {endDate ? format(endDate, "PPP") : 'today'}.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

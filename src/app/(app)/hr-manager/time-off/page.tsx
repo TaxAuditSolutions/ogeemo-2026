@@ -63,7 +63,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, MoreVertical, Check, ThumbsUp, ThumbsDown, MessageSquare, LoaderCircle, ChevronsUpDown, CalendarIcon } from 'lucide-react';
-import { format, set, startOfDay } from 'date-fns';
+import { format, addDays, startOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';

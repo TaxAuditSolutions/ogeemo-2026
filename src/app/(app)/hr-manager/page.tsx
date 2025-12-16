@@ -21,6 +21,7 @@ import {
   Folder,
   FileText,
   X,
+  Smartphone,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -74,10 +75,17 @@ export default function HrHubPage() {
     },
     {
       icon: Clock,
-      title: "Log Worker Time",
-      description: "Enter hours worked for employees and contractors for payroll processing.",
+      title: "Admin Time Entry",
+      description: "Manually enter or adjust hours for employees and contractors for payroll processing.",
       href: "/hr-manager/log-time",
       cta: "Log Time",
+    },
+    {
+        icon: Smartphone,
+        title: "Ogeemo Field App",
+        description: "A standalone app for workers to track time and location. (Demo)",
+        href: "/field-app",
+        cta: "Open Field App",
     },
     {
         icon: FileText,
@@ -92,13 +100,6 @@ export default function HrHubPage() {
       description: "Manage worker vacation, sick leave, and other time off requests.",
       href: "/hr-manager/time-off",
       cta: "Manage Leave",
-    },
-    {
-      icon: Folder,
-      title: "HR Documents",
-      description: "Store and manage important HR documents like contracts and policies.",
-      href: "/document-manager",
-      cta: "Open Documents",
     },
   ];
 

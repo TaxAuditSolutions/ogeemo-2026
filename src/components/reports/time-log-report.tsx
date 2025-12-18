@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -135,8 +134,8 @@ export function TimeLogReport() {
         if (!entryToDelete) return;
         try {
             await deleteTask(entryToDelete.id);
-            setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
-            setDisplayedEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
+            // Refresh all data to ensure consistency
+            await loadData();
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Delete Failed", description: error.message });
@@ -155,7 +154,7 @@ export function TimeLogReport() {
         <>
             <Card className="print:hidden">
                 <CardHeader>
-                    <CardTitle>Select a Worker &amp; Date Range</CardTitle>
+                    <CardTitle>Select a Worker & Date Range</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
@@ -307,3 +306,5 @@ export function TimeLogReport() {
         </>
     );
 }
+
+    

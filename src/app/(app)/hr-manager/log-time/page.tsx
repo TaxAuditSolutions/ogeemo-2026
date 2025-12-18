@@ -232,9 +232,8 @@ export default function LogEmployeeTimePage() {
                                                 selected={entry.date ? new Date(entry.date) : undefined} 
                                                 onSelect={(date) => {
                                                     if (date) {
-                                                        // Adjust for timezone offset
-                                                        const adjustedDate = new Date(date.getTime() - (date.getTimezoneOffset() * -60000));
-                                                        handleEntryChange(entry.id, 'date', format(adjustedDate, 'yyyy-MM-dd'));
+                                                        date.setUTCHours(12);
+                                                        handleEntryChange(entry.id, 'date', format(date, 'yyyy-MM-dd'));
                                                     }
                                                 }}
                                                 initialFocus 

@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { LogTimeDialog } from './log-time-dialog';
 
 
 const formatTime = (totalSeconds: number) => {
@@ -62,6 +63,8 @@ export function TimeLogReport() {
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
+    const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
+
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -137,10 +140,7 @@ export function TimeLogReport() {
     const selectedWorker = workers.find(c => c.id === selectedWorkerId);
 
     const handleLogTimeClick = () => {
-        const url = selectedWorkerId
-            ? `/hr-manager/log-time?workerId=${selectedWorkerId}`
-            : '/hr-manager/log-time';
-        router.push(url);
+        setIsLogTimeDialogOpen(true);
     };
 
     return (
@@ -262,6 +262,15 @@ export function TimeLogReport() {
                     </CardFooter>
                 </Card>
             </div>
+            
+            {selectedWorkerId && (
+              <LogTimeDialog 
+                isOpen={isLogTimeDialogOpen}
+                onOpenChange={setIsLogTimeDialogOpen}
+                workerId={selectedWorkerId}
+                onTimeLogged={loadData} // Refresh data after logging
+              />
+            )}
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>

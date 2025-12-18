@@ -62,8 +62,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, MoreVertical, Check, ThumbsUp, ThumbsDown, MessageSquare, LoaderCircle, ChevronsUpDown, CalendarIcon } from 'lucide-react';
-import { format, addDays, startOfDay } from 'date-fns';
+import { PlusCircle, MoreVertical, Check, ThumbsUp, ThumbsDown, MessageSquare, LoaderCircle, ChevronsUpDown, CalendarIcon, Edit, Pencil } from 'lucide-react';
+import { format, addDays, startOfDay, parseISO } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -99,6 +99,7 @@ export default function TimeOffPage() {
     const [isLoading, setIsLoading] = useState(true);
     
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [requestToEdit, setRequestToEdit] = useState<LeaveRequest | null>(null);
     const [formData, setFormData] = useState<Partial<LeaveRequest>>({ leaveType: 'Vacation', status: 'Pending' });
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     const [startDate, setStartDate] = useState<Date | undefined>();
@@ -106,7 +107,7 @@ export default function TimeOffPage() {
     const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
     const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
 
-    const [requestToUpdate, setRequestToUpdate] = useState<{ request: LeaveRequest, newStatus: 'Approved' | 'Denied' } | null>(null);
+    const [requestToUpdateStatus, setRequestToUpdateStatus] = useState<{ request: LeaveRequest, newStatus: 'Approved' | 'Denied' } | null>(null);
     const [adminNotes, setAdminNotes] = useState('');
 
     const { user } = useAuth();
@@ -136,10 +137,21 @@ export default function TimeOffPage() {
         loadData();
     }, [loadData]);
     
-    const handleOpenForm = () => {
-        setFormData({ leaveType: 'Vacation', status: 'Pending' });
-        setStartDate(undefined);
-        setEndDate(undefined);
+    const handleOpenForm = (request: LeaveRequest | null = null) => {
+        setRequestToEdit(request);
+        if (request) {
+            setFormData({
+                workerId: request.workerId,
+                leaveType: request.leaveType,
+                reason: request.reason,
+            });
+            setStartDate(parseISO(request.startDate));
+            setEndDate(parseISO(request.endDate));
+        } else {
+            setFormData({ leaveType: 'Vacation', status: 'Pending' });
+            setStartDate(undefined);
+            setEndDate(undefined);
+        }
         setIsFormOpen(true);
     };
 
@@ -158,33 +170,46 @@ export default function TimeOffPage() {
             toast({ variant: 'destructive', title: 'Invalid Worker', description: 'Selected worker could not be found.'});
             return;
         }
-
-        const newRequestData: Omit<LeaveRequest, 'id'> = {
-            userId: user.uid,
-            workerId: worker.id,
-            workerName: worker.name,
-            leaveType: formData.leaveType || 'Personal',
-            startDate: format(startDate, 'yyyy-MM-dd'),
-            endDate: format(endDate, 'yyyy-MM-dd'),
-            reason: formData.reason || '',
-            status: 'Pending',
-        };
         
         try {
-            const newRequest = await addLeaveRequest(newRequestData);
-            setRequests(prev => [newRequest, ...prev]);
-            toast({ title: 'Request Submitted' });
+            if (requestToEdit) {
+                // Update existing request
+                const updatedData: Partial<LeaveRequest> = {
+                    leaveType: formData.leaveType || 'Personal',
+                    startDate: format(startDate, 'yyyy-MM-dd'),
+                    endDate: format(endDate, 'yyyy-MM-dd'),
+                    reason: formData.reason || '',
+                };
+                await updateLeaveRequest(requestToEdit.id, updatedData);
+                setRequests(prev => prev.map(r => r.id === requestToEdit.id ? { ...r, ...updatedData } : r));
+                toast({ title: 'Request Updated' });
+            } else {
+                // Add new request
+                const newRequestData: Omit<LeaveRequest, 'id'> = {
+                    userId: user.uid,
+                    workerId: worker.id,
+                    workerName: worker.name,
+                    leaveType: formData.leaveType || 'Personal',
+                    startDate: format(startDate, 'yyyy-MM-dd'),
+                    endDate: format(endDate, 'yyyy-MM-dd'),
+                    reason: formData.reason || '',
+                    status: 'Pending',
+                };
+                const newRequest = await addLeaveRequest(newRequestData);
+                setRequests(prev => [newRequest, ...prev]);
+                toast({ title: 'Request Submitted' });
+            }
             setIsFormOpen(false);
         } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
+             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         }
     };
     
     const handleUpdateStatus = async () => {
-        if (!requestToUpdate || !user) return;
+        if (!requestToUpdateStatus || !user) return;
         
         try {
-            const { request, newStatus } = requestToUpdate;
+            const { request, newStatus } = requestToUpdateStatus;
             
             const updateData: Partial<LeaveRequest> = {
                 status: newStatus,
@@ -199,8 +224,8 @@ export default function TimeOffPage() {
                 const calendarEventData = {
                     title: `${request.leaveType}: ${request.workerName}`,
                     start: startOfDay(new Date(request.startDate)),
-                    end: startOfDay(addDays(new Date(request.endDate), 1)), // Make it an all-day event for the range
-                    status: 'done' as const, // The leave itself is 'done' once approved
+                    end: startOfDay(addDays(new Date(request.endDate), 1)),
+                    status: 'done' as const,
                     isScheduled: true,
                     isBillable: false,
                     workerId: request.workerId,
@@ -216,7 +241,7 @@ export default function TimeOffPage() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
         } finally {
-            setRequestToUpdate(null);
+            setRequestToUpdateStatus(null);
             setAdminNotes('');
         }
     };
@@ -235,7 +260,7 @@ export default function TimeOffPage() {
                         <CardTitle>Leave Requests</CardTitle>
                         <CardDescription>All pending, approved, and denied time off requests.</CardDescription>
                     </div>
-                    <Button variant="outline" onClick={handleOpenForm}>
+                    <Button variant="outline" onClick={() => handleOpenForm()}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Request Time Off
                     </Button>
                 </CardHeader>
@@ -270,10 +295,13 @@ export default function TimeOffPage() {
                                                 <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdate({ request: req, newStatus: 'Approved'})}>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(req)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Request
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdateStatus({ request: req, newStatus: 'Approved'})}>
                                                     <ThumbsUp className="mr-2 h-4 w-4 text-green-600"/> Approve
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdate({ request: req, newStatus: 'Denied'})}>
+                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdateStatus({ request: req, newStatus: 'Denied'})}>
                                                     <ThumbsDown className="mr-2 h-4 w-4 text-red-600"/> Deny
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -290,7 +318,7 @@ export default function TimeOffPage() {
         
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogContent>
-                <DialogHeader><DialogTitle>Request Time Off</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{requestToEdit ? 'Edit' : 'Request'} Time Off</DialogTitle></DialogHeader>
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
                         <Label>Worker</Label>
@@ -355,17 +383,17 @@ export default function TimeOffPage() {
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveRequest}>Submit Request</Button>
+                    <Button onClick={handleSaveRequest}>{requestToEdit ? 'Save Changes' : 'Submit Request'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!requestToUpdate} onOpenChange={() => setRequestToUpdate(null)}>
+        <AlertDialog open={!!requestToUpdateStatus} onOpenChange={() => setRequestToUpdateStatus(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Confirm Action</AlertDialogTitle>
                     <AlertDialogDescription>
-                        You are about to {requestToUpdate?.newStatus.toLowerCase()} this request. You can add an optional note for the worker.
+                        You are about to {requestToUpdateStatus?.newStatus.toLowerCase()} this request. You can add an optional note for the worker.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="py-4">
@@ -374,7 +402,7 @@ export default function TimeOffPage() {
                 </div>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleUpdateStatus}>Confirm {requestToUpdate?.newStatus}</AlertDialogAction>
+                    <AlertDialogAction onClick={handleUpdateStatus}>Confirm {requestToUpdateStatus?.newStatus}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

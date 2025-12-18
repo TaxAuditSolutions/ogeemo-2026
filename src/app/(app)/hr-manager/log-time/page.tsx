@@ -174,11 +174,10 @@ export default function LogEmployeeTimePage() {
     return (
         <div className="p-4 sm:p-6 flex flex-col items-center h-full">
             <header className="w-full max-w-4xl mb-6">
-                <AccountingPageHeader pageTitle="Log Worker Time" hubPath="/hr-manager" hubLabel="HR Hub" />
+                <AccountingPageHeader pageTitle="Time Card Entry" hubPath="/hr-manager" hubLabel="HR Hub" />
             </header>
             <Card className="w-full max-w-4xl">
                 <CardHeader>
-                    <CardTitle>Time Card Entry</CardTitle>
                     <CardDescription>Select an employee and add one or more time entries. This will create time logs that can be used to calculate gross pay during a payroll run.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

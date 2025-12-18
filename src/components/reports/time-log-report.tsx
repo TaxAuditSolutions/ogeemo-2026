@@ -85,7 +85,8 @@ export function TimeLogReport() {
             ]);
             setWorkers(fetchedWorkers);
             setAllEntries(entries);
-            setDisplayedEntries(entries.filter(entry => (entry.duration || 0) > 0)); // Set initial display
+            // Default to showing all entries with a duration
+            setDisplayedEntries(entries.filter(entry => (entry.duration || 0) > 0));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -153,7 +154,7 @@ export function TimeLogReport() {
         <>
             <Card className="print:hidden">
                 <CardHeader>
-                    <CardTitle>Select a Worker & Date Range</CardTitle>
+                    <CardTitle>Select a Worker &amp; Date Range</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
@@ -307,3 +308,5 @@ export function TimeLogReport() {
         </>
     );
 }
+
+    

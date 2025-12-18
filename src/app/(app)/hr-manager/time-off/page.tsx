@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -71,6 +71,7 @@ import { getLeaveRequests, addLeaveRequest, updateLeaveRequest, type LeaveReques
 import { addTask } from '@/services/project-service';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 
 const LeaveTypeBadge = ({ type }: { type: string }) => {
@@ -137,6 +138,12 @@ export default function TimeOffPage() {
         loadData();
     }, [loadData]);
     
+    const { pendingRequests, requestHistory } = useMemo(() => {
+        const pending = requests.filter(r => r.status === 'Pending');
+        const history = requests.filter(r => r.status !== 'Pending');
+        return { pendingRequests: pending, requestHistory: history };
+    }, [requests]);
+
     const handleOpenForm = (request: LeaveRequest | null = null) => {
         setRequestToEdit(request);
         if (request) {
@@ -253,23 +260,72 @@ export default function TimeOffPage() {
             <header className="text-center">
                 <h1 className="text-3xl font-bold font-headline text-primary">Time Off &amp; Leave Management</h1>
                 <p className="text-muted-foreground">Review, approve, and manage all worker time off requests.</p>
-            </header>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Leave Requests</CardTitle>
-                        <CardDescription>All pending, approved, and denied time off requests.</CardDescription>
-                    </div>
+                 <div className="mt-4">
                     <Button variant="outline" onClick={() => handleOpenForm()}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Request Time Off
+                        <PlusCircle className="mr-2 h-4 w-4" /> Request Time Off on Behalf of Worker
                     </Button>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="h-64 flex items-center justify-center">
-                            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
+                </div>
+            </header>
+            
+            {isLoading ? (
+                 <div className="h-64 flex items-center justify-center">
+                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+            <>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pending Requests</CardTitle>
+                        <CardDescription>These requests need your attention.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Worker</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Dates</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingRequests.map(req => (
+                                <TableRow key={req.id}>
+                                    <TableCell className="font-medium">{req.workerName}</TableCell>
+                                    <TableCell><LeaveTypeBadge type={req.leaveType} /></TableCell>
+                                    <TableCell>{format(new Date(req.startDate), 'PP')} - {format(new Date(req.endDate), 'PP')}</TableCell>
+                                    <TableCell className="text-right space-x-2">
+                                        <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => setRequestToUpdateStatus({ request: req, newStatus: 'Approved'})}><ThumbsUp className="mr-2 h-4 w-4"/> Approve</Button>
+                                        <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setRequestToUpdateStatus({ request: req, newStatus: 'Denied'})}><ThumbsDown className="mr-2 h-4 w-4"/> Deny</Button>
+                                         <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(req)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Request
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                                {pendingRequests.length === 0 && (
+                                    <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No pending requests.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                <Separator />
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Request History</CardTitle>
+                        <CardDescription>A log of all approved and denied time off requests.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -278,42 +334,27 @@ export default function TimeOffPage() {
                                     <TableHead>Dates</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Approved By</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {requests.map(req => (
+                                {requestHistory.map(req => (
                                 <TableRow key={req.id}>
                                     <TableCell className="font-medium">{req.workerName}</TableCell>
                                     <TableCell><LeaveTypeBadge type={req.leaveType} /></TableCell>
                                     <TableCell>{format(new Date(req.startDate), 'PP')} - {format(new Date(req.endDate), 'PP')}</TableCell>
                                     <TableCell><StatusBadge status={req.status} /></TableCell>
                                     <TableCell>{req.approverName || 'N/A'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(req)}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Request
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdateStatus({ request: req, newStatus: 'Approved'})}>
-                                                    <ThumbsUp className="mr-2 h-4 w-4 text-green-600"/> Approve
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem disabled={req.status !== 'Pending'} onSelect={() => setRequestToUpdateStatus({ request: req, newStatus: 'Denied'})}>
-                                                    <ThumbsDown className="mr-2 h-4 w-4 text-red-600"/> Deny
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
                                 </TableRow>
                                 ))}
+                                 {requestHistory.length === 0 && (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No historical requests found.</TableCell></TableRow>
+                                )}
                             </TableBody>
                         </Table>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </>
+            )}
         </div>
         
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -378,7 +419,7 @@ export default function TimeOffPage() {
                     </div>
                      <div className="space-y-2">
                         <Label>Reason (Optional)</Label>
-                        <Textarea value={formData.reason || ''} onChange={e => setFormData(p => ({...p, reason: e.target.value}))} placeholder="Provide a brief reason for your request..." />
+                        <Textarea value={formData.reason || ''} onChange={e => setFormData(p => ({...p, reason: e.target.value}))} placeholder="Provide a brief reason for the request..." />
                     </div>
                 </div>
                 <DialogFooter>
@@ -409,4 +450,3 @@ export default function TimeOffPage() {
         </>
     );
 }
-    

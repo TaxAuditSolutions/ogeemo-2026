@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, Clock, PlusCircle } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ReportsPageHeader } from "@/components/reports/page-header";
 import { LogTimeDialog } from './log-time-dialog';
 
 
@@ -46,7 +47,7 @@ const formatTime = (totalSeconds: number) => {
     return `${hours}h ${minutes}m`;
 };
 
-const endOfDayFn = (date: Date) => {
+const endOfDay = (date: Date) => {
     const newDate = new Date(date);
     newDate.setHours(23, 59, 59, 999);
     return newDate;
@@ -98,24 +99,24 @@ export function TimeLogReport() {
     }, [loadData]);
     
     const handleViewLogs = () => {
-        let filteredEntries = allEntries;
+        let filtered = allEntries;
 
         // 1. Filter by worker
         if (selectedWorkerId && selectedWorkerId !== 'all') {
-            filteredEntries = allEntries.filter(entry => entry.workerId === selectedWorkerId);
+            filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
         }
 
         // 2. Filter by date range
         if (dateRange?.from) {
-            const toDate = dateRange.to ? endOfDayFn(dateRange.to) : endOfDayFn(dateRange.from);
-            filteredEntries = filteredEntries.filter(entry => {
+            const toDate = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+            filtered = filtered.filter(entry => {
                 if (!entry.start) return false;
                 const entryDate = new Date(entry.start);
                 return entryDate >= dateRange.from! && entryDate <= toDate;
             });
         }
         
-        setDisplayedEntries(filteredEntries);
+        setDisplayedEntries(filtered);
     };
 
 

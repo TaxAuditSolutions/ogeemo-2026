@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, Clock, PlusCircle } from 'lucide-react';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfDay } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -45,13 +45,6 @@ const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
 };
-
-const endOfDay = (date: Date) => {
-    const newDate = new Date(date);
-    newDate.setHours(23, 59, 59, 999);
-    return newDate;
-};
-
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -106,7 +99,7 @@ export function TimeLogReport() {
             filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
         }
 
-        // 2. Filter by date range on the result of the worker filter
+        // 2. Filter by date range
         if (dateRange?.from) {
             const toDate = dateRange.to || dateRange.from;
             filtered = filtered.filter(entry => {

@@ -47,6 +47,12 @@ import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay }
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 export interface StoredTimerState {
@@ -830,3 +836,4 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
 
 
     
+

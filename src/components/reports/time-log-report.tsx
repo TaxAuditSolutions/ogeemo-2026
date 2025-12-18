@@ -84,6 +84,10 @@ export function TimeLogReport() {
             ]);
             setWorkers(fetchedWorkers);
             setAllEntries(entries);
+            // Default to first worker if list is not empty, otherwise 'all'
+            if (fetchedWorkers.length > 0 && selectedWorkerId === 'all') {
+                // No need to set selectedWorkerId here anymore, default is 'all'
+            }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -96,13 +100,13 @@ export function TimeLogReport() {
     }, [loadData]);
     
     const filteredEntries = useMemo(() => {
-        const { from, to } = dateRange || {};
-
         let workerFilteredEntries = allEntries;
         if (selectedWorkerId !== 'all') {
             workerFilteredEntries = allEntries.filter(entry => entry.workerId === selectedWorkerId);
         }
         
+        const { from, to } = dateRange || {};
+
         return workerFilteredEntries
             .filter(entry => (entry.duration || 0) > 0)
             .filter(entry => {
@@ -300,4 +304,3 @@ export function TimeLogReport() {
         </>
     );
 }
-

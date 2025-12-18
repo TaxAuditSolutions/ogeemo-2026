@@ -77,7 +77,7 @@ export default function HrHubPage() {
       icon: Clock,
       title: "Admin Time Entry",
       description: "Manually enter or adjust hours for employees and contractors for payroll processing.",
-      href: "/hr-manager/log-time",
+      href: "/reports/time-log",
       cta: "Log Time",
     },
     {

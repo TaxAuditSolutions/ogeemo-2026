@@ -98,24 +98,24 @@ export function TimeLogReport() {
     }, [loadData]);
     
     const handleViewLogs = () => {
-        let filtered = allEntries;
+        let filteredEntries = allEntries;
 
         // 1. Filter by worker
         if (selectedWorkerId && selectedWorkerId !== 'all') {
-             filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
+            filteredEntries = allEntries.filter(entry => entry.workerId === selectedWorkerId);
         }
 
         // 2. Filter by date range
         if (dateRange?.from) {
             const toDate = dateRange.to ? endOfDayFn(dateRange.to) : endOfDayFn(dateRange.from);
-            filtered = filtered.filter(entry => {
+            filteredEntries = filteredEntries.filter(entry => {
                 if (!entry.start) return false;
                 const entryDate = new Date(entry.start);
                 return entryDate >= dateRange.from! && entryDate <= toDate;
             });
         }
         
-        setDisplayedEntries(filtered);
+        setDisplayedEntries(filteredEntries);
     };
 
 

@@ -99,22 +99,23 @@ export function TimeLogReport() {
     }, [loadData]);
     
     const handleViewLogs = () => {
-        let filtered = allEntries;
+        let filteredByWorker = allEntries;
 
-        if (selectedWorkerId !== 'all') {
-            filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
+        if (selectedWorkerId && selectedWorkerId !== 'all') {
+            filteredByWorker = allEntries.filter(entry => entry.workerId === selectedWorkerId);
         }
 
+        let filteredByDate = filteredByWorker;
         if (dateRange?.from) {
             const toDate = dateRange.to || dateRange.from;
-            filtered = filtered.filter(entry => {
+            filteredByDate = filteredByWorker.filter(entry => {
                 if (!entry.start) return false;
                 const entryDate = new Date(entry.start);
                 return entryDate >= dateRange.from! && entryDate <= endOfDay(toDate);
             });
         }
         
-        setDisplayedEntries(filtered.filter(entry => (entry.duration || 0) > 0));
+        setDisplayedEntries(filteredByDate.filter(entry => (entry.duration || 0) > 0));
     };
 
 

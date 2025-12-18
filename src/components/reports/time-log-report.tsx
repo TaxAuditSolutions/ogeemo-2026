@@ -246,7 +246,7 @@ export function TimeLogReport() {
                                 <TableBody>
                                     {displayedEntries.length > 0 ? displayedEntries.map(entry => {
                                         const workerName = workers.find(w => w.id === entry.workerId)?.name;
-                                        if (!workerName) return null; // Ensure we have a worker name
+                                        if (!workerName) return null; // Only render entries with a valid worker
                                         return (
                                             <TableRow key={entry.id}>
                                                 <TableCell>{workerName}</TableCell>

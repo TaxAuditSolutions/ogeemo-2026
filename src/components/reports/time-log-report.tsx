@@ -83,7 +83,7 @@ export function TimeLogReport() {
                 getTasksForUser(user.uid),
             ]);
             setWorkers(fetchedWorkers);
-            const timeLogEntries = entries.filter(entry => (entry.duration || 0) > 0);
+            const timeLogEntries = entries.filter(entry => (entry.duration || 0) > 0 && entry.workerId);
             setAllEntries(timeLogEntries);
             setDisplayedEntries(timeLogEntries); // Default to show all
         } catch (error: any) {
@@ -245,7 +245,8 @@ export function TimeLogReport() {
                                 </TableHeader>
                                 <TableBody>
                                     {displayedEntries.length > 0 ? displayedEntries.map(entry => {
-                                        const workerName = workers.find(w => w.id === entry.workerId)?.name || 'Unknown';
+                                        const workerName = workers.find(w => w.id === entry.workerId)?.name;
+                                        if (!workerName) return null; // Ensure we have a worker name
                                         return (
                                             <TableRow key={entry.id}>
                                                 <TableCell>{workerName}</TableCell>

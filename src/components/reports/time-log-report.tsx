@@ -46,6 +46,12 @@ const formatTime = (totalSeconds: number) => {
     return `${hours}h ${minutes}m`;
 };
 
+const endOfDayFn = (date: Date) => {
+    const newDate = new Date(date);
+    newDate.setHours(23, 59, 59, 999);
+    return newDate;
+};
+
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
@@ -77,9 +83,9 @@ export function TimeLogReport() {
                 getTasksForUser(user.uid),
             ]);
             setWorkers(fetchedWorkers);
-            setAllEntries(entries);
-            // Default to showing all entries with a duration
-            setDisplayedEntries(entries.filter(entry => (entry.duration || 0) > 0));
+            const timeLogEntries = entries.filter(entry => (entry.duration || 0) > 0);
+            setAllEntries(timeLogEntries);
+            setDisplayedEntries(timeLogEntries); // Default to show all
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -105,11 +111,11 @@ export function TimeLogReport() {
             filtered = filtered.filter(entry => {
                 if (!entry.start) return false;
                 const entryDate = new Date(entry.start);
-                return entryDate >= dateRange.from! && entryDate <= endOfDay(toDate);
+                return entryDate >= dateRange.from! && entryDate <= endOfDayFn(toDate);
             });
         }
         
-        setDisplayedEntries(filtered.filter(entry => (entry.duration || 0) > 0));
+        setDisplayedEntries(filtered);
     };
 
 
@@ -283,9 +289,7 @@ export function TimeLogReport() {
                 onOpenChange={setIsLogTimeDialogOpen}
                 workerId={selectedWorkerId !== 'all' ? selectedWorkerId : null}
                 workers={workers}
-                onTimeLogged={() => {
-                    loadData(); // Refresh data after logging time
-                }}
+                onTimeLogged={loadData}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

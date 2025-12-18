@@ -292,7 +292,9 @@
         "reason": { "type": "string" },
         "status": { "type": "string", "enum": ["Pending", "Approved", "Denied"] },
         "adminNotes": { "type": "string" },
-        "userId": { "type": "string" }
+        "userId": { "type": "string" },
+        "approverId": { "type": "string" },
+        "approverName": { "type": "string" }
       },
       "required": ["workerId", "workerName", "leaveType", "startDate", "endDate", "status", "userId"]
     }

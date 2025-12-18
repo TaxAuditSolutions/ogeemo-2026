@@ -25,6 +25,8 @@ export interface LeaveRequest {
   status: 'Pending' | 'Approved' | 'Denied';
   adminNotes?: string;
   userId: string;
+  approverId?: string;
+  approverName?: string;
 }
 
 const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';

@@ -185,7 +185,15 @@ export default function TimeOffPage() {
         
         try {
             const { request, newStatus } = requestToUpdate;
-            await updateLeaveRequest(request.id, { status: newStatus, adminNotes });
+            
+            const updateData: Partial<LeaveRequest> = {
+                status: newStatus,
+                adminNotes,
+                approverId: user.uid,
+                approverName: user.displayName || user.email || 'Admin',
+            };
+
+            await updateLeaveRequest(request.id, updateData);
             
             if (newStatus === 'Approved') {
                 const calendarEventData = {
@@ -203,7 +211,7 @@ export default function TimeOffPage() {
                 await addTask(calendarEventData);
             }
             
-            setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: newStatus, adminNotes } : r));
+            setRequests(prev => prev.map(r => r.id === request.id ? { ...r, ...updateData } : r));
             toast({ title: 'Request Updated', description: `The request has been ${newStatus.toLowerCase()}.` });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -244,6 +252,7 @@ export default function TimeOffPage() {
                                     <TableHead>Type</TableHead>
                                     <TableHead>Dates</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Approved By</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -254,6 +263,7 @@ export default function TimeOffPage() {
                                     <TableCell><LeaveTypeBadge type={req.leaveType} /></TableCell>
                                     <TableCell>{format(new Date(req.startDate), 'PP')} - {format(new Date(req.endDate), 'PP')}</TableCell>
                                     <TableCell><StatusBadge status={req.status} /></TableCell>
+                                    <TableCell>{req.approverName || 'N/A'}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>

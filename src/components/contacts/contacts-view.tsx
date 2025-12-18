@@ -224,8 +224,9 @@ export function ContactsView() {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
       } else {
-          setContacts(prev => [...prev, savedContact]);
+          setContacts(prev => [savedContact, ...prev]);
       }
+      setIsContactFormOpen(false);
   };
   
   const handleConfirmDeleteContact = async () => {
@@ -400,7 +401,7 @@ export function ContactsView() {
     if (!user || !newFolderName.trim()) return;
     try {
         const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: newFolderParentId });
-        onFoldersChange([...folders, newFolder]);
+        setFolders(prev => [...prev, newFolder]);
         handleSelectFolder(newFolder.id);
     } catch(e: any) { toast({ variant: "destructive", title: "Failed", description: (e as Error).message }); }
     finally { setIsNewFolderDialogOpen(false); setNewFolderName(""); }

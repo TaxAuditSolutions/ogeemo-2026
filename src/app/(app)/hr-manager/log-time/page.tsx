@@ -178,7 +178,7 @@ export default function LogEmployeeTimePage() {
             </header>
             <Card className="w-full max-w-4xl">
                 <CardHeader>
-                    <CardTitle>New Time Card Entry</CardTitle>
+                    <CardTitle>Time Card Entry</CardTitle>
                     <CardDescription>Select an employee and add one or more time entries. This will create time logs that can be used to calculate gross pay during a payroll run.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

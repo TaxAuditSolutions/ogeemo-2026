@@ -226,7 +226,20 @@ export default function LogEmployeeTimePage() {
                                                 {entry.date ? format(new Date(entry.date), "PPP") : <span>Pick a date</span>}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={entry.date ? new Date(entry.date) : undefined} onSelect={(date) => date && handleEntryChange(entry.id, 'date', format(date, 'yyyy-MM-dd'))} initialFocus /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar 
+                                                mode="single" 
+                                                selected={entry.date ? new Date(entry.date) : undefined} 
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        // Adjust for timezone offset
+                                                        const adjustedDate = new Date(date.getTime() - (date.getTimezoneOffset() * -60000));
+                                                        handleEntryChange(entry.id, 'date', format(adjustedDate, 'yyyy-MM-dd'));
+                                                    }
+                                                }}
+                                                initialFocus 
+                                            />
+                                        </PopoverContent>
                                     </Popover>
                                 </div>
                                 <div className="space-y-2">

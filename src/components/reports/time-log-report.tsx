@@ -208,7 +208,7 @@ const LogTimeDialog = ({
                     <Separator />
 
                     <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                        {timeEntries.map((entry) => (
+                        {timeEntries.map((entry, index) => (
                             <div key={entry.id} className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_2fr_auto] gap-4 items-end border p-4 rounded-lg">
                                 <div className="space-y-2">
                                     <Label htmlFor={`log-date-${entry.id}`}>Date</Label>
@@ -294,8 +294,7 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
     const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
@@ -322,6 +321,9 @@ export function TimeLogReport() {
             ]);
             setWorkers(fetchedWorkers);
             setAllEntries(entries);
+            if (fetchedWorkers.length > 0) {
+                setSelectedWorkerId(fetchedWorkers[0].id);
+            }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -438,8 +440,10 @@ export function TimeLogReport() {
             <div ref={contentRef}>
                 <Card className="print:border-none print:shadow-none">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Summary of Logged Times</CardTitle>
-                        <CardDescription>Time Log Events. Click the Log a time entry to add a new event.</CardDescription>
+                        <CardTitle className="text-2xl">Time Log Report for {selectedWorker?.name || "..."}</CardTitle>
+                        <CardDescription>
+                            {startDate ? endDate ? `${format(startDate, "PPP")} to ${format(endDate, "PPP")}` : `On ${format(startDate, "PPP")}` : "All Time"}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -519,3 +523,4 @@ export function TimeLogReport() {
     );
 }
 
+    

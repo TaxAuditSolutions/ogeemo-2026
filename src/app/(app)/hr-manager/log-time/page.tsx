@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -47,7 +46,7 @@ const emptyLogEntry: Omit<TimeLogEntry, 'id'> = {
 export default function LogEmployeeTimePage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [timeEntries, setTimeEntries] = useState<TimeLogEntry[]>([{ id: Date.now(), ...emptyLogEntry }]);
     
     const [isSaving, setIsSaving] = useState(false);
@@ -98,7 +97,7 @@ export default function LogEmployeeTimePage() {
     };
 
     const handleSaveAllLogs = async () => {
-        if (!user || !selectedWorkerId) {
+        if (!user || !selectedEmployeeId) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker.' });
             return;
         }
@@ -128,12 +127,12 @@ export default function LogEmployeeTimePage() {
                 const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
                 
                 const taskData = {
-                    title: `Time Log: ${workers.find(e => e.id === selectedWorkerId)?.name}`,
+                    title: `Time Log: ${workers.find(e => e.id === selectedEmployeeId)?.name}`,
                     description: entry.description,
                     start: startTime,
                     end: endTime,
                     duration: durationSeconds,
-                    workerId: selectedWorkerId,
+                    workerId: selectedEmployeeId,
                     userId: user.uid,
                     status: 'done' as const,
                     isBillable: false,
@@ -189,7 +188,7 @@ export default function LogEmployeeTimePage() {
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    {selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}
+                                    {selectedEmployeeId ? workers.find(e => e.id === selectedEmployeeId)?.name : "Select a worker..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -200,8 +199,8 @@ export default function LogEmployeeTimePage() {
                                         <CommandEmpty>No worker found.</CommandEmpty>
                                         <CommandGroup>
                                             {workers.map(emp => (
-                                                <CommandItem key={emp.id} value={emp.name} onSelect={() => { setSelectedWorkerId(emp.id); setIsWorkerPopoverOpen(false); }}>
-                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === emp.id ? "opacity-100" : "opacity-0")} />
+                                                <CommandItem key={emp.id} value={emp.name} onSelect={() => { setSelectedEmployeeId(emp.id); setIsWorkerPopoverOpen(false); }}>
+                                                    <Check className={cn("mr-2 h-4 w-4", selectedEmployeeId === emp.id ? "opacity-100" : "opacity-0")} />
                                                     {emp.name}
                                                 </CommandItem>
                                             ))}
@@ -293,4 +292,3 @@ export default function LogEmployeeTimePage() {
         </div>
     );
 }
-

@@ -15,6 +15,7 @@ import {
   startOfWeek,
   eachDayOfInterval,
   parseISO,
+  endOfDay,
 } from 'date-fns';
 import {
   ChevronLeft,
@@ -90,6 +91,27 @@ const CALENDAR_DAY_COUNT_KEY = 'calendarDayCount';
 const CALENDAR_START_HOUR_KEY = 'calendarStartHour';
 const CALENDAR_END_HOUR_KEY = 'calendarEndHour';
 const CALENDAR_SLOTS_CONFIG_KEY = 'calendarSlotsConfig';
+
+const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDrop: (item: Event) => void, children: React.ReactNode, onClick: () => void }) => {
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+        accept: ItemTypes.EVENT,
+        drop: (item: Event) => onDrop(item),
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop(),
+        }),
+    }));
+
+    return (
+        <div 
+            ref={drop} 
+            onClick={onClick}
+            className={cn("h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
+        >
+            {children}
+        </div>
+    );
+};
 
 export function CalendarView() {
   const [isClient, setIsClient] = React.useState(false);
@@ -266,11 +288,23 @@ export function CalendarView() {
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new time.'});
       }
   };
+
+  const handleAllDayDrop = async (item: Event, date: Date) => {
+    if (!item.id) return;
+    const newStart = startOfDay(date);
+    const newEnd = endOfDay(date);
+    try {
+        await updateTask(item.id, { start: newStart, end: newEnd });
+        toast({ title: "Event Updated", description: `"${item.title}" is now an all-day event for ${format(newStart, 'PPP')}.`});
+        await loadEvents();
+    } catch (error: any) {
+        console.error("Failed to update event to all-day:", error);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not make the event all-day.' });
+    }
+  };
   
   const isAllDayEvent = (event: Event): boolean => {
     if (!event.start || !event.end) return false;
-    // An all-day event should ideally not have specific times and span at least one full day.
-    // The check for differenceInMinutes is a more robust way to identify all-day events.
     return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
   };
   
@@ -558,7 +592,7 @@ export function CalendarView() {
                 return (
                     <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
                         <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
-                        <div className="h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors" onClick={() => handleAllDayClick(date)}>
+                        <AllDayDropZone date={date} onDrop={(item) => handleAllDayDrop(item, date)} onClick={() => handleAllDayClick(date)}>
                             {allDayEvents.map(event => (
                                 <CalendarEvent
                                     key={event.id}
@@ -568,7 +602,7 @@ export function CalendarView() {
                                     onToggleComplete={handleToggleComplete}
                                 />
                             ))}
-                        </div>
+                        </AllDayDropZone>
                     </div>
                 );
               })}

@@ -56,6 +56,7 @@ const endOfDay = (date: Date) => {
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
+    const [displayedEntries, setDisplayedEntries] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string>('all');
@@ -84,10 +85,7 @@ export function TimeLogReport() {
             ]);
             setWorkers(fetchedWorkers);
             setAllEntries(entries);
-            // Default to first worker if list is not empty, otherwise 'all'
-            if (fetchedWorkers.length > 0 && selectedWorkerId === 'all') {
-                // No need to set selectedWorkerId here anymore, default is 'all'
-            }
+            setDisplayedEntries(entries.filter(entry => (entry.duration || 0) > 0)); // Set initial display
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -99,26 +97,27 @@ export function TimeLogReport() {
         loadData();
     }, [loadData]);
     
-    const filteredEntries = useMemo(() => {
-        let workerFilteredEntries = allEntries;
+    const handleViewLogs = () => {
+        let filtered = allEntries;
+
         if (selectedWorkerId !== 'all') {
-            workerFilteredEntries = allEntries.filter(entry => entry.workerId === selectedWorkerId);
+            filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
+        }
+
+        if (dateRange?.from) {
+            const toDate = dateRange.to || dateRange.from;
+            filtered = filtered.filter(entry => {
+                if (!entry.start) return false;
+                const entryDate = new Date(entry.start);
+                return entryDate >= dateRange.from! && entryDate <= endOfDay(toDate);
+            });
         }
         
-        const { from, to } = dateRange || {};
-
-        return workerFilteredEntries
-            .filter(entry => (entry.duration || 0) > 0)
-            .filter(entry => {
-                if (!from || !entry.start) return true;
-                const entryDate = new Date(entry.start);
-                const toDate = to || from;
-                return entryDate >= from && entryDate <= endOfDay(toDate);
-            });
-    }, [selectedWorkerId, allEntries, dateRange]);
+        setDisplayedEntries(filtered.filter(entry => (entry.duration || 0) > 0));
+    };
 
 
-    const totalDuration = useMemo(() => filteredEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [filteredEntries]);
+    const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
     
     const setMonthToDate = () => setDateRange({ from: startOfMonth(new Date()), to: new Date() });
     
@@ -135,6 +134,7 @@ export function TimeLogReport() {
         try {
             await deleteTask(entryToDelete.id);
             setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
+            setDisplayedEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Delete Failed", description: error.message });
@@ -155,7 +155,7 @@ export function TimeLogReport() {
                 <CardHeader>
                     <CardTitle>Select a Worker & Date Range</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>Worker</Label>
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
@@ -205,6 +205,9 @@ export function TimeLogReport() {
                         <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
                         <Button variant="ghost" onClick={clearDates} className="w-full">Clear Date</Button>
                     </div>
+                    <div className="flex items-end gap-2">
+                        <Button onClick={handleViewLogs} className="w-full">View Logs</Button>
+                    </div>
                 </CardContent>
                  <CardFooter>
                     <Button onClick={handleLogTimeClick}>
@@ -237,7 +240,7 @@ export function TimeLogReport() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredEntries.length > 0 ? filteredEntries.map(entry => {
+                                    {displayedEntries.length > 0 ? displayedEntries.map(entry => {
                                         const workerName = workers.find(w => w.id === entry.workerId)?.name || 'Unknown';
                                         return (
                                             <TableRow key={entry.id}>

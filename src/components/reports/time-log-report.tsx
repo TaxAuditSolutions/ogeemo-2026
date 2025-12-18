@@ -102,7 +102,7 @@ export function TimeLogReport() {
 
         // 1. Filter by worker
         if (selectedWorkerId && selectedWorkerId !== 'all') {
-            filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
+             filtered = filtered.filter(entry => entry.workerId === selectedWorkerId);
         }
 
         // 2. Filter by date range
@@ -250,7 +250,7 @@ export function TimeLogReport() {
                                             <TableRow key={entry.id}>
                                                 <TableCell>{workerName}</TableCell>
                                                 <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                <TableCell>{entry.title}</TableCell>
+                                                <TableCell>{entry.description || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
                                                 <TableCell className="print:hidden">
                                                     <DropdownMenu>

@@ -29,6 +29,7 @@ import {
   BrainCircuit,
   Plus,
   ChevronDown,
+  ArrowRight,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -294,7 +295,7 @@ export function CalendarView() {
     const newStart = startOfDay(date);
     const newEnd = endOfDay(date);
     try {
-        await updateTask(item.id, { start: newStart, end: newEnd });
+        await updateTask(item.id, { start: newStart, end: newEnd, isScheduled: true });
         toast({ title: "Event Updated", description: `"${item.title}" is now an all-day event for ${format(newStart, 'PPP')}.`});
         await loadEvents();
     } catch (error: any) {
@@ -313,7 +314,6 @@ export function CalendarView() {
   }
   
   const TimeSlot = ({ date, hour, slot, slotsPerHour }: { date: Date; hour: number; slot: number, slotsPerHour: number }) => {
-    const slotDuration = 60 / slotsPerHour;
     const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
     const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
     
@@ -584,7 +584,10 @@ export function CalendarView() {
 
         <div className="flex flex-1 min-h-0 border-black border rounded-lg overflow-hidden flex-col bg-white">
           <div className="grid grid-cols-[5rem,1fr] flex-shrink-0">
-            <div className="border-r-black border-r border-b border-b-black h-auto"></div>
+            <div className="border-r-black border-r border-b border-b-black h-auto flex flex-col items-center justify-center p-1 text-center">
+                <p className="text-xs font-semibold leading-tight">All Day Events</p>
+                <ArrowRight className="h-4 w-4 mt-1" />
+            </div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))` }}>
               {visibleDates.map((date, index) => {
                 const dayEvents = getEventsForDay(date);

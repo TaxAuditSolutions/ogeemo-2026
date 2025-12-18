@@ -12,13 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, Clock, PlusCircle } from 'lucide-react';
-import { format, startOfMonth, set } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent, addTask } from '@/services/project-service';
+import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -36,7 +36,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogTimeDialog } from './log-time-dialog';
 
 
 const formatTime = (totalSeconds: number) => {
@@ -61,11 +60,8 @@ export function TimeLogReport() {
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
-    const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
-    const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
-    const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -101,15 +97,15 @@ export function TimeLogReport() {
     
     const filteredEntries = useMemo(() => {
         if (!selectedWorkerId) return [];
-        const { from: startDate, to: endDate } = dateRange || {};
+        const { from, to } = dateRange || {};
         
         return allEntries
             .filter(entry => entry.workerId === selectedWorkerId && (entry.duration || 0) > 0)
             .filter(entry => {
-                if (!startDate || !entry.start) return true;
+                if (!from || !entry.start) return true;
                 const entryDate = new Date(entry.start);
-                const toDate = endDate || startDate;
-                return entryDate >= startDate && entryDate <= endOfDay(toDate);
+                const toDate = to || from;
+                return entryDate >= from && entryDate <= endOfDay(toDate);
             });
     }, [selectedWorkerId, allEntries, dateRange]);
 
@@ -140,6 +136,13 @@ export function TimeLogReport() {
     
     const selectedWorker = workers.find(c => c.id === selectedWorkerId);
 
+    const handleLogTimeClick = () => {
+        const url = selectedWorkerId
+            ? `/hr-manager/log-time?workerId=${selectedWorkerId}`
+            : '/hr-manager/log-time';
+        router.push(url);
+    };
+
     return (
         <>
             <Card className="print:hidden">
@@ -164,26 +167,26 @@ export function TimeLogReport() {
                     <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
                             <Label>Start Date</Label>
-                            <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
+                            <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({...prev, from: date})); setIsStartPopoverOpen(false); }} disabled={(date) => dateRange?.to ? date > dateRange.to : false} initialFocus /></PopoverContent>
+                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({...prev, from: date})); }} disabled={(date) => dateRange?.to ? date > dateRange.to : false} initialFocus /></PopoverContent>
                             </Popover>
                         </div>
                         <div className="space-y-2">
                             <Label>End Date</Label>
-                            <Popover open={isEndPopoverOpen} onOpenChange={setIsEndPopoverOpen}>
+                            <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({...prev, to: date})); setIsEndPopoverOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus /></PopoverContent>
+                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({...prev, to: date})); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus /></PopoverContent>
                             </Popover>
                         </div>
                         <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
@@ -191,7 +194,7 @@ export function TimeLogReport() {
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={() => setIsLogTimeDialogOpen(true)} disabled={!selectedWorkerId}>
+                    <Button onClick={handleLogTimeClick} disabled={!selectedWorkerId}>
                         <Clock className="mr-2 h-4 w-4" />
                         Log a Time Entry
                     </Button>
@@ -260,14 +263,6 @@ export function TimeLogReport() {
                 </Card>
             </div>
             
-            <LogTimeDialog 
-                isOpen={isLogTimeDialogOpen}
-                onOpenChange={setIsLogTimeDialogOpen}
-                workers={workers}
-                initialWorkerId={selectedWorkerId}
-                onLogSuccess={loadData}
-            />
-
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -283,4 +278,3 @@ export function TimeLogReport() {
         </>
     );
 }
-

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -11,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, Pencil, Trash2, BookOpen, Clock, PlusCircle } from 'lucide-react';
-import { format, startOfMonth, endOfDay } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -106,11 +107,11 @@ export function TimeLogReport() {
 
         // 2. Filter by date range
         if (dateRange?.from) {
-            const toDate = dateRange.to || dateRange.from;
+            const toDate = dateRange.to ? endOfDayFn(dateRange.to) : endOfDayFn(dateRange.from);
             filtered = filtered.filter(entry => {
                 if (!entry.start) return false;
                 const entryDate = new Date(entry.start);
-                return entryDate >= dateRange.from! && entryDate <= endOfDayFn(toDate);
+                return entryDate >= dateRange.from! && entryDate <= toDate;
             });
         }
         
@@ -132,12 +133,14 @@ export function TimeLogReport() {
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
+        const originalEntries = [...allEntries];
         try {
             await deleteTask(entryToDelete.id);
             // Refresh all data to ensure consistency
             await loadData();
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
+            setAllEntries(originalEntries);
             toast({ variant: "destructive", title: "Delete Failed", description: error.message });
         } finally {
             setEntryToDelete(null);
@@ -154,7 +157,7 @@ export function TimeLogReport() {
         <>
             <Card className="print:hidden">
                 <CardHeader>
-                    <CardTitle>Select a Worker & Date Range</CardTitle>
+                    <CardTitle>Report Filters</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
@@ -204,7 +207,7 @@ export function TimeLogReport() {
                             </Popover>
                         </div>
                         <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
-                        <Button variant="ghost" onClick={clearDates} className="w-full">Clear Date</Button>
+                        <Button variant="ghost" onClick={clearDates} className="w-full">All Dates</Button>
                     </div>
                     <div className="flex items-end gap-2">
                         <Button onClick={handleViewLogs} className="w-full">View Logs</Button>
@@ -306,5 +309,3 @@ export function TimeLogReport() {
         </>
     );
 }
-
-    

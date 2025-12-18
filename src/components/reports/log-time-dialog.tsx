@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,13 +16,16 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
 import { addTask } from '@/services/project-service';
-import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
+import { LoaderCircle, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, set } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { type Worker } from '@/services/payroll-service';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+
 
 interface TimeLogEntry {
     id: number;
@@ -42,15 +45,27 @@ const emptyLogEntry: Omit<TimeLogEntry, 'id'> = {
 interface LogTimeDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    workerId: string;
+    workerId: string | null;
+    workers: Worker[];
     onTimeLogged: () => void; // Callback to refresh the report
 }
 
-export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: LogTimeDialogProps) {
+export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId, workers, onTimeLogged }: LogTimeDialogProps) {
     const [timeEntries, setTimeEntries] = useState<TimeLogEntry[]>([{ id: Date.now(), ...emptyLogEntry }]);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(initialWorkerId);
+    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
+
     const { user } = useAuth();
     const { toast } = useToast();
+    
+    useEffect(() => {
+        setSelectedWorkerId(initialWorkerId);
+        if (isOpen) {
+            setTimeEntries([{ id: Date.now(), ...emptyLogEntry }]);
+        }
+    }, [isOpen, initialWorkerId]);
+
 
     const handleAddEntry = () => {
         setTimeEntries(prev => [...prev, { id: Date.now(), ...emptyLogEntry }]);
@@ -74,8 +89,8 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: 
     };
 
     const handleSaveAllLogs = async () => {
-        if (!user || !workerId) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Cannot log time without a worker.' });
+        if (!user || !selectedWorkerId) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select an employee.' });
             return;
         }
         if (timeEntries.length === 0) {
@@ -104,12 +119,12 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: 
                 const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
                 
                 const taskData = {
-                    title: `Time Log: ${entry.description || 'General Work'}`,
+                    title: `Time Log: ${workers.find(e => e.id === selectedWorkerId)?.name}`,
                     description: entry.description,
                     start: startTime,
                     end: endTime,
                     duration: durationSeconds,
-                    workerId: workerId,
+                    workerId: selectedWorkerId,
                     userId: user.uid,
                     status: 'done' as const,
                     isBillable: false,
@@ -124,7 +139,6 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: 
                 toast({ title: "Time Logged Successfully", description: `${successfulLogs} time entries have been saved.` });
                 onTimeLogged(); // Call the callback to refresh the report
                 onOpenChange(false); // Close the dialog
-                setTimeEntries([{ id: Date.now(), ...emptyLogEntry }]); // Reset form
             }
 
         } catch (error: any) {
@@ -147,6 +161,22 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: 
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                    
+                    <div className="space-y-2 max-w-sm">
+                        <Label>Employee / Contractor</Label>
+                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                    {selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>No worker found.</CommandEmpty><CommandGroup>{workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
                     {timeEntries.map((entry) => (
                         <div key={entry.id} className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_2fr_auto] gap-4 items-end border p-4 rounded-lg">
                             <div className="space-y-2">
@@ -213,4 +243,3 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId, onTimeLogged }: 
         </Dialog>
     );
 }
-

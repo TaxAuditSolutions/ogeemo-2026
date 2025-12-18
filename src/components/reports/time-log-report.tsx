@@ -58,7 +58,7 @@ export function TimeLogReport() {
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
-    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     
@@ -84,26 +84,27 @@ export function TimeLogReport() {
             ]);
             setWorkers(fetchedWorkers);
             setAllEntries(entries);
-            if (fetchedWorkers.length > 0 && !selectedWorkerId) {
-                setSelectedWorkerId(fetchedWorkers[0].id);
-            }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast, selectedWorkerId]);
+    }, [user, toast]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
     
     const filteredEntries = useMemo(() => {
-        if (!selectedWorkerId) return [];
         const { from, to } = dateRange || {};
+
+        let workerFilteredEntries = allEntries;
+        if (selectedWorkerId !== 'all') {
+            workerFilteredEntries = allEntries.filter(entry => entry.workerId === selectedWorkerId);
+        }
         
-        return allEntries
-            .filter(entry => entry.workerId === selectedWorkerId && (entry.duration || 0) > 0)
+        return workerFilteredEntries
+            .filter(entry => (entry.duration || 0) > 0)
             .filter(entry => {
                 if (!from || !entry.start) return true;
                 const entryDate = new Date(entry.start);
@@ -111,6 +112,7 @@ export function TimeLogReport() {
                 return entryDate >= from && entryDate <= endOfDay(toDate);
             });
     }, [selectedWorkerId, allEntries, dateRange]);
+
 
     const totalDuration = useMemo(() => filteredEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [filteredEntries]);
     
@@ -155,12 +157,19 @@ export function TimeLogReport() {
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    {selectedWorker?.name || "Select worker..."}
+                                    {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty><CommandGroup>{workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
+                                <CommandGroup>
+                                    <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
+                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
+                                    </CommandItem>
+                                    {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
+                                </CommandGroup>
+                                </CommandList></Command>
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -194,7 +203,7 @@ export function TimeLogReport() {
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button onClick={handleLogTimeClick} disabled={!selectedWorkerId}>
+                    <Button onClick={handleLogTimeClick}>
                         <Clock className="mr-2 h-4 w-4" />
                         Log a Time Entry
                     </Button>
@@ -204,7 +213,7 @@ export function TimeLogReport() {
             <div ref={contentRef}>
                 <Card className="print:border-none print:shadow-none">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Time Log Report for {selectedWorker?.name || "..."}</CardTitle>
+                        <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
                         <CardDescription>
                             {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
                         </CardDescription>
@@ -212,10 +221,11 @@ export function TimeLogReport() {
                     <CardContent>
                         {isLoading ? (
                             <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
-                        ) : selectedWorkerId ? (
+                        ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>Worker</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Description</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
@@ -223,39 +233,41 @@ export function TimeLogReport() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredEntries.length > 0 ? filteredEntries.map(entry => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                            <TableCell>{entry.title}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                            <TableCell className="print:hidden">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow><TableCell colSpan={4} className="h-24 text-center">No time entries found for this worker and period.</TableCell></TableRow>
+                                    {filteredEntries.length > 0 ? filteredEntries.map(entry => {
+                                        const workerName = workers.find(w => w.id === entry.workerId)?.name || 'Unknown';
+                                        return (
+                                            <TableRow key={entry.id}>
+                                                <TableCell>{workerName}</TableCell>
+                                                <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                                <TableCell>{entry.title}</TableCell>
+                                                <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
+                                                <TableCell className="print:hidden">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    }) : (
+                                        <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found for this selection.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                                 <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={2} className="font-bold">Total Logged Time</TableCell>
+                                        <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
                                         <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
                                         <TableCell className="print:hidden"/>
                                     </TableRow>
                                 </TableFooter>
                             </Table>
-                        ) : (
-                            <div className="h-48 flex items-center justify-center"><p className="text-muted-foreground">Please select a worker to generate a report.</p></div>
                         )}
                     </CardContent>
                     <CardFooter className="print:hidden justify-end space-x-2">
-                        <Button variant="outline" onClick={handlePrint} disabled={!selectedWorkerId}>
+                        <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
                             <Printer className="mr-2 h-4 w-4" />
                             Print Report
                         </Button>
@@ -263,14 +275,15 @@ export function TimeLogReport() {
                 </Card>
             </div>
             
-            {selectedWorkerId && (
-              <LogTimeDialog 
+            <LogTimeDialog 
                 isOpen={isLogTimeDialogOpen}
                 onOpenChange={setIsLogTimeDialogOpen}
-                workerId={selectedWorkerId}
-                onTimeLogged={loadData} // Refresh data after logging
-              />
-            )}
+                workerId={selectedWorkerId !== 'all' ? selectedWorkerId : null}
+                workers={workers}
+                onTimeLogged={() => {
+                    loadData(); // Refresh data after logging time
+                }}
+            />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
@@ -287,3 +300,4 @@ export function TimeLogReport() {
         </>
     );
 }
+

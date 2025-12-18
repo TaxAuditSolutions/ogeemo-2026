@@ -284,7 +284,7 @@ export default function LogEmployeeTimePage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleSaveAllLogs} disabled={isSaving || !selectedWorkerId} className="w-full">
+                    <Button onClick={handleSaveAllLogs} disabled={isSaving || !selectedEmployeeId} className="w-full">
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                         Log All Entries ({timeEntries.length})
                     </Button>
@@ -293,3 +293,4 @@ export default function LogEmployeeTimePage() {
         </div>
     );
 }
+

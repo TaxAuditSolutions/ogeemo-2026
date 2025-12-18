@@ -181,7 +181,7 @@ export default function TimeOffPage() {
                     reason: formData.reason || '',
                 };
                 await updateLeaveRequest(requestToEdit.id, updatedData);
-                setRequests(prev => prev.map(r => r.id === requestToEdit.id ? { ...r, ...updatedData } : r));
+                setRequests(prev => prev.map(r => r.id === requestToEdit.id ? { ...r, ...updatedData } as LeaveRequest : r));
                 toast({ title: 'Request Updated' });
             } else {
                 // Add new request
@@ -236,7 +236,7 @@ export default function TimeOffPage() {
                 await addTask(calendarEventData);
             }
             
-            setRequests(prev => prev.map(r => r.id === request.id ? { ...r, ...updateData } : r));
+            setRequests(prev => prev.map(r => r.id === request.id ? { ...r, ...updateData } as LeaveRequest : r));
             toast({ title: 'Request Updated', description: `The request has been ${newStatus.toLowerCase()}.` });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -409,3 +409,5 @@ export default function TimeOffPage() {
         </>
     );
 }
+
+    

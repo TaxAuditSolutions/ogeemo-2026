@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -21,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, set } from 'date-fns';
+import { format, set, parseISO } from 'date-fns';
 import { ChevronsUpDown, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -114,9 +115,7 @@ export default function LogEmployeeTimePage() {
                     continue;
                 }
                 
-                const logDate = new Date(entry.date);
-                // The fix for the timezone issue
-                logDate.setUTCHours(12);
+                const logDate = parseISO(entry.date);
 
                 const startTime = set(logDate, { hours: parseInt(entry.startTime.hour), minutes: parseInt(entry.startTime.minute) });
                 const endTime = set(logDate, { hours: parseInt(entry.endTime.hour), minutes: parseInt(entry.endTime.minute) });
@@ -215,21 +214,19 @@ export default function LogEmployeeTimePage() {
                                         <PopoverTrigger asChild>
                                             <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !entry.date && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {entry.date ? format(new Date(entry.date), "PPP") : <span>Pick a date</span>}
+                                                {entry.date ? format(parseISO(entry.date), "PPP") : <span>Pick a date</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar 
-                                                mode="single" 
-                                                selected={entry.date ? new Date(entry.date) : undefined} 
+                                            <Calendar
+                                                mode="single"
+                                                selected={entry.date ? parseISO(entry.date) : undefined}
                                                 onSelect={(date) => {
                                                     if (date) {
-                                                        // THE FIX: Neutralize timezone before formatting
-                                                        date.setUTCHours(12);
                                                         handleEntryChange(entry.id, 'date', format(date, 'yyyy-MM-dd'));
                                                     }
                                                 }}
-                                                initialFocus 
+                                                initialFocus
                                             />
                                         </PopoverContent>
                                     </Popover>

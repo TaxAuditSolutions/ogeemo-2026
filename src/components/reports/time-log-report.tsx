@@ -196,7 +196,7 @@ export function TimeLogReport() {
                     </CardContent>
                      <CardFooter>
                         <Button asChild>
-                            <Link href="/hr-manager/log-time">
+                            <Link href={`/hr-manager/log-time${selectedWorkerId ? `?workerId=${selectedWorkerId}` : ''}`}>
                                 <Clock className="mr-2 h-4 w-4" />
                                 Log a Time Entry
                             </Link>

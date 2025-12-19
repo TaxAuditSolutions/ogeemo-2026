@@ -10,7 +10,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { UserNav } from '../user-nav';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2 } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, Users2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, getUserProfile } from '@/services/user-profile-service';
@@ -22,7 +22,7 @@ import { useSidebarView } from '@/context/sidebar-view-context';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/action-manager', '/calendar', '/all-project-tasks', '/document-manager', '/email-hub'] },
-    Relationships: { icon: Users, items: ['/contacts', '/crm'] },
+    Relationships: { icon: Users, items: ['/contacts', '/crm', '/crm/action-manager'] },
     Operations: { icon: Bot, items: ['/projects', '/master-mind', '/accounting'] },
     Growth: { icon: BarChart3, items: ['/reports', '/marketing-manager', '/research', '/idea-board'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup'] },

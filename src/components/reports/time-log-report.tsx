@@ -445,266 +445,262 @@ export function TimeLogReport() {
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>
-                <Card className="print:hidden">
-                    <CardHeader>
-                        <CardTitle>Report Filters</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label>Worker</Label>
-                            <div className="flex gap-2">
-                                <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                                            {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
-                                        <CommandGroup>
-                                            <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
-                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
-                                            </CommandItem>
-                                            {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
-                                        </CommandGroup>
-                                        </CommandList></Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <Button variant="outline" size="icon" onClick={() => setIsWorkerFormOpen(true)}><Plus className="h-4 w-4"/></Button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                                <Label>Start Date</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({...prev, from: date})); }} disabled={(date) => dateRange?.to ? date > dateRange.to : false} initialFocus /></PopoverContent>
-                                </Popover>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>End Date</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({...prev, to: date})); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus /></PopoverContent>
-                                </Popover>
-                            </div>
-                            <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
-                            <Button variant="ghost" onClick={clearDates} className="w-full">All Dates</Button>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="gap-2">
-                        <Button onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <Clock className="mr-2 h-4 w-4" /> Log a Time Entry
-                        </Button>
-                         <Button variant="outline" onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
-                    </CardFooter>
-                </Card>
-                {showTestCard && (
-                  <>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Test Card</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor="test-worker">Worker</Label>
-                                  <Select value={testWorker} onValueChange={setTestWorker}>
-                                      <SelectTrigger id="test-worker">
-                                          <SelectValue placeholder="Select a worker" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                          {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
-                                      </SelectContent>
-                                  </Select>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="test-date">Date</Label>
-                                  <Popover>
-                                      <PopoverTrigger asChild>
-                                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                              <CalendarIcon className="mr-2 h-4 w-4" />
-                                              {testDate ? format(testDate, "PPP") : <span>Pick a date</span>}
-                                          </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0">
-                                          <Calendar mode="single" selected={testDate} onSelect={setTestDate} initialFocus />
-                                      </PopoverContent>
-                                  </Popover>
-                              </div>
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="test-description">Description</Label>
-                              <Input id="test-description" value={testDescription} onChange={e => setTestDescription(e.target.value)} />
-                          </div>
-                          <div className="space-y-2">
-                              <Label>Duration</Label>
-                              <div className="flex items-center gap-2">
-                                  <Input type="number" placeholder="Hours" value={testDuration.hours} onChange={e => setTestDuration(p => ({...p, hours: e.target.value}))} />
-                                  <Input type="number" placeholder="Minutes" value={testDuration.minutes} onChange={e => setTestDuration(p => ({...p, minutes: e.target.value}))} />
-                              </div>
-                          </div>
-                        </CardContent>
-                         <CardFooter>
-                            <Button onClick={handleLogTestEntry}>Log Test Entry</Button>
-                        </CardFooter>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Test 2</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p>This is Test Card 2.</p>
-                        </CardContent>
-                    </Card>
-                  </>
-                )}
 
-                <div ref={contentRef}>
-                    <Card className="print:border-none print:shadow-none">
-                        <CardHeader className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                                <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
-                                <Button variant="outline" onClick={() => setShowTest2Card(prev => !prev)}>Test 2</Button>
-                            </div>
-                            <CardDescription>
-                                {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {isLoading ? (
-                                <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Worker</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Description</TableHead>
-                                            <TableHead className="text-right">Duration</TableHead>
-                                            <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {displayedEntries.length > 0 ? displayedEntries.map(entry => {
-                                            const workerName = workers.find(w => w.id === entry.workerId)?.name;
-                                            if (!workerName) return null; // Ensure worker exists before rendering row
-                                            return (
-                                                <TableRow key={entry.id}>
-                                                    <TableCell>{workerName}</TableCell>
-                                                    <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                    <TableCell>{entry.description || entry.title}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                                    <TableCell className="print:hidden">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        }) : (
-                                            <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found for this selection.</TableCell></TableRow>
-                                        )}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
-                                            <TableCell className="print:hidden"/>
-                                        </TableRow>
-                                    </TableFooter>
-                                </Table>
-                            )}
-                        </CardContent>
-                        <CardFooter className="print:hidden justify-end space-x-2">
-                            <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
-                                <Printer className="mr-2 h-4 w-4" />
-                                Print Report
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
-                {showTest2Card && (
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle>Worker-Specific Report</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-w-xs space-y-2">
-                                <Label>Select Worker to View Report</Label>
-                                <Popover open={isTest2WorkerPopoverOpen} onOpenChange={setIsTest2WorkerPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                                            {test2SelectedWorkerId ? workers.find(w => w.id === test2SelectedWorkerId)?.name : "Select worker..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search workers..." />
-                                            <CommandList>
-                                                <CommandEmpty>No worker found.</CommandEmpty>
+                <Card className="w-full max-w-7xl mx-auto">
+                    <CardContent className="pt-6 space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Report Filters</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Worker</Label>
+                                    <div className="flex gap-2">
+                                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                    {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
                                                 <CommandGroup>
-                                                    {workers.map(w => (
-                                                        <CommandItem key={w.id} value={w.name} onSelect={() => { setTest2SelectedWorkerId(w.id); setIsTest2WorkerPopoverOpen(false); }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", test2SelectedWorkerId === w.id ? "opacity-100" : "opacity-0")} />
-                                                            {w.name}
-                                                        </CommandItem>
-                                                    ))}
+                                                    <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
+                                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
+                                                    </CommandItem>
+                                                    {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
                                                 </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            {test2SelectedWorkerId && (
-                                <div className="mt-4">
-                                     <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Description</TableHead>
-                                                <TableHead className="text-right">Duration</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {test2WorkerEntries.length > 0 ? test2WorkerEntries.map(entry => (
-                                                <TableRow key={entry.id}>
-                                                    <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                    <TableCell>{entry.description || entry.title}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                                </TableRow>
-                                            )) : (
-                                                <TableRow><TableCell colSpan={3} className="h-24 text-center">No time entries found for this worker.</TableCell></TableRow>
-                                            )}
-                                        </TableBody>
-                                        <TableFooter>
-                                            <TableRow>
-                                                <TableCell colSpan={2} className="font-bold">Total Time</TableCell>
-                                                <TableCell className="text-right font-bold font-mono">{formatTime(test2TotalDuration)}</TableCell>
-                                            </TableRow>
-                                        </TableFooter>
-                                    </Table>
+                                                </CommandList></Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <Button variant="outline" size="icon" onClick={() => setIsWorkerFormOpen(true)}><Plus className="h-4 w-4"/></Button>
+                                    </div>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-2">
+                                        <Label>Start Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({...prev, from: date})); }} disabled={(date) => dateRange?.to ? date > dateRange.to : false} initialFocus /></PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>End Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({...prev, to: date})); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus /></PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
+                                    <Button variant="ghost" onClick={clearDates} className="w-full">All Dates</Button>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="gap-2">
+                                <Button onClick={() => setIsLogTimeDialogOpen(true)}>
+                                    <Clock className="mr-2 h-4 w-4" /> Log a Time Entry
+                                </Button>
+                                 <Button variant="outline" onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
+                            </CardFooter>
+                        </Card>
+                        {showTestCard && (
+                          <>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Test Card</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                          <Label htmlFor="test-worker">Worker</Label>
+                                          <Select value={testWorker} onValueChange={setTestWorker}>
+                                              <SelectTrigger id="test-worker">
+                                                  <SelectValue placeholder="Select a worker" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                  {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                                              </SelectContent>
+                                          </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                          <Label htmlFor="test-date">Date</Label>
+                                          <Popover>
+                                              <PopoverTrigger asChild>
+                                                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                      <CalendarIcon className="mr-2 h-4 w-4" />
+                                                      {testDate ? format(testDate, "PPP") : <span>Pick a date</span>}
+                                                  </Button>
+                                              </PopoverTrigger>
+                                              <PopoverContent className="w-auto p-0">
+                                                  <Calendar mode="single" selected={testDate} onSelect={setTestDate} initialFocus />
+                                              </PopoverContent>
+                                          </Popover>
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="test-description">Description</Label>
+                                      <Input id="test-description" value={testDescription} onChange={e => setTestDescription(e.target.value)} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label>Duration</Label>
+                                      <div className="flex items-center gap-2">
+                                          <Input type="number" placeholder="Hours" value={testDuration.hours} onChange={e => setTestDuration(p => ({...p, hours: e.target.value}))} />
+                                          <Input type="number" placeholder="Minutes" value={testDuration.minutes} onChange={e => setTestDuration(p => ({...p, minutes: e.target.value}))} />
+                                      </div>
+                                  </div>
+                                </CardContent>
+                                 <CardFooter>
+                                    <Button onClick={handleLogTestEntry}>Log Test Entry</Button>
+                                </CardFooter>
+                            </Card>
+                          </>
+                        )}
+                        <div ref={contentRef}>
+                            <Card className="print:border-none print:shadow-none">
+                                <CardHeader className="text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
+                                        <Button variant="outline" onClick={() => setShowTest2Card(prev => !prev)}>Test 2</Button>
+                                    </div>
+                                    <CardDescription>
+                                        {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {isLoading ? (
+                                        <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
+                                    ) : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Worker</TableHead>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Description</TableHead>
+                                                    <TableHead className="text-right">Duration</TableHead>
+                                                    <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {displayedEntries.length > 0 ? displayedEntries.map(entry => {
+                                                    const workerName = workers.find(w => w.id === entry.workerId)?.name;
+                                                    if (!workerName) return null; // Ensure worker exists before rendering row
+                                                    return (
+                                                        <TableRow key={entry.id}>
+                                                            <TableCell>{workerName}</TableCell>
+                                                            <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                                            <TableCell>{entry.description || entry.title}</TableCell>
+                                                            <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
+                                                            <TableCell className="print:hidden">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )
+                                                }) : (
+                                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found for this selection.</TableCell></TableRow>
+                                                )}
+                                            </TableBody>
+                                            <TableFooter>
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
+                                                    <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
+                                                    <TableCell className="print:hidden"/>
+                                                </TableRow>
+                                            </TableFooter>
+                                        </Table>
+                                    )}
+                                </CardContent>
+                                <CardFooter className="print:hidden justify-end space-x-2">
+                                    <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
+                                        <Printer className="mr-2 h-4 w-4" />
+                                        Print Report
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        </div>
+                        {showTest2Card && (
+                            <Card className="mt-6">
+                                <CardHeader>
+                                    <CardTitle>Worker-Specific Report</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="max-w-xs space-y-2">
+                                        <Label>Select Worker to View Report</Label>
+                                        <Popover open={isTest2WorkerPopoverOpen} onOpenChange={setIsTest2WorkerPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                    {test2SelectedWorkerId ? workers.find(w => w.id === test2SelectedWorkerId)?.name : "Select worker..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search workers..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No worker found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {workers.map(w => (
+                                                                <CommandItem key={w.id} value={w.name} onSelect={() => { setTest2SelectedWorkerId(w.id); setIsTest2WorkerPopoverOpen(false); }}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", test2SelectedWorkerId === w.id ? "opacity-100" : "opacity-0")} />
+                                                                    {w.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    {test2SelectedWorkerId && (
+                                        <div className="mt-4">
+                                             <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Date</TableHead>
+                                                        <TableHead>Description</TableHead>
+                                                        <TableHead className="text-right">Duration</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {test2WorkerEntries.length > 0 ? test2WorkerEntries.map(entry => (
+                                                        <TableRow key={entry.id}>
+                                                            <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                                            <TableCell>{entry.description || entry.title}</TableCell>
+                                                            <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
+                                                        </TableRow>
+                                                    )) : (
+                                                        <TableRow><TableCell colSpan={3} className="h-24 text-center">No time entries found for this worker.</TableCell></TableRow>
+                                                    )}
+                                                </TableBody>
+                                                <TableFooter>
+                                                    <TableRow>
+                                                        <TableCell colSpan={2} className="font-bold">Total Time</TableCell>
+                                                        <TableCell className="text-right font-bold font-mono">{formatTime(test2TotalDuration)}</TableCell>
+                                                    </TableRow>
+                                                </TableFooter>
+                                            </Table>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </CardContent>
+                </Card>
                 <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>

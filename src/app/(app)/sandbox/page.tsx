@@ -1,5 +1,12 @@
-
 'use client';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function SandboxPage() {
   return (
@@ -9,6 +16,11 @@ export default function SandboxPage() {
           Testing Time Logs
         </h1>
       </header>
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>One Frame to control them all.</CardTitle>
+        </CardHeader>
+      </Card>
     </div>
   );
 }

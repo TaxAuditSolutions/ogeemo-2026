@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,7 +15,7 @@ import { useDrag, useDrop } from 'react-dnd';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
-type LeadStatus = 'Inactive Leads' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads';
+type LeadStatus = 'New' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads';
 
 interface Lead {
   id: string;
@@ -146,7 +147,7 @@ export default function CrmPlanPage() {
       updateLeadsAndStorage(updatedLeads);
   }, [allLeads]);
   
-  const columns: LeadStatus[] = ["Inactive Leads", "Active Leads", "Scheduled Leads", "Completed Leads"];
+  const columns: LeadStatus[] = ["New", "Active Leads", "Scheduled Leads", "Completed Leads"];
 
   return (
     <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
@@ -174,15 +175,18 @@ export default function CrmPlanPage() {
         </div>
       </header>
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-        {columns.map(status => (
-            <LeadColumn
-                key={status}
-                status={status}
-                leads={allLeads.filter(l => l.status === status)}
-                moveCard={moveCard}
-                onDropCard={onDropCard}
-            />
-        ))}
+        {columns.map(status => {
+            const leadsForColumn = allLeads.filter(l => l.status === status);
+            return (
+                <LeadColumn
+                    key={status}
+                    status={status}
+                    leads={leadsForColumn}
+                    moveCard={moveCard}
+                    onDropCard={onDropCard}
+                />
+            );
+        })}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -27,6 +28,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
+type LeadStatus = 'New' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads';
+
 export default function CreateLeadPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -37,7 +40,7 @@ export default function CreateLeadPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [source, setSource] = useState('');
-  const [status, setStatus] = useState('New');
+  const [status, setStatus] = useState<LeadStatus>('New');
   const [notes, setNotes] = useState('');
 
   const handleSaveLead = (e: React.FormEvent) => {
@@ -150,15 +153,15 @@ export default function CreateLeadPage() {
                 </div>
                 <div className="space-y-2">
                 <Label htmlFor="lead-status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select value={status} onValueChange={(value) => setStatus(value as LeadStatus)}>
                     <SelectTrigger id="lead-status">
                     <SelectValue placeholder="Select a status" />
                     </SelectTrigger>
                     <SelectContent>
                     <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Contacted">Contacted</SelectItem>
-                    <SelectItem value="Qualified">Qualified</SelectItem>
-                    <SelectItem value="Unqualified">Unqualified</SelectItem>
+                    <SelectItem value="Active Leads">Active Leads</SelectItem>
+                    <SelectItem value="Scheduled Leads">Scheduled Leads</SelectItem>
+                    <SelectItem value="Completed Leads">Completed Leads</SelectItem>
                     </SelectContent>
                 </Select>
                 </div>

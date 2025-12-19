@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from "react-day-picker";
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LogTimeDialog } from './log-time-dialog';
 import { ReportsPageHeader } from './page-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -65,6 +67,12 @@ export function TimeLogReport() {
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [showTestCard, setShowTestCard] = useState(false);
+
+    // State for Test Card fields
+    const [testWorker, setTestWorker] = useState<string>('');
+    const [testDate, setTestDate] = useState<Date | undefined>(new Date());
+    const [testDescription, setTestDescription] = useState('');
+    const [testDuration, setTestDuration] = useState({ hours: '', minutes: '' });
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -117,6 +125,13 @@ export function TimeLogReport() {
         
         setDisplayedEntries(filtered);
     };
+    
+    const handleLogTestEntry = () => {
+      toast({
+        title: "Test Entry Logged",
+        description: `Worker: ${testWorker}, Date: ${testDate ? format(testDate, 'PPP') : 'N/A'}, Desc: ${testDescription}, Duration: ${testDuration.hours || 0}h ${testDuration.minutes || 0}m`
+      });
+    };
 
     const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
     
@@ -160,7 +175,7 @@ export function TimeLogReport() {
                     hubLabel="HR Hub" 
                 />
                 <header className="text-center">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                  <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>
                 <Card className="print:hidden">
                     <CardHeader>
@@ -231,9 +246,49 @@ export function TimeLogReport() {
                       <CardHeader>
                           <CardTitle>Test Card</CardTitle>
                       </CardHeader>
-                      <CardContent>
-                          <p>This is the test card.</p>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="test-worker">Worker</Label>
+                                <Select value={testWorker} onValueChange={setTestWorker}>
+                                    <SelectTrigger id="test-worker">
+                                        <SelectValue placeholder="Select a worker" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="test-date">Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {testDate ? format(testDate, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar mode="single" selected={testDate} onSelect={setTestDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="test-description">Description</Label>
+                            <Input id="test-description" value={testDescription} onChange={e => setTestDescription(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Duration</Label>
+                            <div className="flex items-center gap-2">
+                                <Input type="number" placeholder="Hours" value={testDuration.hours} onChange={e => setTestDuration(p => ({...p, hours: e.target.value}))} />
+                                <Input type="number" placeholder="Minutes" value={testDuration.minutes} onChange={e => setTestDuration(p => ({...p, minutes: e.target.value}))} />
+                            </div>
+                        </div>
                       </CardContent>
+                       <CardFooter>
+                          <Button onClick={handleLogTestEntry}>Log Test Entry</Button>
+                      </CardFooter>
                   </Card>
                 )}
 

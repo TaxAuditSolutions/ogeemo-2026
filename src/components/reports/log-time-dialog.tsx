@@ -84,6 +84,11 @@ export function LogTimeDialog({
             return;
         }
 
+        if (!notes.trim()) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a description of the work done.' });
+            return;
+        }
+
         const selectedWorker = workers.find(w => w.id === selectedWorkerId);
         if (!selectedWorker) {
              toast({ variant: 'destructive', title: 'Invalid Worker', description: 'Could not find the selected worker.' });
@@ -188,7 +193,7 @@ export function LogTimeDialog({
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Notes (Optional)</Label>
+                        <Label htmlFor="description">Description of work done *</Label>
                         <Textarea id="description" placeholder="e.g., On-site client meeting, regular shift, etc." value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </div>
                 </div>

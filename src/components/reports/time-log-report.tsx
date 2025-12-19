@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import {
   DropdownMenu,
@@ -95,7 +96,7 @@ export function TimeLogReport() {
         loadData();
     }, [loadData]);
     
-    const filteredEntries = useMemo(() => {
+    const { filteredEntries, totalDurationSeconds } = useMemo(() => {
         let entries = allEntries;
 
         if (selectedWorkerId) {
@@ -110,7 +111,9 @@ export function TimeLogReport() {
             });
         }
 
-        return entries;
+        const totalSeconds = entries.reduce((acc, entry) => acc + entry.durationSeconds, 0);
+        return { filteredEntries: entries, totalDurationSeconds: totalSeconds };
+
     }, [allEntries, selectedWorkerId, dateRange]);
 
     const handleOpenLogTimeDialog = (entry: TimeLog | null = null, preselectWorkerId: string | null = null) => {
@@ -140,10 +143,23 @@ export function TimeLogReport() {
         setDateRange(range);
         if (range?.from && range?.to) {
             setIsDatePickerOpen(false);
+        } else if (range?.from && !range.to) {
+            // If only a single date is picked, keep the popover open
+            // but the logic for closing is now more manual based on range selection.
+        } else {
+             setIsDatePickerOpen(false);
         }
     };
     
     const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+    
+    const totalPay = useMemo(() => {
+        if (!selectedWorker || selectedWorker.payType !== 'hourly' || totalDurationSeconds <= 0) {
+            return 0;
+        }
+        const hoursWorked = totalDurationSeconds / 3600;
+        return hoursWorked * selectedWorker.payRate;
+    }, [selectedWorker, totalDurationSeconds]);
 
     return (
         <>
@@ -209,7 +225,6 @@ export function TimeLogReport() {
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: new Date(), to: new Date() })}>Today</Button>
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
-                                        <Button size="sm" variant="outline" onClick={() => { setDateRange(undefined); setIsDatePickerOpen(false); }}>Clear</Button>
                                     </div>
                                 </PopoverContent>
                             </Popover>
@@ -288,6 +303,29 @@ export function TimeLogReport() {
                                     </TableRow>
                                 )}
                             </TableBody>
+                            {selectedWorker && filteredEntries.length > 0 && (
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-bold">Total Hours:</TableCell>
+                                        <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
+                                        <TableCell />
+                                    </TableRow>
+                                    {selectedWorker.payType === 'hourly' && (
+                                        <>
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-right font-bold">Hourly Rate:</TableCell>
+                                                <TableCell className="text-right font-bold font-mono">${selectedWorker.payRate.toFixed(2)}</TableCell>
+                                                <TableCell />
+                                            </TableRow>
+                                            <TableRow className="text-base bg-muted/50">
+                                                <TableCell colSpan={3} className="text-right font-bold">Total Pay:</TableCell>
+                                                <TableCell className="text-right font-bold font-mono">${totalPay.toFixed(2)}</TableCell>
+                                                <TableCell />
+                                            </TableRow>
+                                        </>
+                                    )}
+                                </TableFooter>
+                            )}
                         </Table>
                     </div>
                 </CardContent>

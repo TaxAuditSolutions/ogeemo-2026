@@ -30,8 +30,43 @@ export default function CrmPlanPage() {
         </div>
         <div className="w-1/4" />
       </header>
-      <div className="flex-1 flex items-center justify-center rounded-lg border-2 border-dashed">
-        <p className="text-2xl text-muted-foreground">Content for The CRM Plan will go here.</p>
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <Card>
+            <CardHeader>
+                <CardTitle>Phase 1: Lead Capture</CardTitle>
+                <CardDescription>Strategies for attracting and capturing new leads.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">Details about lead magnets, website forms, and social media campaigns will go here.</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Phase 2: Nurturing & Qualification</CardTitle>
+                <CardDescription>Automated email sequences and lead scoring.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <p className="text-sm text-muted-foreground">Content for nurturing sequences and criteria for identifying qualified leads will be detailed here.</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Phase 3: Sales Pipeline</CardTitle>
+                <CardDescription>Managing deals through the visual sales pipeline.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">Definitions of pipeline stages and actions for moving deals forward will be outlined here.</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Phase 4: Customer Retention</CardTitle>
+                <CardDescription>Post-sale follow-ups and loyalty programs.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">Plans for customer onboarding, check-ins, and strategies for repeat business will be described here.</p>
+            </CardContent>
+        </Card>
       </div>
     </div>
   );

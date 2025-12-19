@@ -297,6 +297,34 @@
         "approverName": { "type": "string" }
       },
       "required": ["workerId", "workerName", "leaveType", "startDate", "endDate", "status", "userId"]
+    },
+    "TimeLog": {
+        "title": "Time Log",
+        "description": "Stores individual work sessions for workers.",
+        "type": "object",
+        "properties": {
+            "workerId": { "type": "string" },
+            "startTime": { "type": "string", "format": "date-time" },
+            "endTime": { "type": "string", "format": "date-time" },
+            "durationSeconds": { "type": "number" },
+            "notes": { "type": "string" },
+            "status": { "type": "string", "enum": ["active", "paused", "completed"] }
+        },
+        "required": ["workerId", "startTime", "endTime", "durationSeconds", "status"]
+    },
+    "LocationLog": {
+        "title": "Location Log",
+        "description": "Stores GPS coordinates for a specific work session.",
+        "type": "object",
+        "properties": {
+            "timeLogId": { "type": "string" },
+            "workerId": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "accuracy": { "type": "number" }
+        },
+        "required": ["timeLogId", "workerId", "timestamp", "latitude", "longitude"]
     }
   },
   "auth": {
@@ -382,6 +410,14 @@
     "/leaveRequests/{leaveRequestId}": {
         "schema": { "$ref": "#/entities/LeaveRequest" },
         "description": "Stores worker time off and leave requests."
+    },
+    "/timeLogs/{timeLogId}": {
+        "schema": { "$ref": "#/entities/TimeLog" },
+        "description": "A collection of individual work sessions."
+    },
+    "/timeLogs/{timeLogId}/locations/{locationId}": {
+        "schema": { "$ref": "#/entities/LocationLog" },
+        "description": "A sub-collection of GPS coordinates for a specific time log."
     }
   }
 }

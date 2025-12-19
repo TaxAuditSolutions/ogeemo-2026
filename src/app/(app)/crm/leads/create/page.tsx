@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
@@ -152,6 +151,14 @@ export default function CreateLeadPage() {
         <h1 className="text-3xl font-bold font-headline text-primary">
           {isEditing ? 'Edit Lead' : 'Create New Lead'}
         </h1>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+             <Button asChild variant="ghost" size="icon">
+                <Link href="/crm/plan">
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Close</span>
+                </Link>
+            </Button>
+        </div>
       </header>
       <Card className="w-full max-w-2xl">
         <form onSubmit={handleSaveLead}>

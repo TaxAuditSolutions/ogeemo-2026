@@ -158,7 +158,7 @@ export function TimeLogReport() {
                     hubPath="/hr-manager" 
                     hubLabel="HR Hub" 
                 />
-                <header className="text-center mb-6">
+                <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>
                 <Card className="print:hidden">
@@ -216,11 +216,12 @@ export function TimeLogReport() {
                             <Button variant="ghost" onClick={clearDates} className="w-full">All Dates</Button>
                         </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="gap-2">
                         <Button onClick={handleLogTimeClick}>
                             <Clock className="mr-2 h-4 w-4" />
                             Log a Time Entry
                         </Button>
+                        <Button>Test</Button>
                     </CardFooter>
                 </Card>
 

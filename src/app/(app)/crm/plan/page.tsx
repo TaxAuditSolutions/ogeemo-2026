@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -33,38 +34,38 @@ export default function CrmPlanPage() {
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <Card>
             <CardHeader>
-                <CardTitle>Phase 1: Lead Capture</CardTitle>
-                <CardDescription>Strategies for attracting and capturing new leads.</CardDescription>
+                <CardTitle></CardTitle>
+                <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">Details about lead magnets, website forms, and social media campaigns will go here.</p>
+                 <p className="text-sm text-muted-foreground"></p>
             </CardContent>
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Phase 2: Nurturing & Qualification</CardTitle>
-                <CardDescription>Automated email sequences and lead scoring.</CardDescription>
+                <CardTitle></CardTitle>
+                <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
-                 <p className="text-sm text-muted-foreground">Content for nurturing sequences and criteria for identifying qualified leads will be detailed here.</p>
+                 <p className="text-sm text-muted-foreground"></p>
             </CardContent>
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Phase 3: Sales Pipeline</CardTitle>
-                <CardDescription>Managing deals through the visual sales pipeline.</CardDescription>
+                <CardTitle></CardTitle>
+                <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">Definitions of pipeline stages and actions for moving deals forward will be outlined here.</p>
+                <p className="text-sm text-muted-foreground"></p>
             </CardContent>
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Phase 4: Customer Retention</CardTitle>
-                <CardDescription>Post-sale follow-ups and loyalty programs.</CardDescription>
+                <CardTitle></CardTitle>
+                <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground">Plans for customer onboarding, check-ins, and strategies for repeat business will be described here.</p>
+                <p className="text-sm text-muted-foreground"></p>
             </CardContent>
         </Card>
       </div>

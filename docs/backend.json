@@ -325,6 +325,22 @@
             "accuracy": { "type": "number" }
         },
         "required": ["timeLogId", "workerId", "timestamp", "latitude", "longitude"]
+    },
+    "Lead": {
+        "title": "Lead",
+        "description": "Represents a potential customer or sales opportunity.",
+        "type": "object",
+        "properties": {
+            "contactName": { "type": "string" },
+            "companyName": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "phone": { "type": "string" },
+            "source": { "type": "string", "enum": ["Website", "Referral", "Trade Show", "Advertisement", "Other"] },
+            "status": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Unqualified"] },
+            "notes": { "type": "string" },
+            "userId": { "type": "string" }
+        },
+        "required": ["contactName", "email", "userId"]
     }
   },
   "auth": {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -30,9 +29,11 @@ export default function CrmPlanPage() {
             </h1>
         </div>
         <div className="w-1/4 flex justify-end">
-            <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create a Lead
+            <Button asChild>
+                <Link href="/crm/leads/create">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create a Lead
+                </Link>
             </Button>
         </div>
       </header>
@@ -40,38 +41,26 @@ export default function CrmPlanPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Inactive Leads</CardTitle>
-                <CardDescription></CardDescription>
             </CardHeader>
-            <CardContent>
-                 <p className="text-sm text-muted-foreground"></p>
-            </CardContent>
+            <CardContent></CardContent>
         </Card>
         <Card>
             <CardHeader>
                 <CardTitle>Active Leads</CardTitle>
-                <CardDescription></CardDescription>
             </CardHeader>
-            <CardContent>
-                 <p className="text-sm text-muted-foreground"></p>
-            </CardContent>
+            <CardContent></CardContent>
         </Card>
         <Card>
             <CardHeader>
                 <CardTitle>Scheduled Leads</CardTitle>
-                <CardDescription></CardDescription>
             </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground"></p>
-            </CardContent>
+            <CardContent></CardContent>
         </Card>
         <Card>
             <CardHeader>
                 <CardTitle>Completed Leads</CardTitle>
-                <CardDescription></CardDescription>
             </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground"></p>
-            </CardContent>
+            <CardContent></CardContent>
         </Card>
       </div>
     </div>

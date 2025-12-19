@@ -20,7 +20,7 @@ import { LoaderCircle, Plus, ChevronsUpDown, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, set } from 'date-fns';
+import { format, set, parseISO } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type Worker } from '@/services/payroll-service';
@@ -33,14 +33,22 @@ interface LogTimeDialogProps {
     onOpenChange: (isOpen: boolean) => void;
     workers: Worker[];
     onTimeLogged: () => void;
-    entryToEdit?: TimeLog | null; 
+    entryToEdit?: TimeLog | null;
+    preselectedWorkerId?: string | null;
 }
 
-export function LogTimeDialog({ isOpen, onOpenChange, workers, onTimeLogged, entryToEdit = null }: LogTimeDialogProps) {
+export function LogTimeDialog({ 
+    isOpen, 
+    onOpenChange, 
+    workers, 
+    onTimeLogged, 
+    entryToEdit = null,
+    preselectedWorkerId = null
+}: LogTimeDialogProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [startTime, setStartTime] = useState({ hour: '09', minute: '00' });
     const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
-    const [description, setDescription] = useState('');
+    const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     
     const [isSaving, setIsSaving] = useState(false);
@@ -57,18 +65,18 @@ export function LogTimeDialog({ isOpen, onOpenChange, workers, onTimeLogged, ent
                 setDate(start);
                 setStartTime({ hour: String(start.getHours()).padStart(2, '0'), minute: String(start.getMinutes()).padStart(2, '0') });
                 setEndTime({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
-                setDescription(entryToEdit.notes || '');
+                setNotes(entryToEdit.notes || '');
                 setSelectedWorkerId(entryToEdit.workerId);
             } else {
-                // Reset form for new entry
+                // Reset form for new entry, potentially with a preselected worker
                 setDate(new Date());
                 setStartTime({ hour: '09', minute: '00' });
                 setEndTime({ hour: '17', minute: '00' });
-                setDescription('');
-                setSelectedWorkerId(null);
+                setNotes('');
+                setSelectedWorkerId(preselectedWorkerId);
             }
         }
-    }, [isOpen, entryToEdit]);
+    }, [isOpen, entryToEdit, preselectedWorkerId]);
 
     const handleSave = async () => {
         if (!user || !selectedWorkerId || !date) {
@@ -95,26 +103,24 @@ export function LogTimeDialog({ isOpen, onOpenChange, workers, onTimeLogged, ent
         setIsSaving(true);
         try {
             if (entryToEdit) {
-                // Update existing entry
                 const updatedData = {
                     workerId: selectedWorkerId,
                     workerName: selectedWorker.name,
                     startTime: finalStartTime,
                     endTime: finalEndTime,
                     durationSeconds,
-                    notes: description,
+                    notes: notes,
                 };
                 await updateTimeLog(entryToEdit.id, updatedData);
                 toast({ title: "Time Log Updated" });
             } else {
-                // Add new entry
                  const logData = {
                     workerId: selectedWorkerId,
                     workerName: selectedWorker.name,
                     startTime: finalStartTime,
                     endTime: finalEndTime,
                     durationSeconds,
-                    notes: description,
+                    notes: notes,
                     userId: user.uid,
                 };
                 await addTimeLog(logData);
@@ -182,8 +188,8 @@ export function LogTimeDialog({ isOpen, onOpenChange, workers, onTimeLogged, ent
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description (Optional)</Label>
-                        <Textarea id="description" placeholder="e.g., Regular shift" value={description} onChange={(e) => setDescription(e.target.value)} />
+                        <Label htmlFor="description">Notes (Optional)</Label>
+                        <Textarea id="description" placeholder="e.g., On-site client meeting, regular shift, etc." value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </div>
                 </div>
                 <DialogFooter>

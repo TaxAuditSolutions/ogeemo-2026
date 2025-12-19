@@ -11,6 +11,7 @@ import {
   query,
   where,
   Timestamp,
+  deleteDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/lib/firebase';
 
@@ -61,3 +62,8 @@ export async function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id'
     await updateDoc(docRef, data);
 }
 
+export async function deleteTimeLog(id: string): Promise<void> {
+    const db = await getDb();
+    const docRef = doc(db, TIME_LOGS_COLLECTION, id);
+    await deleteDoc(docRef);
+}

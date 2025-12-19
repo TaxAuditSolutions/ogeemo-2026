@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -73,7 +72,7 @@ export default function CrmActionManagerPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {crmActions.map(action => {
-            const { icon: Icon } = action;
+            const Icon = action.icon;
             return (
               <Card key={action.title} className="flex flex-col">
                 <CardHeader>

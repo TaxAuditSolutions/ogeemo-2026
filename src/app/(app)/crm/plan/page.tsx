@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -31,7 +30,7 @@ export default function CrmPlanPage() {
         </div>
         <div className="w-1/4" />
       </header>
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
         <Card>
             <CardHeader>
                 <CardTitle></CardTitle>

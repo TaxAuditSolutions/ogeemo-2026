@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -16,7 +15,7 @@ import { useDrag, useDrop } from 'react-dnd';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
-type LeadStatus = 'New' | 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
+type LeadStatus = 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
 
 interface Lead {
   id: string;
@@ -155,7 +154,7 @@ export default function CrmPlanPage() {
       router.push(`/crm/leads/create?id=${lead.id}`);
   };
 
-  const columns: LeadStatus[] = ["New", "Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
+  const columns: LeadStatus[] = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
   return (
     <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
@@ -182,7 +181,7 @@ export default function CrmPlanPage() {
             </Button>
         </div>
       </header>
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
         {columns.map(status => {
             const leadsForColumn = allLeads.filter(l => l.status === status);
             return (

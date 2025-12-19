@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -34,7 +33,7 @@ import { type Industry, getIndustries } from '@/services/industry-service';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
-type LeadStatus = 'New' | 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
+type LeadStatus = 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -51,7 +50,7 @@ export default function CreateLeadPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [source, setSource] = useState('');
-  const [status, setStatus] = useState<LeadStatus>('New');
+  const [status, setStatus] = useState<LeadStatus>('Unscheduled Leads');
   const [notes, setNotes] = useState('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
@@ -93,7 +92,7 @@ export default function CreateLeadPage() {
           setEmail(leadToEdit.email || '');
           setPhone(leadToEdit.phone || '');
           setSource(leadToEdit.source || '');
-          setStatus(leadToEdit.status || 'New');
+          setStatus(leadToEdit.status || 'Unscheduled Leads');
           setNotes(leadToEdit.notes || '');
         } else {
           toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
@@ -231,7 +230,6 @@ export default function CreateLeadPage() {
                       <SelectValue placeholder="Select a status" />
                       </SelectTrigger>
                       <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
                       <SelectItem value="Unscheduled Leads">Unscheduled Leads</SelectItem>
                       <SelectItem value="Scheduled Leads">Scheduled Leads</SelectItem>
                       <SelectItem value="Completed Leads">Completed Leads</SelectItem>
@@ -274,4 +272,3 @@ export default function CreateLeadPage() {
     </>
   );
 }
-

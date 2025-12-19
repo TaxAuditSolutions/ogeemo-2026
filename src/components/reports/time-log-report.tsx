@@ -1,12 +1,43 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { LoaderCircle, Printer, MoreVertical, BookOpen, Trash2, Clock, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
@@ -14,22 +45,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ReportsPageHeader } from './page-header';
 import { WorkerFormDialog } from '../accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
@@ -41,7 +56,6 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
-    
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
 
@@ -62,7 +76,8 @@ export function TimeLogReport() {
                 getTasksForUser(user.uid),
             ]);
             setWorkers(fetchedWorkers);
-            const timeLogEntries = entries.filter(entry => (entry.duration || 0) > 0 && entry.workerId);
+            // Filter to only include entries that are time logs (have workerId and duration)
+            const timeLogEntries = entries.filter(entry => entry.workerId && (entry.duration || 0) > 0);
             setAllEntries(timeLogEntries);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -78,15 +93,15 @@ export function TimeLogReport() {
     const totalDuration = useMemo(() => allEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [allEntries]);
     
     const handleEditTask = (task: TaskEvent) => {
-      router.push(`/master-mind?eventId=${task.id}`);
+        router.push(`/master-mind?eventId=${task.id}`);
     };
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
         const originalEntries = [...allEntries];
+        setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
         try {
             await deleteTask(entryToDelete.id);
-            setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
             setAllEntries(originalEntries);
@@ -118,50 +133,52 @@ export function TimeLogReport() {
                                 <CardDescription>A complete list of all recorded work sessions.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Worker</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Description</TableHead>
-                                            <TableHead className="text-right">Duration</TableHead>
-                                            <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {isLoading ? (
-                                            <TableRow><TableCell colSpan={5} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                                        ) : allEntries.length > 0 ? allEntries.map(entry => {
-                                                const workerName = workers.find(w => w.id === entry.workerId)?.name;
-                                                return (
-                                                    <TableRow key={entry.id}>
-                                                        <TableCell>{workerName || 'Unknown Worker'}</TableCell>
-                                                        <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                        <TableCell>{entry.description || entry.title}</TableCell>
-                                                        <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                                        <TableCell className="print:hidden">
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )
-                                            }) : (
-                                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found.</TableCell></TableRow>
-                                            )}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
-                                            <TableCell className="print:hidden"/>
-                                        </TableRow>
-                                    </TableFooter>
-                                </Table>
+                                {isLoading ? (
+                                    <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Worker</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead className="text-right">Duration</TableHead>
+                                                <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {allEntries.length > 0 ? allEntries.map(entry => {
+                                                    const workerName = workers.find(w => w.id === entry.workerId)?.name;
+                                                    return (
+                                                        <TableRow key={entry.id}>
+                                                            <TableCell>{workerName || 'Unknown Worker'}</TableCell>
+                                                            <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                                            <TableCell>{entry.description || entry.title}</TableCell>
+                                                            <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
+                                                            <TableCell className="print:hidden">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuItem onSelect={() => handleEditTask(entry)}><BookOpen className="mr-2 h-4 w-4"/>Open / Edit</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="text-destructive" onSelect={() => setEntryToDelete(entry)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )
+                                                }) : (
+                                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found.</TableCell></TableRow>
+                                                )}
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
+                                                <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
+                                                <TableCell className="print:hidden"/>
+                                            </TableRow>
+                                        </TableFooter>
+                                    </Table>
+                                )}
                             </CardContent>
                         </Card>
                     </div>

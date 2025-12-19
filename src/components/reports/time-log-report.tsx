@@ -13,13 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, set } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
+import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent, addTask } from '@/services/project-service';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -126,11 +126,46 @@ export function TimeLogReport() {
         setDisplayedEntries(filtered);
     };
     
-    const handleLogTestEntry = () => {
-      toast({
-        title: "Test Entry Logged",
-        description: `Worker: ${testWorker}, Date: ${testDate ? format(testDate, 'PPP') : 'N/A'}, Desc: ${testDescription}, Duration: ${testDuration.hours || 0}h ${testDuration.minutes || 0}m`
-      });
+    const handleLogTestEntry = async () => {
+        if (!user) return;
+        const durationHours = Number(testDuration.hours) || 0;
+        const durationMinutes = Number(testDuration.minutes) || 0;
+        const totalDurationSeconds = (durationHours * 3600) + (durationMinutes * 60);
+
+        if (!testWorker || !testDate || totalDurationSeconds <= 0) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker, date, and enter a valid duration.' });
+            return;
+        }
+
+        try {
+            const startTime = set(testDate, { hours: 9, minutes: 0 }); // Default to 9 AM
+            const endTime = new Date(startTime.getTime() + totalDurationSeconds * 1000);
+
+            const taskData = {
+                title: testDescription || `Manual Time Entry`,
+                description: testDescription,
+                start: startTime,
+                end: endTime,
+                duration: totalDurationSeconds,
+                workerId: testWorker,
+                userId: user.uid,
+                status: 'done' as const,
+                isBillable: false, // Default to non-billable for simplicity
+                position: 0,
+            };
+
+            await addTask(taskData);
+            toast({
+                title: "Test Entry Logged",
+                description: "The time log has been added successfully."
+            });
+            // Clear form and refresh data
+            setTestDescription('');
+            setTestDuration({ hours: '', minutes: '' });
+            await loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
     };
 
     const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
@@ -169,11 +204,7 @@ export function TimeLogReport() {
     return (
         <>
             <div className="space-y-6">
-                <ReportsPageHeader 
-                    pageTitle={selectedWorkerId === 'all' ? 'All Workers' : selectedWorker?.name || '...'} 
-                    hubPath="/hr-manager" 
-                    hubLabel="HR Hub" 
-                />
+                <ReportsPageHeader pageTitle={pageTitle} />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>

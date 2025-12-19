@@ -18,6 +18,7 @@ export interface PlanningRitual {
 export interface UserProfile {
     id: string; // This will be the user's UID
     email: string;
+    displayName?: string;
     companyName?: string;
     website?: string;
     businessPhone?: string;
@@ -39,13 +40,15 @@ export interface UserProfile {
     };
     alternateContact?: string;
     alternateContactPhone?: string;
+    businessNumber?: string;
+    netEquity?: number;
     createdAt?: any;
     updatedAt?: any;
     preferences?: {
         showDictationButton?: boolean;
         showDashboardFrame?: boolean;
         showMenuViewInstructions?: boolean;
-        showActionManagerAboutPanel?: boolean; // Added this line
+        showActionManagerAboutPanel?: boolean;
         defaultSidebarView?: SidebarViewType;
         menuOrder?: string[];
         accountingQuickNavOrder?: string[];

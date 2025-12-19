@@ -10,7 +10,8 @@ const defaultPreferences: UserProfile['preferences'] = {
     showDictationButton: true,
     showDashboardFrame: true,
     showMenuViewInstructions: true,
-    showActionManagerAboutPanel: true, // Added new default
+    showActionManagerAboutPanel: true,
+    defaultSidebarView: 'grouped',
 };
 
 export function useUserPreferences() {
@@ -57,5 +58,3 @@ export function useUserPreferences() {
 
     return { preferences, updatePreferences, isLoading, loadPreferences };
 }
-
-    

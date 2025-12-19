@@ -570,7 +570,10 @@ export function TimeLogReport() {
                 <div ref={contentRef}>
                     <Card className="print:border-none print:shadow-none">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
+                            <div className="flex items-center justify-center gap-2">
+                                <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
+                                <Button variant="outline">Test 2</Button>
+                            </div>
                             <CardDescription>
                                 {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
                             </CardDescription>
@@ -660,5 +663,3 @@ export function TimeLogReport() {
         </>
     );
 }
-
-    

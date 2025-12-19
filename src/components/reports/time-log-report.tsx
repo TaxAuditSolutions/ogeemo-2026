@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
+import { LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle, Plus } from 'lucide-react';
 import { format, startOfMonth, set } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
@@ -37,9 +37,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogTimeDialog } from './log-time-dialog';
 import { ReportsPageHeader } from './page-header';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { WorkerFormDialog } from '../accounting/WorkerFormDialog';
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -67,6 +67,8 @@ export function TimeLogReport() {
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [showTestCard, setShowTestCard] = useState(false);
+    const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
+
 
     // State for Test Card fields
     const [testWorker, setTestWorker] = useState<string>('');
@@ -93,7 +95,6 @@ export function TimeLogReport() {
             setWorkers(fetchedWorkers);
             const timeLogEntries = entries.filter(entry => (entry.duration || 0) > 0 && entry.workerId);
             setAllEntries(timeLogEntries);
-            setDisplayedEntries(timeLogEntries); // Default to show all
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -105,7 +106,7 @@ export function TimeLogReport() {
         loadData();
     }, [loadData]);
     
-    const handleViewLogs = () => {
+    const handleViewLogs = useCallback(() => {
         let filtered = allEntries;
 
         // 1. Filter by worker
@@ -124,7 +125,11 @@ export function TimeLogReport() {
         }
         
         setDisplayedEntries(filtered);
-    };
+    }, [allEntries, selectedWorkerId, dateRange]);
+
+    useEffect(() => {
+        handleViewLogs();
+    }, [allEntries, handleViewLogs]);
     
     const handleLogTestEntry = async () => {
         if (!user) return;
@@ -196,16 +201,19 @@ export function TimeLogReport() {
     };
     
     const selectedWorker = workers.find(c => c.id === selectedWorkerId);
-
-    const handleLogTimeClick = () => {
-        setIsLogTimeDialogOpen(true);
+    
+    const handleWorkerSaved = (newOrUpdatedWorker: Worker) => {
+        // Refresh the worker list to include the new addition/update
+        loadData();
+        // Optionally, select the new worker
+        setSelectedWorkerId(newOrUpdatedWorker.id);
     };
+
 
     return (
         <>
             <div className="space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" />
-                <header className="text-center">
+                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>
                 <Card className="print:hidden">
@@ -215,24 +223,27 @@ export function TimeLogReport() {
                     <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Worker</Label>
-                            <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="w-full justify-between">
-                                        {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
-                                            <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
-                                        </CommandItem>
-                                        {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
-                                    </CommandGroup>
-                                    </CommandList></Command>
-                                </PopoverContent>
-                            </Popover>
+                            <div className="flex gap-2">
+                                <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                                            {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
+                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
+                                            </CommandItem>
+                                            {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
+                                        </CommandGroup>
+                                        </CommandList></Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => setIsWorkerFormOpen(true)}><Plus className="h-4 w-4"/></Button>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
@@ -264,10 +275,6 @@ export function TimeLogReport() {
                         </div>
                     </CardContent>
                     <CardFooter className="gap-2">
-                        <Button onClick={handleLogTimeClick}>
-                            <Clock className="mr-2 h-4 w-4" />
-                            Log a Time Entry
-                        </Button>
                         <Button onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
                     </CardFooter>
                 </Card>
@@ -388,15 +395,6 @@ export function TimeLogReport() {
                         </CardFooter>
                     </Card>
                 </div>
-                
-                <LogTimeDialog 
-                    isOpen={isLogTimeDialogOpen}
-                    onOpenChange={setIsLogTimeDialogOpen}
-                    workerId={selectedWorkerId !== 'all' ? selectedWorkerId : null}
-                    workers={workers}
-                    onTimeLogged={loadData}
-                />
-                
                 <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -410,6 +408,11 @@ export function TimeLogReport() {
                     </AlertDialogContent>
                 </AlertDialog>
             </div>
+             <WorkerFormDialog
+                isOpen={isWorkerFormOpen}
+                onOpenChange={setIsWorkerFormOpen}
+                onWorkerSave={handleWorkerSaved}
+            />
         </>
     );
 }

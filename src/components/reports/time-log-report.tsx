@@ -204,7 +204,7 @@ export function TimeLogReport() {
     return (
         <>
             <div className="space-y-6">
-                <ReportsPageHeader pageTitle={pageTitle} />
+                <ReportsPageHeader pageTitle="Time Log Report" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>

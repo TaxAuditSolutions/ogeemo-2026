@@ -1,4 +1,6 @@
 
+'use client';
+
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
 

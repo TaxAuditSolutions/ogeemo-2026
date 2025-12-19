@@ -506,7 +506,6 @@ export function TimeLogReport() {
                          <Button variant="outline" onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
                     </CardFooter>
                 </Card>
-
                 {showTestCard && (
                   <>
                     <Card>
@@ -661,3 +660,5 @@ export function TimeLogReport() {
         </>
     );
 }
+
+    

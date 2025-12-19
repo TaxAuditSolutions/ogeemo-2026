@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LogTimeDialog } from './log-time-dialog';
+import { ReportsPageHeader } from './page-header';
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -150,6 +151,11 @@ export function TimeLogReport() {
 
     return (
         <>
+            <ReportsPageHeader 
+                pageTitle="Time Log Report" 
+                hubPath="/hr-manager" 
+                hubLabel="HR Hub" 
+            />
             <Card className="print:hidden">
                 <CardHeader>
                     <CardTitle>Report Filters</CardTitle>

@@ -111,7 +111,7 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
        
         {isDraggable && (
             <GripVertical
-            className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-sidebar-foreground/50 cursor-grab"
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-sidebar-foreground/50 cursor-move"
             />
         )}
       </div>

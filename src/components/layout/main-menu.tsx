@@ -261,6 +261,7 @@ export function MainMenu() {
                 index={index}
                 isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
                 moveMenuItem={moveMenuItem}
+                isDraggable={false}
                 isCompact={true}
             />
             ))

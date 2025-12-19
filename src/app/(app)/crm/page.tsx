@@ -1,10 +1,10 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users2, Filter, Bot, Mail, Calendar, Calculator, Contact } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const FeatureDetail = ({
   title,
@@ -43,7 +43,9 @@ export default function CrmManagerPage() {
           A flexible system for tracking the entire customer journey, from initial lead to loyal client. Turn relationships into revenue.
         </p>
         <div>
-            <Button>CRM Manager</Button>
+            <Button asChild>
+                <Link href="/crm/action-manager">CRM Manager</Link>
+            </Button>
         </div>
       </header>
       

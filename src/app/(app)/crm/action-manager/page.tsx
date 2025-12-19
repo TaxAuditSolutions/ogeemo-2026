@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,9 +10,11 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, UserPlus, Pipeline, MailQuestion, BarChartHorizontal, ArrowRight } from "lucide-react";
+import { ArrowLeft, UserPlus, MailQuestion, BarChartHorizontal, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
+import { Pipeline } from "lucide-react";
+
 
 interface CrmAction {
   icon: LucideIcon;

@@ -284,17 +284,10 @@ export function TimeLogReport() {
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-    const [showTestCard, setShowTestCard] = useState(false);
     const [showTest2Card, setShowTest2Card] = useState(false);
     const [test2SelectedWorkerId, setTest2SelectedWorkerId] = useState<string | null>(null);
     const [isTest2WorkerPopoverOpen, setIsTest2WorkerPopoverOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
-
-    // State for Test Card fields
-    const [testWorker, setTestWorker] = useState<string>('');
-    const [testDate, setTestDate] = useState<Date | undefined>(new Date());
-    const [testDescription, setTestDescription] = useState('');
-    const [testDuration, setTestDuration] = useState({ hours: '', minutes: '' });
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -350,48 +343,6 @@ export function TimeLogReport() {
     useEffect(() => {
         handleViewLogs();
     }, [allEntries, handleViewLogs]);
-    
-    const handleLogTestEntry = async () => {
-        if (!user) return;
-        const durationHours = Number(testDuration.hours) || 0;
-        const durationMinutes = Number(testDuration.minutes) || 0;
-        const totalDurationSeconds = (durationHours * 3600) + (durationMinutes * 60);
-
-        if (!testWorker || !testDate || totalDurationSeconds <= 0) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker, date, and enter a valid duration.' });
-            return;
-        }
-
-        try {
-            const startTime = set(testDate, { hours: 9, minutes: 0 }); // Default to 9 AM
-            const endTime = new Date(startTime.getTime() + totalDurationSeconds * 1000);
-
-            const taskData = {
-                title: testDescription || `Manual Time Entry`,
-                description: testDescription,
-                start: startTime,
-                end: endTime,
-                duration: totalDurationSeconds,
-                workerId: testWorker,
-                userId: user.uid,
-                status: 'done' as const,
-                isBillable: false, // Default to non-billable for simplicity
-                position: 0,
-            };
-
-            await addTask(taskData);
-            toast({
-                title: "Test Entry Logged",
-                description: "The time log has been added successfully."
-            });
-            // Clear form and refresh data
-            setTestDescription('');
-            setTestDuration({ hours: '', minutes: '' });
-            await loadData();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
-    };
 
     const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
     
@@ -432,9 +383,7 @@ export function TimeLogReport() {
     const selectedWorker = workers.find(c => c.id === selectedWorkerId);
     
     const handleWorkerSaved = (newOrUpdatedWorker: Worker) => {
-        // Refresh the worker list to include the new addition/update
         loadData();
-        // Optionally, select the new worker
         setSelectedWorkerId(newOrUpdatedWorker.id);
     };
 
@@ -510,61 +459,9 @@ export function TimeLogReport() {
                                 <Button onClick={() => setIsLogTimeDialogOpen(true)}>
                                     <Clock className="mr-2 h-4 w-4" /> Log a Time Entry
                                 </Button>
-                                 <Button variant="outline" onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
                             </CardFooter>
                         </Card>
-                        {showTestCard && (
-                          <>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Test Card</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                          <Label htmlFor="test-worker">Worker</Label>
-                                          <Select value={testWorker} onValueChange={setTestWorker}>
-                                              <SelectTrigger id="test-worker">
-                                                  <SelectValue placeholder="Select a worker" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                  {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
-                                              </SelectContent>
-                                          </Select>
-                                      </div>
-                                      <div className="space-y-2">
-                                          <Label htmlFor="test-date">Date</Label>
-                                          <Popover>
-                                              <PopoverTrigger asChild>
-                                                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                      <CalendarIcon className="mr-2 h-4 w-4" />
-                                                      {testDate ? format(testDate, "PPP") : <span>Pick a date</span>}
-                                                  </Button>
-                                              </PopoverTrigger>
-                                              <PopoverContent className="w-auto p-0">
-                                                  <Calendar mode="single" selected={testDate} onSelect={setTestDate} initialFocus />
-                                              </PopoverContent>
-                                          </Popover>
-                                      </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label htmlFor="test-description">Description</Label>
-                                      <Input id="test-description" value={testDescription} onChange={e => setTestDescription(e.target.value)} />
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label>Duration</Label>
-                                      <div className="flex items-center gap-2">
-                                          <Input type="number" placeholder="Hours" value={testDuration.hours} onChange={e => setTestDuration(p => ({...p, hours: e.target.value}))} />
-                                          <Input type="number" placeholder="Minutes" value={testDuration.minutes} onChange={e => setTestDuration(p => ({...p, minutes: e.target.value}))} />
-                                      </div>
-                                  </div>
-                                </CardContent>
-                                 <CardFooter>
-                                    <Button onClick={handleLogTestEntry}>Log Test Entry</Button>
-                                </CardFooter>
-                            </Card>
-                          </>
-                        )}
+                        
                         <div ref={contentRef}>
                             <Card className="print:border-none print:shadow-none">
                                 <CardHeader className="text-center">
@@ -729,3 +626,5 @@ export function TimeLogReport() {
         </>
     );
 }
+
+    

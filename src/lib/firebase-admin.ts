@@ -57,26 +57,3 @@ initializeFirebaseAdmin();
 export const getAdminStorage = () => getAdminStorageSdk(adminApp);
 export const adminDb = admin.firestore(adminApp);
 export const adminAuth = admin.auth(adminApp);
-
-/**
- * A purely server-side function to get file content from Firebase Storage.
- */
-export async function getAdminFileContentFromStorage(storagePath: string): Promise<string> {
-    if (!storagePath) {
-        console.warn("getAdminFileContentFromStorage: storagePath is empty.");
-        return '';
-    }
-    try {
-        const bucket = getAdminStorage().bucket();
-        const file = bucket.file(storagePath);
-        const [exists] = await file.exists();
-        if (!exists) {
-            throw new Error(`File not found at storage path: ${storagePath}`);
-        }
-        const contents = await file.download();
-        return contents.toString('utf8');
-    } catch (error: any) {
-        console.error(`Failed to fetch content from admin storage path ${storagePath}:`, error);
-        throw new Error(`Failed to retrieve file content from storage: ${error.message}`);
-    }
-}

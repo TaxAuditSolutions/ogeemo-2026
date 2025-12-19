@@ -44,7 +44,7 @@ export default function CrmManagerPage() {
         </p>
         <div>
             <Button asChild>
-                <Link href="/crm/action-manager">CRM Manager</Link>
+                <Link href="#">CRM Manager</Link>
             </Button>
         </div>
       </header>

@@ -33,8 +33,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -44,10 +44,11 @@ import { ReportsPageHeader } from './page-header';
 import { Button } from '@/components/ui/button';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
-import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange } from 'react-day-picker';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -55,7 +56,6 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
-    const router = useRouter();
 
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
@@ -65,6 +65,10 @@ export function TimeLogReport() {
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
+    
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -91,11 +95,21 @@ export function TimeLogReport() {
     }, [loadData]);
     
     const filteredEntries = useMemo(() => {
-        if (!selectedWorkerId) {
-            return allEntries;
+        let entries = allEntries;
+
+        if (selectedWorkerId) {
+            entries = entries.filter(entry => entry.workerId === selectedWorkerId);
         }
-        return allEntries.filter(entry => entry.workerId === selectedWorkerId);
-    }, [allEntries, selectedWorkerId]);
+
+        if (dateRange?.from) {
+            const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+            entries = entries.filter(entry => 
+                isWithinInterval(new Date(entry.startTime), { start: startOfDay(dateRange.from!), end: rangeEnd })
+            );
+        }
+
+        return entries;
+    }, [allEntries, selectedWorkerId, dateRange]);
 
     const handleOpenLogTimeDialog = (entry: TimeLog | null = null, preselectWorkerId: string | null = null) => {
         setEntryToEdit(entry);
@@ -162,15 +176,44 @@ export function TimeLogReport() {
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                            <Button onClick={() => handleOpenLogTimeDialog(null)}>
+                            
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {dateRange?.from ? 
+                                            dateRange.to ? `${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}` : format(dateRange.from, 'LLL dd, y')
+                                            : "Filter by date"
+                                        }
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={setDateRange}
+                                        numberOfMonths={2}
+                                    />
+                                    <div className="p-2 border-t flex justify-end gap-2">
+                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>Today</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+                                        <Button size="sm" variant="outline" onClick={() => { setDateRange(undefined); setIsDatePickerOpen(false); }}>Clear</Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+
+                            <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Time Entry
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
                             </Button>
-                            {selectedWorkerId && (
-                                <Button variant="ghost" onClick={() => setSelectedWorkerId(null)}>
-                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filter
+                            {(selectedWorkerId || dateRange) && (
+                                <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }}>
+                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                                 </Button>
                             )}
                         </div>
@@ -242,7 +285,7 @@ export function TimeLogReport() {
                 onOpenChange={(isOpen) => {
                     setIsLogTimeDialogOpen(isOpen);
                     if (!isOpen) {
-                        setEntryToEdit(null); // Clear editing state when dialog closes
+                        setEntryToEdit(null);
                         setPreselectedWorkerId(null);
                     }
                 }}

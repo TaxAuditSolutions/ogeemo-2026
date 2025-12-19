@@ -5,9 +5,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription
 } from '@/components/ui/card';
 import {
   Table,
@@ -22,7 +22,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTimeLogs, type TimeLog } from '@/services/timelog-service'; // UPDATED
+import { getTimeLogs, type TimeLog } from '@/services/timelog-service';
 import { formatTime } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import { LogTimeDialog } from './log-time-dialog';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
-    const [allEntries, setAllEntries] = useState<TimeLog[]>([]); // UPDATED
+    const [allEntries, setAllEntries] = useState<TimeLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -39,7 +39,7 @@ export function TimeLogReport() {
     // State for Dialogs
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
-    const [selectedWorkerIdForDialog, setSelectedWorkerIdForDialog] = useState<string | null>(null);
+    const [entryToEdit, setEntryToEdit] = useState<TimeLog | null>(null);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -50,10 +50,10 @@ export function TimeLogReport() {
         try {
             const [fetchedWorkers, entries] = await Promise.all([
                 getWorkers(user.uid),
-                getTimeLogs(user.uid), // UPDATED to use getTimeLogs
+                getTimeLogs(user.uid),
             ]);
             setWorkers(fetchedWorkers);
-            setAllEntries(entries); // No need to filter here anymore
+            setAllEntries(entries);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -65,13 +65,13 @@ export function TimeLogReport() {
         loadData();
     }, [loadData]);
 
-    const handleOpenLogTimeDialog = () => {
-        setSelectedWorkerIdForDialog(null);
+    const handleOpenLogTimeDialog = (entry: TimeLog | null = null) => {
+        setEntryToEdit(entry);
         setIsLogTimeDialogOpen(true);
     };
 
     const handleWorkerSaved = () => {
-        loadData();
+        loadData(); // This assumes you want to refresh both workers and time logs
     };
     
     return (
@@ -83,7 +83,7 @@ export function TimeLogReport() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                         <div className="mt-4 flex justify-center gap-2">
-                            <Button onClick={handleOpenLogTimeDialog}>
+                            <Button onClick={() => handleOpenLogTimeDialog()}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Time Entry
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
@@ -113,7 +113,15 @@ export function TimeLogReport() {
                                 ) : allEntries.length > 0 ? (
                                     allEntries.map(entry => (
                                         <TableRow key={entry.id}>
-                                            <TableCell>{entry.workerName}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    variant="link"
+                                                    className="p-0 h-auto"
+                                                    onClick={() => handleOpenLogTimeDialog(entry)}
+                                                >
+                                                    {entry.workerName}
+                                                </Button>
+                                            </TableCell>
                                             <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                             <TableCell>{entry.notes}</TableCell>
                                             <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
@@ -134,10 +142,10 @@ export function TimeLogReport() {
 
             <LogTimeDialog 
                 isOpen={isLogTimeDialogOpen} 
-                onOpenChange={setIsLogTimeDialogOpen} 
-                workerId={selectedWorkerIdForDialog} 
-                workers={workers} 
-                onTimeLogged={loadData} 
+                onOpenChange={setIsLogTimeDialogOpen}
+                workers={workers}
+                onTimeLogged={loadData}
+                entryToEdit={entryToEdit}
             />
 
             <WorkerFormDialog 

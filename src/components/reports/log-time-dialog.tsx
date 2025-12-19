@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
-import { addTimeLog } from '@/services/timelog-service'; // UPDATED
-import { LoaderCircle, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
+import { addTimeLog, updateTimeLog, type TimeLog } from '@/services/timelog-service';
+import { LoaderCircle, Plus, ChevronsUpDown, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -25,125 +25,103 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type Worker } from '@/services/payroll-service';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Textarea } from '../ui/textarea';
 
-
-interface TimeLogEntry {
-    id: number;
-    date: string;
-    startTime: { hour: string; minute: string };
-    endTime: { hour: string; minute: string };
-    description: string;
-}
-
-const emptyLogEntry: Omit<TimeLogEntry, 'id'> = {
-    date: format(new Date(), 'yyyy-MM-dd'),
-    startTime: { hour: '9', minute: '0' },
-    endTime: { hour: '17', minute: '0' },
-    description: '',
-};
 
 interface LogTimeDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    workerId: string | null;
     workers: Worker[];
-    onTimeLogged: () => void; // Callback to refresh the report
+    onTimeLogged: () => void;
+    entryToEdit?: TimeLog | null; 
 }
 
-export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId, workers, onTimeLogged }: LogTimeDialogProps) {
-    const [timeEntries, setTimeEntries] = useState<TimeLogEntry[]>([{ id: Date.now(), ...emptyLogEntry }]);
+export function LogTimeDialog({ isOpen, onOpenChange, workers, onTimeLogged, entryToEdit = null }: LogTimeDialogProps) {
+    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [startTime, setStartTime] = useState({ hour: '09', minute: '00' });
+    const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
+    const [description, setDescription] = useState('');
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    
     const [isSaving, setIsSaving] = useState(false);
-    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(initialWorkerId);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
-
+    
     const { user } = useAuth();
     const { toast } = useToast();
-    
+
     useEffect(() => {
-        setSelectedWorkerId(initialWorkerId);
         if (isOpen) {
-            setTimeEntries([{ id: Date.now(), ...emptyLogEntry }]);
-        }
-    }, [isOpen, initialWorkerId]);
-
-
-    const handleAddEntry = () => {
-        setTimeEntries(prev => [...prev, { id: Date.now(), ...emptyLogEntry }]);
-    };
-    
-    const handleRemoveEntry = (id: number) => {
-        setTimeEntries(prev => prev.filter(entry => entry.id !== id));
-    };
-
-    const handleEntryChange = (id: number, field: keyof TimeLogEntry, value: any) => {
-        setTimeEntries(prev => prev.map(entry => entry.id === id ? { ...entry, [field]: value } : entry));
-    };
-    
-    const handleTimeChange = (id: number, timeField: 'startTime' | 'endTime', part: 'hour' | 'minute', value: string) => {
-        setTimeEntries(prev => prev.map(entry => {
-            if (entry.id === id) {
-                return { ...entry, [timeField]: { ...entry[timeField], [part]: value } };
+            if (entryToEdit) {
+                const start = new Date(entryToEdit.startTime);
+                const end = new Date(entryToEdit.endTime);
+                setDate(start);
+                setStartTime({ hour: String(start.getHours()).padStart(2, '0'), minute: String(start.getMinutes()).padStart(2, '0') });
+                setEndTime({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
+                setDescription(entryToEdit.notes || '');
+                setSelectedWorkerId(entryToEdit.workerId);
+            } else {
+                // Reset form for new entry
+                setDate(new Date());
+                setStartTime({ hour: '09', minute: '00' });
+                setEndTime({ hour: '17', minute: '00' });
+                setDescription('');
+                setSelectedWorkerId(null);
             }
-            return entry;
-        }));
-    };
-
-    const handleSaveAllLogs = async () => {
-        if (!user || !selectedWorkerId) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select an employee.' });
-            return;
         }
-        if (timeEntries.length === 0) {
-            toast({ variant: 'destructive', title: 'No Entries', description: 'Please add at least one time entry to log.' });
+    }, [isOpen, entryToEdit]);
+
+    const handleSave = async () => {
+        if (!user || !selectedWorkerId || !date) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a worker and a date.' });
             return;
         }
 
         const selectedWorker = workers.find(w => w.id === selectedWorkerId);
         if (!selectedWorker) {
-            toast({ variant: 'destructive', title: 'Invalid Worker', description: 'Could not find the selected worker.' });
+             toast({ variant: 'destructive', title: 'Invalid Worker', description: 'Could not find the selected worker.' });
             return;
         }
 
+        const finalStartTime = set(date, { hours: parseInt(startTime.hour), minutes: parseInt(startTime.minute), seconds: 0, milliseconds: 0 });
+        const finalEndTime = set(date, { hours: parseInt(endTime.hour), minutes: parseInt(endTime.minute), seconds: 0, milliseconds: 0 });
+
+        if (finalEndTime <= finalStartTime) {
+            toast({ variant: 'destructive', title: 'Invalid Times', description: 'End time must be after start time.' });
+            return;
+        }
+
+        const durationSeconds = (finalEndTime.getTime() - finalStartTime.getTime()) / 1000;
+
         setIsSaving(true);
         try {
-            let successfulLogs = 0;
-            for (const entry of timeEntries) {
-                if (!entry.date) {
-                    toast({ variant: 'destructive', title: 'Invalid Entry', description: `Entry for "${entry.description}" is missing a date.`});
-                    continue;
-                }
-                
-                const logDate = new Date(entry.date);
-                const startTime = set(logDate, { hours: parseInt(entry.startTime.hour), minutes: parseInt(entry.startTime.minute), seconds: 0, milliseconds: 0 });
-                const endTime = set(logDate, { hours: parseInt(entry.endTime.hour), minutes: parseInt(entry.endTime.minute), seconds: 0, milliseconds: 0 });
-
-                if (endTime <= startTime) {
-                    toast({ variant: 'destructive', title: 'Invalid Times', description: `End time must be after start time for entry on ${entry.date}.` });
-                    continue;
-                }
-
-                const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
-                
-                const logData = {
+            if (entryToEdit) {
+                // Update existing entry
+                const updatedData = {
                     workerId: selectedWorkerId,
                     workerName: selectedWorker.name,
-                    startTime,
-                    endTime,
+                    startTime: finalStartTime,
+                    endTime: finalEndTime,
                     durationSeconds,
-                    notes: entry.description,
+                    notes: description,
+                };
+                await updateTimeLog(entryToEdit.id, updatedData);
+                toast({ title: "Time Log Updated" });
+            } else {
+                // Add new entry
+                 const logData = {
+                    workerId: selectedWorkerId,
+                    workerName: selectedWorker.name,
+                    startTime: finalStartTime,
+                    endTime: finalEndTime,
+                    durationSeconds,
+                    notes: description,
                     userId: user.uid,
                 };
-
                 await addTimeLog(logData);
-                successfulLogs++;
+                toast({ title: "Time Logged Successfully" });
             }
-            
-            if (successfulLogs > 0) {
-                toast({ title: "Time Logged Successfully", description: `${successfulLogs} time entries have been saved.` });
-                onTimeLogged(); // Call the callback to refresh the report
-                onOpenChange(false); // Close the dialog
-            }
-
+            onTimeLogged();
+            onOpenChange(false);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         } finally {
@@ -151,25 +129,21 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId,
         }
     };
     
-    const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i), label: format(set(new Date(), { hours: i }), 'h a') }));
-    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` }; });
+    const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: format(set(new Date(), { hours: i }), 'h a') }));
+    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Log Time Card Entry</DialogTitle>
-                    <DialogDescription>
-                        Add one or more time entries for the selected worker. This will create time logs that can be used to calculate gross pay.
-                    </DialogDescription>
+                    <DialogTitle>{entryToEdit ? 'Edit' : 'Log'} Time Card Entry</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                    
-                    <div className="space-y-2 max-w-sm">
-                        <Label>Employee / Contractor</Label>
+                     <div className="space-y-2">
+                        <Label>Employee / Contractor *</Label>
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                <Button variant="outline" role="combobox" className="w-full justify-between" disabled={!!entryToEdit}>
                                     {selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -179,67 +153,44 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId,
                             </PopoverContent>
                         </Popover>
                     </div>
-
-                    {timeEntries.map((entry) => (
-                        <div key={entry.id} className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_2fr_auto] gap-4 items-end border p-4 rounded-lg">
-                            <div className="space-y-2">
-                                <Label htmlFor={`log-date-${entry.id}`}>Date</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !entry.date && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {entry.date ? format(new Date(entry.date), "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={entry.date ? new Date(entry.date) : undefined} onSelect={(date) => date && handleEntryChange(entry.id, 'date', format(date, 'yyyy-MM-dd'))} initialFocus /></PopoverContent>
-                                </Popover>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Start Time</Label>
-                                <div className="flex gap-2">
-                                    <Select value={entry.startTime.hour} onValueChange={(v) => handleTimeChange(entry.id, 'startTime', 'hour', v)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <Select value={entry.startTime.minute} onValueChange={(v) => handleTimeChange(entry.id, 'startTime', 'minute', v)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <Label>End Time</Label>
-                                <div className="flex gap-2">
-                                    <Select value={entry.endTime.hour} onValueChange={(v) => handleTimeChange(entry.id, 'endTime', 'hour', v)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                     <Select value={entry.endTime.minute} onValueChange={(v) => handleTimeChange(entry.id, 'endTime', 'minute', v)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor={`log-description-${entry.id}`}>Description (Optional)</Label>
-                                <Input id={`log-description-${entry.id}`} placeholder="e.g., Regular shift" value={entry.description} onChange={(e) => handleEntryChange(entry.id, 'description', e.target.value)} />
-                            </div>
-                            <div>
-                                <Button variant="ghost" size="icon" onClick={() => handleRemoveEntry(entry.id)} disabled={timeEntries.length <= 1}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <div className="space-y-2">
+                        <Label>Date *</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
                                 </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent>
+                        </Popover>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Start Time *</Label>
+                            <div className="flex gap-2">
+                                <Select value={startTime.hour} onValueChange={(v) => setStartTime(p => ({...p, hour: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                <Select value={startTime.minute} onValueChange={(v) => setStartTime(p => ({...p, minute: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
-                    ))}
-                     <Button variant="outline" onClick={handleAddEntry}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Another Entry
-                    </Button>
+                        <div className="space-y-2">
+                            <Label>End Time *</Label>
+                            <div className="flex gap-2">
+                                <Select value={endTime.hour} onValueChange={(v) => setEndTime(p => ({...p, hour: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                <Select value={endTime.minute} onValueChange={(v) => setEndTime(p => ({...p, minute: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description (Optional)</Label>
+                        <Textarea id="description" placeholder="e.g., Regular shift" value={description} onChange={(e) => setDescription(e.target.value)} />
+                    </div>
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSaveAllLogs} disabled={isSaving}>
+                    <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                        Log All Entries ({timeEntries.length})
+                        {entryToEdit ? 'Save Changes' : 'Log Time'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

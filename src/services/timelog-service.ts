@@ -7,6 +7,7 @@ import {
   getDocs,
   doc,
   addDoc,
+  updateDoc,
   query,
   where,
   Timestamp,
@@ -53,3 +54,10 @@ export async function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
   const docRef = await addDoc(collection(db, TIME_LOGS_COLLECTION), data);
   return { id: docRef.id, ...data };
 }
+
+export async function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id' | 'userId'>>): Promise<void> {
+    const db = await getDb();
+    const docRef = doc(db, TIME_LOGS_COLLECTION, id);
+    await updateDoc(docRef, data);
+}
+

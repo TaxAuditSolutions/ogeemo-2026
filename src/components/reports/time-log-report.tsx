@@ -64,6 +64,7 @@ export function TimeLogReport() {
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
+    const [showTestCard, setShowTestCard] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -159,7 +160,7 @@ export function TimeLogReport() {
                     hubLabel="HR Hub" 
                 />
                 <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                 </header>
                 <Card className="print:hidden">
                     <CardHeader>
@@ -221,9 +222,20 @@ export function TimeLogReport() {
                             <Clock className="mr-2 h-4 w-4" />
                             Log a Time Entry
                         </Button>
-                        <Button>Test</Button>
+                        <Button onClick={() => setShowTestCard(prev => !prev)}>Test</Button>
                     </CardFooter>
                 </Card>
+
+                {showTestCard && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Test Card</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          <p>This is the test card.</p>
+                      </CardContent>
+                  </Card>
+                )}
 
                 <div ref={contentRef}>
                     <Card className="print:border-none print:shadow-none">

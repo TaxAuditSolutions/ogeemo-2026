@@ -72,23 +72,23 @@ export default function CrmActionManagerPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {crmActions.map(action => {
-            const Icon = action.icon;
+            const { icon: Icon, title, description, href } = action;
             return (
-              <Card key={action.title} className="flex flex-col">
+              <Card key={title} className="flex flex-col">
                 <CardHeader>
                    <div className="flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-lg">
                             <Icon className="h-6 w-6 text-primary" />
                         </div>
-                        <CardTitle>{action.title}</CardTitle>
+                        <CardTitle>{title}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1">
-                    <CardDescription>{action.description}</CardDescription>
+                    <CardDescription>{description}</CardDescription>
                 </CardContent>
                 <CardFooter>
                      <Button asChild className="w-full">
-                      <Link href={action.href}>
+                      <Link href={href}>
                         Go <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>

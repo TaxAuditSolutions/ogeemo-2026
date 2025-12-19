@@ -214,7 +214,7 @@ export function TimeLogReport() {
                             </Popover>
 
                             <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add Time Entry
+                                <PlusCircle className="mr-2 h-4 w-4" /> Log Event
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker

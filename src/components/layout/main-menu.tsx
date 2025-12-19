@@ -28,6 +28,9 @@ const groupedMenuItems = {
     Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup'] },
 };
 
+// This component is now memoized to prevent re-rendering when its props (item, isActive) don't change.
+const MemoizedDraggableMenuItem = React.memo(DraggableMenuItem);
+
 export function MainMenu() {
   const pathname = usePathname();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(allMenuItems);
@@ -146,14 +149,14 @@ export function MainMenu() {
             <AccordionContent className="pt-1 pl-4">
                 <div className="space-y-1">
                 {groupItems.map(item => (
-                    <DraggableMenuItem
-                    key={item.href}
-                    item={item}
-                    index={-1}
-                    isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
-                    moveMenuItem={() => {}}
-                    isDraggable={false}
-                    isCompact={true}
+                    <MemoizedDraggableMenuItem
+                        key={item.href}
+                        item={item}
+                        index={-1} // Not needed for non-draggable view
+                        isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
+                        moveMenuItem={() => {}}
+                        isDraggable={false}
+                        isCompact={true}
                     />
                 ))}
                 </div>
@@ -255,7 +258,7 @@ export function MainMenu() {
       <div className="flex-1 space-y-1">
         {view === 'fullMenu' ? (
             menuItems.map((item, index) => (
-            <DraggableMenuItem
+            <MemoizedDraggableMenuItem
                 key={item.href}
                 item={item}
                 index={index}

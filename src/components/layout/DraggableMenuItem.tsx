@@ -29,7 +29,7 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
     index, 
     isActive, 
     moveMenuItem, 
-    isDraggable = true, 
+    isDraggable = false, 
     isCompact = false 
 }, forwardedRef) => {
   const localRef = useRef<HTMLDivElement>(null);

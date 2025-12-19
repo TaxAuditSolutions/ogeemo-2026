@@ -219,7 +219,7 @@ export function TimeLogReport() {
             <div ref={contentRef}>
                 <Card className="print:border-none print:shadow-none">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
+                        <CardTitle className="text-2xl">Time Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
                         <CardDescription>
                             {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
                         </CardDescription>

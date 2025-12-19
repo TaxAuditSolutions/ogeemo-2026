@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
-type LeadStatus = 'New' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads';
+type LeadStatus = 'New' | 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -213,7 +214,7 @@ export default function CreateLeadPage() {
                     </SelectTrigger>
                     <SelectContent>
                     <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Active Leads">Active Leads</SelectItem>
+                    <SelectItem value="Unscheduled Leads">Unscheduled Leads</SelectItem>
                     <SelectItem value="Scheduled Leads">Scheduled Leads</SelectItem>
                     <SelectItem value="Completed Leads">Completed Leads</SelectItem>
                     </SelectContent>

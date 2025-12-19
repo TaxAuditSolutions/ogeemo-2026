@@ -16,7 +16,7 @@ import { useDrag, useDrop } from 'react-dnd';
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
-type LeadStatus = 'New' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads';
+type LeadStatus = 'New' | 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
 
 interface Lead {
   id: string;
@@ -155,7 +155,7 @@ export default function CrmPlanPage() {
       router.push(`/crm/leads/create?id=${lead.id}`);
   };
 
-  const columns: LeadStatus[] = ["New", "Active Leads", "Scheduled Leads", "Completed Leads"];
+  const columns: LeadStatus[] = ["New", "Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
   return (
     <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">

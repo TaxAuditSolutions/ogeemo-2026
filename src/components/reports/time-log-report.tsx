@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -33,7 +33,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +45,9 @@ import { Button } from '@/components/ui/button';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
 import { useRouter } from 'next/navigation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -59,6 +62,9 @@ export function TimeLogReport() {
     const [entryToEdit, setEntryToEdit] = useState<TimeLog | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<TimeLog | null>(null);
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
+    
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -83,6 +89,13 @@ export function TimeLogReport() {
     useEffect(() => {
         loadData();
     }, [loadData]);
+    
+    const filteredEntries = useMemo(() => {
+        if (!selectedWorkerId) {
+            return allEntries;
+        }
+        return allEntries.filter(entry => entry.workerId === selectedWorkerId);
+    }, [allEntries, selectedWorkerId]);
 
     const handleOpenLogTimeDialog = (entry: TimeLog | null = null, preselectWorkerId: string | null = null) => {
         setEntryToEdit(entry);
@@ -106,6 +119,8 @@ export function TimeLogReport() {
     const handleWorkerSaved = () => {
         loadData();
     };
+    
+    const selectedWorker = workers.find(w => w.id === selectedWorkerId);
 
     return (
         <>
@@ -116,12 +131,48 @@ export function TimeLogReport() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                         <div className="mt-4 flex justify-center gap-2">
+                             <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline">
+                                        <User className="mr-2 h-4 w-4" />
+                                        {selectedWorker ? `Filtering: ${selectedWorker.name}` : "Select Worker"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search workers..." />
+                                        <CommandList>
+                                            <CommandEmpty>No worker found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {workers.map(worker => (
+                                                    <CommandItem
+                                                        key={worker.id}
+                                                        value={worker.name}
+                                                        onSelect={() => {
+                                                            setSelectedWorkerId(worker.id);
+                                                            setIsWorkerPopoverOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />
+                                                        {worker.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             <Button onClick={() => handleOpenLogTimeDialog(null)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Time Entry
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
                             </Button>
+                            {selectedWorkerId && (
+                                <Button variant="ghost" onClick={() => setSelectedWorkerId(null)}>
+                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filter
+                                </Button>
+                            )}
                         </div>
                     </header>
                 </CardHeader>
@@ -132,7 +183,7 @@ export function TimeLogReport() {
                                 <TableRow>
                                     <TableHead>Worker</TableHead>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Notes</TableHead>
+                                    <TableHead>Description</TableHead>
                                     <TableHead className="text-right">Duration</TableHead>
                                     <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                 </TableRow>
@@ -144,8 +195,8 @@ export function TimeLogReport() {
                                             <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                                         </TableCell>
                                     </TableRow>
-                                ) : allEntries.length > 0 ? (
-                                    allEntries.map(entry => (
+                                ) : filteredEntries.length > 0 ? (
+                                    filteredEntries.map(entry => (
                                         <TableRow key={entry.id}>
                                             <TableCell className="font-medium">{entry.workerName}</TableCell>
                                             <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
@@ -176,7 +227,7 @@ export function TimeLogReport() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            No time log entries found.
+                                            No time log entries found for this selection.
                                         </TableCell>
                                     </TableRow>
                                 )}

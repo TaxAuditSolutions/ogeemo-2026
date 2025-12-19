@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -33,7 +34,7 @@ export default function CrmPlanPage() {
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
         <Card>
             <CardHeader>
-                <CardTitle></CardTitle>
+                <CardTitle>Inactive Leads</CardTitle>
                 <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
@@ -42,7 +43,7 @@ export default function CrmPlanPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle></CardTitle>
+                <CardTitle>Active Leads</CardTitle>
                 <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
@@ -51,7 +52,7 @@ export default function CrmPlanPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle></CardTitle>
+                <CardTitle>Scheduled Leads</CardTitle>
                 <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
@@ -60,7 +61,7 @@ export default function CrmPlanPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle></CardTitle>
+                <CardTitle>Completed Leads</CardTitle>
                 <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>

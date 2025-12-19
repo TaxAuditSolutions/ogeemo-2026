@@ -4,6 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users2, Filter, Bot, Mail, Calendar, Calculator, Contact } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 const FeatureDetail = ({
   title,
@@ -33,7 +34,7 @@ const FeatureDetail = ({
 export default function CrmManagerPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
-       <header className="text-center">
+       <header className="text-center space-y-4">
         <h1 className="text-2xl font-bold font-headline text-primary flex items-center justify-center gap-3">
           <Users2 className="h-8 w-8" />
           Customer Relationship Manager
@@ -41,6 +42,9 @@ export default function CrmManagerPage() {
         <p className="text-muted-foreground max-w-3xl mx-auto mt-2">
           A flexible system for tracking the entire customer journey, from initial lead to loyal client. Turn relationships into revenue.
         </p>
+        <div>
+            <Button>CRM Manager</Button>
+        </div>
       </header>
       
       <div className="max-w-4xl mx-auto space-y-6">

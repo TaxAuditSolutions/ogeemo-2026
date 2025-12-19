@@ -1,11 +1,10 @@
-
 'use client';
 
 import Link from 'next/link';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
 import { ActiveTimerIndicator } from '@/components/layout/active-timer-indicator';
-import { Sidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
@@ -17,11 +16,10 @@ import {
 } from "@/components/ui/tooltip";
 import { LayoutDashboard, Bot } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
-import { ClientLayout } from '@/components/layout/client-layout';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClientLayout>
+    <SidebarProvider>
       <DndProviderWrapper>
         <SidebarViewProvider>
           <div className="flex h-screen w-full bg-muted">
@@ -104,6 +102,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <ActiveTimerIndicator />
         </SidebarViewProvider>
       </DndProviderWrapper>
-    </ClientLayout>
+    </SidebarProvider>
   );
 }

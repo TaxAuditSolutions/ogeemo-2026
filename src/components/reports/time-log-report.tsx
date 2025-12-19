@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -33,7 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon } from 'lucide-react';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -267,6 +268,10 @@ export function TimeLogReport() {
                                                         <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(null, entry.workerId)}>
                                                             <PlusCircle className="mr-2 h-4 w-4" /> Add New Entry for Worker
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => setSelectedWorkerId(entry.workerId)}>
+                                                            <FileText className="mr-2 h-4 w-4" /> View Worker Report
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive">
                                                             <Trash2 className="mr-2 h-4 w-4" /> Delete Entry
                                                         </DropdownMenuItem>

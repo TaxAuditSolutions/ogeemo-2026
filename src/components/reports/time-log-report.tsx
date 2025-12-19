@@ -10,7 +10,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { LoaderCircle, ChevronsUpDown, Check, Printer, MoreVertical, BookOpen, Clock, Plus, Trash2 } from 'lucide-react';
+import { LoaderCircle, ChevronsUpDown, Check, Printer, MoreVertical, BookOpen, Clock, Plus, Trash2, FilterX } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -127,9 +127,10 @@ export function TimeLogReport() {
         <>
             <div className="space-y-6">
                 <ReportsPageHeader pageTitle="Time Log Report" />
-                 <Card className="w-full max-w-7xl mx-auto">
+                <Card className="w-full max-w-7xl mx-auto">
                     <CardHeader className="text-center">
                         <CardTitle className="text-3xl font-bold font-headline text-primary">Time Log Report</CardTitle>
+                        <CardDescription>Review and manage all logged work hours for your team.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <Card>
@@ -179,21 +180,20 @@ export function TimeLogReport() {
                                     <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {isLoading ? (
-                                        <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
-                                    ) : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Worker</TableHead>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Description</TableHead>
-                                                    <TableHead className="text-right">Duration</TableHead>
-                                                    <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {displayedEntries.length > 0 ? displayedEntries.map(entry => {
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Worker</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead className="text-right">Duration</TableHead>
+                                                <TableHead className="w-10 print:hidden"><span className="sr-only">Actions</span></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {isLoading ? (
+                                                <TableRow><TableCell colSpan={5} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                            ) : displayedEntries.length > 0 ? displayedEntries.map(entry => {
                                                     const workerName = workers.find(w => w.id === entry.workerId)?.name;
                                                     if (!workerName) return null; // Should not happen if data is consistent
                                                     return (
@@ -216,16 +216,15 @@ export function TimeLogReport() {
                                                 }) : (
                                                     <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found for this selection.</TableCell></TableRow>
                                                 )}
-                                            </TableBody>
-                                            <TableFooter>
-                                                <TableRow>
-                                                    <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
-                                                    <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
-                                                    <TableCell className="print:hidden"/>
-                                                </TableRow>
-                                            </TableFooter>
-                                        </Table>
-                                    )}
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="font-bold">Total Logged Time</TableCell>
+                                                <TableCell className="text-right font-bold font-mono">{formatTime(totalDuration)}</TableCell>
+                                                <TableCell className="print:hidden"/>
+                                            </TableRow>
+                                        </TableFooter>
+                                    </Table>
                                 </CardContent>
                                 <CardFooter className="print:hidden justify-end space-x-2">
                                     <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
@@ -236,7 +235,7 @@ export function TimeLogReport() {
                             </Card>
                         </div>
                     </CardContent>
-                 </Card>
+                </Card>
             </div>
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
@@ -253,7 +252,7 @@ export function TimeLogReport() {
             <LogTimeDialog
                 isOpen={isLogTimeDialogOpen}
                 onOpenChange={setIsLogTimeDialogOpen}
-                workerId={selectedWorkerId}
+                workerId={selectedWorkerId !== 'all' ? selectedWorkerId : null}
                 workers={workers}
                 onTimeLogged={loadData}
             />

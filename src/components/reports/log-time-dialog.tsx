@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
-import { addTask } from '@/services/project-service';
+import { addTimeLog } from '@/services/timelog-service'; // UPDATED
 import { LoaderCircle, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -98,6 +98,12 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId,
             return;
         }
 
+        const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+        if (!selectedWorker) {
+            toast({ variant: 'destructive', title: 'Invalid Worker', description: 'Could not find the selected worker.' });
+            return;
+        }
+
         setIsSaving(true);
         try {
             let successfulLogs = 0;
@@ -108,8 +114,8 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId,
                 }
                 
                 const logDate = new Date(entry.date);
-                const startTime = set(logDate, { hours: parseInt(entry.startTime.hour), minutes: parseInt(entry.startTime.minute) });
-                const endTime = set(logDate, { hours: parseInt(entry.endTime.hour), minutes: parseInt(entry.endTime.minute) });
+                const startTime = set(logDate, { hours: parseInt(entry.startTime.hour), minutes: parseInt(entry.startTime.minute), seconds: 0, milliseconds: 0 });
+                const endTime = set(logDate, { hours: parseInt(entry.endTime.hour), minutes: parseInt(entry.endTime.minute), seconds: 0, milliseconds: 0 });
 
                 if (endTime <= startTime) {
                     toast({ variant: 'destructive', title: 'Invalid Times', description: `End time must be after start time for entry on ${entry.date}.` });
@@ -118,20 +124,17 @@ export function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId,
 
                 const durationSeconds = (endTime.getTime() - startTime.getTime()) / 1000;
                 
-                const taskData = {
-                    title: `Time Log: ${workers.find(e => e.id === selectedWorkerId)?.name}`,
-                    description: entry.description,
-                    start: startTime,
-                    end: endTime,
-                    duration: durationSeconds,
+                const logData = {
                     workerId: selectedWorkerId,
+                    workerName: selectedWorker.name,
+                    startTime,
+                    endTime,
+                    durationSeconds,
+                    notes: entry.description,
                     userId: user.uid,
-                    status: 'done' as const,
-                    isBillable: false,
-                    position: 0,
                 };
 
-                await addTask(taskData);
+                await addTimeLog(logData);
                 successfulLogs++;
             }
             

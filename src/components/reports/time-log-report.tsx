@@ -22,7 +22,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
+import { getTimeLogs, type TimeLog } from '@/services/timelog-service'; // UPDATED
 import { formatTime } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import { LogTimeDialog } from './log-time-dialog';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
-    const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
+    const [allEntries, setAllEntries] = useState<TimeLog[]>([]); // UPDATED
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -50,12 +50,10 @@ export function TimeLogReport() {
         try {
             const [fetchedWorkers, entries] = await Promise.all([
                 getWorkers(user.uid),
-                getTasksForUser(user.uid),
+                getTimeLogs(user.uid), // UPDATED to use getTimeLogs
             ]);
             setWorkers(fetchedWorkers);
-            // Filter for entries that are actual time logs
-            const timeLogEntries = entries.filter(entry => entry.workerId && (entry.duration || 0) > 0);
-            setAllEntries(timeLogEntries);
+            setAllEntries(entries); // No need to filter here anymore
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -73,7 +71,7 @@ export function TimeLogReport() {
     };
 
     const handleWorkerSaved = () => {
-        loadData(); // Re-fetch workers after one is saved
+        loadData();
     };
     
     return (
@@ -113,17 +111,14 @@ export function TimeLogReport() {
                                         </TableCell>
                                     </TableRow>
                                 ) : allEntries.length > 0 ? (
-                                    allEntries.map(entry => {
-                                        const workerName = workers.find(w => w.id === entry.workerId)?.name || 'Unknown Worker';
-                                        return (
-                                            <TableRow key={entry.id}>
-                                                <TableCell>{workerName}</TableCell>
-                                                <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                <TableCell>{entry.description || entry.title}</TableCell>
-                                                <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                            </TableRow>
-                                        );
-                                    })
+                                    allEntries.map(entry => (
+                                        <TableRow key={entry.id}>
+                                            <TableCell>{entry.workerName}</TableCell>
+                                            <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                            <TableCell>{entry.notes}</TableCell>
+                                            <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
+                                        </TableRow>
+                                    ))
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">

@@ -4,20 +4,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
-import { LoaderCircle, ChevronsUpDown, Check, Printer, MoreVertical, BookOpen, Clock, Plus, Trash2 } from 'lucide-react';
+import { LoaderCircle, Printer, MoreVertical, BookOpen, Trash2, Clock, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
-import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,9 +45,6 @@ export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
-    const [selectedWorkerId, setSelectedWorkerId] = useState<string>('all');
-    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     
@@ -88,14 +81,7 @@ export function TimeLogReport() {
         loadData();
     }, [loadData]);
     
-    const displayedEntries = useMemo(() => {
-        if (selectedWorkerId === 'all') {
-            return allEntries;
-        }
-        return allEntries.filter(entry => entry.workerId === selectedWorkerId);
-    }, [allEntries, selectedWorkerId]);
-
-    const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
+    const totalDuration = useMemo(() => allEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [allEntries]);
     
     const handleEditTask = (task: TaskEvent) => {
       router.push(`/master-mind?eventId=${task.id}`);
@@ -116,11 +102,8 @@ export function TimeLogReport() {
         }
     };
     
-    const selectedWorker = workers.find(c => c.id === selectedWorkerId);
-    
     const handleWorkerSaved = (newOrUpdatedWorker: Worker) => {
         loadData(); // Reload all data to ensure lists are fresh
-        setSelectedWorkerId(newOrUpdatedWorker.id);
     };
 
     return (
@@ -134,51 +117,11 @@ export function TimeLogReport() {
                     </header>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Report Filters</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                                <div className="space-y-2 max-w-sm">
-                                    <Label>Worker</Label>
-                                    <div className="flex gap-2">
-                                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" role="combobox" className="w-full justify-between">
-                                                    {selectedWorkerId === 'all' ? "All Workers" : (selectedWorker?.name || "Select worker...")}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                <Command>
-                                                    <CommandInput placeholder="Search workers..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : "No worker found."}</CommandEmpty>
-                                                        <CommandGroup>
-                                                            <CommandItem key="all" value="All Workers" onSelect={() => { setSelectedWorkerId('all'); setIsWorkerPopoverOpen(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === 'all' ? "opacity-100" : "opacity-0")}/>All Workers
-                                                            </CommandItem>
-                                                            {workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <Button variant="outline" size="icon" onClick={() => setIsWorkerFormOpen(true)}><Plus className="h-4 w-4"/></Button>
-                                    </div>
-                                </div>
-                        </CardContent>
-                         <CardFooter className="gap-2">
-                            <Button onClick={() => setIsLogTimeDialogOpen(true)}>
-                                <Clock className="mr-2 h-4 w-4" /> Log a Time Entry
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                    
                     <div ref={contentRef}>
                         <Card className="print:border-none print:shadow-none">
-                            <CardHeader className="text-center">
-                                <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
+                            <CardHeader>
+                                <CardTitle>All Time Log Entries</CardTitle>
+                                <CardDescription>A complete list of all recorded work sessions.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
@@ -194,9 +137,8 @@ export function TimeLogReport() {
                                     <TableBody>
                                         {isLoading ? (
                                             <TableRow><TableCell colSpan={5} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                                        ) : displayedEntries.length > 0 ? displayedEntries.map(entry => {
+                                        ) : allEntries.length > 0 ? allEntries.map(entry => {
                                                 const workerName = workers.find(w => w.id === entry.workerId)?.name;
-                                                if (!workerName && selectedWorkerId !== 'all') return null; // Don't render if worker not found for specific filter
                                                 return (
                                                     <TableRow key={entry.id}>
                                                         <TableCell>{workerName || 'N/A'}</TableCell>
@@ -215,7 +157,7 @@ export function TimeLogReport() {
                                                     </TableRow>
                                                 )
                                             }) : (
-                                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found for this selection.</TableCell></TableRow>
+                                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No time entries found.</TableCell></TableRow>
                                             )}
                                     </TableBody>
                                     <TableFooter>
@@ -227,15 +169,23 @@ export function TimeLogReport() {
                                     </TableFooter>
                                 </Table>
                             </CardContent>
-                            <CardFooter className="print:hidden justify-end space-x-2">
-                                <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
-                                    <Printer className="mr-2 h-4 w-4" />
-                                    Print Report
-                                </Button>
-                            </CardFooter>
                         </Card>
                     </div>
                 </CardContent>
+                <CardFooter className="justify-between">
+                     <div className="flex gap-2">
+                        <Button onClick={() => setIsLogTimeDialogOpen(true)}>
+                            <Clock className="mr-2 h-4 w-4" /> Log a Time Entry
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Worker
+                        </Button>
+                    </div>
+                    <Button variant="outline" onClick={handlePrint} disabled={isLoading}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print Report
+                    </Button>
+                </CardFooter>
             </Card>
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
@@ -252,7 +202,7 @@ export function TimeLogReport() {
             <LogTimeDialog
                 isOpen={isLogTimeDialogOpen}
                 onOpenChange={setIsLogTimeDialogOpen}
-                workerId={selectedWorkerId !== 'all' ? selectedWorkerId : null}
+                workerId={null}
                 workers={workers}
                 onTimeLogged={loadData}
             />

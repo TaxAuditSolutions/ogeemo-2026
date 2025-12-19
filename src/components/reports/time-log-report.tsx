@@ -103,9 +103,10 @@ export function TimeLogReport() {
 
         if (dateRange?.from) {
             const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-            entries = entries.filter(entry => 
-                isWithinInterval(new Date(entry.startTime), { start: startOfDay(dateRange.from!), end: rangeEnd })
-            );
+            entries = entries.filter(entry => {
+                const entryDate = new Date(entry.startTime);
+                return isWithinInterval(entryDate, { start: startOfDay(dateRange.from!), end: rangeEnd });
+            });
         }
 
         return entries;
@@ -132,6 +133,13 @@ export function TimeLogReport() {
     
     const handleWorkerSaved = () => {
         loadData();
+    };
+
+    const handleDateRangeSelect = (range: DateRange | undefined) => {
+        setDateRange(range);
+        if (range?.from && range?.to) {
+            setIsDatePickerOpen(false);
+        }
     };
     
     const selectedWorker = workers.find(w => w.id === selectedWorkerId);
@@ -193,13 +201,13 @@ export function TimeLogReport() {
                                         mode="range"
                                         defaultMonth={dateRange?.from}
                                         selected={dateRange}
-                                        onSelect={setDateRange}
+                                        onSelect={handleDateRangeSelect}
                                         numberOfMonths={2}
                                     />
                                     <div className="p-2 border-t flex justify-end gap-2">
-                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>Today</Button>
-                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
-                                        <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: new Date(), to: new Date() })}>Today</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
                                         <Button size="sm" variant="outline" onClick={() => { setDateRange(undefined); setIsDatePickerOpen(false); }}>Clear</Button>
                                     </div>
                                 </PopoverContent>

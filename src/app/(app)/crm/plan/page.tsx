@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CrmPlanPage() {
@@ -29,7 +29,12 @@ export default function CrmPlanPage() {
                 The CRM Plan
             </h1>
         </div>
-        <div className="w-1/4" />
+        <div className="w-1/4 flex justify-end">
+            <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create a Lead
+            </Button>
+        </div>
       </header>
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
         <Card>

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -34,9 +35,10 @@ interface LeadCardProps {
   lead: Lead;
   index: number;
   moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
+  onEdit: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, index, moveCard }: LeadCardProps) => {
+const LeadCard = ({ lead, index, moveCard, onEdit }: LeadCardProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
 
     const [{ isDragging }, drag] = useDrag({
@@ -61,8 +63,8 @@ const LeadCard = ({ lead, index, moveCard }: LeadCardProps) => {
     drag(drop(ref));
 
     return (
-        <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <Card className="mb-2 cursor-move">
+        <div ref={ref} onClick={() => onEdit(lead)} style={{ opacity: isDragging ? 0.5 : 1 }}>
+            <Card className="mb-2 cursor-pointer hover:bg-muted/50">
                 <CardContent className="p-3">
                     <p className="font-semibold text-sm">{lead.contactName}</p>
                     <p className="text-xs text-muted-foreground">{lead.companyName}</p>
@@ -78,9 +80,10 @@ interface LeadColumnProps {
     leads: Lead[];
     moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
     onDropCard: (lead: Lead, targetStatus: LeadStatus) => void;
+    onEditLead: (lead: Lead) => void;
 }
 
-const LeadColumn = ({ status, leads, moveCard, onDropCard }: LeadColumnProps) => {
+const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead }: LeadColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.LEAD,
         drop: (item: Lead) => onDropCard(item, status),
@@ -96,7 +99,7 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard }: LeadColumnProps) =>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
                 {leads.map((lead, index) => (
-                    <LeadCard key={lead.id} lead={lead} index={index} moveCard={moveCard} />
+                    <LeadCard key={lead.id} lead={lead} index={index} moveCard={moveCard} onEdit={onEditLead}/>
                 ))}
                 {leads.length === 0 && (
                     <div className="text-sm text-muted-foreground text-center pt-8 h-full">
@@ -111,6 +114,7 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard }: LeadColumnProps) =>
 
 export default function CrmPlanPage() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -147,6 +151,10 @@ export default function CrmPlanPage() {
       updateLeadsAndStorage(updatedLeads);
   }, [allLeads]);
   
+  const handleEditLead = (lead: Lead) => {
+      router.push(`/crm/leads/create?id=${lead.id}`);
+  };
+
   const columns: LeadStatus[] = ["New", "Active Leads", "Scheduled Leads", "Completed Leads"];
 
   return (
@@ -184,6 +192,7 @@ export default function CrmPlanPage() {
                     leads={leadsForColumn}
                     moveCard={moveCard}
                     onDropCard={onDropCard}
+                    onEditLead={handleEditLead}
                 />
             );
         })}

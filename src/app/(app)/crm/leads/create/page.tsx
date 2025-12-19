@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,8 +32,11 @@ type LeadStatus = 'New' | 'Active Leads' | 'Scheduled Leads' | 'Completed Leads'
 
 export default function CreateLeadPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const leadId = searchParams.get('id');
 
   const [contactName, setContactName] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -42,6 +45,32 @@ export default function CreateLeadPage() {
   const [source, setSource] = useState('');
   const [status, setStatus] = useState<LeadStatus>('New');
   const [notes, setNotes] = useState('');
+  
+  useEffect(() => {
+    if (leadId) {
+      try {
+        const existingLeadsRaw = sessionStorage.getItem(LEADS_STORAGE_KEY);
+        const existingLeads = existingLeadsRaw ? JSON.parse(existingLeadsRaw) : [];
+        const leadToEdit = existingLeads.find((l: any) => l.id === leadId);
+        
+        if (leadToEdit) {
+          setIsEditing(true);
+          setContactName(leadToEdit.contactName || '');
+          setCompanyName(leadToEdit.companyName || '');
+          setEmail(leadToEdit.email || '');
+          setPhone(leadToEdit.phone || '');
+          setSource(leadToEdit.source || '');
+          setStatus(leadToEdit.status || 'New');
+          setNotes(leadToEdit.notes || '');
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
+          router.push('/crm/plan');
+        }
+      } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load lead data.' });
+      }
+    }
+  }, [leadId, router, toast]);
 
   const handleSaveLead = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,29 +86,47 @@ export default function CreateLeadPage() {
     setIsLoading(true);
 
     try {
-        const newLead = {
-            id: `lead_${Date.now()}`,
-            contactName,
-            companyName,
-            email,
-            phone,
-            source,
-            status,
-            notes,
-        };
-
         const existingLeadsRaw = sessionStorage.getItem(LEADS_STORAGE_KEY);
         const existingLeads = existingLeadsRaw ? JSON.parse(existingLeadsRaw) : [];
-        const updatedLeads = [...existingLeads, newLead];
+        let updatedLeads;
+        
+        if (isEditing) {
+            // Update existing lead
+            updatedLeads = existingLeads.map((l: any) => {
+                if (l.id === leadId) {
+                    return {
+                        ...l,
+                        contactName,
+                        companyName,
+                        email,
+                        phone,
+                        source,
+                        status,
+                        notes,
+                    };
+                }
+                return l;
+            });
+            toast({ title: 'Lead Updated', description: `Changes to "${contactName}" have been saved.` });
+        } else {
+            // Create new lead
+            const newLead = {
+                id: `lead_${Date.now()}`,
+                contactName,
+                companyName,
+                email,
+                phone,
+                source,
+                status,
+                notes,
+            };
+            updatedLeads = [...existingLeads, newLead];
+            toast({ title: 'Lead Created', description: `"${contactName}" has been added to your leads list.` });
+        }
 
         sessionStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updatedLeads));
-
-        toast({
-            title: 'Lead Created',
-            description: `"${contactName}" has been added to your leads list.`,
-        });
-
         router.push('/crm/plan');
+
     } catch (error) {
         console.error("Failed to save lead:", error);
         toast({
@@ -103,7 +150,7 @@ export default function CreateLeadPage() {
             </Button>
         </div>
         <h1 className="text-3xl font-bold font-headline text-primary">
-          Create New Lead
+          {isEditing ? 'Edit Lead' : 'Create New Lead'}
         </h1>
       </header>
       <Card className="w-full max-w-2xl">
@@ -111,7 +158,7 @@ export default function CreateLeadPage() {
             <CardHeader>
             <CardTitle>Lead Information</CardTitle>
             <CardDescription>
-                Fill out the form below to add a new lead to your pipeline.
+                {isEditing ? 'Update the information for this lead.' : 'Fill out the form below to add a new lead to your pipeline.'}
             </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -180,7 +227,7 @@ export default function CreateLeadPage() {
             <CardFooter className="justify-end">
                 <Button type="submit" disabled={isLoading}>
                     {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Lead
+                    {isEditing ? 'Save Changes' : 'Save Lead'}
                 </Button>
             </CardFooter>
         </form>

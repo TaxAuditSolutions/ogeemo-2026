@@ -284,9 +284,7 @@ export function TimeLogReport() {
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-    const [showTest2Card, setShowTest2Card] = useState(false);
-    const [test2SelectedWorkerId, setTest2SelectedWorkerId] = useState<string | null>(null);
-    const [isTest2WorkerPopoverOpen, setIsTest2WorkerPopoverOpen] = useState(false);
+    
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
 
     const { user } = useAuth();
@@ -346,14 +344,6 @@ export function TimeLogReport() {
 
     const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
     
-    const test2WorkerEntries = useMemo(() => {
-        if (!test2SelectedWorkerId) return [];
-        return allEntries.filter(entry => entry.workerId === test2SelectedWorkerId);
-    }, [allEntries, test2SelectedWorkerId]);
-
-    const test2TotalDuration = useMemo(() => {
-        return test2WorkerEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0);
-    }, [test2WorkerEntries]);
     
     const setMonthToDate = () => setDateRange({ from: startOfMonth(new Date()), to: new Date() });
     
@@ -467,7 +457,6 @@ export function TimeLogReport() {
                                 <CardHeader className="text-center">
                                     <div className="flex items-center justify-center gap-2">
                                         <CardTitle className="text-2xl">Time Log Report for {selectedWorkerId === 'all' ? 'All Workers' : (selectedWorker?.name || "...")}</CardTitle>
-                                        <Button variant="outline" onClick={() => setShowTest2Card(prev => !prev)}>Test 2</Button>
                                     </div>
                                     <CardDescription>
                                         {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
@@ -530,72 +519,6 @@ export function TimeLogReport() {
                                 </CardFooter>
                             </Card>
                         </div>
-                        {showTest2Card && (
-                            <Card className="mt-6">
-                                <CardHeader>
-                                    <CardTitle>Worker-Specific Report</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="max-w-xs space-y-2">
-                                        <Label>Select Worker to View Report</Label>
-                                        <Popover open={isTest2WorkerPopoverOpen} onOpenChange={setIsTest2WorkerPopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" role="combobox" className="w-full justify-between">
-                                                    {test2SelectedWorkerId ? workers.find(w => w.id === test2SelectedWorkerId)?.name : "Select worker..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <Command>
-                                                    <CommandInput placeholder="Search workers..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>No worker found.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {workers.map(w => (
-                                                                <CommandItem key={w.id} value={w.name} onSelect={() => { setTest2SelectedWorkerId(w.id); setIsTest2WorkerPopoverOpen(false); }}>
-                                                                    <Check className={cn("mr-2 h-4 w-4", test2SelectedWorkerId === w.id ? "opacity-100" : "opacity-0")} />
-                                                                    {w.name}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    {test2SelectedWorkerId && (
-                                        <div className="mt-4">
-                                             <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Date</TableHead>
-                                                        <TableHead>Description</TableHead>
-                                                        <TableHead className="text-right">Duration</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {test2WorkerEntries.length > 0 ? test2WorkerEntries.map(entry => (
-                                                        <TableRow key={entry.id}>
-                                                            <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                            <TableCell>{entry.description || entry.title}</TableCell>
-                                                            <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>
-                                                        </TableRow>
-                                                    )) : (
-                                                        <TableRow><TableCell colSpan={3} className="h-24 text-center">No time entries found for this worker.</TableCell></TableRow>
-                                                    )}
-                                                </TableBody>
-                                                <TableFooter>
-                                                    <TableRow>
-                                                        <TableCell colSpan={2} className="font-bold">Total Time</TableCell>
-                                                        <TableCell className="text-right font-bold font-mono">{formatTime(test2TotalDuration)}</TableCell>
-                                                    </TableRow>
-                                                </TableFooter>
-                                            </Table>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
                     </CardContent>
                 </Card>
                 <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
@@ -626,5 +549,3 @@ export function TimeLogReport() {
         </>
     );
 }
-
-    

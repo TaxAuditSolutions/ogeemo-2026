@@ -40,6 +40,15 @@ import {
 import { ReportsPageHeader } from './page-header';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { WorkerFormDialog } from '../accounting/WorkerFormDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -164,8 +173,8 @@ function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId, worker
             
             if (successfulLogs > 0) {
                 toast({ title: "Time Logged Successfully", description: `${successfulLogs} time entries have been saved.` });
-                onTimeLogged();
-                onOpenChange(false);
+                onTimeLogged(); // Call the callback to refresh the report
+                onOpenChange(false); // Close the dialog
             }
 
         } catch (error: any) {
@@ -271,7 +280,6 @@ function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId, worker
     );
 }
 
-
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TaskEvent[]>([]);
@@ -286,7 +294,6 @@ export function TimeLogReport() {
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [showTestCard, setShowTestCard] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
-
 
     // State for Test Card fields
     const [testWorker, setTestWorker] = useState<string>('');
@@ -426,7 +433,6 @@ export function TimeLogReport() {
         // Optionally, select the new worker
         setSelectedWorkerId(newOrUpdatedWorker.id);
     };
-
 
     return (
         <>

@@ -175,9 +175,7 @@ function LogTimeDialog({ isOpen, onOpenChange, workerId: initialWorkerId, worker
                     <div className="space-y-2 max-w-sm">
                         <Label>Employee / Contractor</Label>
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className="w-full justify-between">{selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
-                            </PopoverTrigger>
+                            <PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>No worker found.</CommandEmpty><CommandGroup>{workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
                         </Popover>
                     </div>
@@ -305,9 +303,7 @@ export default function SandboxPage() {
     <>
       <div className="p-4 sm:p-6 flex flex-col items-center h-full">
         <header className="text-center mb-6">
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            Testing Time Logs
-          </h1>
+          <h1 className="text-3xl font-bold font-headline text-primary">Testing Time Logs</h1>
         </header>
         <Card className="w-full max-w-2xl">
           <CardHeader>
@@ -361,5 +357,3 @@ export default function SandboxPage() {
     </>
   );
 }
-
-    

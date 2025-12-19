@@ -33,13 +33,7 @@ import {
 import { ReportsPageHeader } from './page-header';
 import { WorkerFormDialog } from '../accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
-
-const formatTime = (totalSeconds: number) => {
-    if (!totalSeconds) return '0h 0m';
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-};
+import { formatTime } from '@/lib/utils';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -92,7 +86,7 @@ export function TimeLogReport() {
         const originalEntries = [...allEntries];
         try {
             await deleteTask(entryToDelete.id);
-            setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id)); // Update the base list
+            setAllEntries(prev => prev.filter(e => e.id !== entryToDelete.id));
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
             setAllEntries(originalEntries);
@@ -103,7 +97,7 @@ export function TimeLogReport() {
     };
     
     const handleWorkerSaved = (newOrUpdatedWorker: Worker) => {
-        loadData(); // Reload all data to ensure lists are fresh
+        loadData();
     };
 
     return (
@@ -141,7 +135,7 @@ export function TimeLogReport() {
                                                 const workerName = workers.find(w => w.id === entry.workerId)?.name;
                                                 return (
                                                     <TableRow key={entry.id}>
-                                                        <TableCell>{workerName || 'N/A'}</TableCell>
+                                                        <TableCell>{workerName || 'Unknown Worker'}</TableCell>
                                                         <TableCell>{entry.start ? format(new Date(entry.start), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                                         <TableCell>{entry.description || entry.title}</TableCell>
                                                         <TableCell className="text-right font-mono">{formatTime(entry.duration || 0)}</TableCell>

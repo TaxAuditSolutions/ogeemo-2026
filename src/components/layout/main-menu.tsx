@@ -177,7 +177,7 @@ export function MainMenu() {
                             key={app.href}
                             asChild
                             variant="ghost"
-                            className="w-full justify-start gap-3 h-9 text-sm border-b-4 border-black hover:bg-sidebar-accent/90 active:mt-1 active:border-b-2"
+                            className="w-full justify-start gap-3 h-9 text-sm"
                         >
                             <a href={app.href} target="_blank" rel="noopener noreferrer">
                                 <AppIcon className="h-4 w-4" />
@@ -261,6 +261,7 @@ export function MainMenu() {
                 index={index}
                 isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
                 moveMenuItem={moveMenuItem}
+                isCompact={true}
             />
             ))
         ) : view === 'dashboard' ? (

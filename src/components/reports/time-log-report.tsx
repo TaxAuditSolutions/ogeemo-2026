@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
+import { LoaderCircle, ChevronsUpDown, Check, Printer, Calendar as CalendarIcon, MoreVertical, BookOpen, Clock, PlusCircle } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from "react-day-picker";
 import { useAuth } from '@/context/auth-context';
@@ -36,9 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ReportsPageHeader } from "@/components/reports/page-header";
 import { LogTimeDialog } from './log-time-dialog';
-
 
 const formatTime = (totalSeconds: number) => {
     if (!totalSeconds) return '0h 0m';
@@ -65,7 +63,6 @@ export function TimeLogReport() {
     
     const [entryToDelete, setEntryToDelete] = useState<TaskEvent | null>(null);
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -119,7 +116,6 @@ export function TimeLogReport() {
         setDisplayedEntries(filtered);
     };
 
-
     const totalDuration = useMemo(() => displayedEntries.reduce((acc, entry) => acc + (entry.duration || 0), 0), [displayedEntries]);
     
     const setMonthToDate = () => setDateRange({ from: startOfMonth(new Date()), to: new Date() });
@@ -137,7 +133,6 @@ export function TimeLogReport() {
         const originalEntries = [...allEntries];
         try {
             await deleteTask(entryToDelete.id);
-            // Refresh all data to ensure consistency
             await loadData();
             toast({ title: "Entry Deleted", description: `The log entry "${entryToDelete.title}" has been removed.` });
         } catch (error: any) {
@@ -247,7 +242,7 @@ export function TimeLogReport() {
                                 <TableBody>
                                     {displayedEntries.length > 0 ? displayedEntries.map(entry => {
                                         const workerName = workers.find(w => w.id === entry.workerId)?.name;
-                                        if (!workerName) return null; // Only render entries with a valid worker
+                                        if (!workerName) return null; // Ensure worker exists before rendering row
                                         return (
                                             <TableRow key={entry.id}>
                                                 <TableCell>{workerName}</TableCell>

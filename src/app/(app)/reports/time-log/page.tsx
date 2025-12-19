@@ -1,9 +1,13 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
+import type { Metadata } from 'next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReportsPageHeader } from "@/components/reports/page-header";
+
+// export const metadata: Metadata = {
+//   title: "Time Log Report",
+// };
 
 const TimeLogReport = dynamic(
   () => import('@/components/reports/time-log-report').then((mod) => mod.TimeLogReport),
@@ -18,7 +22,7 @@ export default function TimeLogReportPage() {
     <>
         <div className="p-4 sm:p-6 space-y-6">
             <ReportsPageHeader 
-                pageTitle="Worker Time Log Report" 
+                pageTitle="Time Log Report" 
                 hubPath="/hr-manager" 
                 hubLabel="HR Hub" 
             />

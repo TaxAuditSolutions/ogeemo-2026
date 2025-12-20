@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -214,9 +215,9 @@ export default function CreateLeadPage() {
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                                <CommandInput placeholder="Search contacts..." />
+                                <CommandInput placeholder="Search contacts..." onValueChange={setContactName} />
                                 <CommandList>
                                 <CommandEmpty>No contact found.</CommandEmpty>
                                 <CommandGroup>
@@ -237,7 +238,6 @@ export default function CreateLeadPage() {
                     </Popover>
                     <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
-                <Input id="contact-name" value={contactName} onChange={e => setContactName(e.target.value)} className="mt-2" placeholder="Or type manually..."/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>

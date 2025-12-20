@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDrag, useDrop } from 'react-dnd';
+import Link from 'next/link';
 import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ import {
 import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { TaskColumn } from '@/components/tasks/TaskColumn';
-import { archiveIdeaAsFile, archiveTaskAsFile } from '@/services/file-service';
+import { archiveTaskAsFile } from '@/services/file-service';
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -185,8 +186,8 @@ export function ToDoListView() {
     event?.stopPropagation();
     setSelectedTaskIds(prev =>
         prev.includes(taskId)
-            ? prev.filter(id => id !== taskId)
-            : [...prev, id]
+            ? prev.filter(currentId => currentId !== taskId)
+            : [...prev, taskId]
     );
   };
 
@@ -270,13 +271,15 @@ export function ToDoListView() {
           {columns.map(({ title, status }) => (
             <TaskColumn
               key={status}
-              title={title}
               status={status}
               tasks={tasks.filter(t => t.status === status).sort((a,b) => a.position - b.position)}
               onAddTask={status === 'todo' ? handleAddTask : undefined}
               onDropTask={onDropTask}
-              onEditTask={handleEditTask}
-              onDeleteTask={handleDeleteTask}
+              onEdit={handleEditTask}
+              onTaskDelete={(taskId) => {
+                  const task = tasks.find(t => t.id === taskId);
+                  if (task) handleDeleteTask(task);
+              }}
               onMakeProjectTask={handleMakeProject}
               onMoveCard={onMoveCard}
               onToggleComplete={onToggleComplete}
@@ -325,7 +328,7 @@ export function ToDoListView() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This will permanently delete {selectedTaskIds.length} task(s). This cannot be undone.
+                    This will permanently delete {selectedTaskIds.length} task(s). This action cannot be undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

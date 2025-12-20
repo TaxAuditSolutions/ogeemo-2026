@@ -9,9 +9,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+
 
 const LEADS_STORAGE_KEY = 'crmLeads';
 
@@ -35,9 +53,10 @@ interface LeadCardProps {
   index: number;
   moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
   onEdit: (lead: Lead) => void;
+  onDelete: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, index, moveCard, onEdit }: LeadCardProps) => {
+const LeadCard = ({ lead, index, moveCard, onEdit, onDelete }: LeadCardProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
 
     const [{ isDragging }, drag] = useDrag({
@@ -62,11 +81,30 @@ const LeadCard = ({ lead, index, moveCard, onEdit }: LeadCardProps) => {
     drag(drop(ref));
 
     return (
-        <div ref={ref} onClick={() => onEdit(lead)} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <Card className="mb-2 cursor-pointer hover:bg-muted/50">
-                <CardContent className="p-3">
-                    <p className="font-semibold text-sm">{lead.contactName}</p>
-                    <p className="text-xs text-muted-foreground">{lead.companyName}</p>
+        <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
+            <Card className="mb-2 group hover:bg-muted/50 cursor-grab active:cursor-grabbing">
+                <CardContent className="p-3 flex justify-between items-start">
+                    <div className="flex-1" onClick={() => onEdit(lead)}>
+                        <p className="font-semibold text-sm">{lead.contactName}</p>
+                        <p className="text-xs text-muted-foreground">{lead.companyName}</p>
+                    </div>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => onEdit(lead)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Lead
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onDelete(lead)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Lead
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </CardContent>
             </Card>
         </div>
@@ -80,9 +118,10 @@ interface LeadColumnProps {
     moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
     onDropCard: (lead: Lead, targetStatus: LeadStatus) => void;
     onEditLead: (lead: Lead) => void;
+    onDeleteLead: (lead: Lead) => void;
 }
 
-const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead }: LeadColumnProps) => {
+const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteLead }: LeadColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.LEAD,
         drop: (item: Lead) => onDropCard(item, status),
@@ -104,7 +143,14 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead }: LeadCol
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
                 {leads.map((lead, index) => (
-                    <LeadCard key={lead.id} lead={lead} index={index} moveCard={moveCard} onEdit={onEditLead}/>
+                    <LeadCard 
+                        key={lead.id} 
+                        lead={lead} 
+                        index={index} 
+                        moveCard={moveCard} 
+                        onEdit={onEditLead}
+                        onDelete={onDeleteLead}
+                    />
                 ))}
                 {leads.length === 0 && (
                     <div className="text-sm text-muted-foreground text-center pt-8 h-full">
@@ -119,7 +165,10 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead }: LeadCol
 
 export default function CrmPlanPage() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
+
 
   useEffect(() => {
     try {
@@ -169,48 +218,87 @@ export default function CrmPlanPage() {
       router.push(`/crm/leads/create?id=${lead.id}`);
   };
 
+  const handleDeleteLead = (lead: Lead) => {
+    setLeadToDelete(lead);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (!leadToDelete) return;
+    
+    const updatedLeads = allLeads.filter(l => l.id !== leadToDelete.id);
+    updateLeadsAndStorage(updatedLeads);
+
+    toast({
+        title: "Lead Deleted",
+        description: `The lead for "${leadToDelete.contactName}" has been removed.`,
+    });
+
+    setLeadToDelete(null);
+  };
+
+
   const columns: LeadStatus[] = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
-      <header className="flex items-center justify-between">
-        <div className="w-1/4">
-             <Button asChild variant="outline">
-                <Link href="/crm">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to CRM Hub
-                </Link>
-            </Button>
+    <>
+      <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
+        <header className="flex items-center justify-between">
+          <div className="w-1/4">
+              <Button asChild variant="outline">
+                  <Link href="/crm">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to CRM Hub
+                  </Link>
+              </Button>
+          </div>
+          <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold font-headline text-primary">
+                  The CRM Plan
+              </h1>
+          </div>
+          <div className="w-1/4 flex justify-end">
+              <Button asChild>
+                  <Link href="/crm/leads/create">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create a Lead
+                  </Link>
+              </Button>
+          </div>
+        </header>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+          {columns.map(status => {
+              const leadsForColumn = allLeads.filter(l => l.status === status);
+              return (
+                  <LeadColumn
+                      key={status}
+                      status={status}
+                      leads={leadsForColumn}
+                      moveCard={moveCard}
+                      onDropCard={onDropCard}
+                      onEditLead={handleEditLead}
+                      onDeleteLead={handleDeleteLead}
+                  />
+              );
+          })}
         </div>
-        <div className="text-center flex-1">
-            <h1 className="text-3xl font-bold font-headline text-primary">
-                The CRM Plan
-            </h1>
-        </div>
-        <div className="w-1/4 flex justify-end">
-            <Button asChild>
-                <Link href="/crm/leads/create">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create a Lead
-                </Link>
-            </Button>
-        </div>
-      </header>
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-        {columns.map(status => {
-            const leadsForColumn = allLeads.filter(l => l.status === status);
-            return (
-                <LeadColumn
-                    key={status}
-                    status={status}
-                    leads={leadsForColumn}
-                    moveCard={moveCard}
-                    onDropCard={onDropCard}
-                    onEditLead={handleEditLead}
-                />
-            );
-        })}
       </div>
-    </div>
+
+       <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action will permanently delete the lead for "{leadToDelete?.contactName}". This cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

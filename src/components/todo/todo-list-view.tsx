@@ -1,31 +1,24 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
-import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft, CheckCircle, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from '@/components/ui/input';
-import { Plus } from 'lucide-react';
-import EditIdeaDialog from '@/components/ideas/edit-idea-dialog';
-import IdeaBoardInstructionsDialog from '@/components/ideas/idea-board-instructions-dialog';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/todo-service';
+import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
-import { getContacts, type Contact } from '@/services/contact-service';
-import { addProject, getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +29,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Checkbox } from '../ui/checkbox';
-
 
 const ItemTypes = {
     TASK: 'task',
@@ -237,4 +228,3 @@ export function ToDoListView() {
     </>
   );
 }
-

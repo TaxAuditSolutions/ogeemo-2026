@@ -336,7 +336,7 @@
             "email": { "type": "string", "format": "email" },
             "phone": { "type": "string" },
             "source": { "type": "string", "enum": ["Website", "Referral", "Trade Show", "Advertisement", "Other"] },
-            "status": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Unqualified"] },
+            "status": { "type": "string", "enum": ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"] },
             "notes": { "type": "string" },
             "userId": { "type": "string" }
         },
@@ -434,6 +434,10 @@
     "/timeLogs/{timeLogId}/locations/{locationId}": {
         "schema": { "$ref": "#/entities/LocationLog" },
         "description": "A sub-collection of GPS coordinates for a specific time log."
+    },
+    "/leads/{leadId}": {
+        "schema": { "$ref": "#/entities/Lead" },
+        "description": "Collection of all sales leads."
     }
   }
 }

@@ -30,10 +30,7 @@ import { type Contact } from '@/data/contacts';
 import { type FolderData, getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { type Company, getCompanies } from '@/services/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
-
-const LEADS_STORAGE_KEY = 'crmLeads';
-
-type LeadStatus = 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
+import { getLeadById, addLead, updateLead, type Lead, type LeadStatus } from '@/services/lead-service';
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -80,68 +77,68 @@ export default function CreateLeadPage() {
   
   useEffect(() => {
     if (leadId) {
-      try {
-        const existingLeadsRaw = sessionStorage.getItem(LEADS_STORAGE_KEY);
-        const existingLeads = existingLeadsRaw ? JSON.parse(existingLeadsRaw) : [];
-        const leadToEdit = existingLeads.find((l: any) => l.id === leadId);
-        
-        if (leadToEdit) {
-          setIsEditing(true);
-          setContactName(leadToEdit.contactName || '');
-          setCompanyName(leadToEdit.companyName || '');
-          setEmail(leadToEdit.email || '');
-          setPhone(leadToEdit.phone || '');
-          setSource(leadToEdit.source || '');
-          setStatus(leadToEdit.status || 'Unscheduled Leads');
-          setNotes(leadToEdit.notes || '');
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
-          router.push('/crm/plan');
-        }
-      } catch (error) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load lead data.' });
+      const loadLead = async () => {
+          setIsLoading(true);
+          try {
+            const leadToEdit = await getLeadById(leadId);
+            if (leadToEdit) {
+              setIsEditing(true);
+              setContactName(leadToEdit.contactName || '');
+              setCompanyName(leadToEdit.companyName || '');
+              setEmail(leadToEdit.email || '');
+              setPhone(leadToEdit.phone || '');
+              setSource(leadToEdit.source || '');
+              setStatus(leadToEdit.status || 'Unscheduled Leads');
+              setNotes(leadToEdit.notes || '');
+            } else {
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
+              router.push('/crm/plan');
+            }
+          } catch (error) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load lead data.' });
+          } finally {
+              setIsLoading(false);
+          }
       }
+      loadLead();
     }
   }, [leadId, router, toast]);
 
-  const handleSaveLead = (e: React.FormEvent) => {
+  const handleSaveLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactName.trim() || !email.trim()) {
+    if (!contactName.trim() || !email.trim() || !user) {
         toast({
             variant: 'destructive',
             title: 'Missing Information',
-            description: 'Please fill out at least the Contact Name and Email fields.',
+            description: 'Please fill out at least the Contact Name, Email, and ensure you are logged in.',
         });
         return;
     }
     
     setIsLoading(true);
 
+    const leadData: Omit<Lead, 'id' | 'userId'> = {
+        contactName,
+        companyName,
+        email,
+        phone,
+        source,
+        status,
+        notes,
+    };
+
     try {
-        const existingLeadsRaw = sessionStorage.getItem(LEADS_STORAGE_KEY);
-        const existingLeads = existingLeadsRaw ? JSON.parse(existingLeadsRaw) : [];
-        let updatedLeads;
-        
-        if (isEditing) {
-            updatedLeads = existingLeads.map((l: any) => {
-                if (l.id === leadId) {
-                    return { ...l, contactName, companyName, email, phone, source, status, notes };
-                }
-                return l;
-            });
+        if (isEditing && leadId) {
+            await updateLead(leadId, leadData);
             toast({ title: 'Lead Updated', description: `Changes to "${contactName}" have been saved.` });
         } else {
-            const newLead = { id: `lead_${Date.now()}`, contactName, companyName, email, phone, source, status, notes };
-            updatedLeads = [...existingLeads, newLead];
+            await addLead({ ...leadData, userId: user.uid });
             toast({ title: 'Lead Created', description: `"${contactName}" has been added to your leads list.` });
         }
-
-        sessionStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updatedLeads));
         router.push('/crm/plan');
-
     } catch (error) {
         console.error("Failed to save lead:", error);
-        toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the lead to session storage.' });
+        toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the lead to the database.' });
         setIsLoading(false);
     }
   };

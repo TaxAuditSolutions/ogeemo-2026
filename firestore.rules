@@ -100,6 +100,10 @@ service cloud.firestore {
         allow read: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
       }
     }
+    
+    match /leads/{leadId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
 
     // Fallback rule for any other path
     match /{document=**} {

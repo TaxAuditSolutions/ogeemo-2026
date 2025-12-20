@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -10,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -30,19 +29,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { getLeads, updateLead, deleteLead, type Lead, type LeadStatus } from '@/services/lead-service';
 
-
-const LEADS_STORAGE_KEY = 'crmLeads';
-
-type LeadStatus = 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
-
-interface Lead {
-  id: string;
-  contactName: string;
-  companyName: string;
-  email: string;
-  status: LeadStatus;
-}
 
 const ItemTypes = {
   LEAD: 'lead',
@@ -131,7 +120,7 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteL
         }),
     });
 
-    const columnTitles = {
+    const columnTitles: Record<LeadStatus, string> = {
       "Unscheduled Leads": "Unscheduled Leads",
       "Scheduled Leads": "Scheduled Leads",
       "Completed Leads": "Completed Leads",
@@ -167,24 +156,32 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteL
 export default function CrmPlanPage() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
 
   useEffect(() => {
-    try {
-      const savedLeadsRaw = sessionStorage.getItem(LEADS_STORAGE_KEY);
-      if (savedLeadsRaw) {
-        setAllLeads(JSON.parse(savedLeadsRaw));
-      }
-    } catch (error) {
-      console.error("Failed to load leads from session storage:", error);
-    }
-  }, []);
+    const loadLeads = async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const leadsFromDb = await getLeads(user.uid);
+            setAllLeads(leadsFromDb);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error loading leads' });
+            console.error("Failed to load leads from firestore:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    loadLeads();
+  }, [user, toast]);
 
-  const updateLeadsAndStorage = (updatedLeads: Lead[]) => {
+  const updateLeadsAndStorage = async (updatedLeads: Lead[]) => {
       setAllLeads(updatedLeads);
-      sessionStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updatedLeads));
+      // Here you might want to batch update positions in Firestore if needed
   };
   
   const moveCard = useCallback((dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => {
@@ -199,21 +196,25 @@ export default function CrmPlanPage() {
       updateLeadsAndStorage([...otherLeads, ...newLeadsInColumn]);
   }, [allLeads]);
 
-  const onDropCard = useCallback((lead: Lead, targetStatus: LeadStatus) => {
-    if (targetStatus === 'Scheduled Leads' && lead.status !== 'Scheduled Leads') {
+  const onDropCard = useCallback(async (lead: Lead, targetStatus: LeadStatus) => {
+    if (lead.status === targetStatus) return;
+
+    if (targetStatus === 'Scheduled Leads') {
         const query = new URLSearchParams({
             title: `Follow-up with ${lead.contactName}`,
             notes: `Follow-up regarding lead from ${lead.companyName || 'N/A'}.`,
-            // In a real app, you would pass the contact ID
         });
         router.push(`/master-mind?${query.toString()}`);
-    } else {
-        const updatedLeads = allLeads.map(l => 
-            l.id === lead.id ? { ...l, status: targetStatus } : l
-        );
-        updateLeadsAndStorage(updatedLeads);
+    } 
+    
+    // Update status in Firestore
+    try {
+        await updateLead(lead.id, { status: targetStatus });
+        setAllLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: targetStatus } : l));
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Failed to update lead status' });
     }
-  }, [allLeads, router]);
+  }, [router, toast]);
   
   const handleEditLead = (lead: Lead) => {
       router.push(`/crm/leads/create?id=${lead.id}`);
@@ -223,22 +224,33 @@ export default function CrmPlanPage() {
     setLeadToDelete(lead);
   };
   
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!leadToDelete) return;
     
-    const updatedLeads = allLeads.filter(l => l.id !== leadToDelete.id);
-    updateLeadsAndStorage(updatedLeads);
-
-    toast({
-        title: "Lead Deleted",
-        description: `The lead for "${leadToDelete.contactName}" has been removed.`,
-    });
-
-    setLeadToDelete(null);
+    try {
+        await deleteLead(leadToDelete.id);
+        setAllLeads(prev => prev.filter(l => l.id !== leadToDelete.id));
+        toast({
+            title: "Lead Deleted",
+            description: `The lead for "${leadToDelete.contactName}" has been removed.`,
+        });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Failed to delete lead' });
+    } finally {
+        setLeadToDelete(null);
+    }
   };
 
 
   const columns: LeadStatus[] = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoaderCircle className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>

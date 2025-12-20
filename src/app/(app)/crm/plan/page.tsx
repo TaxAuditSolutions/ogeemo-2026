@@ -32,6 +32,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getLeads, updateLead, deleteLead, type Lead, type LeadStatus } from '@/services/lead-service';
+import { getAllCrmActions, type Action as CrmAction } from '@/services/crm-action-service';
 
 
 const ItemTypes = {
@@ -42,13 +43,14 @@ const ItemTypes = {
 interface LeadCardProps {
   lead: Lead;
   index: number;
+  hasPlan: boolean;
   moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
-  onCreatePlan: (lead: Lead) => void;
+  onPlanAction: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, index, moveCard, onEdit, onDelete, onCreatePlan }: LeadCardProps) => {
+const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanAction }: LeadCardProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
 
     const [{ isDragging }, drag] = useDrag({
@@ -91,9 +93,9 @@ const LeadCard = ({ lead, index, moveCard, onEdit, onDelete, onCreatePlan }: Lea
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Lead
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => onCreatePlan(lead)}>
+                            <DropdownMenuItem onSelect={() => onPlanAction(lead)}>
                                 <Route className="mr-2 h-4 w-4" />
-                                Create the plan
+                                {hasPlan ? 'View Plan' : 'Create the plan'}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onDelete(lead)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -111,14 +113,15 @@ const LeadCard = ({ lead, index, moveCard, onEdit, onDelete, onCreatePlan }: Lea
 interface LeadColumnProps {
     status: LeadStatus;
     leads: Lead[];
+    allCrmActions: CrmAction[];
     moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
     onDropCard: (lead: Lead, targetStatus: LeadStatus) => void;
     onEditLead: (lead: Lead) => void;
     onDeleteLead: (lead: Lead) => void;
-    onCreatePlan: (lead: Lead) => void;
+    onPlanAction: (lead: Lead) => void;
 }
 
-const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteLead, onCreatePlan }: LeadColumnProps) => {
+const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEditLead, onDeleteLead, onPlanAction }: LeadColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.LEAD,
         drop: (item: Lead) => onDropCard(item, status),
@@ -139,17 +142,21 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteL
                 <CardTitle>{columnTitles[status]}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
-                {leads.map((lead, index) => (
-                    <LeadCard 
-                        key={lead.id} 
-                        lead={lead} 
-                        index={index} 
-                        moveCard={moveCard} 
-                        onEdit={onEditLead}
-                        onDelete={onDeleteLead}
-                        onCreatePlan={onCreatePlan}
-                    />
-                ))}
+                {leads.map((lead, index) => {
+                    const hasPlan = allCrmActions.some(action => action.leadName === lead.contactName);
+                    return (
+                        <LeadCard 
+                            key={lead.id} 
+                            lead={lead} 
+                            index={index} 
+                            hasPlan={hasPlan}
+                            moveCard={moveCard} 
+                            onEdit={onEditLead}
+                            onDelete={onDeleteLead}
+                            onPlanAction={onPlanAction}
+                        />
+                    );
+                })}
                 {leads.length === 0 && (
                     <div className="text-sm text-muted-foreground text-center pt-8 h-full">
                         <p>No leads in this stage.</p>
@@ -163,6 +170,7 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteL
 
 export default function CrmPlanPage() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [allCrmActions, setAllCrmActions] = useState<CrmAction[]>([]);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -171,20 +179,24 @@ export default function CrmPlanPage() {
 
 
   useEffect(() => {
-    const loadLeads = async () => {
+    const loadData = async () => {
         if (!user) return;
         setIsLoading(true);
         try {
-            const leadsFromDb = await getLeads(user.uid);
+            const [leadsFromDb, actionsFromDb] = await Promise.all([
+                getLeads(user.uid),
+                getAllCrmActions(user.uid),
+            ]);
             setAllLeads(leadsFromDb);
+            setAllCrmActions(actionsFromDb);
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error loading leads' });
-            console.error("Failed to load leads from firestore:", error);
+            toast({ variant: 'destructive', title: 'Error loading data' });
+            console.error("Failed to load leads or actions from firestore:", error);
         } finally {
             setIsLoading(false);
         }
     };
-    loadLeads();
+    loadData();
   }, [user, toast]);
 
   const updateLeadsAndStorage = async (updatedLeads: Lead[]) => {
@@ -249,7 +261,7 @@ export default function CrmPlanPage() {
     }
   };
 
-  const handleCreatePlan = (lead: Lead) => {
+  const handlePlanAction = (lead: Lead) => {
     router.push(`/crm/action-plan?leadName=${encodeURIComponent(lead.contactName)}`);
   };
 
@@ -298,11 +310,12 @@ export default function CrmPlanPage() {
                       key={status}
                       status={status}
                       leads={leadsForColumn}
+                      allCrmActions={allCrmActions}
                       moveCard={moveCard}
                       onDropCard={onDropCard}
                       onEditLead={handleEditLead}
                       onDeleteLead={handleDeleteLead}
-                      onCreatePlan={handleCreatePlan}
+                      onPlanAction={handlePlanAction}
                   />
               );
           })}

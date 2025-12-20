@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -36,6 +35,17 @@ const docToAction = (doc: any): Action => ({
   id: doc.id,
   ...doc.data(),
 } as Action);
+
+export async function getAllCrmActions(userId: string): Promise<Action[]> {
+  const db = await getDb();
+  const q = query(
+    collection(db, CRM_ACTIONS_COLLECTION),
+    where('userId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docToAction);
+}
+
 
 export async function getActionsForLead(userId: string, leadName: string): Promise<Action[]> {
   const db = await getDb();

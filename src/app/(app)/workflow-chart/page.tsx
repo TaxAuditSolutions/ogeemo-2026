@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -239,7 +240,7 @@ export default function WorkflowChartPage() {
                                 <div key={chart.id} className="group flex items-center gap-1 p-2 rounded-md hover:bg-accent cursor-pointer" onClick={() => handleLoadChart(chart)}>
                                     <FolderOpen className="h-4 w-4 text-primary shrink-0" />
                                     <span className="text-sm truncate flex-1">{chart.name}</span>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setChartToDelete(chart); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 transition-opacity" onClick={(e) => { e.stopPropagation(); setChartToDelete(chart); }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                 </div>
                             ))
                         }

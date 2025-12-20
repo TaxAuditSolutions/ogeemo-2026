@@ -115,7 +115,7 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-1 -translate-y-1/2 h-5 w-5"
+                        className="absolute top-1/2 right-1 -translate-y-1/2 h-5 w-5 transition-opacity"
                     >
                         <MoreVertical className="h-4 w-4" />
                         <span className="sr-only">More options for {label}</span>

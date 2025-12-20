@@ -138,7 +138,7 @@ const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEdit
 
     return (
         <Card ref={drop} className={`flex flex-col ${isOver ? 'bg-primary/10' : ''}`}>
-            <CardHeader>
+            <CardHeader className="text-center">
                 <CardTitle>{columnTitles[status]}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">

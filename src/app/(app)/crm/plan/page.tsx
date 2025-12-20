@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -250,12 +249,7 @@ export default function CrmPlanPage() {
   };
 
   const handleCreatePlan = (lead: Lead) => {
-    // This functionality has been temporarily disabled per user request.
-    // New functionality will be added later.
-    toast({
-        title: "Action Disabled",
-        description: "'Create the plan' is temporarily disabled. Please provide the new destination.",
-    });
+    router.push('/crm/action-plan');
   };
 
 

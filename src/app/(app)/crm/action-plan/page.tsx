@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle, Route, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -54,9 +54,10 @@ interface ActionCardProps {
   moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: Status) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSchedule: () => void;
 }
 
-const ActionCard = ({ action, index, moveCard, onEdit, onDelete }: ActionCardProps) => {  
+const ActionCard = ({ action, index, moveCard, onEdit, onDelete, onSchedule }: ActionCardProps) => {  
   const ref = React.useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag({
@@ -98,6 +99,9 @@ const ActionCard = ({ action, index, moveCard, onEdit, onDelete }: ActionCardPro
                         <DropdownMenuItem onSelect={onEdit}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={onSchedule}>
+                            <Calendar className="mr-2 h-4 w-4" /> Schedule to calendar
+                        </DropdownMenuItem>
                         <DropdownMenuItem onSelect={onDelete} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
@@ -118,9 +122,10 @@ interface ActionColumnProps {
   onDropCard: (action: Action, targetStatus: Status) => void;
   onEditAction: (action: Action) => void;
   onDeleteAction: (action: Action) => void;
+  onScheduleAction: (action: Action) => void;
 }
 
-const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDeleteAction }: ActionColumnProps) => {
+const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDeleteAction, onScheduleAction }: ActionColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.ACTION,
         drop: (item: Action) => onDropCard(item, title),
@@ -143,6 +148,7 @@ const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDe
                         moveCard={moveCard}
                         onEdit={() => onEditAction(action)}
                         onDelete={() => onDeleteAction(action)}
+                        onSchedule={() => onScheduleAction(action)}
                     />
                 ))}
                 {actions.length === 0 && (
@@ -291,6 +297,15 @@ export default function CrmActionPlanPage() {
         }
     };
     
+    const handleScheduleAction = (action: Action) => {
+        const query = new URLSearchParams({
+            title: action.title,
+            notes: action.description || '',
+            // We could pre-fill more info here if the lead is linked to a contact
+        }).toString();
+        router.push(`/master-mind?${query}`);
+    };
+
     const onDropCard = useCallback(async (action: Action, targetStatus: Status) => {
         if (action.status === targetStatus) return;
         
@@ -367,6 +382,7 @@ export default function CrmActionPlanPage() {
                             onDropCard={onDropCard}
                             onEditAction={(action) => { setActionToEdit(action); setIsDialogOpen(true); }}
                             onDeleteAction={handleDeleteAction}
+                            onScheduleAction={handleScheduleAction}
                         />;
                     })}
                 </div>

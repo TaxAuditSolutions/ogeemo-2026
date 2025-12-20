@@ -15,60 +15,61 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/lib/firebase';
+import { type Event as TaskEvent } from '@/types/calendar-types';
 
-export interface ToDoItem {
-  id: string;
-  text: string;
-  userId: string;
-  createdAt: Date;
-  completed: boolean;
-}
-
-const TODOS_COLLECTION = 'todos';
+const TASKS_COLLECTION = 'tasks';
 
 async function getDb() {
     const { db } = await initializeFirebase();
     return db;
 }
 
-const docToTodo = (doc: any): ToDoItem => {
+const docToTodo = (doc: any): TaskEvent => {
     const data = doc.data();
     return {
         id: doc.id,
-        text: data.text,
-        userId: data.userId,
+        ...data,
         createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
         completed: data.completed || false,
-    } as ToDoItem;
+    } as TaskEvent;
 };
 
 
-export async function getTodos(userId: string): Promise<ToDoItem[]> {
+export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
+    // This now fetches general tasks (not assigned to a specific project)
     const q = query(
-        collection(db, TODOS_COLLECTION), 
-        where("userId", "==", userId)
+        collection(db, TASKS_COLLECTION), 
+        where("userId", "==", userId),
+        where("projectId", "==", null)
     );
     const snapshot = await getDocs(q);
     
     return snapshot.docs.map(docToTodo);
 }
 
-export async function addTodo(todoData: Omit<ToDoItem, 'id'>): Promise<ToDoItem> {
+export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
     const db = await getDb();
-    const docRef = await addDoc(collection(db, TODOS_COLLECTION), { ...todoData, completed: false });
-    return { id: docRef.id, ...todoData, completed: false };
+    // Ensure it's treated as a general "to-do" by not having a project ID
+    const dataToSave = {
+        ...todoData,
+        status: 'todo' as const,
+        projectId: null,
+        position: todoData.position || 0,
+    };
+    const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
+    return { id: docRef.id, ...dataToSave };
 }
 
-export async function updateTodo(todoId: string, dataToUpdate: Partial<Omit<ToDoItem, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
+export async function updateTodo(todoId: string, dataToUpdate: Partial<Omit<TaskEvent, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
     const db = await getDb();
-    const todoRef = doc(db, TODOS_COLLECTION, todoId);
+    const todoRef = doc(db, TASKS_COLLECTION, todoId);
     await updateDoc(todoRef, dataToUpdate);
 }
 
 export async function deleteTodo(todoId: string): Promise<void> {
     const db = await getDb();
-    await deleteDoc(doc(db, TODOS_COLLECTION, todoId));
+    await deleteDoc(doc(db, TASKS_COLLECTION, todoId));
 }
 
 export async function deleteTodos(todoIds: string[]): Promise<void> {
@@ -76,7 +77,7 @@ export async function deleteTodos(todoIds: string[]): Promise<void> {
     if (todoIds.length === 0) return;
     const batch = writeBatch(db);
     todoIds.forEach(id => {
-        const docRef = doc(db, TODOS_COLLECTION, id);
+        const docRef = doc(db, TASKS_COLLECTION, id);
         batch.delete(docRef);
     });
     await batch.commit();
@@ -86,9 +87,10 @@ export async function updateTodosStatus(todoIds: string[], completed: boolean): 
     const db = await getDb();
     if (todoIds.length === 0) return;
     const batch = writeBatch(db);
+    const status = completed ? 'done' : 'todo';
     todoIds.forEach(id => {
-        const docRef = doc(db, TODOS_COLLECTION, id);
-        batch.update(docRef, { completed });
+        const docRef = doc(db, TASKS_COLLECTION, id);
+        batch.update(docRef, { completed, status });
     });
     await batch.commit();
 }

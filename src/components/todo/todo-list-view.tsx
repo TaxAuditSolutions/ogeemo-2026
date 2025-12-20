@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions, deleteTasks, updateTasksStatus } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
-import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -281,6 +279,7 @@ export function ToDoListView() {
                   if (task) handleDeleteTask(task);
               }}
               onMakeProjectTask={handleMakeProject}
+              onArchive={archiveTaskAsFile}
               onMoveCard={onMoveCard}
               onToggleComplete={onToggleComplete}
               selectedTaskIds={selectedTaskIds}

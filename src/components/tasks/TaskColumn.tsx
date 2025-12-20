@@ -59,8 +59,11 @@ export function TaskColumn({
     }),
   }));
 
-  const allInColumnSelected = tasks.length > 0 && tasks.every(t => selectedTaskIds.includes(t.id));
-  const someInColumnSelected = tasks.length > 0 && tasks.some(t => selectedTaskIds.includes(t.id)) && !allInColumnSelected;
+  const columnTaskIds = React.useMemo(() => tasks.map(t => t.id), [tasks]);
+  const selectedInColumn = selectedTaskIds.filter(id => columnTaskIds.includes(id));
+
+  const allInColumnSelected = tasks.length > 0 && selectedInColumn.length === tasks.length;
+  const someInColumnSelected = selectedInColumn.length > 0 && !allInColumnSelected;
 
   return (
     <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10 ring-2 ring-primary")}>

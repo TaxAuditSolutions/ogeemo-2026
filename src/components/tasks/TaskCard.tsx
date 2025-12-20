@@ -4,7 +4,7 @@
 import React, { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreVertical, Edit, Trash2, Briefcase } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Briefcase, Archive } from 'lucide-react';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import {
@@ -26,6 +26,7 @@ interface TaskCardProps {
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
   onMakeProject: (task: TaskEvent) => void;
+  onArchive: (task: TaskEvent) => void;
   isSelected: boolean;
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   showCheckbox?: boolean;
@@ -37,7 +38,8 @@ export function TaskCard({
     onEdit, 
     onTaskDelete, 
     onToggleComplete, 
-    onMakeProject, 
+    onMakeProject,
+    onArchive,
     isSelected,
     onToggleSelect,
     showCheckbox = false,
@@ -74,21 +76,17 @@ export function TaskCard({
       <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
         <Card className={cn("group", isSelected && "bg-primary/20 border-primary", isCompleted && "bg-muted/70")}>
           <CardContent className="p-3 flex items-start gap-2">
-             {(showCheckbox || isCompleted) ? (
+             {(showCheckbox) && (
                 <Checkbox
-                    checked={isSelected || isCompleted}
+                    checked={isSelected}
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (showCheckbox) {
-                            onToggleSelect(task.id, e);
-                        } else {
-                            onToggleComplete(task.id);
-                        }
+                        onToggleSelect(task.id, e);
                     }}
                     className="mt-1"
-                    aria-label={`Mark task ${task.title} as ${isCompleted ? 'not done' : 'done'}`}
+                    aria-label={`Select task ${task.title}`}
                 />
-            ) : null}
+            )}
             <div className="flex-1 cursor-pointer" onClick={handleEditClick}>
               <p className={cn("font-semibold text-sm", isCompleted && "line-through text-muted-foreground")}>{task.title}</p>
               <p className={cn("text-xs text-muted-foreground line-clamp-2", isCompleted && "line-through")}>{task.description}</p>
@@ -105,6 +103,9 @@ export function TaskCard({
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onMakeProject(task)}>
                         <Briefcase className="mr-2 h-4 w-4" /> Make a Project
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onArchive(task)}>
+                        <Archive className="mr-2 h-4 w-4" /> Archive
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => onTaskDelete(task.id)} className="text-destructive">

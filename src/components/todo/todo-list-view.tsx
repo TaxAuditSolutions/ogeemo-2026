@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,11 +12,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/project-service';
-import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
+import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -29,12 +30,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { addProject } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+
 
 const ItemTypes = {
     TASK: 'task',
 };
 
-const TaskCard = ({ task, onEdit, onDelete }: { task: TaskEvent, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void }) => {
+const TaskCard = ({ task, onEdit, onDelete, onMakeProject }: { task: TaskEvent, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onMakeProject: (task: TaskEvent) => void }) => {
     
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.TASK,
@@ -56,8 +60,12 @@ const TaskCard = ({ task, onEdit, onDelete }: { task: TaskEvent, onEdit: (task: 
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
+                        <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => onEdit(task)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => onMakeProject(task)}>
+                                <Briefcase className="mr-2 h-4 w-4" /> Make a Project
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onSelect={() => onDelete(task)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -67,7 +75,7 @@ const TaskCard = ({ task, onEdit, onDelete }: { task: TaskEvent, onEdit: (task: 
     );
 };
 
-const TaskColumn = ({ title, status, tasks, onAddTask, onDropTask, onEditTask, onDeleteTask }: { title: string, status: TaskStatus, tasks: TaskEvent[], onAddTask?: () => void, onDropTask: (item: TaskEvent, newStatus: TaskStatus) => void, onEditTask: (task: TaskEvent) => void, onDeleteTask: (task: TaskEvent) => void }) => {
+const TaskColumn = ({ title, status, tasks, onAddTask, onDropTask, onEditTask, onDeleteTask, onMakeProjectTask }: { title: string, status: TaskStatus, tasks: TaskEvent[], onAddTask?: () => void, onDropTask: (item: TaskEvent, newStatus: TaskStatus) => void, onEditTask: (task: TaskEvent) => void, onDeleteTask: (task: TaskEvent) => void, onMakeProjectTask: (task: TaskEvent) => void }) => {
     
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.TASK,
@@ -85,7 +93,7 @@ const TaskColumn = ({ title, status, tasks, onAddTask, onDropTask, onEditTask, o
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
                 {tasks.map(task => (
-                    <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} />
+                    <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onMakeProject={onMakeProjectTask} />
                 ))}
             </CardContent>
         </Card>
@@ -99,6 +107,10 @@ export function ToDoListView() {
   const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [initialDialogData, setInitialDialogData] = useState({});
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -113,6 +125,8 @@ export function ToDoListView() {
     try {
       const userTasks = await getTasksForUser(user.uid);
       setTasks(userTasks.filter(t => !t.projectId || t.projectId === 'inbox'));
+      const userContacts = await getContacts(user.uid);
+      setContacts(userContacts);
     } catch (error) {
       console.error("Failed to load tasks:", error);
       toast({
@@ -145,13 +159,21 @@ export function ToDoListView() {
   };
 
   const handleDeleteTask = async (task: TaskEvent) => {
+    setTaskToDelete(task);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
     const originalTasks = [...tasks];
-    setTasks(tasks.filter(t => t.id !== task.id));
+    setTasks(tasks.filter(t => t.id !== taskToDelete.id));
     try {
-      await deleteTaskFromDb(task.id);
+      await deleteTaskFromDb(taskToDelete.id);
+      toast({ title: "Task Deleted" });
     } catch (error) {
       setTasks(originalTasks);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+    } finally {
+        setTaskToDelete(null);
     }
   };
 
@@ -168,6 +190,27 @@ export function ToDoListView() {
           setTasks(originalTasks);
           toast({ variant: 'destructive', title: 'Update failed', description: 'Could not move the task.' });
       }
+  };
+
+  const handleMakeProject = (task: TaskEvent) => {
+    setInitialDialogData({ name: task.title, description: task.description || '' });
+    setTaskToConvert(task);
+    setIsNewProjectDialogOpen(true);
+  };
+  
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    if (!user || !taskToConvert) return;
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        await deleteTaskFromDb(taskToConvert.id);
+        toast({ title: "Project Created", description: `"${newProject.name}" created and original task removed.` });
+        loadTasks(); // Refresh the to-do list
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    } finally {
+        setIsNewProjectDialogOpen(false);
+        setTaskToConvert(null);
+    }
   };
   
   const columns: { title: string, status: TaskStatus }[] = [
@@ -198,7 +241,8 @@ export function ToDoListView() {
               onAddTask={status === 'todo' ? handleAddTask : undefined}
               onDropTask={onDropTask}
               onEditTask={handleEditTask}
-              onDeleteTask={setTaskToDelete}
+              onDeleteTask={handleDeleteTask}
+              onMakeProjectTask={handleMakeProject}
             />
           ))}
         </div>
@@ -213,6 +257,16 @@ export function ToDoListView() {
         projectId="inbox"
       />
 
+      <NewTaskDialog
+        isOpen={isNewProjectDialogOpen}
+        onOpenChange={setIsNewProjectDialogOpen}
+        onProjectCreate={handleProjectCreated}
+        contacts={contacts}
+        onContactsChange={setContacts}
+        projectToEdit={null}
+        initialData={initialDialogData}
+      />
+
        <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -221,7 +275,7 @@ export function ToDoListView() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { if(taskToDelete) handleDeleteTask(taskToDelete) }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

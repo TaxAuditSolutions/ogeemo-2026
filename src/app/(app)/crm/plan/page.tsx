@@ -250,12 +250,12 @@ export default function CrmPlanPage() {
   };
 
   const handleCreatePlan = (lead: Lead) => {
-    const params = new URLSearchParams({
-      title: `Project for ${lead.companyName || lead.contactName}`,
-      notes: `Initial project created from lead: ${lead.contactName}. \n\nLead Notes:\n${lead.notes}`,
-      contactId: lead.id, // Assuming contact and lead can be linked this way, may need adjustment
+    // This functionality has been temporarily disabled per user request.
+    // New functionality will be added later.
+    toast({
+        title: "Action Disabled",
+        description: "'Create the plan' is temporarily disabled. Please provide the new destination.",
     });
-    router.push(`/master-mind?${params.toString()}`);
   };
 
 

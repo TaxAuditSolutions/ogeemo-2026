@@ -101,6 +101,13 @@ export default function CreateLeadPage() {
               setSource(leadToEdit.source || '');
               setStatus(leadToEdit.status || 'Unscheduled Leads');
               setNotes(leadToEdit.notes || '');
+
+              // Try to find and set the matching contact
+              const matchingContact = contacts.find(c => c.name === leadToEdit.contactName && c.email === leadToEdit.email);
+              if (matchingContact) {
+                  setSelectedContact(matchingContact);
+              }
+
             } else {
               toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
               router.push('/crm/plan');
@@ -111,9 +118,11 @@ export default function CreateLeadPage() {
               setIsLoading(false);
           }
       }
-      loadLead();
+      if (contacts.length > 0) { // Ensure contacts are loaded before trying to find a match
+        loadLead();
+      }
     }
-  }, [leadId, router, toast]);
+  }, [leadId, router, toast, contacts]);
 
   const handleSaveLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,7 +228,7 @@ export default function CreateLeadPage() {
               </CardHeader>
               <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="contact-name">Contact Name</Label>
+                <Label>Contact Name</Label>
                 <div className="flex gap-2">
                     <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -234,7 +243,7 @@ export default function CreateLeadPage() {
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                                <CommandInput placeholder="Search contacts..." onValueChange={setContactName} />
+                                <CommandInput placeholder="Search or type to add..." onValueChange={setContactName} value={contactName} />
                                 <CommandList>
                                 <CommandEmpty>No contact found.</CommandEmpty>
                                 <CommandGroup>
@@ -259,7 +268,9 @@ export default function CreateLeadPage() {
               <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>
                 <div className="flex gap-2 items-center">
-                    <Input id="company-name" placeholder="Not set" value={companyName} readOnly disabled className="bg-muted/50" />
+                    <div className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                      {companyName || <span className="text-muted-foreground">Not set</span>}
+                    </div>
                     {selectedContact && (
                         <Button type="button" variant="outline" onClick={handleEditContact}>
                             <Edit className="mr-2 h-4 w-4" />

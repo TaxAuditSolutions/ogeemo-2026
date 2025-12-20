@@ -55,7 +55,7 @@ const LeadCard = ({ lead, index, moveCard, onEdit, onDelete, onCreatePlan }: Lea
         type: ItemTypes.LEAD,
         item: () => ({ ...lead, index }),
         collect: (monitor) => ({
-            isDragging: monitor.isDragging(),
+            isDragging: !!monitor.isDragging(),
         }),
     });
 
@@ -278,7 +278,7 @@ export default function CrmPlanPage() {
           </div>
           <div className="text-center flex-1">
               <h1 className="text-3xl font-bold font-headline text-primary">
-                  The CRM Plan
+                  CRM Leads
               </h1>
           </div>
           <div className="w-1/4 flex justify-end">

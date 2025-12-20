@@ -202,7 +202,7 @@ export default function CreateLeadPage() {
               <Button asChild variant="outline">
                   <Link href="/crm/plan">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to CRM Plan
+                      Back to CRM Leads
                   </Link>
               </Button>
           </div>

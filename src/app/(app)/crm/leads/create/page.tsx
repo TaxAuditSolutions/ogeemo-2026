@@ -22,15 +22,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle, X, Plus } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
-import { type Contact } from '@/data/contacts';
+import { type Contact, getContacts } from '@/services/contact-service';
 import { type FolderData, getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { type Company, getCompanies } from '@/services/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
 import { getLeadById, addLead, updateLead, type Lead, type LeadStatus } from '@/services/lead-service';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -51,23 +55,27 @@ export default function CreateLeadPage() {
   const [notes, setNotes] = useState('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   
   const loadDropdownData = useCallback(async () => {
     if (!user) return;
     try {
-        const [foldersData, companiesData, industriesData] = await Promise.all([
+        const [foldersData, companiesData, industriesData, contactsData] = await Promise.all([
             getContactFolders(user.uid),
             getCompanies(user.uid),
-            getIndustries(user.uid)
+            getIndustries(user.uid),
+            getContacts(user.uid), // Fetch contacts here
         ]);
         setContactFolders(foldersData);
         setCompanies(companiesData);
         setCustomIndustries(industriesData);
+        setContacts(contactsData); // Populate contacts state
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data for contact creation.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
     }
   }, [user, toast]);
 
@@ -144,10 +152,19 @@ export default function CreateLeadPage() {
   };
   
   const handleContactSave = (savedContact: Contact) => {
+      setContacts(prev => [savedContact, ...prev]);
       setContactName(savedContact.name);
       setEmail(savedContact.email || '');
       setCompanyName(savedContact.businessName || '');
       setIsContactFormOpen(false);
+  };
+
+  const handleSelectContact = (contact: Contact) => {
+    setContactName(contact.name);
+    setEmail(contact.email || '');
+    setCompanyName(contact.businessName || '');
+    setPhone(contact.cellPhone || contact.businessPhone || contact.homePhone || '');
+    setIsContactPopoverOpen(false);
   };
 
   return (
@@ -186,9 +203,41 @@ export default function CreateLeadPage() {
               <div className="space-y-2">
                 <Label htmlFor="contact-name">Contact Name</Label>
                 <div className="flex gap-2">
-                    <Input id="contact-name" placeholder="e.g., Jane Smith" value={contactName} onChange={e => setContactName(e.target.value)} />
+                    <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                            >
+                                <span className="truncate">{contactName || "Select or search for a contact..."}</span>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search contacts..." />
+                                <CommandList>
+                                <CommandEmpty>No contact found.</CommandEmpty>
+                                <CommandGroup>
+                                    {contacts.map((contact) => (
+                                    <CommandItem
+                                        key={contact.id}
+                                        value={contact.name}
+                                        onSelect={() => handleSelectContact(contact)}
+                                    >
+                                        <Check className={cn("mr-2 h-4 w-4", contactName === contact.name ? "opacity-100" : "opacity-0")} />
+                                        {contact.name}
+                                    </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                     <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
+                <Input id="contact-name" value={contactName} onChange={e => setContactName(e.target.value)} className="mt-2" placeholder="Or type manually..."/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>

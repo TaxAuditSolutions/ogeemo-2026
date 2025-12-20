@@ -1,5 +1,4 @@
 
-
 import {
   LayoutDashboard,
   Users,
@@ -80,7 +79,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },
   { href: "/hr-manager", label: "HR Manager", icon: Contact2 },
   { href: "/social-media-manager", label: "Social Media", icon: Share2 },
-  { href: "/crm", label: "CRM", icon: Users2 },
+  { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
   { href: "/crm/action-manager", label: "CRM Actions", icon: Users2 },
   { href: "/inventory-manager", label: "Inventory", icon: PackageSearch },
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },

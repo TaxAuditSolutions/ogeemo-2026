@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -37,16 +37,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { type Action, getActionsForLead, addAction, updateAction, deleteAction, updateActionPositions } from '@/services/crm-action-service';
 
 // --- Types ---
 type Status = 'To Do' | 'In Progress' | 'Done';
-
-interface Action {
-  id: string;
-  title: string;
-  description: string;
-  status: Status;
-}
 
 const ItemTypes = {
   ACTION: 'action',
@@ -164,7 +159,7 @@ const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDe
 interface AddActionDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    onSave: (title: string, description: string) => void;
+    onSave: (actionData: Omit<Action, 'id' | 'userId' | 'leadName' | 'status' | 'position'>, actionToEdit: Action | null) => void;
     actionToEdit: Action | null;
 }
 
@@ -176,19 +171,19 @@ const AddActionDialog = ({ isOpen, onOpenChange, onSave, actionToEdit }: AddActi
     React.useEffect(() => {
         if (actionToEdit) {
             setTitle(actionToEdit.title);
-            setDescription(actionToEdit.description);
+            setDescription(actionToEdit.description || '');
         } else {
             setTitle('');
             setDescription('');
         }
-    }, [actionToEdit]);
+    }, [actionToEdit, isOpen]);
 
     const handleSave = () => {
         if (!title.trim()) {
             toast({ variant: 'destructive', title: 'Action title is required.' });
             return;
         }
-        onSave(title, description);
+        onSave({ title, description }, actionToEdit);
         onOpenChange(false);
     };
 
@@ -224,65 +219,117 @@ const AddActionDialog = ({ isOpen, onOpenChange, onSave, actionToEdit }: AddActi
 export default function CrmActionPlanPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const leadName = searchParams.get('leadName');
+    const leadName = searchParams.get('leadName') || 'New Plan';
+    const { user } = useAuth();
+    const { toast } = useToast();
 
     const [actions, setActions] = useState<Action[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [actionToEdit, setActionToEdit] = useState<Action | null>(null);
     const [actionToDelete, setActionToDelete] = useState<Action | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const handleSaveAction = (title: string, description: string) => {
-        if (actionToEdit) {
-            // Update existing action
-            setActions(prev => prev.map(a => a.id === actionToEdit.id ? { ...a, title, description } : a));
-        } else {
-            // Add new action
-            const newAction: Action = {
-                id: `action_${Date.now()}`,
-                title,
-                description,
-                status: 'To Do',
-            };
-            setActions(prev => [...prev, newAction]);
+    useEffect(() => {
+        if (!user) {
+            setIsLoading(false);
+            return;
         }
-    };
+        const fetchActions = async () => {
+            setIsLoading(true);
+            try {
+                const fetchedActions = await getActionsForLead(user.uid, leadName);
+                setActions(fetchedActions);
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Failed to load actions', description: error.message });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchActions();
+    }, [user, leadName, toast]);
 
-    const handleEditAction = (action: Action) => {
-        setActionToEdit(action);
-        setIsDialogOpen(true);
+    const handleSaveAction = async (actionData: Omit<Action, 'id' | 'userId' | 'leadName' | 'status' | 'position'>, existingAction: Action | null) => {
+        if (!user) return;
+
+        try {
+            if (existingAction) {
+                const updatedActionData = { ...existingAction, ...actionData };
+                await updateAction(existingAction.id, { title: updatedActionData.title, description: updatedActionData.description });
+                setActions(prev => prev.map(a => a.id === existingAction.id ? updatedActionData : a));
+                toast({ title: 'Action Updated' });
+            } else {
+                const newActionData: Omit<Action, 'id'> = {
+                    ...actionData,
+                    status: 'To Do',
+                    position: actions.filter(a => a.status === 'To Do').length,
+                    leadName,
+                    userId: user.uid,
+                };
+                const newAction = await addAction(newActionData);
+                setActions(prev => [...prev, newAction]);
+                toast({ title: 'Action Added' });
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
     };
 
     const handleDeleteAction = (action: Action) => {
         setActionToDelete(action);
     };
 
-    const handleConfirmDelete = () => {
-        if (actionToDelete) {
+    const handleConfirmDelete = async () => {
+        if (!actionToDelete) return;
+        try {
+            await deleteAction(actionToDelete.id);
             setActions(prev => prev.filter(a => a.id !== actionToDelete.id));
+            toast({ title: 'Action Deleted' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        } finally {
             setActionToDelete(null);
         }
     };
-
-    const moveCard = useCallback((dragIndex: number, hoverIndex: number, sourceStatus: Status) => {
-        setActions(prev => {
-            const columnActions = prev.filter(a => a.status === sourceStatus);
-            const otherActions = prev.filter(a => a.status !== sourceStatus);
-            const draggedCard = columnActions[dragIndex];
-            
-            const newColumnActions = [...columnActions];
-            newColumnActions.splice(dragIndex, 1);
-            newColumnActions.splice(hoverIndex, 0, draggedCard);
-
-            return [...otherActions, ...newColumnActions];
-        });
-    }, []);
-
-    const onDropCard = useCallback((action: Action, targetStatus: Status) => {
+    
+    const onDropCard = useCallback(async (action: Action, targetStatus: Status) => {
         if (action.status === targetStatus) return;
+        
+        const originalActions = actions;
         setActions(prev => prev.map(a => a.id === action.id ? { ...a, status: targetStatus } : a));
-    }, []);
+
+        try {
+            await updateAction(action.id, { status: targetStatus });
+            // Here you would also update positions if needed, for simplicity we are not doing that on status change for now
+        } catch(error: any) {
+            setActions(originalActions);
+            toast({ variant: 'destructive', title: 'Move Failed', description: error.message });
+        }
+    }, [actions, toast]);
+    
+    const moveCard = useCallback(async (dragId: string, hoverId: string, sourceStatus: Status) => {
+        const dragIndex = actions.findIndex(a => a.id === dragId);
+        const hoverIndex = actions.findIndex(a => a.id === hoverId);
+        
+        const newActions = [...actions];
+        const [draggedItem] = newActions.splice(dragIndex, 1);
+        newActions.splice(hoverIndex, 0, draggedItem);
+
+        const positionUpdates = newActions.map((action, index) => ({
+            id: action.id,
+            position: index,
+            status: action.status,
+        }));
+
+        setActions(newActions); // Optimistic update
+        await updateActionPositions(positionUpdates);
+
+    }, [actions]);
 
     const columns: Status[] = ["To Do", "In Progress", "Done"];
+
+    if (isLoading) {
+        return <div className="flex h-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
+    }
 
     return (
         <>
@@ -298,7 +345,7 @@ export default function CrmActionPlanPage() {
                     </div>
                     <div className="text-center flex-1">
                         <h1 className="text-3xl font-bold font-headline text-primary">
-                            CRM Action Plan: {leadName || 'New Plan'}
+                            CRM Action Plan: {leadName}
                         </h1>
                         <p className="text-muted-foreground">Manage the next steps for your leads.</p>
                     </div>
@@ -311,14 +358,14 @@ export default function CrmActionPlanPage() {
                 </header>
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                     {columns.map(status => {
-                        const columnActions = actions.filter(a => a.status === status);
+                        const columnActions = actions.filter(a => a.status === status).sort((a, b) => a.position - b.position);
                         return <ActionColumn
                             key={status}
                             title={status}
                             actions={columnActions}
                             moveCard={moveCard}
                             onDropCard={onDropCard}
-                            onEditAction={handleEditAction}
+                            onEditAction={(action) => { setActionToEdit(action); setIsDialogOpen(true); }}
                             onDeleteAction={handleDeleteAction}
                         />;
                     })}
@@ -344,4 +391,3 @@ export default function CrmActionPlanPage() {
         </>
     );
 }
-

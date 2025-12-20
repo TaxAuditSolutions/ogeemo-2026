@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -249,7 +250,7 @@ export default function CrmPlanPage() {
   };
 
   const handleCreatePlan = (lead: Lead) => {
-    router.push('/crm/action-plan');
+    router.push(`/crm/action-plan?leadName=${encodeURIComponent(lead.contactName)}`);
   };
 
 

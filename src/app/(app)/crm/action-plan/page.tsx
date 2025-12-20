@@ -1,7 +1,8 @@
+
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -22,6 +23,8 @@ const ActionColumn = ({ title }: { title: string }) => (
 
 export default function CrmActionPlanPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const leadName = searchParams.get('leadName');
 
     return (
         <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
@@ -36,7 +39,7 @@ export default function CrmActionPlanPage() {
                 </div>
                 <div className="text-center flex-1">
                     <h1 className="text-3xl font-bold font-headline text-primary">
-                        CRM Action Plan
+                        CRM Action Plan: {leadName || 'New Plan'}
                     </h1>
                     <p className="text-muted-foreground">Manage the next steps for your leads.</p>
                 </div>

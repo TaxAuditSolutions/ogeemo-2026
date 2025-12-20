@@ -1,6 +1,5 @@
 
-
-"use client";
+'use client';
 
 import React from 'react';
 import { useDrop } from 'react-dnd';
@@ -17,11 +16,13 @@ import { ItemTypes as StepItemTypes } from './DraggableStep';
 interface TaskColumnProps {
   status: TaskStatus;
   tasks: TaskEvent[];
-  onAddTask: () => void;
-  onMoveTask: (item: TaskEvent | ProjectStep, newStatus: TaskStatus, newPosition: number) => void;
+  onAddTask?: () => void;
+  onDropTask: (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => void;
+  onMoveCard: (dragId: string, hoverId: string) => void;
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: TaskEvent) => void;
+  onMakeProjectTask: (task: TaskEvent) => void;
   selectedTaskIds: string[];
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   onToggleSelectAll: (status: TaskStatus) => void;
@@ -37,10 +38,12 @@ export function TaskColumn({
   status,
   tasks,
   onAddTask,
-  onMoveTask,
+  onDropTask,
+  onMoveCard,
   onTaskDelete,
   onToggleComplete,
   onEdit,
+  onMakeProjectTask,
   selectedTaskIds,
   onToggleSelect,
   onToggleSelectAll,
@@ -48,36 +51,31 @@ export function TaskColumn({
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ['task', StepItemTypes.STEP],
     drop: (item: TaskEvent | ProjectStep) => {
-      onMoveTask(item, status, tasks.length); // Drop at the end of the list
+      onDropTask(item, status);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
     }),
   }));
-  
-  const moveCard = (dragId: string, hoverId: string) => {
-    const dragTask = tasks.find(t => t.id === dragId);
-    const hoverTask = tasks.find(t => t.id === hoverId);
-    if (dragTask && hoverTask) {
-        onMoveTask(dragTask, status, hoverTask.position);
-    }
-  };
-  
-  const areAllInColumnSelected = tasks.length > 0 && tasks.every(t => selectedTaskIds.includes(t.id));
+
+  const allInColumnSelected = tasks.length > 0 && tasks.every(t => selectedTaskIds.includes(t.id));
+  const someInColumnSelected = tasks.length > 0 && tasks.some(t => selectedTaskIds.includes(t.id)) && !allInColumnSelected;
 
   return (
     <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10 ring-2 ring-primary")}>
       <CardHeader className="flex flex-row items-center justify-between p-4">
         <div className="flex items-center gap-2">
-            <Checkbox
-              checked={areAllInColumnSelected}
-              onCheckedChange={() => onToggleSelectAll(status)}
-              aria-label={`Select all tasks in ${columnTitles[status]}`}
-            />
+            {status === 'done' && (
+              <Checkbox
+                checked={allInColumnSelected ? true : someInColumnSelected ? 'indeterminate' : false}
+                onCheckedChange={() => onToggleSelectAll(status)}
+                aria-label={`Select all tasks in ${columnTitles[status]}`}
+              />
+            )}
             <CardTitle className="text-lg">{columnTitles[status]} <span className="text-sm font-normal text-muted-foreground">({tasks.length})</span></CardTitle>
         </div>
-        {status === 'todo' && (
+        {onAddTask && (
             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onAddTask}>
               <Plus className="h-4 w-4" />
             </Button>
@@ -89,12 +87,14 @@ export function TaskColumn({
             <TaskCard 
                 key={task.id} 
                 task={task} 
-                onMoveCard={moveCard}
+                onMoveCard={onMoveCard}
                 onEdit={onEdit}
-                onTaskDelete={onTaskDelete}
+                onTaskDelete={() => onTaskDelete(task.id)}
                 onToggleComplete={onToggleComplete}
+                onMakeProject={onMakeProjectTask}
                 isSelected={selectedTaskIds.includes(task.id)}
                 onToggleSelect={onToggleSelect}
+                showCheckbox={status === 'done'}
             />
           ))}
         </CardContent>
@@ -102,5 +102,3 @@ export function TaskColumn({
     </Card>
   );
 }
-
-    

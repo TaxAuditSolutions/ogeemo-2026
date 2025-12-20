@@ -21,6 +21,7 @@ import { initializeFirebase } from '@/lib/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
+import { type Event as TaskEvent } from '@/types/calendar-types';
 
 
 const FILES_COLLECTION = 'files';
@@ -334,6 +335,23 @@ ${description || 'No description provided.'}
     
     await setDoc(doc(db, FILES_COLLECTION, fileId), newFileRecord);
     return newFileRecord;
+}
+
+export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promise<FileItem> {
+    const folder = await findOrCreateFileFolder(userId, 'Archived Tasks');
+
+    const content = `
+# ${task.title}
+
+**Description:**
+${task.description || 'No description provided.'}
+
+---
+*Task Status: Done*
+*Archived on: ${new Date().toISOString()}*
+    `.trim();
+    
+    return addTextFileClient(userId, folder.id, `Archived Task - ${task.title}.txt`, content);
 }
 
 

@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/project-service';
+import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions, deleteTasks, updateTasksStatus } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { cn } from '@/lib/utils';
@@ -32,74 +32,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-
-
-const ItemTypes = {
-    TASK: 'task',
-};
-
-const TaskCard = ({ task, onEdit, onDelete, onMakeProject }: { task: TaskEvent, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onMakeProject: (task: TaskEvent) => void }) => {
-    
-    const [{ isDragging }, drag] = useDrag(() => ({
-        type: ItemTypes.TASK,
-        item: task,
-        collect: (monitor) => ({
-            isDragging: !!monitor.isDragging(),
-        }),
-    }));
-
-    return (
-        <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <Card className="mb-2 cursor-move">
-                <CardContent className="p-3 flex items-center justify-between">
-                    <div onClick={() => onEdit(task)} className="flex-1">
-                        <p className={cn("font-semibold", task.status === 'done' && 'line-through text-muted-foreground')}>{task.title}</p>
-                        {task.description && <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>}
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onEdit(task)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                             <DropdownMenuItem onSelect={() => onMakeProject(task)}>
-                                <Briefcase className="mr-2 h-4 w-4" /> Make a Project
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={() => onDelete(task)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </CardContent>
-            </Card>
-        </div>
-    );
-};
-
-const TaskColumn = ({ title, status, tasks, onAddTask, onDropTask, onEditTask, onDeleteTask, onMakeProjectTask }: { title: string, status: TaskStatus, tasks: TaskEvent[], onAddTask?: () => void, onDropTask: (item: TaskEvent, newStatus: TaskStatus) => void, onEditTask: (task: TaskEvent) => void, onDeleteTask: (task: TaskEvent) => void, onMakeProjectTask: (task: TaskEvent) => void }) => {
-    
-    const [{ isOver }, drop] = useDrop(() => ({
-        accept: ItemTypes.TASK,
-        drop: (item: TaskEvent) => onDropTask(item, status),
-        collect: (monitor) => ({
-            isOver: !!monitor.isOver(),
-        }),
-    }));
-
-    return (
-        <Card ref={drop} className={cn("flex flex-col", isOver && 'bg-primary/10')}>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{title}</CardTitle>
-                {onAddTask && <Button size="icon" variant="ghost" onClick={onAddTask}><Plus className="h-4 w-4" /></Button>}
-            </CardHeader>
-            <CardContent className="flex-1 space-y-2">
-                {tasks.map(task => (
-                    <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onMakeProject={onMakeProjectTask} />
-                ))}
-            </CardContent>
-        </Card>
-    );
-};
-
+import { TaskColumn } from '@/components/tasks/TaskColumn';
+import { archiveIdeaAsFile, archiveTaskAsFile } from '@/services/file-service';
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -111,6 +45,10 @@ export function ToDoListView() {
   const [initialDialogData, setInitialDialogData] = useState({});
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+  
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+
 
   const router = useRouter();
   const { user } = useAuth();
@@ -213,6 +151,96 @@ export function ToDoListView() {
     }
   };
   
+  const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
+      const dragTask = tasks.find(t => t.id === dragId);
+      const hoverTask = tasks.find(t => t.id === hoverId);
+      if (!dragTask || !hoverTask) return;
+
+      const dragIndex = tasks.findIndex(t => t.id === dragId);
+      const hoverIndex = tasks.findIndex(t => t.id === hoverId);
+
+      const newTasks = [...tasks];
+      const [draggedItem] = newTasks.splice(dragIndex, 1);
+      newTasks.splice(hoverIndex, 0, draggedItem);
+      
+      const positionUpdates = newTasks.map((task, index) => ({
+        id: task.id,
+        position: index,
+        status: task.status, // Ensure status is part of the update
+      }));
+      
+      setTasks(newTasks); // Optimistic update
+      
+      await updateTaskPositions(positionUpdates);
+  }, [tasks]);
+
+  const onToggleComplete = async (taskId: string) => {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      onDropTask(task, newStatus);
+  };
+  
+  const handleToggleSelect = (taskId: string, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setSelectedTaskIds(prev =>
+        prev.includes(taskId)
+            ? prev.filter(id => id !== taskId)
+            : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = (status: TaskStatus) => {
+    const columnTaskIds = tasks.filter(t => t.status === status).map(t => t.id);
+    const allSelected = columnTaskIds.length > 0 && columnTaskIds.every(id => selectedTaskIds.includes(id));
+    if (allSelected) {
+        setSelectedTaskIds(prev => prev.filter(id => !columnTaskIds.includes(id)));
+    } else {
+        setSelectedTaskIds(prev => [...new Set([...prev, ...columnTaskIds])]);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedTaskIds.length === 0) return;
+    setIsBulkDeleteAlertOpen(true);
+  };
+  
+  const handleConfirmBulkDelete = async () => {
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.filter(t => !selectedTaskIds.includes(t.id)));
+    try {
+        await deleteTasks(selectedTaskIds);
+        toast({ title: `${selectedTaskIds.length} tasks deleted.` });
+        setSelectedTaskIds([]);
+    } catch(error: any) {
+        setTasks(originalTasks);
+        toast({ variant: 'destructive', title: 'Bulk delete failed.', description: error.message });
+    } finally {
+        setIsBulkDeleteAlertOpen(false);
+    }
+  };
+  
+  const handleArchiveSelected = async () => {
+    if (!user || selectedTaskIds.length === 0) return;
+    
+    const tasksToArchive = tasks.filter(t => selectedTaskIds.includes(t.id));
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.filter(t => !selectedTaskIds.includes(t.id)));
+    setSelectedTaskIds([]);
+
+    try {
+        for (const task of tasksToArchive) {
+            await archiveTaskAsFile(user.uid, task);
+        }
+        await deleteTasks(tasksToArchive.map(t => t.id));
+        toast({ title: "Tasks Archived", description: `${tasksToArchive.length} tasks moved to your File Manager.` });
+    } catch(error: any) {
+        setTasks(originalTasks);
+        toast({ variant: 'destructive', title: 'Archive failed.', description: error.message });
+    }
+  };
+
+
   const columns: { title: string, status: TaskStatus }[] = [
     { title: 'To Do', status: 'todo' },
     { title: 'In Progress', status: 'inProgress' },
@@ -229,6 +257,13 @@ export function ToDoListView() {
         <header className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
           <p className="text-muted-foreground">Drag and drop tasks to change their status.</p>
+           {selectedTaskIds.length > 0 && (
+                <div className="mt-4 flex justify-center items-center gap-2">
+                    <span className="text-sm font-medium">{selectedTaskIds.length} selected</span>
+                    <Button variant="outline" size="sm" onClick={handleArchiveSelected}><Archive className="mr-2 h-4 w-4" /> Archive</Button>
+                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+                </div>
+            )}
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mt-6">
@@ -243,6 +278,11 @@ export function ToDoListView() {
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
               onMakeProjectTask={handleMakeProject}
+              onMoveCard={onMoveCard}
+              onToggleComplete={onToggleComplete}
+              selectedTaskIds={selectedTaskIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
             />
           ))}
         </div>
@@ -276,6 +316,23 @@ export function ToDoListView() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete {selectedTaskIds.length} task(s). This cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete Selected
+                </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

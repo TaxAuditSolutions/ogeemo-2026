@@ -16,6 +16,8 @@ import {
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/lib/firebase';
 import { type Event as TaskEvent } from '@/types/calendar-types';
+import { archiveTaskAsFile } from './file-service';
+
 
 const TASKS_COLLECTION = 'tasks';
 
@@ -81,6 +83,18 @@ export async function deleteTodos(todoIds: string[]): Promise<void> {
         batch.delete(docRef);
     });
     await batch.commit();
+}
+
+export async function archiveTodos(userId: string, tasksToArchive: TaskEvent[]): Promise<void> {
+    if (tasksToArchive.length === 0) return;
+
+    // Archive each file
+    for (const task of tasksToArchive) {
+        await archiveTaskAsFile(userId, task);
+    }
+    
+    // Then bulk delete from the tasks collection
+    await deleteTodos(tasksToArchive.map(t => t.id));
 }
 
 export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {

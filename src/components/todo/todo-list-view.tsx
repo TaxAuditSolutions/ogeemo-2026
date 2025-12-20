@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/todo-service';
+import { getTasksForUser, updateTask, deleteTask as deleteTaskFromDb, updateTaskPositions } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { cn } from '@/lib/utils';

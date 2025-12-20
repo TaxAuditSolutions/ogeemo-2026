@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -56,11 +56,13 @@ export default function CreateLeadPage() {
   const [notes, setNotes] = useState('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   
   const loadDropdownData = useCallback(async () => {
     if (!user) return;
@@ -69,12 +71,12 @@ export default function CreateLeadPage() {
             getContactFolders(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
-            getContacts(user.uid), // Fetch contacts here
+            getContacts(user.uid),
         ]);
         setContactFolders(foldersData);
         setCompanies(companiesData);
         setCustomIndustries(industriesData);
-        setContacts(contactsData); // Populate contacts state
+        setContacts(contactsData);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
     }
@@ -152,15 +154,30 @@ export default function CreateLeadPage() {
     }
   };
   
-  const handleContactSave = (savedContact: Contact) => {
-      setContacts(prev => [savedContact, ...prev]);
-      setContactName(savedContact.name);
-      setEmail(savedContact.email || '');
-      setCompanyName(savedContact.businessName || '');
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+          if(selectedContact?.id === savedContact.id) {
+            setSelectedContact(savedContact); // Update selected contact details
+            setCompanyName(savedContact.businessName || ''); // Update company name field
+          }
+      } else {
+          setContacts(prev => [savedContact, ...prev]);
+      }
+      handleSelectContact(savedContact); // This will set the name, email, etc.
       setIsContactFormOpen(false);
+      setContactToEdit(null);
+  };
+  
+  const handleEditContact = () => {
+    if (selectedContact) {
+      setContactToEdit(selectedContact);
+      setIsContactFormOpen(true);
+    }
   };
 
   const handleSelectContact = (contact: Contact) => {
+    setSelectedContact(contact);
     setContactName(contact.name);
     setEmail(contact.email || '');
     setCompanyName(contact.businessName || '');
@@ -227,7 +244,7 @@ export default function CreateLeadPage() {
                                         value={contact.name}
                                         onSelect={() => handleSelectContact(contact)}
                                     >
-                                        <Check className={cn("mr-2 h-4 w-4", contactName === contact.name ? "opacity-100" : "opacity-0")} />
+                                        <Check className={cn("mr-2 h-4 w-4", selectedContact?.id === contact.id ? "opacity-100" : "opacity-0")} />
                                         {contact.name}
                                     </CommandItem>
                                     ))}
@@ -236,12 +253,20 @@ export default function CreateLeadPage() {
                             </Command>
                         </PopoverContent>
                     </Popover>
-                    <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
+                    <Button type="button" variant="outline" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" placeholder="e.g., ACME Innovations" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                <div className="flex gap-2 items-center">
+                    <Input id="company-name" placeholder="Not set" value={companyName} readOnly disabled className="bg-muted/50" />
+                    {selectedContact && (
+                        <Button type="button" variant="outline" onClick={handleEditContact}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {companyName ? 'Edit' : 'Add'} Company
+                        </Button>
+                    )}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -306,7 +331,7 @@ export default function CreateLeadPage() {
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
-        contactToEdit={null}
+        contactToEdit={contactToEdit}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
         onSave={handleContactSave}

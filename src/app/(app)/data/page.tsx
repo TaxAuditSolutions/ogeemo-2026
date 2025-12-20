@@ -31,6 +31,6 @@ const DataView = dynamic(
   }
 );
 
-export default function DataPage() {
+export default function UsersPage() {
   return <DataView />;
 }

@@ -68,7 +68,7 @@ const users = [
 export function DataView() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <h1 className="text-3xl font-bold font-headline text-primary">Data Management</h1>
+      <h1 className="text-3xl font-bold font-headline text-primary">Users</h1>
       <Card>
         <CardHeader>
           <CardTitle>Users Collection</CardTitle>

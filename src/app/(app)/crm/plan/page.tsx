@@ -91,10 +91,16 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead }: LeadCol
         }),
     });
 
+    const columnTitles = {
+      "Unscheduled Leads": "Unscheduled Leads",
+      "Scheduled Leads": "Scheduled Leads",
+      "Completed Leads": "Completed Leads",
+    };
+
     return (
         <Card ref={drop} className={`flex flex-col ${isOver ? 'bg-primary/10' : ''}`}>
             <CardHeader>
-                <CardTitle>{status}</CardTitle>
+                <CardTitle>{columnTitles[status]}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
                 {leads.map((lead, index) => (
@@ -144,11 +150,20 @@ export default function CrmPlanPage() {
   }, [allLeads]);
 
   const onDropCard = useCallback((lead: Lead, targetStatus: LeadStatus) => {
-      const updatedLeads = allLeads.map(l => 
-          l.id === lead.id ? { ...l, status: targetStatus } : l
-      );
-      updateLeadsAndStorage(updatedLeads);
-  }, [allLeads]);
+    if (targetStatus === 'Scheduled Leads') {
+        const query = new URLSearchParams({
+            title: `Follow-up with ${lead.contactName}`,
+            notes: `Follow-up regarding lead from ${lead.companyName || 'N/A'}.`,
+            // In a real app, you would pass the contact ID
+        });
+        router.push(`/master-mind?${query.toString()}`);
+    } else {
+        const updatedLeads = allLeads.map(l => 
+            l.id === lead.id ? { ...l, status: targetStatus } : l
+        );
+        updateLeadsAndStorage(updatedLeads);
+    }
+  }, [allLeads, router]);
   
   const handleEditLead = (lead: Lead) => {
       router.push(`/crm/leads/create?id=${lead.id}`);

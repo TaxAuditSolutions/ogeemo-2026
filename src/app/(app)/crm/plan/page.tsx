@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle, Route } from 'lucide-react';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -44,9 +45,10 @@ interface LeadCardProps {
   moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
+  onCreatePlan: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, index, moveCard, onEdit, onDelete }: LeadCardProps) => {
+const LeadCard = ({ lead, index, moveCard, onEdit, onDelete, onCreatePlan }: LeadCardProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
 
     const [{ isDragging }, drag] = useDrag({
@@ -80,7 +82,7 @@ const LeadCard = ({ lead, index, moveCard, onEdit, onDelete }: LeadCardProps) =>
                     </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
                                 <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -88,6 +90,10 @@ const LeadCard = ({ lead, index, moveCard, onEdit, onDelete }: LeadCardProps) =>
                             <DropdownMenuItem onSelect={() => onEdit(lead)}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Lead
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onCreatePlan(lead)}>
+                                <Route className="mr-2 h-4 w-4" />
+                                Create the plan
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onDelete(lead)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -109,9 +115,10 @@ interface LeadColumnProps {
     onDropCard: (lead: Lead, targetStatus: LeadStatus) => void;
     onEditLead: (lead: Lead) => void;
     onDeleteLead: (lead: Lead) => void;
+    onCreatePlan: (lead: Lead) => void;
 }
 
-const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteLead }: LeadColumnProps) => {
+const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteLead, onCreatePlan }: LeadColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.LEAD,
         drop: (item: Lead) => onDropCard(item, status),
@@ -140,6 +147,7 @@ const LeadColumn = ({ status, leads, moveCard, onDropCard, onEditLead, onDeleteL
                         moveCard={moveCard} 
                         onEdit={onEditLead}
                         onDelete={onDeleteLead}
+                        onCreatePlan={onCreatePlan}
                     />
                 ))}
                 {leads.length === 0 && (
@@ -241,6 +249,15 @@ export default function CrmPlanPage() {
     }
   };
 
+  const handleCreatePlan = (lead: Lead) => {
+    const params = new URLSearchParams({
+      title: `Project for ${lead.companyName || lead.contactName}`,
+      notes: `Initial project created from lead: ${lead.contactName}. \n\nLead Notes:\n${lead.notes}`,
+      contactId: lead.id, // Assuming contact and lead can be linked this way, may need adjustment
+    });
+    router.push(`/master-mind?${params.toString()}`);
+  };
+
 
   const columns: LeadStatus[] = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
@@ -290,6 +307,7 @@ export default function CrmPlanPage() {
                       onDropCard={onDropCard}
                       onEditLead={handleEditLead}
                       onDeleteLead={handleDeleteLead}
+                      onCreatePlan={handleCreatePlan}
                   />
               );
           })}

@@ -5,7 +5,7 @@ import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 const ActionColumn = ({ title }: { title: string }) => (
@@ -43,7 +43,12 @@ export default function CrmActionPlanPage() {
                     </h1>
                     <p className="text-muted-foreground">Manage the next steps for your leads.</p>
                 </div>
-                <div className="w-1/4" />
+                <div className="w-1/4 flex justify-end">
+                    <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add an Action
+                    </Button>
+                </div>
             </header>
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                 <ActionColumn title="To Do" />

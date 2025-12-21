@@ -35,7 +35,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText } from 'lucide-react';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +51,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
+import { Badge } from '../ui/badge';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -229,17 +230,21 @@ export function TimeLogReport() {
                                 </PopoverContent>
                             </Popover>
 
+                            {(selectedWorkerId || dateRange) && (
+                                <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }}>
+                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                                </Button>
+                            )}
+                            
                             <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Event
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
                             </Button>
-                            {(selectedWorkerId || dateRange) && (
-                                <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }}>
-                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filters
-                                </Button>
-                            )}
+                             <Button disabled={!selectedWorkerId}>
+                                <HandCoins className="mr-2 h-4 w-4" /> Process for Payment
+                            </Button>
                         </div>
                     </header>
                 </CardHeader>
@@ -251,6 +256,7 @@ export function TimeLogReport() {
                                     <TableHead>Worker</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Description</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Duration</TableHead>
                                     <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                 </TableRow>
@@ -258,7 +264,7 @@ export function TimeLogReport() {
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                                         </TableCell>
                                     </TableRow>
@@ -268,6 +274,7 @@ export function TimeLogReport() {
                                             <TableCell className="font-medium">{entry.workerName}</TableCell>
                                             <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                             <TableCell>{entry.notes}</TableCell>
+                                            <TableCell><Badge variant="outline">Unprocessed</Badge></TableCell>
                                             <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                             <TableCell>
                                                  <DropdownMenu>
@@ -297,7 +304,7 @@ export function TimeLogReport() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                             No time log entries found for this selection.
                                         </TableCell>
                                     </TableRow>
@@ -306,19 +313,19 @@ export function TimeLogReport() {
                             {selectedWorker && filteredEntries.length > 0 && (
                                 <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-right font-bold">Total Hours:</TableCell>
+                                        <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
                                         <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
                                         <TableCell />
                                     </TableRow>
                                     {selectedWorker.payType === 'hourly' && (
                                         <>
                                             <TableRow>
-                                                <TableCell colSpan={3} className="text-right font-bold">Hourly Rate:</TableCell>
+                                                <TableCell colSpan={4} className="text-right font-bold">Hourly Rate:</TableCell>
                                                 <TableCell className="text-right font-bold font-mono">${selectedWorker.payRate.toFixed(2)}</TableCell>
                                                 <TableCell />
                                             </TableRow>
                                             <TableRow className="text-base bg-muted/50">
-                                                <TableCell colSpan={3} className="text-right font-bold">Total Pay:</TableCell>
+                                                <TableCell colSpan={4} className="text-right font-bold">Total Pay:</TableCell>
                                                 <TableCell className="text-right font-bold font-mono">${totalPay.toFixed(2)}</TableCell>
                                                 <TableCell />
                                             </TableRow>

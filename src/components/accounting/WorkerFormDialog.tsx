@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { addWorker, updateWorker, type Worker } from '@/services/payroll-service';
+import { updateWorker, type Worker } from '@/services/payroll-service';
 import { ScrollArea } from '../ui/scroll-area';
 
 const workerSchema = z.object({
@@ -69,10 +69,11 @@ interface WorkerFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   workerToEdit?: Worker | null;
-  onWorkerSave: (worker: Worker) => void;
+  onWorkerSave: (workerData: Omit<Worker, 'id'>, shouldAddAnother?: boolean) => void;
+  onWorkerUpdate: (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => void;
 }
 
-export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerSave }: WorkerFormDialogProps) {
+export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerSave, onWorkerUpdate }: WorkerFormDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -102,6 +103,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
     
     const workerData = {
         ...data,
+        userId: user.uid,
         email: data.email || "",
         sin: data.sin || "",
         hireDate: data.hireDate ? new Date(data.hireDate) : null,
@@ -109,24 +111,16 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
         notes: data.notes || "",
     };
 
-    try {
-      if (workerToEdit) {
-        await updateWorker(workerToEdit.id, workerData);
-        onWorkerSave({ ...workerToEdit, ...workerData });
-        toast({ title: "Worker Updated" });
-      } else {
-        const newWorker = await addWorker({ ...workerData, userId: user.uid });
-        onWorkerSave(newWorker);
-        toast({ title: "Worker Added" });
-      }
-      
-      if (shouldAddAnother) {
-        form.reset(defaultFormValues);
-      } else {
-        onOpenChange(false);
-      }
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    if (workerToEdit) {
+      onWorkerUpdate(workerToEdit.id, workerData);
+    } else {
+      onWorkerSave(workerData, shouldAddAnother);
+    }
+
+    if (shouldAddAnother) {
+      form.reset(defaultFormValues);
+    } else {
+      onOpenChange(false);
     }
   };
 

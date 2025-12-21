@@ -48,7 +48,7 @@ import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, Chevrons
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, addWorker as saveWorker, type Worker } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
 import { formatTime } from '@/lib/utils';
@@ -153,8 +153,24 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = (newWorker: Worker) => {
-        setWorkers(prev => [...prev, newWorker].sort((a,b) => a.name.localeCompare(b.name)));
+    const handleWorkerSaved = async (workerData: Omit<Worker, 'id'>) => {
+        try {
+            const newWorker = await addWorker(workerData);
+            setWorkers(prev => [...prev, newWorker].sort((a,b) => a.name.localeCompare(b.name)));
+            toast({ title: 'Worker Added' });
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
+    };
+
+    const handleWorkerUpdated = async (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => {
+        try {
+            await updateWorker(workerId, workerData);
+            setWorkers(prev => prev.map(w => w.id === workerId ? { ...w, ...workerData } as Worker : w));
+            toast({ title: 'Worker Updated' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
     };
 
     const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -424,6 +440,7 @@ export function TimeLogReport() {
                 isOpen={isWorkerFormOpen} 
                 onOpenChange={setIsWorkerFormOpen} 
                 onWorkerSave={handleWorkerSaved} 
+                onWorkerUpdate={handleWorkerUpdated}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

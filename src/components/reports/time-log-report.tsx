@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -48,7 +48,7 @@ import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, Chevrons
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, type Worker } from '@/services/payroll-service';
+import { getWorkers, addWorker as saveWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
 import { formatTime } from '@/lib/utils';
@@ -153,8 +153,8 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = () => {
-        loadData();
+    const handleWorkerSaved = (newWorker: Worker) => {
+        setWorkers(prev => [...prev, newWorker].sort((a,b) => a.name.localeCompare(b.name)));
     };
 
     const handleDateRangeSelect = (range: DateRange | undefined) => {

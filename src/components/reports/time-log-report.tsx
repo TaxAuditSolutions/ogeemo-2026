@@ -45,7 +45,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
@@ -268,27 +268,7 @@ export function TimeLogReport() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search workers..." />
-                                        <CommandList>
-                                            <CommandEmpty>No worker found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {workers.map(worker => (
-                                                    <CommandItem
-                                                        key={worker.id}
-                                                        value={worker.name}
-                                                        onSelect={() => {
-                                                            setSelectedWorkerId(worker.id);
-                                                            setIsWorkerPopoverOpen(false);
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />
-                                                        {worker.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
+                                    <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>No worker found.</CommandEmpty><CommandGroup>{workers.map(worker => (<CommandItem key={worker.id} value={worker.name} onSelect={() => { setSelectedWorkerId(worker.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />{worker.name}</CommandItem>))}</CommandGroup></CommandList></Command>
                                 </PopoverContent>
                             </Popover>
                             
@@ -326,7 +306,7 @@ export function TimeLogReport() {
                             )}
                             
                             <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Log Event
+                                <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker

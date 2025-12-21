@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal, Plus, LoaderCircle, Trash2, Edit, BookOpen } from "lucide-react";
+import { MoreHorizontal, Plus, LoaderCircle, Trash2, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +40,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getFilesForFolder, findOrCreateFileFolder, type FileItem, deleteFiles } from "@/services/file-service";
+import { getFilesForFolder, findOrCreateFileFolder, type FileItem, deleteFiles, getFileById } from "@/services/file-service";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
@@ -77,9 +77,19 @@ export function UserListView() {
     loadUserFiles();
   }, [loadUserFiles]);
   
-  const handleEdit = (file: FileItem) => {
-    setFileToEdit(file);
-    setIsAddUserDialogOpen(true);
+  const handleEdit = async (file: FileItem) => {
+    try {
+      // Fetch the full file content before opening the dialog
+      const fullFile = await getFileById(file.id);
+      if (fullFile) {
+        setFileToEdit(fullFile);
+        setIsAddUserDialogOpen(true);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
+      }
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+    }
   };
 
   const handleDelete = (file: FileItem) => {

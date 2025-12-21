@@ -108,10 +108,14 @@ export async function getFileById(fileId: string): Promise<FileItem | null> {
     }
     const fileData = docToFile(fileSnap);
     
-    // We no longer fetch content here on the client-side get.
-    // The page/component that needs the content will call the Server Action.
+    // Server action handles content fetching securely
+    const { content, error } = await fetchFileContent(fileId);
+    if (error) {
+        console.warn(`Could not fetch content for file ${fileId}: ${error}`);
+        return fileData; // Return metadata even if content fails
+    }
     
-    return fileData;
+    return { ...fileData, content };
 }
 
 

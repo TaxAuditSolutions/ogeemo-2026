@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -20,13 +20,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { findOrCreateFileFolder, addTextFileClient, updateFile, getFileById } from '@/services/file-service';
+import { findOrCreateFileFolder, addTextFileClient, updateFile } from '@/services/file-service';
 import { type FileItem } from '@/data/files';
 import { LoaderCircle } from 'lucide-react';
 
@@ -75,32 +75,19 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   });
 
   useEffect(() => {
-    const populateForm = async () => {
-        if (userToEdit) {
-            // Since the userToEdit from the list might not have content,
-            // we may need to fetch it.
-            if (userToEdit.content) {
-                const parsedData = parseFileContent(userToEdit.content);
-                form.reset(parsedData);
-            } else {
-                 try {
-                    const fullFile = await getFileById(userToEdit.id);
-                    if (fullFile?.content) {
-                        const parsedData = parseFileContent(fullFile.content);
-                        form.reset(parsedData);
-                    }
-                 } catch (error: any) {
-                     toast({ variant: 'destructive', title: 'Error', description: `Failed to load user details: ${error.message}` });
-                 }
-            }
-        } else {
-            form.reset({ name: '', email: '', notes: '' });
-        }
-    };
     if (isOpen) {
-      populateForm();
+      if (userToEdit && userToEdit.content) {
+        const parsedData = parseFileContent(userToEdit.content);
+        form.reset({
+          name: parsedData.name || userToEdit.name.replace('.txt', ''),
+          email: parsedData.email || '',
+          notes: parsedData.notes || '',
+        });
+      } else {
+        form.reset({ name: '', email: '', notes: '' });
+      }
     }
-  }, [isOpen, userToEdit, form, toast]);
+  }, [isOpen, userToEdit, form]);
 
   const onSubmit = async (values: UserFormData) => {
     if (!user) {

@@ -40,9 +40,10 @@ type UserFormData = z.infer<typeof userSchema>;
 interface AddUserDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onUserAdded: () => void; // Callback function
 }
 
-export function AddUserDialog({ isOpen, onOpenChange }: AddUserDialogProps) {
+export function AddUserDialog({ isOpen, onOpenChange, onUserAdded }: AddUserDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -81,7 +82,8 @@ ${values.notes || 'No notes provided.'}
         title: 'User File Created',
         description: `A file for ${values.name} has been saved to your "Users" folder in the Document Manager.`,
       });
-
+      
+      onUserAdded(); // Trigger the callback
       onOpenChange(false);
       form.reset();
 

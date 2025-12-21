@@ -26,50 +26,41 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
-
-
-const users = [
-  {
-    name: "Olivia Martin",
-    email: "olivia.martin@email.com",
-    role: "Admin",
-    status: "active",
-    createdAt: "2023-06-23",
-  },
-  {
-    name: "Jackson Lee",
-    email: "jackson.lee@email.com",
-    role: "Developer",
-    status: "active",
-    createdAt: "2023-06-24",
-  },
-  {
-    name: "Isabella Nguyen",
-    email: "isabella.nguyen@email.com",
-    role: "Editor",
-    status: "inactive",
-    createdAt: "2023-06-25",
-  },
-  {
-    name: "William Kim",
-    email: "will@email.com",
-    role: "Developer",
-    status: "active",
-    createdAt: "2023-06-26",
-  },
-  {
-    name: "Sofia Davis",
-    email: "sofia.davis@email.com",
-    role: "Viewer",
-    status: "active",
-    createdAt: "2023-06-27",
-  },
-];
+import { useAuth } from "@/context/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { getFilesForFolder, findOrCreateFileFolder, type FileItem } from "@/services/file-service";
+import { format } from "date-fns";
+import { LoaderCircle } from "lucide-react";
 
 export function UserListView() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [userFiles, setUserFiles] = useState<FileItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const loadUserFiles = useCallback(async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+        const usersFolder = await findOrCreateFileFolder(user.uid, 'Users');
+        const files = await getFilesForFolder(user.uid, usersFolder.id);
+        setUserFiles(files);
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Failed to load users', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+    loadUserFiles();
+  }, [loadUserFiles]);
 
   return (
     <>
@@ -92,8 +83,6 @@ export function UserListView() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden md:table-cell">
                     Created at
                   </TableHead>
@@ -103,44 +92,49 @@ export function UserListView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.email}>
-                    <TableCell className="font-medium">
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground md:hidden">
-                        {user.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant={user.status === "active" ? "secondary" : "outline"}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {user.createdAt}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {isLoading ? (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
+                        </TableCell>
+                    </TableRow>
+                ) : userFiles.length > 0 ? (
+                  userFiles.map((file) => (
+                    <TableRow key={file.id}>
+                      <TableCell className="font-medium">
+                        <div className="font-medium">{file.name.replace('.txt', '')}</div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {format(file.modifiedAt, 'PP')}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                            No users found.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -149,6 +143,7 @@ export function UserListView() {
       <AddUserDialog 
         isOpen={isAddUserDialogOpen}
         onOpenChange={setIsAddUserDialogOpen}
+        onUserAdded={loadUserFiles}
       />
     </>
   );

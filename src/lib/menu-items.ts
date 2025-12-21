@@ -88,6 +88,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/dev-notes", label: "Dev Notes", icon: BookText },
   { href: "/forms", label: "Forms", icon: FilePlus2 },
   { href: "/image-generator", label: "Image Generation", icon: ImageIcon },
+  { href: "/user-list", label: "User List", icon: Users2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },

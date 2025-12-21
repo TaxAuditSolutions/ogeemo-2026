@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -5,13 +6,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Save, LoaderCircle } from "lucide-react";
+import { Save, LoaderCircle, X } from "lucide-react";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -96,15 +98,20 @@ export default function SettingsPage() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-6">
-        <header className="flex justify-between items-center w-full max-w-4xl mx-auto mb-6">
+        <header className="flex justify-between items-center w-full max-w-4xl mx-auto mb-6 relative">
           <div className="text-center flex-1">
             <h1 className="text-2xl font-bold font-headline text-primary">Settings</h1>
             <p className="text-muted-foreground">Manage your account and preferences.</p>
           </div>
-          <div>
+          <div className="flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </Button>
+             <Button asChild variant="ghost" size="icon">
+                <Link href="/action-manager" aria-label="Close settings">
+                    <X className="h-5 w-5" />
+                </Link>
             </Button>
           </div>
         </header>

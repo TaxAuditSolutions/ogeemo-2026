@@ -69,7 +69,7 @@ interface WorkerFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   workerToEdit?: Worker | null;
-  onWorkerSave: (workerData: Omit<Worker, 'id' | 'userId'>, shouldAddAnother?: boolean) => void;
+  onWorkerSave: (workerData: Omit<Worker, 'id' | 'userId'>) => Promise<Worker | null>;
   onWorkerUpdate: (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => void;
 }
 
@@ -97,7 +97,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
     }
   }, [isOpen, workerToEdit, form]);
 
-  const onSubmit = (data: WorkerFormData, shouldAddAnother = false) => {
+  const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
     if (!user) return;
     
     const workerData = {
@@ -107,14 +107,15 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
     if (workerToEdit) {
       onWorkerUpdate(workerToEdit.id, workerData);
     } else {
-      onWorkerSave(workerData, shouldAddAnother);
+      const newWorker = await onWorkerSave(workerData);
+      if (newWorker && shouldAddAnother) {
+        form.reset(defaultFormValues);
+        // Don't close the dialog, allow user to add another
+        return; 
+      }
     }
-
-    if (shouldAddAnother) {
-      form.reset(defaultFormValues);
-    } else {
-      onOpenChange(false);
-    }
+    
+    onOpenChange(false);
   };
 
   return (

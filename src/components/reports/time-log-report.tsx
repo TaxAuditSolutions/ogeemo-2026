@@ -7,7 +7,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription
+  CardDescription,
+  CardFooter
 } from '@/components/ui/card';
 import {
   Table,
@@ -35,12 +36,21 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTimeLogs, deleteTimeLog, type TimeLog } from '@/services/timelog-service';
+import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
+import { addPayableBill } from '@/services/accounting-service';
 import { formatTime } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
 import { Button } from '@/components/ui/button';
@@ -52,6 +62,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '../ui/badge';
+import { Label } from '../ui/label';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -71,6 +82,8 @@ export function TimeLogReport() {
     
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+    const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
 
 
     const loadData = useCallback(async () => {
@@ -146,9 +159,62 @@ export function TimeLogReport() {
             setIsDatePickerOpen(false);
         } else if (range?.from && !range.to) {
             // If only a single date is picked, keep the popover open
-            // but the logic for closing is now more manual based on range selection.
         } else {
              setIsDatePickerOpen(false);
+        }
+    };
+    
+    const handleProcessPayment = () => {
+      setIsProcessConfirmationOpen(true);
+    };
+
+    const handleConfirmProcessPayment = async () => {
+        if (!selectedWorker || !user) return;
+
+        const entriesToProcess = filteredEntries.filter(e => e.status === 'unprocessed');
+        if (entriesToProcess.length === 0) {
+            toast({ title: "No Entries to Process", description: "All entries for this period have already been processed." });
+            setIsProcessConfirmationOpen(false);
+            return;
+        }
+
+        if (selectedWorker.workerType === 'contractor') {
+            try {
+                await addPayableBill({
+                    userId: user.uid,
+                    vendor: selectedWorker.name,
+                    dueDate: format(addDays(new Date(), 14), 'yyyy-MM-dd'),
+                    totalAmount: totalPay,
+                    category: 'Contractor Fees',
+                    description: `Services for period ${dateRange?.from ? format(dateRange.from, 'PP') : ''} to ${dateRange?.to ? format(dateRange.to, 'PP') : ''}`,
+                    invoiceNumber: `TL-${selectedWorker.id.slice(0,5)}-${Date.now()}`
+                });
+                await updateTimeLogsStatus(entriesToProcess.map(e => e.id), 'processed');
+                toast({ title: "Bill Created", description: `A payable bill for ${selectedWorker.name} has been added to Accounts Payable.` });
+                loadData();
+            } catch (error: any) {
+                toast({ variant: "destructive", title: "Failed to create bill", description: error.message });
+            }
+        } else { // Employee
+             try {
+                await updateTimeLogsStatus(entriesToProcess.map(e => e.id), 'ready-for-payroll');
+                toast({ title: "Ready for Payroll", description: `Time logs for ${selectedWorker.name} are marked and ready for the next payroll run.` });
+                loadData();
+            } catch (error: any) {
+                toast({ variant: "destructive", title: "Update Failed", description: error.message });
+            }
+        }
+        setIsProcessConfirmationOpen(false);
+    };
+
+    const getStatusBadge = (status: string | undefined) => {
+        switch (status) {
+            case 'processed':
+                return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Processed as Bill</Badge>;
+            case 'ready-for-payroll':
+                return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Ready for Payroll</Badge>;
+            default:
+                return <Badge variant="outline">Unprocessed</Badge>;
         }
     };
     
@@ -242,7 +308,7 @@ export function TimeLogReport() {
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
                             </Button>
-                             <Button disabled={!selectedWorkerId}>
+                             <Button onClick={handleProcessPayment} disabled={!selectedWorkerId}>
                                 <HandCoins className="mr-2 h-4 w-4" /> Process for Payment
                             </Button>
                         </div>
@@ -274,7 +340,7 @@ export function TimeLogReport() {
                                             <TableCell className="font-medium">{entry.workerName}</TableCell>
                                             <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                             <TableCell>{entry.notes}</TableCell>
-                                            <TableCell><Badge variant="outline">Unprocessed</Badge></TableCell>
+                                            <TableCell>{getStatusBadge(entry.status)}</TableCell>
                                             <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                             <TableCell>
                                                  <DropdownMenu>
@@ -289,9 +355,6 @@ export function TimeLogReport() {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(null, entry.workerId)}>
                                                             <PlusCircle className="mr-2 h-4 w-4" /> Add New Entry for Worker
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => setSelectedWorkerId(entry.workerId)}>
-                                                            <FileText className="mr-2 h-4 w-4" /> View Worker Report
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive">
@@ -373,6 +436,24 @@ export function TimeLogReport() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <Dialog open={isProcessConfirmationOpen} onOpenChange={setIsProcessConfirmationOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Process Payment for {selectedWorker?.name}?</DialogTitle>
+                        <DialogDescription>
+                            {selectedWorker?.workerType === 'contractor'
+                                ? `This will create a new bill of ${formatCurrency(totalPay)} in Accounts Payable for this contractor.`
+                                : `This will mark these time entries as "Ready for Payroll" to be included in the next payroll run.`
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsProcessConfirmationOpen(false)}>Cancel</Button>
+                        <Button onClick={handleConfirmProcessPayment}>Confirm & Process</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

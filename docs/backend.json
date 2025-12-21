@@ -308,7 +308,7 @@
             "endTime": { "type": "string", "format": "date-time" },
             "durationSeconds": { "type": "number" },
             "notes": { "type": "string" },
-            "status": { "type": "string", "enum": ["active", "paused", "completed"] }
+            "status": { "type": "string", "enum": ["unprocessed", "processed", "ready-for-payroll"] }
         },
         "required": ["workerId", "startTime", "endTime", "durationSeconds", "status"]
     },

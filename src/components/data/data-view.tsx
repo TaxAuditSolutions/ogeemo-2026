@@ -53,6 +53,7 @@ export function UserListView() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const [fileToEdit, setFileToEdit] = useState<FileItem | null>(null);
   const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
 
   const loadUserFiles = useCallback(async () => {
@@ -76,8 +77,9 @@ export function UserListView() {
     loadUserFiles();
   }, [loadUserFiles]);
   
-  const handleEdit = (fileId: string) => {
-    router.push(`/notes/editor?fileId=${fileId}`);
+  const handleEdit = (file: FileItem) => {
+    setFileToEdit(file);
+    setIsAddUserDialogOpen(true);
   };
 
   const handleDelete = (file: FileItem) => {
@@ -110,7 +112,7 @@ export function UserListView() {
                 A list of users in your database.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsAddUserDialogOpen(true)}>
+            <Button onClick={() => { setFileToEdit(null); setIsAddUserDialogOpen(true); }}>
                 <Plus className="mr-2 h-4 w-4" /> Add User
             </Button>
           </CardHeader>
@@ -138,7 +140,7 @@ export function UserListView() {
                   userFiles.map((file) => (
                     <TableRow key={file.id}>
                       <TableCell className="font-medium">
-                        <button className="hover:underline" onClick={() => handleEdit(file.id)}>
+                        <button className="hover:underline" onClick={() => handleEdit(file)}>
                           {file.name.replace('.txt', '')}
                         </button>
                       </TableCell>
@@ -159,11 +161,8 @@ export function UserListView() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => handleEdit(file.id)}>
-                                <BookOpen className="mr-2 h-4 w-4"/> Open
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onSelect={() => handleEdit(file.id)}>
-                                <Edit className="mr-2 h-4 w-4"/> Edit
+                            <DropdownMenuItem onSelect={() => handleEdit(file)}>
+                                <BookOpen className="mr-2 h-4 w-4"/> Open / Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleDelete(file)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4"/> Delete
@@ -189,6 +188,7 @@ export function UserListView() {
         isOpen={isAddUserDialogOpen}
         onOpenChange={setIsAddUserDialogOpen}
         onUserAdded={loadUserFiles}
+        userToEdit={fileToEdit}
       />
       <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
         <AlertDialogContent>

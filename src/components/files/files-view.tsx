@@ -22,7 +22,12 @@ import {
   FileText,
   Sheet,
   Presentation,
+  Users,
+  Plus,
+  GitMerge,
+  Edit,
 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -558,73 +563,83 @@ export function FilesView() {
     const isExpanded = expandedFolders.has(folder.id);
     const isRenaming = renamingFolder?.id === folder.id;
 
-    const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: ItemTypes.FILE,
-        drop: (item: FileItem) => handleFileDrop(item, folder.id),
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-            canDrop: monitor.canDrop(),
-        }),
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+      type: ItemTypes.FOLDER,
+      item: { ...folder, type: ItemTypes.FOLDER },
+      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    }));
+
+    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+      accept: [ItemTypes.FILE, ItemTypes.FOLDER],
+      drop: (item: DroppableItem) => {
+        if (item.type === ItemTypes.FOLDER) {
+          handleFolderDrop(item, folder.id);
+        } else {
+          handleFileDrop(item, folder.id);
+        }
+      },
+      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
     }));
 
     return (
-        <div style={{ marginLeft: level > 0 ? '1rem' : '0' }} className="my-0.5">
-            <div
-                ref={drop}
-                className={cn(
-                    "flex items-center justify-between border border-black rounded-md h-8 group",
-                    isRenaming ? 'bg-background' : 'hover:bg-accent',
-                    selectedFolderId === folder.id && "bg-primary/20",
-                    isOver && canDrop && "bg-primary/30 ring-2 ring-primary"
+      <div style={{ marginLeft: level > 0 ? '1rem' : '0' }} className="my-0.5">
+        <div
+          ref={node => drag(drop(node))}
+          className={cn(
+            "flex items-center justify-between border border-black rounded-md h-8 group",
+            isRenaming ? 'bg-background' : 'hover:bg-accent',
+            (isOver && canDrop) && 'bg-primary/20 ring-1 ring-primary',
+            isDragging && 'opacity-50',
+            selectedFolderId === folder.id && !isRenaming && 'bg-accent'
+          )}
+        >
+             <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && handleSelectFolder(folder.id)}>
+                {hasChildren ? (
+                    <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); setExpandedFolders(p => { const n = new Set(p); n.has(folder.id) ? n.delete(folder.id) : n.add(folder.id); return n; }); }} />
+                ) : <div className="w-4" />}
+                <Folder className="h-4 w-4 text-foreground ml-1" />
+                 {isRenaming ? (
+                    <Input
+                        autoFocus
+                        value={renameInputValue}
+                        onChange={e => setRenameInputValue(e.target.value)}
+                        onBlur={handleConfirmRename}
+                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') handleCancelRename(); }}
+                        className="h-full py-0 px-2 text-xs font-medium bg-transparent"
+                        onClick={e => e.stopPropagation()}
+                    />
+                ) : (
+                    <span className="text-sm font-medium truncate ml-2 flex-1 flex items-center gap-1">
+                        {folder.name}
+                    </span>
                 )}
-            >
-                 <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && handleSelectFolder(folder.id)}>
-                    {hasChildren ? (
-                        <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); setExpandedFolders(p => { const n = new Set(p); n.has(folder.id) ? n.delete(folder.id) : n.add(folder.id); return n; }); }} />
-                    ) : <div className="w-4" />}
-                    <Folder className="h-4 w-4 text-foreground ml-1" />
-                     {isRenaming ? (
-                        <Input
-                            autoFocus
-                            value={renameInputValue}
-                            onChange={e => setRenameInputValue(e.target.value)}
-                            onBlur={handleConfirmRename}
-                            onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') handleCancelRename(); }}
-                            className="h-full py-0 px-2 text-xs font-medium bg-transparent"
-                            onClick={e => e.stopPropagation()}
-                        />
-                    ) : (
-                        <span className="text-sm font-medium truncate ml-2 flex-1 flex items-center gap-1">
-                            {folder.name}
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center">
-                    {folder.driveLink && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
-                        <ExternalLink className="h-4 w-4 text-blue-500" />
-                      </Button>
-                    )}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onSelect={() => handleOpenNewFolderDialog(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleStartRename(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleOpenDriveFolderLinkDialog(folder)}><LinkIcon className="mr-2 h-4 w-4" />Link Google Drive Folder</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
             </div>
-            {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
-                <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
-            ))}
+            <div className="flex items-center">
+                {folder.driveLink && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
+                    <ExternalLink className="h-4 w-4 text-blue-500" />
+                  </Button>
+                )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onSelect={() => handleOpenNewFolderDialog(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleStartRename(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleOpenDriveFolderLinkDialog(folder)}><LinkIcon className="mr-2 h-4 w-4" />Link Google Drive Folder</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
+        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
+            <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
+        ))}
+      </div>
     );
   };
   

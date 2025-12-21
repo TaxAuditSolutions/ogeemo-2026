@@ -20,7 +20,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from '@/context/auth-context';
 import { type Worker } from '@/services/payroll-service';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -68,13 +67,11 @@ interface WorkerFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   workerToEdit?: Worker | null;
-  onWorkerSave: (workerData: Omit<Worker, 'id' | 'userId'>) => Promise<Worker | null>;
+  onWorkerSave: (workerData: Omit<Worker, 'id' | 'userId'>) => void;
   onWorkerUpdate: (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => void;
 }
 
 export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerSave, onWorkerUpdate }: WorkerFormDialogProps) {
-  const { user } = useAuth();
-
   const form = useForm<WorkerFormData>({
     resolver: zodResolver(workerSchema),
     defaultValues: defaultFormValues,
@@ -97,19 +94,18 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
   }, [isOpen, workerToEdit, form]);
 
   const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
-    if (!user) return;
-    
     const workerData = {
         ...data,
+        hireDate: data.hireDate ? new Date(data.hireDate) : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
     };
 
     if (workerToEdit) {
       onWorkerUpdate(workerToEdit.id, workerData);
     } else {
-      const newWorker = await onWorkerSave(workerData);
-      if (newWorker && shouldAddAnother) {
+      onWorkerSave(workerData);
+      if (shouldAddAnother) {
         form.reset(defaultFormValues);
-        // Don't close the dialog, allow user to add another
         return; 
       }
     }

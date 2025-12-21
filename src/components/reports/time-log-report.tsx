@@ -154,15 +154,13 @@ export function TimeLogReport() {
     };
     
     const handleWorkerSaved = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
-        if (!user) return null;
+        if (!user) return;
         try {
             const newWorker = await addWorker({ ...workerData, userId: user.uid });
             setWorkers(prev => [...prev, newWorker].sort((a, b) => a.name.localeCompare(b.name)));
             toast({ title: 'Worker Added' });
-            return newWorker;
         } catch (error: any) {
              toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-             return null;
         }
     };
 

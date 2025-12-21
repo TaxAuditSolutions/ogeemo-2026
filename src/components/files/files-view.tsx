@@ -221,8 +221,7 @@ export function FilesView() {
         window.open(file.driveLink, '_blank', 'noopener,noreferrer');
     } else if (isUserFile) {
         handleEditUser(file);
-    }
-    else {
+    } else {
         handleOpenDriveLinkDialog(file);
     }
   };
@@ -555,7 +554,7 @@ export function FilesView() {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
       }
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+      toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
     } finally {
         setIsLoadingFileForEdit(false);
     }
@@ -818,7 +817,6 @@ export function FilesView() {
                       filesInSelectedFolder.length > 0 ? (
                         filesInSelectedFolder.map((file) => {
                           const isRenaming = renamingFile?.id === file.id;
-                          const isUserFile = folders.find(f => f.id === file.folderId)?.name === 'Users';
 
                           return (
                            <DraggableFileRow key={file.id} file={file}>
@@ -936,8 +934,8 @@ export function FilesView() {
                             <div className="flex items-start space-x-3">
                               <FormControl><RadioGroupItem value="file" id="type-file" className="mt-1" /></FormControl>
                               <div className="grid gap-1.5 leading-none">
-                                <Label htmlFor="type-file">Empty Folder</Label>
-                                <FormDescription>Creates an empty folder, ready for future files.</FormDescription>
+                                <Label htmlFor="type-file">Empty Text File</Label>
+                                <FormDescription>Creates an empty text file you can add content to later.</FormDescription>
                               </div>
                             </div>
                             <div className="flex items-start space-x-3">
@@ -998,7 +996,9 @@ export function FilesView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the folder "{folderToDelete?.name}" and all its contents. This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>
+                This will permanently delete the folder "{folderToDelete?.name}" and all of its contents. This action cannot be undone.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

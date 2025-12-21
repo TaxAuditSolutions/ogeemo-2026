@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { updateWorker, type Worker } from '@/services/payroll-service';
+import { type Worker } from '@/services/payroll-service';
 import { ScrollArea } from '../ui/scroll-area';
 
 const workerSchema = z.object({
@@ -69,13 +69,12 @@ interface WorkerFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   workerToEdit?: Worker | null;
-  onWorkerSave: (workerData: Omit<Worker, 'id'>, shouldAddAnother?: boolean) => void;
+  onWorkerSave: (workerData: Omit<Worker, 'id' | 'userId'>, shouldAddAnother?: boolean) => void;
   onWorkerUpdate: (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => void;
 }
 
 export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerSave, onWorkerUpdate }: WorkerFormDialogProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const form = useForm<WorkerFormData>({
     resolver: zodResolver(workerSchema),
@@ -98,17 +97,11 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
     }
   }, [isOpen, workerToEdit, form]);
 
-  const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
+  const onSubmit = (data: WorkerFormData, shouldAddAnother = false) => {
     if (!user) return;
     
     const workerData = {
         ...data,
-        userId: user.uid,
-        email: data.email || "",
-        sin: data.sin || "",
-        hireDate: data.hireDate ? new Date(data.hireDate) : null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        notes: data.notes || "",
     };
 
     if (workerToEdit) {

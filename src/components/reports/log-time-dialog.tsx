@@ -31,7 +31,7 @@ import { Textarea } from '../ui/textarea';
 interface LogTimeDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    workers: Worker[]; // Accept workers as a prop
+    workers: Worker[]; 
     onTimeLogged: () => void;
     entryToEdit?: TimeLog | null;
     preselectedWorkerId?: string | null;
@@ -40,7 +40,7 @@ interface LogTimeDialogProps {
 export function LogTimeDialog({
     isOpen,
     onOpenChange,
-    workers, // Use the passed-in prop
+    workers,
     onTimeLogged,
     entryToEdit = null,
     preselectedWorkerId = null
@@ -68,7 +68,6 @@ export function LogTimeDialog({
                 setNotes(entryToEdit.notes || '');
                 setSelectedWorkerId(entryToEdit.workerId);
             } else {
-                // Reset form for new entry, potentially with a preselected worker
                 setDate(new Date());
                 setStartTime({ hour: '09', minute: '00' });
                 setEndTime({ hour: '17', minute: '00' });

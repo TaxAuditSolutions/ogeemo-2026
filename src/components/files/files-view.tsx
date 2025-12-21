@@ -26,6 +26,9 @@ import {
   Plus,
   GitMerge,
   Edit,
+  ArrowDownAZ,
+  ArrowUpZA,
+  ArrowDownUp,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -157,6 +160,10 @@ export function FilesView() {
   const [userToEdit, setUserToEdit] = useState<FileItem | null>(null);
   const [isLoadingFileForEdit, setIsLoadingFileForEdit] = useState(false);
 
+  // Sorting state
+  const [folderSortDirection, setFolderSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [fileSortConfig, setFileSortConfig] = useState<{ key: 'name' | 'modifiedAt'; direction: 'asc' | 'desc' }>({ key: 'modifiedAt', direction: 'desc' });
+
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -214,22 +221,38 @@ export function FilesView() {
     setSelectedFileIds([]);
   };
 
-  const handleSelectFile = (file: FileItem) => {
+  const handleSelectFile = async (file: FileItem) => {
     const isUserFile = folders.find(f => f.id === file.folderId)?.name === 'Users';
 
     if (file.driveLink) {
         window.open(file.driveLink, '_blank', 'noopener,noreferrer');
     } else if (isUserFile) {
-        handleEditUser(file);
+        await handleEditUser(file);
     } else {
         handleOpenDriveLinkDialog(file);
     }
   };
   
   const filesInSelectedFolder = React.useMemo(() => {
-    if (selectedFolderId === 'all') return files;
-    return files.filter((file) => file.folderId === selectedFolderId);
-  }, [files, selectedFolderId]);
+    let filesToSort = files;
+    if (selectedFolderId !== 'all') {
+      filesToSort = files.filter((file) => file.folderId === selectedFolderId);
+    }
+    
+    return filesToSort.sort((a, b) => {
+        const { key, direction } = fileSortConfig;
+        const valA = a[key];
+        const valB = b[key];
+        let comparison = 0;
+        if (valA > valB) {
+            comparison = 1;
+        } else if (valA < valB) {
+            comparison = -1;
+        }
+        return direction === 'asc' ? comparison : -comparison;
+    });
+
+  }, [files, selectedFolderId, fileSortConfig]);
 
   const handleOpenNewFolderDialog = (parentId: string | null) => {
     setNewFolderParentId(parentId);
@@ -559,6 +582,20 @@ export function FilesView() {
         setIsLoadingFileForEdit(false);
     }
   };
+  
+  const handleFolderSort = (direction: 'asc' | 'desc') => {
+      setFolderSortDirection(direction);
+  };
+  
+  const handleFileSort = (key: 'name' | 'modifiedAt') => {
+    setFileSortConfig(prev => {
+        if (prev.key === key) {
+            return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+        }
+        return { key, direction: key === 'modifiedAt' ? 'desc' : 'asc' };
+    });
+  };
+
 
   const FolderTreeItem = ({ folder, allFolders, level = 0 }: { folder: FolderItem, allFolders: FolderItem[], level?: number }) => {
     const hasChildren = allFolders.some(f => f.parentId === folder.id);
@@ -638,7 +675,7 @@ export function FilesView() {
                 </DropdownMenu>
             </div>
         </div>
-        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
+        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => folderSortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)).map(child => (
             <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
         ))}
       </div>
@@ -673,7 +710,7 @@ export function FilesView() {
   const flattenedFolders = (folders: FolderItem[], parentId: string | null = null, level = 0): { folder: FolderItem, level: number }[] => {
       return folders
           .filter(f => f.parentId === parentId)
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => folderSortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name))
           .flatMap(f => [{ folder: f, level }, ...flattenedFolders(folders, f.id, level + 1)]);
   };
 
@@ -767,6 +804,10 @@ export function FilesView() {
         <div className="md:col-span-1 flex flex-col gap-2">
             <div className="h-8 flex items-center p-1 border border-black bg-primary/10 rounded-md text-primary">
                 <p className="flex-1 text-center font-semibold text-sm">Folders</p>
+                <div className="flex items-center">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFolderSort('asc')}><ArrowDownAZ className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFolderSort('desc')}><ArrowUpZA className="h-4 w-4" /></Button>
+                </div>
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
               <div
@@ -776,7 +817,7 @@ export function FilesView() {
                   <Button variant="ghost" className="w-full justify-start gap-2 h-7"><Files className="h-4 w-4" />All Files</Button>
               </div>
               <ScrollArea className="flex-1 rounded-md p-2">
-                  {folders.filter(f => !f.parentId).map(folder => (
+                  {folders.filter(f => !f.parentId).sort((a, b) => folderSortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)).map(folder => (
                     <FolderTreeItem key={folder.id} folder={folder} allFolders={folders} />
                   ))}
               </ScrollArea>
@@ -796,6 +837,10 @@ export function FilesView() {
                 ) : (
                     <p className="flex-1 text-center font-semibold text-sm">Files in "{selectedFolderId === 'all' ? 'All Folders' : folders.find(f=>f.id===selectedFolderId)?.name}"</p>
                 )}
+                 <div className="flex items-center">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFileSort('name')}><ArrowDownUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFileSort('modifiedAt')}><ArrowDownUp className="h-4 w-4" /></Button>
+                </div>
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
                 <div className="p-2 border-b h-8 flex items-center">

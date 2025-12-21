@@ -218,7 +218,6 @@ export function FilesView() {
     if (file.driveLink) {
         window.open(file.driveLink, '_blank', 'noopener,noreferrer');
     } else {
-        // Since there's no editor, we just select the file in the UI
         toast({
             title: "File Selected",
             description: "Use the menu for available actions.",
@@ -483,7 +482,7 @@ export function FilesView() {
         await deleteFolders(allFoldersIncludingChildren);
 
         setFolders(prev => prev.filter(f => !allFoldersIncludingChildren.includes(f.id)));
-        setFiles(prev => prev.filter(f => !allFoldersIncludingChildren.includes(f.folderId)));
+        setFiles(prev => prev.filter(c => !allFoldersIncludingChildren.includes(c.folderId)));
         
         if (allFoldersIncludingChildren.includes(selectedFolderId)) {
             setSelectedFolderId('all');
@@ -1101,3 +1100,5 @@ export function FilesView() {
     </>
   );
 }
+
+    

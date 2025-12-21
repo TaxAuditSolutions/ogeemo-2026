@@ -64,6 +64,10 @@ import type { DateRange } from 'react-day-picker';
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
 
+const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [allEntries, setAllEntries] = useState<TimeLog[]>([]);

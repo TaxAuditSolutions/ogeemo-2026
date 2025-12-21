@@ -215,13 +215,15 @@ export function FilesView() {
   };
 
   const handleSelectFile = (file: FileItem) => {
+    const isUserFile = folders.find(f => f.id === file.folderId)?.name === 'Users';
+
     if (file.driveLink) {
         window.open(file.driveLink, '_blank', 'noopener,noreferrer');
-    } else {
-        toast({
-            title: "File Selected",
-            description: "Use the menu for available actions.",
-        });
+    } else if (isUserFile) {
+        handleEditUser(file);
+    }
+    else {
+        handleOpenDriveLinkDialog(file);
     }
   };
   
@@ -552,8 +554,7 @@ export function FilesView() {
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
       }
-    } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+    } catch (error: any)       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
     } finally {
         setIsLoadingFileForEdit(false);
     }
@@ -855,19 +856,16 @@ export function FilesView() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onSelect={() => handleSelectFile(file)}>
-                                      <BookOpen className="mr-2 h-4 w-4" /> Open / Preview
+                                        {isUserFile ? <Edit className="mr-2 h-4 w-4"/> : <BookOpen className="mr-2 h-4 w-4"/> }
+                                        {isUserFile ? 'Open / Edit' : 'Open / Preview'}
                                     </DropdownMenuItem>
-                                    {isUserFile && (
-                                        <DropdownMenuItem onSelect={() => handleEditUser(file)}>
-                                            <Edit className="mr-2 h-4 w-4"/> Edit User
-                                        </DropdownMenuItem>
-                                    )}
-                                     <DropdownMenuItem onSelect={() => handleStartFileRename(file)}>
+                                    <DropdownMenuItem onSelect={() => handleStartFileRename(file)}>
                                       <Pencil className="mr-2 h-4 w-4" /> Rename
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleOpenDriveLinkDialog(file)}>
                                       <LinkIcon className="mr-2 h-4 w-4" /> Link Google Drive File
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setFileToDelete(file); }} className="text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                                     </DropdownMenuItem>
@@ -1100,5 +1098,3 @@ export function FilesView() {
     </>
   );
 }
-
-    

@@ -22,6 +22,7 @@ import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
+import { fetchFileContent } from '@/app/actions/file-actions';
 
 
 const FILES_COLLECTION = 'files';

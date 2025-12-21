@@ -1,10 +1,9 @@
 // src/app/actions/file-actions.ts
 'use server';
 
-import { getAdminFileContentFromStorage } from '@/services/file-service';
+import { getAdminFileContentFromStorage } from '@/lib/firebase-admin';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
-import { type Auth } from 'firebase/auth';
 
 /**
  * A server action to securely fetch the content of a file from Firebase Storage.
@@ -19,10 +18,6 @@ export async function fetchFileContent(fileId: string): Promise<{ content?: stri
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
         const userId = decodedToken.uid;
         
-        // The client-side file service needs a mock Auth object to pass type checks,
-        // even though the server-side logic won't use it directly.
-        const mockAuth = {} as Auth;
-
         const fileDocRef = adminDb.collection('files').doc(fileId);
         const fileDoc = await fileDocRef.get();
 
@@ -35,7 +30,7 @@ export async function fetchFileContent(fileId: string): Promise<{ content?: stri
              return { error: 'File has no content associated with it.' };
         }
 
-        const content = await getAdminFileContentFromStorage(auth, storagePath);
+        const content = await getAdminFileContentFromStorage(storagePath);
         return { content };
 
     } catch (error: any) {

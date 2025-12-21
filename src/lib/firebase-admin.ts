@@ -1,4 +1,3 @@
-
 // src/lib/firebase-admin.ts
 import admin from 'firebase-admin';
 import { getStorage as getAdminStorageSdk } from 'firebase-admin/storage';
@@ -58,3 +57,25 @@ initializeFirebaseAdmin();
 export const getAdminStorage = () => getAdminStorageSdk(adminApp);
 export const adminDb = admin.firestore(adminApp);
 export const adminAuth = admin.auth(adminApp);
+
+
+export async function getAdminFileContentFromStorage(storagePath: string): Promise<string> {
+    if (!storagePath) {
+        console.warn("Admin Storage: Storage path is empty, returning empty content.");
+        return '';
+    }
+
+    try {
+        const bucket = getAdminStorage().bucket();
+        const file = bucket.file(storagePath);
+        const [exists] = await file.exists();
+        if (!exists) {
+            throw new Error(`File does not exist at path: ${storagePath}`);
+        }
+        const contents = await file.download();
+        return contents.toString('utf-8');
+    } catch (error: any) {
+        console.error(`Admin Storage: Failed to fetch content from ${storagePath}:`, error);
+        throw new Error(`Failed to retrieve file content: ${error.message}`);
+    }
+}

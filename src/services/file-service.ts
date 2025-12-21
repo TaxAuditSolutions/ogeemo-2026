@@ -61,7 +61,10 @@ export async function getFiles(userId?: string): Promise<FileItem[]> {
   return snapshot.docs.map(docToFile);
 }
 
-export async function getAdminFileContentFromStorage(auth: Auth, storagePath: string): Promise<string> {
+// NOTE: This function is now deprecated for server-side use. 
+// It is kept for potential client-side-only scenarios.
+// Server Actions should use getAdminFileContentFromStorage from lib/firebase-admin.ts
+export async function getClientFileContentFromStorage(auth: Auth, storagePath: string): Promise<string> {
     if (!storagePath) {
         console.warn("Storage path is empty, returning empty content.");
         return '';
@@ -80,7 +83,6 @@ export async function getAdminFileContentFromStorage(auth: Auth, storagePath: st
                     resolve(textDecoder.decode(bytes));
                 } catch (error: any) {
                     console.error(`Failed to fetch content from ${storagePath}:`, error);
-                    // Provide a more user-friendly error
                     if (error.code === 'storage/object-not-found') {
                          reject(new Error(`File content not found in storage at path: ${storagePath}. It may have been deleted or not yet created.`));
                     } else if (error.code === 'storage/unauthorized') {
@@ -106,16 +108,8 @@ export async function getFileById(fileId: string): Promise<FileItem | null> {
     }
     const fileData = docToFile(fileSnap);
     
-    if ((fileData.type === 'text/plain' || fileData.type === 'application/vnd.ogeemo-flowchart+json') && fileData.storagePath) {
-        try {
-            const { auth } = await initializeFirebase();
-            const content = await getAdminFileContentFromStorage(auth, fileData.storagePath);
-            fileData.content = content;
-        } catch (error) {
-            console.error(`Failed to fetch content for ${fileId}:`, error);
-            fileData.content = `// Error: Could not load file content.`;
-        }
-    }
+    // We no longer fetch content here on the client-side get.
+    // The page/component that needs the content will call the Server Action.
     
     return fileData;
 }

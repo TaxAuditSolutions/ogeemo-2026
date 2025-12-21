@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -65,7 +66,7 @@ export default function NotesManagerPage() {
             const allFiles = await getFiles(user.uid);
             const allFolders = await getFolders(user.uid);
             // Filter for only text files
-            const textNotes = allFiles.filter(file => file.type === 'text/plain' || file.type === 'application/vnd.ogeemo-flowchart+json');
+            const textNotes = allFiles.filter(file => file.type === 'text/plain' || file.type === 'application/vnd.ogeemo-flowchart+json' || file.type === 'google-drive-link' || file.type === 'doc');
             setNotes(textNotes.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime()));
             setFolders(allFolders);
         } catch (error: any) {
@@ -90,6 +91,7 @@ export default function NotesManagerPage() {
         try {
             const updateData = {
                 driveLink: driveLink.trim() || undefined,
+                type: driveLink.trim() ? 'google-drive-link' : fileToLink.type === 'google-drive-link' ? 'text/plain' : fileToLink.type,
             };
             await updateFile(fileToLink.id, updateData);
             setNotes(prev => prev.map(n => n.id === fileToLink.id ? { ...n, ...updateData } : n));
@@ -120,7 +122,10 @@ export default function NotesManagerPage() {
         if (note.driveLink) {
             window.open(note.driveLink, '_blank', 'noopener,noreferrer');
         } else {
-            router.push(`/notes/editor?fileId=${note.id}`);
+            toast({
+                title: "No Preview Available",
+                description: "This note does not have a link. You can add one via the menu.",
+            });
         }
     };
     
@@ -186,7 +191,7 @@ export default function NotesManagerPage() {
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleNoteClick(note)}><Edit className="mr-2 h-4 w-4"/> Edit / Open</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleNoteClick(note)}><Edit className="mr-2 h-4 w-4"/> Open / Preview</DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleOpenLinkDialog(note)}>
                                                           <LinkIcon className="mr-2 h-4 w-4" /> Link Google Drive File
                                                         </DropdownMenuItem>

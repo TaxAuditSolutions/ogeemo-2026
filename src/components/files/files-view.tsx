@@ -215,12 +215,14 @@ export function FilesView() {
   };
 
   const handleSelectFile = (file: FileItem) => {
-    if (file.type === 'text/plain' || file.type === 'application/vnd.ogeemo-flowchart+json') {
-        router.push(`/notes/editor?fileId=${file.id}`);
-    } else if (file.driveLink) {
+    if (file.driveLink) {
         window.open(file.driveLink, '_blank', 'noopener,noreferrer');
     } else {
-        toast({ title: "Preview not available", description: "This file type cannot be previewed directly." });
+        // Since there's no editor, we just select the file in the UI
+        toast({
+            title: "File Selected",
+            description: "Use the menu for available actions.",
+        });
     }
   };
   

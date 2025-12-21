@@ -1,6 +1,7 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 const UserListSkeleton = () => (
     <div className="space-y-6 p-4 sm:p-6">

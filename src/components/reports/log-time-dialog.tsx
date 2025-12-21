@@ -20,7 +20,7 @@ import { LoaderCircle, Plus, ChevronsUpDown, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, set, parseISO } from 'date-fns';
+import { format, set } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type Worker } from '@/services/payroll-service';
@@ -31,17 +31,17 @@ import { Textarea } from '../ui/textarea';
 interface LogTimeDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    workers: Worker[];
+    workers: Worker[]; // Accept workers as a prop
     onTimeLogged: () => void;
     entryToEdit?: TimeLog | null;
     preselectedWorkerId?: string | null;
 }
 
-export function LogTimeDialog({ 
-    isOpen, 
-    onOpenChange, 
-    workers, 
-    onTimeLogged, 
+export function LogTimeDialog({
+    isOpen,
+    onOpenChange,
+    workers, // Use the passed-in prop
+    onTimeLogged,
     entryToEdit = null,
     preselectedWorkerId = null
 }: LogTimeDialogProps) {
@@ -50,10 +50,10 @@ export function LogTimeDialog({
     const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
     const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
-    
+
     const [isSaving, setIsSaving] = useState(false);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
-    
+
     const { user } = useAuth();
     const { toast } = useToast();
 
@@ -140,10 +140,10 @@ export function LogTimeDialog({
             setIsSaving(false);
         }
     };
-    
+
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: format(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
-    
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl">

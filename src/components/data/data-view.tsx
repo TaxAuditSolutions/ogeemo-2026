@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useState } from "react";
+import { AddUserDialog } from "./add-user-dialog";
+
 
 const users = [
   {
@@ -66,74 +69,87 @@ const users = [
 ];
 
 export function UserListView() {
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <h1 className="text-3xl font-bold font-headline text-primary text-center">User List</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Users Collection</CardTitle>
-          <CardDescription>
-            A list of users in your database.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="hidden md:table-cell">Status</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Created at
-                </TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.email}>
-                  <TableCell className="font-medium">
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm text-muted-foreground md:hidden">
-                      {user.email}
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant={user.status === "active" ? "secondary" : "outline"}>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {user.createdAt}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+    <>
+      <div className="space-y-6 p-4 sm:p-6">
+        <h1 className="text-3xl font-bold font-headline text-primary text-center">User List</h1>
+        <Card>
+          <CardHeader className="flex flex-row justify-between items-center">
+            <div>
+              <CardTitle>Users Collection</CardTitle>
+              <CardDescription>
+                A list of users in your database.
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add User
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="hidden md:table-cell">Status</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Created at
+                  </TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.email}>
+                    <TableCell className="font-medium">
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-sm text-muted-foreground md:hidden">
+                        {user.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.role}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant={user.status === "active" ? "secondary" : "outline"}>
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {user.createdAt}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+      <AddUserDialog 
+        isOpen={isAddUserDialogOpen}
+        onOpenChange={setIsAddUserDialogOpen}
+      />
+    </>
   );
 }

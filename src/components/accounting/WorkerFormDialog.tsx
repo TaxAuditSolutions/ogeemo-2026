@@ -21,7 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
 import { type Worker } from '@/services/payroll-service';
 import { ScrollArea } from '../ui/scroll-area';
 

@@ -263,7 +263,7 @@ export function FilesView() {
         setIsNewFolderDialogOpen(false);
         setNewFolderName('');
         setNewFolderDriveLink('');
-        toast({ title: 'Folder Created' });
+        toast({ title: "Folder Created" });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to create folder', description: error.message });
     } finally {
@@ -554,7 +554,8 @@ export function FilesView() {
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
       }
-    } catch (error: any)       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
     } finally {
         setIsLoadingFileForEdit(false);
     }
@@ -856,8 +857,7 @@ export function FilesView() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onSelect={() => handleSelectFile(file)}>
-                                        {isUserFile ? <Edit className="mr-2 h-4 w-4"/> : <BookOpen className="mr-2 h-4 w-4"/> }
-                                        {isUserFile ? 'Open / Edit' : 'Open / Preview'}
+                                        <BookOpen className="mr-2 h-4 w-4"/> Open / Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleStartFileRename(file)}>
                                       <Pencil className="mr-2 h-4 w-4" /> Rename

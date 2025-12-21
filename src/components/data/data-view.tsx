@@ -55,6 +55,7 @@ export function UserListView() {
 
   const [fileToEdit, setFileToEdit] = useState<FileItem | null>(null);
   const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
 
   const loadUserFiles = useCallback(async () => {
     if (!user) {
@@ -78,6 +79,7 @@ export function UserListView() {
   }, [loadUserFiles]);
   
   const handleEdit = async (file: FileItem) => {
+    setIsLoadingFile(true);
     try {
       // Fetch the full file content before opening the dialog
       const fullFile = await getFileById(file.id);
@@ -89,6 +91,8 @@ export function UserListView() {
       }
     } catch (error: any) {
        toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+    } finally {
+        setIsLoadingFile(false);
     }
   };
 
@@ -109,11 +113,12 @@ export function UserListView() {
     }
   };
 
-
   return (
     <>
       <div className="space-y-6 p-4 sm:p-6">
-        <h1 className="text-3xl font-bold font-headline text-primary text-center">User List</h1>
+        <header className="text-center">
+            <h1 className="text-3xl font-bold font-headline text-primary text-center">User List</h1>
+        </header>
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">
             <div>
@@ -150,9 +155,7 @@ export function UserListView() {
                   userFiles.map((file) => (
                     <TableRow key={file.id}>
                       <TableCell className="font-medium">
-                        <button className="hover:underline" onClick={() => handleEdit(file)}>
-                          {file.name.replace('.txt', '')}
-                        </button>
+                        {file.name.replace('.txt', '')}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {format(file.modifiedAt, 'PP')}
@@ -164,6 +167,7 @@ export function UserListView() {
                               aria-haspopup="true"
                               size="icon"
                               variant="ghost"
+                              disabled={isLoadingFile}
                             >
                               <MoreHorizontal className="h-4 w-4" />
                               <span className="sr-only">Toggle menu</span>
@@ -196,7 +200,12 @@ export function UserListView() {
       </div>
       <AddUserDialog 
         isOpen={isAddUserDialogOpen}
-        onOpenChange={setIsAddUserDialogOpen}
+        onOpenChange={(open) => {
+            setIsAddUserDialogOpen(open);
+            if (!open) {
+                setFileToEdit(null); // Clear editing state when dialog closes
+            }
+        }}
         onUserAdded={loadUserFiles}
         userToEdit={fileToEdit}
       />

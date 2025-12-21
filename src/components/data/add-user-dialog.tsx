@@ -39,7 +39,8 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 // Helper function to parse content from the text file
-const parseFileContent = (content: string): Partial<UserFormData> => {
+const parseFileContent = (content?: string): Partial<UserFormData> => {
+    if (!content) return {};
     const data: Partial<UserFormData> = {};
     const nameMatch = content.match(/# User Profile: (.*)/);
     const emailMatch = content.match(/- \*\*Email:\*\* (.*)/);
@@ -76,7 +77,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
   useEffect(() => {
     if (isOpen) {
-      if (userToEdit && userToEdit.content) {
+      if (userToEdit) {
+        // Use the parsing function here
         const parsedData = parseFileContent(userToEdit.content);
         form.reset({
           name: parsedData.name || userToEdit.name.replace('.txt', ''),

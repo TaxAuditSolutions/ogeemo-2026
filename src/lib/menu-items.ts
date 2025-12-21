@@ -88,7 +88,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },
   { href: "/debug", label: "Debug", icon: Bug },
   { href: "/bug-repair", label: "Bug Repair", icon: Bug },
-  { href: "/data", label: "Users", icon: Users },
+  { href: "/user-list", label: "User List", icon: Users },
   { href: "/dev-notes", label: "Dev Notes", icon: BookText },
   { href: "/forms", label: "Forms", icon: FilePlus2 },
   { href: "/image-generator", label: "Image Generation", icon: ImageIcon },

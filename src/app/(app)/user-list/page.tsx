@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const DataSkeleton = () => (
+const UserListSkeleton = () => (
     <div className="space-y-6 p-4 sm:p-6">
         <Skeleton className="h-8 w-1/3" />
         <div className="rounded-md border">
@@ -24,13 +24,13 @@ const DataSkeleton = () => (
 );
 
 
-const DataView = dynamic(
-  () => import('@/components/data/data-view').then((mod) => mod.DataView),
+const UserListView = dynamic(
+  () => import('@/components/data/data-view').then((mod) => mod.UserListView),
   {
-    loading: () => <DataSkeleton />,
+    loading: () => <UserListSkeleton />,
   }
 );
 
-export default function UsersPage() {
-  return <DataView />;
+export default function UserListPage() {
+  return <UserListView />;
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getFilesForFolder, findOrCreateFileFolder, type FileItem, deleteFiles, getFileById } from "@/services/file-service";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 
 
 export function UserListView() {
@@ -116,8 +117,16 @@ export function UserListView() {
   return (
     <>
       <div className="space-y-6 p-4 sm:p-6">
-        <header className="text-center">
+        <header className="text-center relative">
             <h1 className="text-3xl font-bold font-headline text-primary text-center">User List</h1>
+            <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/user-list/instructions">
+                        <Info className="h-5 w-5" />
+                        <span className="sr-only">About the User List</span>
+                    </Link>
+                </Button>
+            </div>
         </header>
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">

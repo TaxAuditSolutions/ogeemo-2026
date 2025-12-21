@@ -115,7 +115,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
         onWorkerSave({ ...workerToEdit, ...workerData });
         toast({ title: "Worker Updated" });
       } else {
-        const newWorker = await saveWorker({ ...workerData, userId: user.uid });
+        const newWorker = await addWorker({ ...workerData, userId: user.uid });
         onWorkerSave(newWorker);
         toast({ title: "Worker Added" });
       }

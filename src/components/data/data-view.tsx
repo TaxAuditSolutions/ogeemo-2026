@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, LoaderCircle, Trash2, Edit, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,9 +40,10 @@ import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getFilesForFolder, findOrCreateFileFolder, type FileItem } from "@/services/file-service";
+import { getFilesForFolder, findOrCreateFileFolder, type FileItem, deleteFiles } from "@/services/file-service";
 import { format } from "date-fns";
-import { LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 export function UserListView() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
@@ -40,6 +51,9 @@ export function UserListView() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
 
   const loadUserFiles = useCallback(async () => {
     if (!user) {
@@ -61,6 +75,28 @@ export function UserListView() {
   useEffect(() => {
     loadUserFiles();
   }, [loadUserFiles]);
+  
+  const handleEdit = (fileId: string) => {
+    router.push(`/notes/editor?fileId=${fileId}`);
+  };
+
+  const handleDelete = (file: FileItem) => {
+    setFileToDelete(file);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+    try {
+        await deleteFiles([fileToDelete.id]);
+        toast({ title: "User file deleted" });
+        loadUserFiles();
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally {
+        setFileToDelete(null);
+    }
+  };
+
 
   return (
     <>
@@ -69,7 +105,7 @@ export function UserListView() {
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">
             <div>
-              <CardTitle>Users Collection</CardTitle>
+              <CardTitle>Users</CardTitle>
               <CardDescription>
                 A list of users in your database.
               </CardDescription>
@@ -102,7 +138,9 @@ export function UserListView() {
                   userFiles.map((file) => (
                     <TableRow key={file.id}>
                       <TableCell className="font-medium">
-                        <div className="font-medium">{file.name.replace('.txt', '')}</div>
+                        <button className="hover:underline" onClick={() => handleEdit(file.id)}>
+                          {file.name.replace('.txt', '')}
+                        </button>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {format(file.modifiedAt, 'PP')}
@@ -121,8 +159,15 @@ export function UserListView() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleEdit(file.id)}>
+                                <BookOpen className="mr-2 h-4 w-4"/> Open
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => handleEdit(file.id)}>
+                                <Edit className="mr-2 h-4 w-4"/> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDelete(file)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4"/> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -145,6 +190,18 @@ export function UserListView() {
         onOpenChange={setIsAddUserDialogOpen}
         onUserAdded={loadUserFiles}
       />
+      <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete the user file for "{fileToDelete?.name.replace('.txt', '')}". This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

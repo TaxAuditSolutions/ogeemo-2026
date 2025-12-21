@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -13,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
+    email: z.string().email({ message: "Please enter a valid email address." }).optional(),
     companyName: z.string().optional(),
     website: z.string().optional(),
     businessPhone: z.string().optional(),
@@ -66,9 +68,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} />
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
-          <div className="space-y-1 flex-1">
+          <div className="space-y-4 flex-1">
             <FormField control={form.control} name="displayName" render={({ field }) => ( <FormItem> <FormLabel>Display Name</FormLabel> <FormControl><Input placeholder="Your Name" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <div className="text-sm text-muted-foreground pt-1">{user.email}</div>
+            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input type="email" placeholder="your@email.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
           </div>
         </div>
         

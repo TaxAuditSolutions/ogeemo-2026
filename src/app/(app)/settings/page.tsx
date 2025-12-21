@@ -17,6 +17,7 @@ import Link from 'next/link';
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
+    email: z.string().email({ message: "Please enter a valid email address." }).optional(),
     companyName: z.string().optional(),
     website: z.string().optional(),
     businessPhone: z.string().optional(),
@@ -48,6 +49,7 @@ export default function SettingsPage() {
           if (userProfile) {
             form.reset({
               displayName: userProfile.displayName || user.displayName || '',
+              email: userProfile.email || user.email || '',
               companyName: userProfile.companyName || '',
               website: userProfile.website || '',
               businessPhone: userProfile.businessPhone || '',
@@ -79,7 +81,7 @@ export default function SettingsPage() {
     }
     setIsSubmitting(true);
     try {
-        await updateUserProfile(user.uid, user.email || '', values);
+        await updateUserProfile(user.uid, values.email || user.email || '', values);
         toast({
             title: "Settings Saved",
             description: "Your profile information has been updated successfully.",

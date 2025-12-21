@@ -18,6 +18,7 @@ import {
 import { LayoutDashboard, Bot } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 
+// Recompilation trigger comment
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>

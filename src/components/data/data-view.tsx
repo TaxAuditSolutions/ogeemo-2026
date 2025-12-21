@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal, Plus, LoaderCircle, Trash2, BookOpen } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,7 +169,7 @@ export function UserListView() {
                               variant="ghost"
                               disabled={isLoadingFile}
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreVertical className="h-4 w-4" />
                               <span className="sr-only">Toggle menu</span>
                             </Button>
                           </DropdownMenuTrigger>

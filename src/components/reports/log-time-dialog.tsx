@@ -127,6 +127,7 @@ export function LogTimeDialog({
                     durationSeconds,
                     notes: notes,
                     userId: user.uid,
+                    status: 'unprocessed' as const,
                 };
                 await addTimeLog(logData);
                 toast({ title: "Time Logged Successfully" });

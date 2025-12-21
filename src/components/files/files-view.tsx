@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 // Import from the NEW isolated folder service
 import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/file-manager-folders';
 // Continue to use file-service for FILE operations
-import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/services/file-service';
+import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord, getFileById } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import {
@@ -74,6 +74,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddUserDialog } from '../data/add-user-dialog';
 
 
 const ItemTypes = {
@@ -145,6 +146,11 @@ export function FilesView() {
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [scrollToFileId, setScrollToFileId] = useState<string | null>(null);
   const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  // State for AddUserDialog
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<FileItem | null>(null);
+  const [isLoadingFileForEdit, setIsLoadingFileForEdit] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -239,7 +245,6 @@ export function FilesView() {
         const updatedFolders = [...folders, newFolder];
         setFolders(updatedFolders);
         
-        // If creating from the New File dialog, update the form's selected folder
         if (isNewFileDialogOpen) {
             form.setValue('targetFolderId', newFolder.id);
         }
@@ -376,8 +381,8 @@ export function FilesView() {
         return;
     }
     try {
-        await updateFile(renamingFile.id, { name: renameFileValue.trim() });
-        setFiles(prev => prev.map(f => f.id === renamingFile.id ? { ...f, name: renameFileValue.trim() } : f));
+        await updateFile(renamingFile.id, { name: renameFileValue.trim(), modifiedAt: new Date() });
+        setFiles(prev => prev.map(f => f.id === renamingFile.id ? { ...f, name: renameFileValue.trim(), modifiedAt: new Date() } : f));
         toast({ title: "File Renamed" });
     } catch (error: any) {
         toast({ variant: "destructive", title: "Rename Failed", description: error.message });
@@ -529,6 +534,24 @@ export function FilesView() {
 
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  
+  // New handler for editing a user file
+  const handleEditUser = async (file: FileItem) => {
+    setIsLoadingFileForEdit(true);
+    try {
+      const fullFile = await getFileById(file.id);
+      if (fullFile) {
+        setUserToEdit(fullFile);
+        setIsAddUserDialogOpen(true);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
+      }
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
+    } finally {
+        setIsLoadingFileForEdit(false);
+    }
+  };
 
   const FolderTreeItem = ({ folder, allFolders, level = 0 }: { folder: FolderItem, allFolders: FolderItem[], level?: number }) => {
     const hasChildren = allFolders.some(f => f.parentId === folder.id);
@@ -777,6 +800,8 @@ export function FilesView() {
                       filesInSelectedFolder.length > 0 ? (
                         filesInSelectedFolder.map((file) => {
                           const isRenaming = renamingFile?.id === file.id;
+                          const isUserFile = folders.find(f => f.id === file.folderId)?.name === 'Users';
+
                           return (
                            <DraggableFileRow key={file.id} file={file}>
                             <div className="flex items-center border-b h-8 group" ref={(el) => fileRefs.current.set(file.id, el)}>
@@ -816,6 +841,11 @@ export function FilesView() {
                                     <DropdownMenuItem onSelect={() => handleSelectFile(file)}>
                                       <BookOpen className="mr-2 h-4 w-4" /> Open / Preview
                                     </DropdownMenuItem>
+                                    {isUserFile && (
+                                        <DropdownMenuItem onSelect={() => handleEditUser(file)}>
+                                            <Edit className="mr-2 h-4 w-4"/> Edit User
+                                        </DropdownMenuItem>
+                                    )}
                                      <DropdownMenuItem onSelect={() => handleStartFileRename(file)}>
                                       <Pencil className="mr-2 h-4 w-4" /> Rename
                                     </DropdownMenuItem>
@@ -954,7 +984,7 @@ export function FilesView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the folder "{folderToDelete?.name}" and all its contents. This cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete the folder "{folderToDelete?.name}" and all its contents. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -1040,6 +1070,17 @@ export function FilesView() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    {isAddUserDialogOpen && (
+        <AddUserDialog 
+            isOpen={isAddUserDialogOpen}
+            onOpenChange={(open) => {
+                setIsAddUserDialogOpen(open);
+                if (!open) setUserToEdit(null);
+            }}
+            onUserAdded={loadData}
+            userToEdit={userToEdit}
+        />
+    )}
     </>
   );
 }

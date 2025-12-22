@@ -31,8 +31,8 @@ import {
   Users,
   DollarSign,
   LoaderCircle,
-  ChevronDown,
   Calculator,
+  Trash2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -42,17 +42,21 @@ import { format, addDays, isWithinInterval, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getEmployees, type Employee, savePayrollRun } from '@/services/payroll-service';
+import { getEmployees, type Employee, savePayrollRun, deleteWorker, addWorker, updateWorker } from '@/services/payroll-service';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { useRouter } from 'next/navigation';
+import { WorkerFormDialog } from './WorkerFormDialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { getActionChips, type ActionChipData } from '@/services/project-service';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 type PayrollEmployee = Employee & {
     grossPay?: number;
@@ -66,32 +70,6 @@ const formatCurrency = (amount: number) => {
 };
 
 const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void, payPeriod?: DateRange }) => {
-    const [navItems, setNavItems] = useState<ActionChipData[]>([]);
-    const [isLoadingNav, setIsLoadingNav] = useState(true);
-    const { user } = useAuth();
-  
-    const loadNavItems = useCallback(async () => {
-      if (user) {
-        setIsLoadingNav(true);
-        try {
-          const items = await getActionChips(user.uid, 'accountingQuickNavItems');
-          setNavItems(items);
-        } catch (error) {
-          console.error("Failed to load quick nav items:", error);
-        } finally {
-          setIsLoadingNav(false);
-        }
-      } else {
-        setIsLoadingNav(false);
-      }
-    }, [user]);
-
-    useEffect(() => {
-        loadNavItems();
-        window.addEventListener('accountingChipsUpdated', loadNavItems);
-        return () => window.removeEventListener('accountingChipsUpdated', loadNavItems);
-    }, [loadNavItems]);
-
     return (
         <div className="p-4 sm:p-6 flex items-center justify-center h-full">
             <Card className="w-full max-w-2xl text-center">
@@ -126,28 +104,6 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
                     <Button variant="outline" asChild>
                         <Link href="/accounting/payroll">Back to Payroll Hub</Link>
                     </Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                                Quick Navigation 
-                                {isLoadingNav ? <LoaderCircle className="ml-2 h-4 w-4 animate-spin" /> : <ChevronDown className="ml-2 h-4 w-4" />}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {navItems.map(item => (
-                                <DropdownMenuItem key={item.id} asChild>
-                                <Link href={typeof item.href === 'string' ? item.href : (item.href?.pathname || '#')}>
-                                    <item.icon className="mr-2 h-4 w-4" />
-                                    <span>{item.label}</span>
-                                </Link>
-                                </DropdownMenuItem>
-                            ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="/accounting/manage-navigation">Manage Quick Nav</Link>
-                        </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </CardFooter>
             </Card>
         </div>
@@ -162,36 +118,44 @@ export function RunPayrollView() {
   const [payPeriod, setPayPeriod] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: new Date() });
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
+  const [workerToEdit, setWorkerToEdit] = useState<Employee | null>(null);
+  const [workerToDelete, setWorkerToDelete] = useState<Employee | null>(null);
+
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const loadData = useCallback(async () => {
+    if (!user) {
+        setIsLoading(false);
+        return;
+    };
+    setIsLoading(true);
+    try {
+        const [fetchedEmployees, fetchedTasks] = await Promise.all([
+            getEmployees(user.uid),
+            getTasksForUser(user.uid)
+        ]);
+        setAllTasks(fetchedTasks);
+        setEmployees(fetchedEmployees.map(e => ({
+            ...e,
+            grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined,
+        })));
+        setSelectedEmployeeIds(fetchedEmployees.map(e => e.id));
+    } catch (error) {
+        console.error("Failed to load payroll data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load employee or task data.' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, toast]);
 
   useEffect(() => {
-    async function loadData() {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        };
-        setIsLoading(true);
-        try {
-            const [fetchedEmployees, fetchedTasks] = await Promise.all([
-                getEmployees(user.uid),
-                getTasksForUser(user.uid)
-            ]);
-            setAllTasks(fetchedTasks);
-            setEmployees(fetchedEmployees.map(e => ({
-                ...e,
-                grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined,
-            })));
-            setSelectedEmployeeIds(fetchedEmployees.map(e => e.id));
-        } catch (error) {
-            console.error("Failed to load payroll data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load employee or task data.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }
     loadData();
-  }, [user, toast]);
+  }, [loadData]);
+
 
   const selectedEmployees = useMemo(() => {
     return employees.filter((e) => selectedEmployeeIds.includes(e.id));
@@ -212,7 +176,7 @@ export function RunPayrollView() {
     const tasksInPeriod = allTasks.filter(task =>
         task.workerId === employeeId &&
         task.start &&
-        isWithinInterval(task.start, { start: payPeriod.from, end: payPeriod.to })
+        isWithinInterval(new Date(task.start), { start: payPeriod.from!, end: payPeriod.to! })
     );
 
     const totalSeconds = tasksInPeriod.reduce((sum, task) => sum + (task.duration || 0), 0);
@@ -292,6 +256,31 @@ export function RunPayrollView() {
         toast({ variant: 'destructive', title: 'Payroll Failed', description: error.message });
     }
   };
+  
+    const handleOpenWorkerForm = (worker: Employee | null) => {
+        setWorkerToEdit(worker);
+        setIsWorkerFormOpen(true);
+    };
+
+    const handleWorkerSaved = async () => {
+        setIsWorkerFormOpen(false);
+        setWorkerToEdit(null);
+        await loadData(); // Refresh the list
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!workerToDelete) return;
+        try {
+            await deleteWorker(workerToDelete.id);
+            toast({ title: 'Worker Deleted' });
+            await loadData(); // Refresh the list
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        } finally {
+            setWorkerToDelete(null);
+        }
+    };
+
 
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
@@ -307,6 +296,7 @@ export function RunPayrollView() {
   }
 
   return (
+    <>
     <div className="p-4 sm:p-6 space-y-6">
       <header className="relative text-center">
         <div className="absolute left-0 top-1/2 -translate-y-1/2">
@@ -327,10 +317,19 @@ export function RunPayrollView() {
 
       <Card className="max-w-5xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-6 w-6 text-primary" />
-            Step 1: Pay Period & Employees
-          </CardTitle>
+          <div className="flex justify-between items-start">
+             <div className="space-y-1.5">
+                <CardTitle className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-6 w-6 text-primary" />
+                  Step 1: Pay Period & Employees
+                </CardTitle>
+                <CardDescription>Select the pay period and the employees you wish to include in this run.</CardDescription>
+             </div>
+             <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
+                <Users className="mr-2 h-4 w-4" />
+                Manage Workers
+             </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -375,21 +374,26 @@ export function RunPayrollView() {
             <Label>Select Employees to Pay</Label>
             <div className="space-y-2 rounded-md border p-4">
               {employees.map((emp) => (
-                <div key={emp.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`emp-${emp.id}`}
-                    checked={selectedEmployeeIds.includes(emp.id)}
-                    onCheckedChange={() => handleSelectEmployee(emp.id)}
-                  />
-                  <label
-                    htmlFor={`emp-${emp.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-                  >
-                    {emp.name}
-                  </label>
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {emp.payType}
-                  </span>
+                <div key={emp.id} className="flex items-center space-x-2 justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`emp-${emp.id}`}
+                      checked={selectedEmployeeIds.includes(emp.id)}
+                      onCheckedChange={() => handleSelectEmployee(emp.id)}
+                    />
+                    <label
+                      htmlFor={`emp-${emp.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                    >
+                      {emp.name}
+                    </label>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      ({emp.payType})
+                    </span>
+                  </div>
+                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWorkerToDelete(emp)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                   </Button>
                 </div>
               ))}
             </div>
@@ -533,7 +537,41 @@ export function RunPayrollView() {
         </CardFooter>
       </Card>
     </div>
+
+    <WorkerFormDialog
+        isOpen={isWorkerFormOpen}
+        onOpenChange={(isOpen) => {
+            setIsWorkerFormOpen(isOpen);
+            if (!isOpen) {
+                setWorkerToEdit(null); // Clear editing state when dialog closes
+            }
+        }}
+        workerToEdit={workerToEdit}
+        onWorkerSave={async (data) => {
+            if (!user) return;
+            await addWorker({ ...data, userId: user.uid });
+            handleWorkerSaved();
+        }}
+        onWorkerUpdate={async (id, data) => {
+            await updateWorker(id, data);
+            handleWorkerSaved();
+        }}
+    />
+    
+    <AlertDialog open={!!workerToDelete} onOpenChange={setWorkerToDelete}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete "{workerToDelete?.name}". This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
-
-      

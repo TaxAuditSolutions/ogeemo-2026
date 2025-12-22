@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -141,7 +141,7 @@ export function RunPayrollView() {
     setIsLoading(true);
     try {
         const [fetchedEmployees, fetchedTasks] = await Promise.all([
-            getEmployees(user.uid),
+            getWorkers(user.uid),
             getTasksForUser(user.uid)
         ]);
         setAllTasks(fetchedTasks);
@@ -651,3 +651,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

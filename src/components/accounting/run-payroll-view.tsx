@@ -421,7 +421,7 @@ export function RunPayrollView() {
           </div>
           <div className="space-y-2">
              <div className="flex justify-between items-center">
-                <Label>Select Workers and Employees to Pay</Label>
+                <Label>Select Workers to Pay</Label>
                 {selectedEmployeeIds.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
                         <Trash2 className="mr-2 h-4 w-4"/>
@@ -670,4 +670,5 @@ export function RunPayrollView() {
   );
 }
 
+    
     

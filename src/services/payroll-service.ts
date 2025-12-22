@@ -23,6 +23,9 @@ import { getRemittances as getPayrollRemittances, addRemittance } from './payrol
 const WORKERS_COLLECTION = 'payrollWorkers';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const PAYROLL_RUNS_COLLECTION = 'payrollRuns';
+const TIME_LOGS_COLLECTION = 'timeLogs';
+const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
+
 
 async function getDb() {
     const { db } = await initializeFirebase();
@@ -110,6 +113,32 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
         const docRef = doc(db, WORKERS_COLLECTION, id);
         batch.delete(docRef);
     });
+    await batch.commit();
+}
+
+
+export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
+    const db = await getDb();
+    const batch = writeBatch(db);
+
+    // Reassign Time Logs
+    const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
+    const timeLogsSnapshot = await getDocs(timeLogsQuery);
+    timeLogsSnapshot.forEach(doc => {
+        batch.update(doc.ref, { workerId: masterWorkerId });
+    });
+    
+    // Reassign Leave Requests
+    const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('workerId', '==', sourceWorkerId));
+    const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
+    leaveRequestsSnapshot.forEach(doc => {
+        batch.update(doc.ref, { workerId: masterWorkerId });
+    });
+
+    // Delete the source worker
+    const sourceWorkerRef = doc(db, WORKERS_COLLECTION, sourceWorkerId);
+    batch.delete(sourceWorkerRef);
+    
     await batch.commit();
 }
 

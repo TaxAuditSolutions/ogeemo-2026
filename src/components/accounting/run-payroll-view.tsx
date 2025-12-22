@@ -23,13 +23,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   ArrowLeft,
@@ -43,6 +43,7 @@ import {
   MoreVertical,
   Edit,
   Plus,
+  GitMerge,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -52,7 +53,7 @@ import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers } from '@/services/payroll-service';
+import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from './WorkerFormDialog';
@@ -66,6 +67,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import MergeWorkerDialog from './MergeWorkerDialog';
 
 
 type PayrollEmployee = Worker & {
@@ -133,6 +135,9 @@ export function RunPayrollView() {
   const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+
+  const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
 
 
   const { user } = useAuth();
@@ -324,6 +329,21 @@ export function RunPayrollView() {
         }
     };
 
+    const handleMergeClick = (worker: Worker) => {
+        setWorkerToMerge(worker);
+        setIsMergeDialogOpen(true);
+    };
+
+    const handleMergeConfirm = async (sourceWorkerId: string, masterWorkerId: string) => {
+        try {
+            await mergeWorkers(sourceWorkerId, masterWorkerId);
+            toast({ title: 'Merge Successful', description: 'The worker records have been merged.' });
+            await loadData(); // Refresh all data
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+        }
+    };
+
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
     setSelectedEmployeeIds([]);
@@ -459,6 +479,7 @@ export function RunPayrollView() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                           <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4" />Edit Worker</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Worker</DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Worker</DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
@@ -615,15 +636,8 @@ export function RunPayrollView() {
             }
         }}
         workerToEdit={workerToEdit}
-        onWorkerSave={async (data) => {
-            if (!user) return;
-            await addWorker({ ...data, userId: user.uid });
-            handleWorkerSaved();
-        }}
-        onWorkerUpdate={async (id, data) => {
-            await updateWorker(id, data);
-            handleWorkerSaved();
-        }}
+        onWorkerSave={handleWorkerSaved}
+        onWorkerUpdate={handleWorkerSaved}
     />
     
     <AlertDialog open={!!workerToDelete} onOpenChange={setWorkerToDelete}>
@@ -655,6 +669,16 @@ export function RunPayrollView() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+
+    {workerToMerge && (
+        <MergeWorkerDialog
+            isOpen={isMergeDialogOpen}
+            onOpenChange={setIsMergeDialogOpen}
+            sourceWorker={workerToMerge}
+            allWorkers={employees}
+            onMergeConfirm={handleMergeConfirm}
+        />
+    )}
     </>
   );
 }

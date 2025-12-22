@@ -33,6 +33,8 @@ import {
   LoaderCircle,
   Calculator,
   Trash2,
+  MoreVertical,
+  Edit,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -42,7 +44,7 @@ import { format, addDays, isWithinInterval, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getEmployees, type Employee, savePayrollRun, deleteWorker, addWorker, updateWorker } from '@/services/payroll-service';
+import { getEmployees, type Employee, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers } from '@/services/payroll-service';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { useRouter } from 'next/navigation';
 import { WorkerFormDialog } from './WorkerFormDialog';
@@ -122,10 +124,13 @@ export function RunPayrollView() {
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
   const [workerToEdit, setWorkerToEdit] = useState<Employee | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Employee | null>(null);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+
 
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const hasStartedTimerRef = useRef(false);
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -280,7 +285,36 @@ export function RunPayrollView() {
             setWorkerToDelete(null);
         }
     };
+    
+    const handleToggleSelectAll = () => {
+        if (selectedEmployeeIds.length === employees.length) {
+            setSelectedEmployeeIds([]);
+        } else {
+            setSelectedEmployeeIds(employees.map(e => e.id));
+        }
+    };
+    
+    const handleDeleteSelected = async () => {
+        if (selectedEmployeeIds.length === 0) return;
+        setIsBulkDeleteAlertOpen(true);
+    };
 
+    const handleConfirmBulkDelete = async () => {
+        if (!user) return;
+        const originalEmployees = [...employees];
+        setEmployees(prev => prev.filter(e => !selectedEmployeeIds.includes(e.id)));
+
+        try {
+            await deleteWorkers(selectedEmployeeIds);
+            toast({ title: `${selectedEmployeeIds.length} worker(s) deleted.` });
+            setSelectedEmployeeIds([]);
+        } catch (error: any) {
+            setEmployees(originalEmployees);
+            toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
+        } finally {
+            setIsBulkDeleteAlertOpen(false);
+        }
+    };
 
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
@@ -371,8 +405,26 @@ export function RunPayrollView() {
             </Popover>
           </div>
           <div className="space-y-2">
-            <Label>Select Employees to Pay</Label>
+             <div className="flex justify-between items-center">
+                <Label>Select Employees to Pay</Label>
+                {selectedEmployeeIds.length > 0 && (
+                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                        <Trash2 className="mr-2 h-4 w-4"/>
+                        Delete Selected ({selectedEmployeeIds.length})
+                    </Button>
+                )}
+            </div>
             <div className="space-y-2 rounded-md border p-4">
+                <div className="flex items-center space-x-2 justify-between border-b pb-2">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox 
+                            id="select-all-employees"
+                            checked={selectedEmployeeIds.length === employees.length && employees.length > 0}
+                            onCheckedChange={handleToggleSelectAll}
+                        />
+                        <Label htmlFor="select-all-employees" className="font-semibold">Select All</Label>
+                    </div>
+                </div>
               {employees.map((emp) => (
                 <div key={emp.id} className="flex items-center space-x-2 justify-between">
                   <div className="flex items-center space-x-2">
@@ -391,9 +443,17 @@ export function RunPayrollView() {
                       ({emp.payType})
                     </span>
                   </div>
-                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWorkerToDelete(emp)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                   </Button>
+                   <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-4 w-4" />
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                          <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4" />Edit Worker</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Worker</DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
@@ -538,8 +598,8 @@ export function RunPayrollView() {
       </Card>
     </div>
 
-    <WorkerFormDialog
-        isOpen={isWorkerFormOpen}
+    <WorkerFormDialog 
+        isOpen={isWorkerFormOpen} 
         onOpenChange={(isOpen) => {
             setIsWorkerFormOpen(isOpen);
             if (!isOpen) {
@@ -562,13 +622,24 @@ export function RunPayrollView() {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete "{workerToDelete?.name}". This action cannot be undone.
-                </AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete "{workerToDelete?.name}". This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete {selectedEmployeeIds.length} worker(s). This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

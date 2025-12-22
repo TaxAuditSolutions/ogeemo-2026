@@ -102,6 +102,17 @@ export async function deleteWorker(id: string): Promise<void> {
     await deleteDoc(doc(db, WORKERS_COLLECTION, id));
 }
 
+export async function deleteWorkers(workerIds: string[]): Promise<void> {
+    const db = await getDb();
+    if (workerIds.length === 0) return;
+    const batch = writeBatch(db);
+    workerIds.forEach(id => {
+        const docRef = doc(db, WORKERS_COLLECTION, id);
+        batch.delete(docRef);
+    });
+    await batch.commit();
+}
+
 
 // --- Payroll Remittance Types & Functions ---
 export interface PayrollRemittance {

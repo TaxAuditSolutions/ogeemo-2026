@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -35,26 +36,45 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '../ui/badge';
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
-import { formatTime } from '@/lib/utils';
+import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
-import { Button } from '@/components/ui/button';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
-import { Badge } from '../ui/badge';
-import { Label } from '../ui/label';
-import { useRouter, useSearchParams } from 'next/navigation';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -145,13 +165,27 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = (newWorker: Worker) => {
-        setWorkers(prev => [...prev, newWorker].sort((a,b) => a.name.localeCompare(b.name)));
+    const handleWorkerSaved = async (data: Omit<Worker, 'id' | 'userId'>) => {
+      if (!user) return;
+      try {
+        const newWorker = await addWorker({ ...data, userId: user.uid });
+        setWorkers(prev => [...prev, newWorker].sort((a, b) => a.name.localeCompare(b.name)));
+        toast({ title: "Worker Added" });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Save Failed", description: error.message });
+      }
     };
     
-    const handleWorkerUpdated = (updatedWorker: Worker) => {
-        setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
+    const handleWorkerUpdated = async (workerId: string, data: Partial<Omit<Worker, 'id' | 'userId'>>) => {
+        try {
+            await updateWorker(workerId, data);
+            setWorkers(prev => prev.map(w => (w.id === workerId ? { ...w, ...data } : w) as Worker));
+            toast({ title: 'Worker Updated' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
     };
+
 
     const handleDateRangeSelect = (range: DateRange | undefined) => {
         setDateRange(range);
@@ -237,7 +271,7 @@ export function TimeLogReport() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                         <div className="mt-4 flex justify-center gap-2">
-                            <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                             <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline">
                                         <User className="mr-2 h-4 w-4" />
@@ -286,7 +320,7 @@ export function TimeLogReport() {
                                 </Button>
                             )}
                             
-                            <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null)}>
+                            <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null, selectedWorkerId)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
                             <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
@@ -329,9 +363,7 @@ export function TimeLogReport() {
                                             <TableCell>
                                                  <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}>
@@ -384,7 +416,7 @@ export function TimeLogReport() {
                     </div>
                 </CardContent>
             </Card>
-
+            
             <LogTimeDialog 
                 isOpen={isLogTimeDialogOpen} 
                 onOpenChange={(isOpen) => {
@@ -442,3 +474,4 @@ export function TimeLogReport() {
         </>
     );
 }
+

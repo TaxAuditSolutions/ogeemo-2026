@@ -53,7 +53,6 @@ import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updat
 import { type Event as TaskEvent } from '@/types/calendar';
 import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from './WorkerFormDialog';
-import MergeWorkerDialog from './MergeWorkerDialog';
 import { cn } from '@/lib/utils';
 
 
@@ -123,10 +122,6 @@ export function RunPayrollView() {
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
-  const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
-  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
-
-
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -141,7 +136,8 @@ export function RunPayrollView() {
     try {
         const [fetchedEmployees, fetchedTasks] = await Promise.all([
             getWorkers(user.uid),
-            getTasksForUser(user.uid)
+            // getTasksForUser(user.uid) - Placeholder for when task fetching is implemented
+            Promise.resolve([] as TaskEvent[])
         ]);
         setAllTasks(fetchedTasks);
         setEmployees(fetchedEmployees.map(e => ({
@@ -316,21 +312,6 @@ export function RunPayrollView() {
         }
     };
 
-    const handleMergeClick = (worker: Worker) => {
-        setWorkerToMerge(worker);
-        setIsMergeDialogOpen(true);
-    };
-
-    const handleMergeConfirm = async (sourceWorkerId: string, masterWorkerId: string) => {
-        try {
-            await mergeWorkers(sourceWorkerId, masterWorkerId);
-            toast({ title: 'Merge Successful', description: 'The worker records have been merged.' });
-            await loadData(); // Refresh all data
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
-        }
-    };
-
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
     setSelectedEmployeeIds([]);
@@ -370,7 +351,7 @@ export function RunPayrollView() {
              <div className="space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="h-6 w-6 text-primary" />
-                  Step 1: Select the period and select Worker
+                  Step 1: Select the period and select Worker.
                 </CardTitle>
                 <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
@@ -466,7 +447,6 @@ export function RunPayrollView() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                           <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4" />Edit Worker</DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Worker</DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Worker</DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
@@ -662,20 +642,6 @@ export function RunPayrollView() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-
-    {workerToMerge && (
-        <MergeWorkerDialog
-            isOpen={isMergeDialogOpen}
-            onOpenChange={setIsMergeDialogOpen}
-            sourceWorker={workerToMerge}
-            allWorkers={employees}
-            onMergeConfirm={handleMergeConfirm}
-        />
-    )}
     </>
   );
 }
-
-    
-
-    

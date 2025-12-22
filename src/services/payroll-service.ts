@@ -32,11 +32,34 @@ async function getDb() {
 // --- Worker Types & Functions ---
 const docToWorker = (doc: any): Worker => {
     const data = doc.data();
+
+    // Helper function to safely convert a Firestore Timestamp or a JS Date
+    const toDate = (dateValue: any): Date | null => {
+        if (!dateValue) return null;
+        // If it's a Firestore Timestamp, convert it
+        if (dateValue.toDate) {
+            return dateValue.toDate();
+        }
+        // If it's already a JS Date object, return it
+        if (dateValue instanceof Date) {
+            return dateValue;
+        }
+        // If it's a string, try to parse it
+        if (typeof dateValue === 'string') {
+            const parsedDate = new Date(dateValue);
+            if (!isNaN(parsedDate.getTime())) {
+                return parsedDate;
+            }
+        }
+        // If all else fails, return null
+        return null;
+    };
+
     return {
         id: doc.id,
         ...data,
-        hireDate: data.hireDate ? (data.hireDate as Timestamp).toDate() : null,
-        startDate: data.startDate ? (data.startDate as Timestamp).toDate() : null,
+        hireDate: toDate(data.hireDate),
+        startDate: toDate(data.startDate),
     } as Worker;
 };
 

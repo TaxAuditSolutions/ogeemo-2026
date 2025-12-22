@@ -6,10 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -39,32 +37,22 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '../ui/badge';
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
@@ -74,6 +62,7 @@ import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
+import { WorkerSelector } from './WorkerSelector'; // Import the new component
 import type { DateRange } from 'react-day-picker';
 
 const formatCurrency = (amount: number) => {
@@ -95,7 +84,6 @@ export function TimeLogReport() {
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
-    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
     
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -165,27 +153,10 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = async (data: Omit<Worker, 'id' | 'userId'>) => {
-      if (!user) return;
-      try {
-        const newWorker = await addWorker({ ...data, userId: user.uid });
-        setWorkers(prev => [...prev, newWorker].sort((a, b) => a.name.localeCompare(b.name)));
-        toast({ title: "Worker Added" });
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Save Failed", description: error.message });
-      }
+    const handleWorkerSaved = async () => {
+      await loadData();
+      setIsWorkerFormOpen(false);
     };
-    
-    const handleWorkerUpdated = async (workerId: string, data: Partial<Omit<Worker, 'id' | 'userId'>>) => {
-        try {
-            await updateWorker(workerId, data);
-            setWorkers(prev => prev.map(w => (w.id === workerId ? { ...w, ...data } : w) as Worker));
-            toast({ title: 'Worker Updated' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
-    };
-
 
     const handleDateRangeSelect = (range: DateRange | undefined) => {
         setDateRange(range);
@@ -271,31 +242,12 @@ export function TimeLogReport() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                         <div className="mt-4 flex justify-center gap-2">
-                             <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline">
-                                        <User className="mr-2 h-4 w-4" />
-                                        {selectedWorker ? `Filtering: ${selectedWorker.name}` : "Select Worker"}
-                                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-64 p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search workers..." />
-                                        <CommandList>
-                                            <CommandEmpty>No worker found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {workers.map(worker => (
-                                                    <CommandItem key={worker.id} value={worker.name} onSelect={() => { setSelectedWorkerId(worker.id); setIsWorkerPopoverOpen(false); }}>
-                                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />
-                                                        {worker.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <WorkerSelector
+                                workers={workers}
+                                selectedWorkerId={selectedWorkerId}
+                                onSelect={setSelectedWorkerId}
+                                isLoading={isLoading}
+                            />
                             
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
@@ -436,7 +388,7 @@ export function TimeLogReport() {
                 isOpen={isWorkerFormOpen} 
                 onOpenChange={setIsWorkerFormOpen} 
                 onWorkerSave={handleWorkerSaved}
-                onWorkerUpdate={handleWorkerUpdated}
+                onWorkerUpdate={() => {}} // Not needed on this page
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
@@ -474,4 +426,3 @@ export function TimeLogReport() {
         </>
     );
 }
-

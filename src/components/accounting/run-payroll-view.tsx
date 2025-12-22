@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -25,6 +25,12 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   CheckCircle,
   FileSpreadsheet,
@@ -41,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, addDays, isWithinInterval, startOfMonth } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
@@ -651,5 +657,3 @@ export function RunPayrollView() {
     </>
   );
 }
-
-    

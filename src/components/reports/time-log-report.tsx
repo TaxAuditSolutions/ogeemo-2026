@@ -2,12 +2,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -62,7 +64,7 @@ import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
-import { WorkerSelector } from './WorkerSelector'; // Import the new component
+import { WorkerSelector } from './WorkerSelector';
 import type { DateRange } from 'react-day-picker';
 
 const formatCurrency = (amount: number) => {
@@ -89,6 +91,10 @@ export function TimeLogReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
+
+    // State for debugging
+    const [workerListForDebug, setWorkerListForDebug] = useState('');
+    const [isTestAlertOpen, setIsTestAlertOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -233,11 +239,17 @@ export function TimeLogReport() {
         return hoursWorked * selectedWorker.payRate;
     }, [selectedWorker, totalDurationSeconds]);
 
+    const handleTestClick = () => {
+        const workerInfo = workers.map(w => `ID: ${w.id}, Name: ${w.name}, Pay Rate: ${w.payRate}`).join('\n');
+        setWorkerListForDebug(workerInfo || "No workers found.");
+        setIsTestAlertOpen(true);
+    };
+
     return (
         <>
             <Card>
                 <CardHeader>
-                    <ReportsPageHeader pageTitle="Time Log Report" />
+                    <ReportsPageHeader pageTitle="Time Log Report" hubPath="/reports" hubLabel="Reports" onTestClick={handleTestClick} />
                     <header className="text-center pt-4">
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
@@ -423,6 +435,23 @@ export function TimeLogReport() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={isTestAlertOpen} onOpenChange={setIsTestAlertOpen}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Worker Data</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        The following worker data was fetched from the database:
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <pre className="mt-2 w-full rounded-md bg-slate-950 p-4">
+                    <code className="text-white">{workerListForDebug}</code>
+                </pre>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => setIsTestAlertOpen(false)}>Close</AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

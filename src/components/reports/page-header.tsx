@@ -17,12 +17,14 @@ interface ReportsPageHeaderProps {
   pageTitle: string;
   hubPath?: string;
   hubLabel?: string;
+  onTestClick?: () => void;
 }
 
 export function ReportsPageHeader({ 
     pageTitle, 
     hubPath = "/reports", 
-    hubLabel = "Reports Hub" 
+    hubLabel = "Reports Hub",
+    onTestClick
 }: ReportsPageHeaderProps) {
   return (
     <div className="flex items-center justify-between">
@@ -40,7 +42,7 @@ export function ReportsPageHeader({
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex items-center gap-2">
-        <Button variant="outline">Test</Button>
+        {onTestClick && <Button variant="outline" onClick={onTestClick}>Test</Button>}
         <Button asChild variant="outline">
           <Link href={hubPath}>
             <ArrowLeft className="mr-2 h-4 w-4" />

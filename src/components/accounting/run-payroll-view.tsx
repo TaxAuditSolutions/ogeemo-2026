@@ -1,8 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -29,7 +30,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   ArrowLeft,
   CheckCircle,
@@ -53,7 +54,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers } from '@/services/payroll-service';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
-import { useRouter } from 'next/navigation';
+import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from './WorkerFormDialog';
 import {
   AlertDialog,

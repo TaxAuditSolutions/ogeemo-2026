@@ -370,9 +370,9 @@ export function RunPayrollView() {
              <div className="space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="h-6 w-6 text-primary" />
-                  Step 1: Pay period and Workers and Employees
+                  Step 1: Select the period and select Worker
                 </CardTitle>
-                <CardDescription>Select the pay period and the workers and employees you wish to include in this run.</CardDescription>
+                <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
              <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
                 <Users className="mr-2 h-4 w-4" />
@@ -669,3 +669,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

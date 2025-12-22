@@ -23,6 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
 import {
     DropdownMenu,
@@ -640,7 +641,7 @@ export function RunPayrollView() {
         onWorkerUpdate={handleWorkerSaved}
     />
     
-    <AlertDialog open={!!workerToDelete} onOpenChange={setWorkerToDelete}>
+    <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>

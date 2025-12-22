@@ -5,9 +5,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from '@/components/ui/card';
 import {
@@ -23,7 +23,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -36,16 +35,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, ChevronsUpDown, Check, User, Calendar as CalendarIcon, FileText, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
@@ -63,6 +54,7 @@ import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -74,6 +66,7 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
 
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
@@ -88,7 +81,6 @@ export function TimeLogReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
-
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -130,7 +122,7 @@ export function TimeLogReport() {
         }
 
         const totalSeconds = entries.reduce((acc, entry) => acc + entry.durationSeconds, 0);
-        return { filteredEntries: entries, totalDurationSeconds: totalSeconds };
+        return { filteredEntries: entries.sort((a,b) => b.startTime.getTime() - a.startTime.getTime()), totalDurationSeconds: totalSeconds };
 
     }, [allEntries, selectedWorkerId, dateRange]);
 
@@ -153,25 +145,12 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
-        if (!user) return;
-        try {
-            const newWorker = await addWorker({ ...workerData, userId: user.uid });
-            setWorkers(prev => [...prev, newWorker].sort((a, b) => a.name.localeCompare(b.name)));
-            toast({ title: 'Worker Added' });
-        } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
+    const handleWorkerSaved = (newWorker: Worker) => {
+        setWorkers(prev => [...prev, newWorker].sort((a,b) => a.name.localeCompare(b.name)));
     };
-
-    const handleWorkerUpdated = async (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => {
-        try {
-            await updateWorker(workerId, workerData);
-            setWorkers(prev => prev.map(w => w.id === workerId ? { ...w, ...workerData } as Worker : w));
-            toast({ title: 'Worker Updated' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
+    
+    const handleWorkerUpdated = (updatedWorker: Worker) => {
+        setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
     };
 
     const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -258,37 +237,41 @@ export function TimeLogReport() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                         <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                         <div className="mt-4 flex justify-center gap-2">
-                             <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                            <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline">
                                         <User className="mr-2 h-4 w-4" />
                                         {selectedWorker ? `Filtering: ${selectedWorker.name}` : "Select Worker"}
+                                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 p-0">
-                                    <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>No worker found.</CommandEmpty><CommandGroup>{workers.map(worker => (<CommandItem key={worker.id} value={worker.name} onSelect={() => { setSelectedWorkerId(worker.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />{worker.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                    <Command>
+                                        <CommandInput placeholder="Search workers..." />
+                                        <CommandList>
+                                            <CommandEmpty>No worker found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {workers.map(worker => (
+                                                    <CommandItem key={worker.id} value={worker.name} onSelect={() => { setSelectedWorkerId(worker.id); setIsWorkerPopoverOpen(false); }}>
+                                                        <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === worker.id ? "opacity-100" : "opacity-0")} />
+                                                        {worker.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
                                 </PopoverContent>
                             </Popover>
                             
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline">
+                                    <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? 
-                                            dateRange.to ? `${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}` : format(dateRange.from, 'LLL dd, y')
-                                            : "Filter by date"
-                                        }
+                                        {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>Filter by date</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from}
-                                        selected={dateRange}
-                                        onSelect={handleDateRangeSelect}
-                                        numberOfMonths={2}
-                                    />
+                                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={handleDateRangeSelect} numberOfMonths={2} />
                                     <div className="p-2 border-t flex justify-end gap-2">
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: new Date(), to: new Date() })}>Today</Button>
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
@@ -420,7 +403,7 @@ export function TimeLogReport() {
             <WorkerFormDialog 
                 isOpen={isWorkerFormOpen} 
                 onOpenChange={setIsWorkerFormOpen} 
-                onWorkerSave={handleWorkerSaved} 
+                onWorkerSave={handleWorkerSaved}
                 onWorkerUpdate={handleWorkerUpdated}
             />
             

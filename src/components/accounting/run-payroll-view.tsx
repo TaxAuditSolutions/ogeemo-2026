@@ -143,7 +143,7 @@ export function RunPayrollView() {
             ...e,
             grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined,
         })));
-        setSelectedEmployeeIds(fetchedEmployees.map(e => e.id));
+        setSelectedEmployeeIds([]);
     } catch (error) {
         console.error("Failed to load payroll data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Could not load employee or task data.' });
@@ -284,7 +284,7 @@ export function RunPayrollView() {
 
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
-    setSelectedEmployeeIds(employees.map((e) => e.id));
+    setSelectedEmployeeIds([]);
   };
   
   if (isLoading) {

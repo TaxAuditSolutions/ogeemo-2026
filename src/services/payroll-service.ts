@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -50,10 +51,10 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
             const docRef = await addDoc(collection(db, WORKERS_COLLECTION), workerData);
             newWorkers.push({ ...workerData, id: docRef.id });
         }
-        return newWorkers;
+        return newWorkers.sort((a,b) => a.name.localeCompare(b.name));
     }
 
-    return snapshot.docs.map(docToWorker);
+    return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {

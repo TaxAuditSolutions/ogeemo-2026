@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -10,11 +10,11 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
   TableFooter,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   ArrowLeft,
   CheckCircle,
@@ -35,6 +35,7 @@ import {
   Trash2,
   MoreVertical,
   Edit,
+  Plus,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -44,7 +45,7 @@ import { format, addDays, isWithinInterval, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getEmployees, type Employee, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers } from '@/services/payroll-service';
+import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers } from '@/services/payroll-service';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { useRouter } from 'next/navigation';
 import { WorkerFormDialog } from './WorkerFormDialog';
@@ -60,7 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
-type PayrollEmployee = Employee & {
+type PayrollEmployee = Worker & {
     grossPay?: number;
     deductions?: number;
     netPay?: number;
@@ -122,8 +123,8 @@ export function RunPayrollView() {
   const [isLoading, setIsLoading] = useState(true);
   
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
-  const [workerToEdit, setWorkerToEdit] = useState<Employee | null>(null);
-  const [workerToDelete, setWorkerToDelete] = useState<Employee | null>(null);
+  const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
+  const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
 
@@ -262,7 +263,7 @@ export function RunPayrollView() {
     }
   };
   
-    const handleOpenWorkerForm = (worker: Employee | null) => {
+    const handleOpenWorkerForm = (worker: Worker | null) => {
         setWorkerToEdit(worker);
         setIsWorkerFormOpen(true);
     };
@@ -635,11 +636,15 @@ export function RunPayrollView() {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete {selectedEmployeeIds.length} worker(s). This action cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>
+                    This will permanently delete {selectedEmployeeIds.length} worker(s). This action cannot be undone.
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

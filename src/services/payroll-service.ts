@@ -45,6 +45,7 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
+        // If no workers exist, create the default mock workers and return them.
         const newWorkers: Worker[] = [];
         for (const worker of mockWorkers) {
             const workerData = { ...worker, userId };
@@ -54,8 +55,14 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
         return newWorkers.sort((a,b) => a.name.localeCompare(b.name));
     }
 
+    // If workers exist, return them from the database.
     return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
+
+export async function getEmployees(userId: string): Promise<Worker[]> {
+  return getWorkers(userId);
+}
+
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     const db = await getDb();

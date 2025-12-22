@@ -370,7 +370,7 @@ export function RunPayrollView() {
              <div className="space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="h-6 w-6 text-primary" />
-                  Step 1: Select the period and select Worker.
+                  Step 1: Select the period and select Worker
                 </CardTitle>
                 <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
@@ -429,7 +429,7 @@ export function RunPayrollView() {
                     </Button>
                 )}
             </div>
-            <div className="space-y-2 rounded-md border p-4">
+             <div className="space-y-2 rounded-md border p-4">
                 <div className="flex items-center space-x-2 justify-between border-b pb-2">
                     <div className="flex items-center space-x-2">
                         <Checkbox 
@@ -437,7 +437,7 @@ export function RunPayrollView() {
                             checked={selectedEmployeeIds.length === employees.length && employees.length > 0}
                             onCheckedChange={handleToggleSelectAll}
                         />
-                        <Label htmlFor="select-all-employees" className="font-semibold">Select All</Label>
+                        <Label htmlFor="select-all-employees" className="font-semibold">Select All ({employees.length})</Label>
                     </div>
                 </div>
               {employees.map((emp) => (
@@ -495,7 +495,7 @@ export function RunPayrollView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {selectedEmployees.map((emp) => (
+              {selectedEmployees.length > 0 ? selectedEmployees.map((emp) => (
                 <TableRow key={emp.id}>
                   <TableCell className="font-medium">{emp.name}</TableCell>
                   <TableCell>
@@ -537,7 +537,13 @@ export function RunPayrollView() {
                     {formatCurrency(emp.netPay || 0)}
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                    Select employees from the list above to process their payroll.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -608,7 +614,7 @@ export function RunPayrollView() {
             )}
             {payrollStatus === 'processing'
               ? 'Processing...'
-              : `Submit Payroll for ${selectedEmployees.length} Employee(s)`}
+              : `Submit Payroll for ${selectedEmployees.length} Worker(s)`}
           </Button>
         </CardFooter>
       </Card>
@@ -669,5 +675,7 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    
 
     

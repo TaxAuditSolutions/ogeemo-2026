@@ -44,14 +44,12 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-        const batch = writeBatch(db);
         const newWorkers: Worker[] = [];
-        mockWorkers.forEach(worker => {
-            const docRef = doc(collection(db, WORKERS_COLLECTION));
-            batch.set(docRef, { ...worker, userId });
-            newWorkers.push({ ...worker, id: docRef.id, userId });
-        });
-        await batch.commit();
+        for (const worker of mockWorkers) {
+            const workerData = { ...worker, userId };
+            const docRef = await addDoc(collection(db, WORKERS_COLLECTION), workerData);
+            newWorkers.push({ ...workerData, id: docRef.id });
+        }
         return newWorkers;
     }
 

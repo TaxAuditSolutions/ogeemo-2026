@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -17,7 +16,9 @@ import {
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/lib/firebase';
 import { type Worker, mockWorkers } from '@/data/payroll';
-import { addExpenseTransaction, addRemittance } from './accounting-service';
+import { addExpenseTransaction } from './accounting-service';
+import { getRemittances as getPayrollRemittances, addRemittance } from './payroll-service';
+
 
 const WORKERS_COLLECTION = 'payrollWorkers';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
@@ -43,9 +44,8 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     const db = await getDb();
     const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    
+
     if (snapshot.empty) {
-        // If no workers exist, create the default mock workers and return them.
         const newWorkers: Worker[] = [];
         for (const worker of mockWorkers) {
             const workerData = { ...worker, userId };
@@ -54,8 +54,7 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
         }
         return newWorkers.sort((a,b) => a.name.localeCompare(b.name));
     }
-
-    // If workers exist, return them from the database.
+    
     return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
 

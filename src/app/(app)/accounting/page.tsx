@@ -1,6 +1,17 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import accountingMenuItems from '@/data/accounting-menu-items';
+
+const hubFeatureHrefs = [
+    "/accounting/bks",
+    "/accounting/accounts-receivable",
+    "/accounting/accounts-payable",
+    "/accounting/payroll",
+    "/accounting/reports",
+    "/accounting/tax",
+];
 
 const AccountingToolsSkeleton = () => (
     <div className="p-4 sm:p-6 space-y-6">
@@ -24,5 +35,13 @@ const AccountingToolsHub = dynamic(
 );
 
 export default function AccountingToolsHubPage() {
-  return <AccountingToolsHub />;
+  return (
+    <>
+      <AccountingToolsHub />
+      {/* Preload key accounting routes for faster navigation */}
+      <div style={{ display: 'none' }}>
+        {hubFeatureHrefs.map(href => <Link key={href} href={href} prefetch={true} />)}
+      </div>
+    </>
+  );
 }

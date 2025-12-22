@@ -101,6 +101,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </main>
             </div>
           </div>
+          {/* Preload key routes */}
+          <div style={{ display: 'none' }}>
+              <Link href="/action-manager" prefetch={true} />
+              <Link href="/settings" prefetch={true} />
+          </div>
           <ActiveTimerIndicator />
         </SidebarViewProvider>
       </DndProviderWrapper>

@@ -37,27 +37,22 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '../ui/badge';
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, addWorker, updateWorker, type Worker } from '@/services/payroll-service';
+import { getWorkers, type Worker, addWorker, updateWorker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
 import { formatTime, cn } from '@/lib/utils';
@@ -66,6 +61,7 @@ import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
 import { WorkerSelector } from './WorkerSelector';
 import type { DateRange } from 'react-day-picker';
+
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -77,8 +73,7 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
-    const router = useRouter();
-
+    
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<TimeLog | null>(null);
@@ -91,10 +86,6 @@ export function TimeLogReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
-
-    // State for debugging
-    const [workerListForDebug, setWorkerListForDebug] = useState('');
-    const [isTestAlertOpen, setIsTestAlertOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -151,7 +142,7 @@ export function TimeLogReport() {
         try {
             await deleteTimeLog(entryToDelete.id);
             toast({ title: 'Time Log Deleted' });
-            loadData(); // Refresh data after delete
+            loadData();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
@@ -239,22 +230,19 @@ export function TimeLogReport() {
         return hoursWorked * selectedWorker.payRate;
     }, [selectedWorker, totalDurationSeconds]);
 
-    const handleTestClick = () => {
-        const workerInfo = workers.map(w => `ID: ${w.id}, Name: ${w.name}, Pay Rate: ${w.payRate}`).join('\n');
-        setWorkerListForDebug(workerInfo || "No workers found.");
-        setIsTestAlertOpen(true);
-    };
-
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <ReportsPageHeader pageTitle="Time Log Report" hubPath="/reports" hubLabel="Reports" onTestClick={handleTestClick} />
-                    <header className="text-center pt-4">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
-                        <p className="text-muted-foreground">A list of all recorded work sessions.</p>
-                        <div className="mt-4 flex justify-center gap-2">
-                            <WorkerSelector
+            <div className="p-4 sm:p-6 space-y-6">
+                <ReportsPageHeader pageTitle="Time Log Report" />
+                <header className="text-center">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                    <p className="text-muted-foreground">A list of all recorded work sessions.</p>
+                </header>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Filter & Actions</CardTitle>
+                        <div className="flex flex-wrap items-center gap-2 pt-2">
+                             <WorkerSelector
                                 workers={workers}
                                 selectedWorkerId={selectedWorkerId}
                                 onSelect={setSelectedWorkerId}
@@ -287,99 +275,85 @@ export function TimeLogReport() {
                             <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null, selectedWorkerId)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
-                            <Button variant="outline" onClick={() => setIsWorkerFormOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
-                            </Button>
                              <Button onClick={handleProcessPayment} disabled={!selectedWorkerId}>
                                 <HandCoins className="mr-2 h-4 w-4" /> Process for Payment
                             </Button>
                         </div>
-                    </header>
-                </CardHeader>
-                <CardContent>
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Worker</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Duration</TableHead>
-                                    <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
+                    </CardHeader>
+                    <CardContent>
+                        <div className="border rounded-md">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">
-                                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
-                                        </TableCell>
+                                        <TableHead>Worker</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Duration</TableHead>
+                                        <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
-                                ) : filteredEntries.length > 0 ? (
-                                    filteredEntries.map(entry => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell className="font-medium">{entry.workerName}</TableCell>
-                                            <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                            <TableCell>{entry.notes}</TableCell>
-                                            <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
-                                            <TableCell>
-                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}>
-                                                            <Edit className="mr-2 h-4 w-4" /> Edit Entry
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(null, entry.workerId)}>
-                                                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Entry for Worker
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Entry
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center h-24">
+                                                <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                            No time log entries found for this selection.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                            {selectedWorker && filteredEntries.length > 0 && (
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
-                                        <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
-                                        <TableCell />
-                                    </TableRow>
-                                    {selectedWorker.payType === 'hourly' && (
-                                        <>
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="text-right font-bold">Hourly Rate:</TableCell>
-                                                <TableCell className="text-right font-bold font-mono">${selectedWorker.payRate.toFixed(2)}</TableCell>
-                                                <TableCell />
+                                    ) : filteredEntries.length > 0 ? (
+                                        filteredEntries.map(entry => (
+                                            <TableRow key={entry.id}>
+                                                <TableCell className="font-medium">{entry.workerName}</TableCell>
+                                                <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                                <TableCell>{entry.notes}</TableCell>
+                                                <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                                                <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
+                                                <TableCell>
+                                                     <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}>
+                                                                <Edit className="mr-2 h-4 w-4" /> Edit Entry
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Entry
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
                                             </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                                                No time log entries found for this selection.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                                {filteredEntries.length > 0 && (
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
+                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        {selectedWorker?.payType === 'hourly' && (
                                             <TableRow className="text-base bg-muted/50">
                                                 <TableCell colSpan={4} className="text-right font-bold">Total Pay:</TableCell>
-                                                <TableCell className="text-right font-bold font-mono">${totalPay.toFixed(2)}</TableCell>
+                                                <TableCell className="text-right font-bold font-mono">{formatCurrency(totalPay)}</TableCell>
                                                 <TableCell />
                                             </TableRow>
-                                        </>
-                                    )}
-                                </TableFooter>
-                            )}
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
+                                        )}
+                                    </TableFooter>
+                                )}
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
             
             <LogTimeDialog 
                 isOpen={isLogTimeDialogOpen} 
@@ -400,13 +374,13 @@ export function TimeLogReport() {
                 isOpen={isWorkerFormOpen} 
                 onOpenChange={setIsWorkerFormOpen} 
                 onWorkerSave={handleWorkerSaved}
-                onWorkerUpdate={() => {}} // Not needed on this page
+                onWorkerUpdate={() => {}}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>This will permanently delete this time log entry. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -435,23 +409,6 @@ export function TimeLogReport() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            <AlertDialog open={isTestAlertOpen} onOpenChange={setIsTestAlertOpen}>
-                <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Worker Data</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        The following worker data was fetched from the database:
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <pre className="mt-2 w-full rounded-md bg-slate-950 p-4">
-                    <code className="text-white">{workerListForDebug}</code>
-                </pre>
-                <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => setIsTestAlertOpen(false)}>Close</AlertDialogAction>
-                </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </>
     );
 }

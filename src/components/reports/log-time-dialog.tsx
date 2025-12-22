@@ -208,4 +208,3 @@ export function LogTimeDialog({
         </Dialog>
     );
 }
-

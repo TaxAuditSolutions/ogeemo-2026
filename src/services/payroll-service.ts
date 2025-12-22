@@ -46,13 +46,16 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-        const newWorkers: Worker[] = [];
-        for (const worker of mockWorkers) {
-            const workerData = { ...worker, userId };
-            const docRef = await addDoc(collection(db, WORKERS_COLLECTION), workerData);
-            newWorkers.push({ ...workerData, id: docRef.id });
-        }
-        return newWorkers.sort((a,b) => a.name.localeCompare(b.name));
+        const batch = writeBatch(db);
+        mockWorkers.forEach(worker => {
+            const docRef = doc(collection(db, WORKERS_COLLECTION));
+            batch.set(docRef, { ...worker, userId });
+        });
+        await batch.commit();
+        
+        // Re-fetch after creating the mock workers
+        const newSnapshot = await getDocs(q);
+        return newSnapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
     }
     
     return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));

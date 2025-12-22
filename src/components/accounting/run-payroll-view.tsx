@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -26,38 +26,11 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  ArrowLeft,
-  CheckCircle,
-  FileSpreadsheet,
-  Users,
-  DollarSign,
-  LoaderCircle,
-  Calculator,
-  Trash2,
-  MoreVertical,
-  Edit,
-  Plus,
-  GitMerge,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, startOfMonth } from 'date-fns';
-import { type DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
-import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
-import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
-import { isWithinInterval } from 'date-fns';
-import { WorkerFormDialog } from './WorkerFormDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +41,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge } from 'lucide-react';
+import { format, startOfMonth } from 'date-fns';
+import { type DateRange } from 'react-day-picker';
+
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
+import { type Event as TaskEvent } from '@/types/calendar';
+import { isWithinInterval } from 'date-fns';
+import { WorkerFormDialog } from './WorkerFormDialog';
 import MergeWorkerDialog from './MergeWorkerDialog';
+import { cn } from '@/lib/utils';
 
 
 type PayrollEmployee = Worker & {
@@ -384,9 +370,9 @@ export function RunPayrollView() {
              <div className="space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="h-6 w-6 text-primary" />
-                  Step 1: Pay Period & Employees
+                  Step 1: Pay period & Workers and Employees
                 </CardTitle>
-                <CardDescription>Select the pay period and the employees you wish to include in this run.</CardDescription>
+                <CardDescription>Select the pay period and the workers and employees you wish to include in this run.</CardDescription>
              </div>
              <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
                 <Users className="mr-2 h-4 w-4" />
@@ -435,7 +421,7 @@ export function RunPayrollView() {
           </div>
           <div className="space-y-2">
              <div className="flex justify-between items-center">
-                <Label>Select Employees to Pay</Label>
+                <Label>Select Workers and Employees to Pay</Label>
                 {selectedEmployeeIds.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
                         <Trash2 className="mr-2 h-4 w-4"/>
@@ -683,3 +669,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

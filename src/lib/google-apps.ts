@@ -18,6 +18,7 @@ import {
     Globe,
     BookOpen,
     Search,
+    Users2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -37,6 +38,7 @@ export const allApps: GoogleApp[] = [
     { name: "Drive", href: "https://drive.google.com/", icon: Folder },
     { name: "Gemini", href: "https://gemini.google.com/app", icon: Bot },
     { name: "Gmail", href: "https://mail.google.com/", icon: Mail },
+    { name: "Google Groups", href: "https://groups.google.com/", icon: Users2 },
     { name: "Keep", href: "https://keep.google.com/", icon: Lightbulb },
     { name: "Maps", href: "https://maps.google.com/", icon: Map },
     { name: "Meet", href: "https://meet.google.com/", icon: Video },

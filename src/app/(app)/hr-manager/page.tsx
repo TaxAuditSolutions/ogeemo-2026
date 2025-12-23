@@ -15,13 +15,11 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
   Users,
-  Banknote,
   Clock,
   CalendarOff,
-  Folder,
+  Smartphone,
   FileText,
   X,
-  Smartphone,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -67,32 +65,11 @@ export default function HrHubPage() {
       cta: "Manage Workers",
     },
     {
-      icon: Banknote,
-      title: "Payroll Hub",
-      description: "Process payroll, view history, and manage payroll settings.",
-      href: "/accounting/payroll",
-      cta: "Go to Payroll",
-    },
-    {
-      icon: Clock,
-      title: "Admin Time Entry",
-      description: "Manually enter or adjust hours for employees and contractors for payroll processing.",
-      href: "/reports/time-log",
-      cta: "Log Time",
-    },
-    {
-        icon: Smartphone,
-        title: "Ogeemo Field App",
-        description: "A standalone app for workers to track time and location. (Demo)",
-        href: "/field-app",
-        cta: "Open Field App",
-    },
-    {
-        icon: FileText,
-        title: "Time Log Report",
-        description: "Review and report on worker timesheets and logged work hours.",
+        icon: Clock,
+        title: "Time Log Report & Entry",
+        description: "Review, manually enter, or adjust hours for all workers before payroll.",
         href: "/reports/time-log",
-        cta: "View Time Log Report"
+        cta: "View Time Logs"
     },
     {
       icon: CalendarOff,
@@ -100,6 +77,13 @@ export default function HrHubPage() {
       description: "Manage worker vacation, sick leave, and other time off requests.",
       href: "/hr-manager/time-off",
       cta: "Manage Leave",
+    },
+    {
+        icon: Smartphone,
+        title: "Ogeemo Field App",
+        description: "A standalone app for workers to track time and location. (Demo)",
+        href: "/field-app",
+        cta: "Open Field App",
     },
   ];
 
@@ -124,7 +108,7 @@ export default function HrHubPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
         {features.map((feature) => (
           <FeatureCard key={feature.title} {...feature} />
         ))}

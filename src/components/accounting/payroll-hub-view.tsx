@@ -75,11 +75,11 @@ export function PayrollHubView() {
             </h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Your central command for processing payroll, viewing history, and managing remittances. Manage your workers from the <Link href="/hr-manager" className="text-primary hover:underline">HR Hub</Link>.
+          Your central command for processing payroll. Manage your workers from the <Link href="/hr-manager" className="text-primary hover:underline">HR Hub</Link>.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
         {features.map((feature) => (
           <FeatureCard key={feature.title} {...feature} />
         ))}

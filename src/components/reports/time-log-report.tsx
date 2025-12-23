@@ -234,7 +234,7 @@ export function TimeLogReport() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" />
+                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
                     <div className="flex items-center justify-center gap-2">
                         <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>

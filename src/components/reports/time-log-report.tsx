@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from '@/components/ui/card';
 import {
@@ -39,16 +39,16 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
-    DialogDescription,
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins } from 'lucide-react';
+import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins, Info } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +86,7 @@ export function TimeLogReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
+    const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -235,7 +236,13 @@ export function TimeLogReport() {
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Time Log Report" />
                 <header className="text-center">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                    <div className="flex items-center justify-center gap-2">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                        <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
+                            <Info className="h-5 w-5 text-muted-foreground" />
+                            <span className="sr-only">About this report</span>
+                        </Button>
+                    </div>
                     <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                 </header>
                 <Card>
@@ -406,6 +413,35 @@ export function TimeLogReport() {
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsProcessConfirmationOpen(false)}>Cancel</Button>
                         <Button onClick={handleConfirmProcessPayment}>Confirm & Process</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>About the Time Log Report</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                         <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <p>This report is the central hub for reviewing all time logged by your workers, whether from the Ogeemo Field App or entered manually.</p>
+                            
+                            <h4>Key Features:</h4>
+                            <ul>
+                                <li><strong>Filter:</strong> You can filter the list to see entries for a specific worker, a specific date range, or both.</li>
+                                <li><strong>Log Time:</strong> As an administrator, you can manually log time on behalf of any worker. This is useful for making corrections or adding entries for workers who cannot use the Field App.</li>
+                                <li><strong>Process for Payment:</strong> This is the crucial step to move time into your accounting system.
+                                    <ul>
+                                        <li><strong>For Contractors:</strong> This action calculates their total pay (if hourly) for the selected period and creates a single payable bill in your Accounts Payable ledger.</li>
+                                        <li><strong>For Employees:</strong> This action flags the time logs as "Ready for Payroll," so they will be automatically included in your next payroll run.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <p>Once a time log is processed, its status will update, and it will no longer be editable to maintain data integrity.</p>
+                         </div>
+                    </div>
+                     <DialogFooter>
+                        <Button onClick={() => setIsInfoDialogOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -95,30 +95,39 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
   }, [isOpen, workerToEdit, form]);
 
   const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
-    // Convert empty strings to null for optional fields to satisfy Firestore
-    const workerData = {
-        ...data,
-        email: data.email || null,
-        sin: data.sin || null,
-        hireDate: data.hireDate ? new Date(data.hireDate) : null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        notes: data.notes || null,
-        address: data.address || null,
-        homePhone: data.homePhone || null,
-        cellPhone: data.cellPhone || null,
-        emergencyContactName: data.emergencyContactName || null,
-        emergencyContactPhone: data.emergencyContactPhone || null,
-        specialNeeds: data.specialNeeds || null,
-    };
+    // Always create a clean data object for saving
+    const dataToSave: Partial<Worker> = {};
 
+    // Iterate over the form data keys and only add changed values
+    for (const key in data) {
+        const formKey = key as keyof WorkerFormData;
+        const currentValue = data[formKey];
+        
+        // For optional string fields, convert empty strings to null for Firestore
+        const optionalStringFields = ['email', 'sin', 'address', 'homePhone', 'cellPhone', 'emergencyContactName', 'emergencyContactPhone', 'specialNeeds', 'notes'];
+        if (optionalStringFields.includes(formKey)) {
+            dataToSave[formKey as keyof Worker] = currentValue || null;
+        } else if (formKey === 'hireDate' || formKey === 'startDate') {
+            dataToSave[formKey] = currentValue ? new Date(currentValue) : null;
+        } else {
+            (dataToSave as any)[formKey] = currentValue;
+        }
+    }
+    
     if (workerToEdit) {
-      onWorkerUpdate(workerToEdit.id, workerData);
+        onWorkerUpdate(workerToEdit.id, dataToSave);
     } else {
-      onWorkerSave(workerData as Omit<Worker, 'id' | 'userId'>);
-      if (shouldAddAnother) {
-        form.reset(defaultFormValues);
-        return; 
-      }
+        // For new workers, ensure all required fields are present
+        const newWorkerData = {
+            ...defaultFormValues,
+            ...dataToSave,
+            userId: '', // This will be added by the service
+        } as Omit<Worker, 'id'>;
+        onWorkerSave(newWorkerData);
+        if (shouldAddAnother) {
+            form.reset(defaultFormValues);
+            return;
+        }
     }
     
     onOpenChange(false);

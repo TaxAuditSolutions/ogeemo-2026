@@ -80,14 +80,21 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
   useEffect(() => {
     if (isOpen) {
         if (workerToEdit) {
-            form.reset({
+            const formValues = {
                 ...workerToEdit,
                 email: workerToEdit.email || "",
                 sin: workerToEdit.sin || "",
+                address: workerToEdit.address || "",
+                homePhone: workerToEdit.homePhone || "",
+                cellPhone: workerToEdit.cellPhone || "",
+                emergencyContactName: workerToEdit.emergencyContactName || "",
+                emergencyContactPhone: workerToEdit.emergencyContactPhone || "",
+                specialNeeds: workerToEdit.specialNeeds || "",
+                notes: workerToEdit.notes || "",
                 hireDate: workerToEdit.hireDate ? new Date(workerToEdit.hireDate).toISOString().split('T')[0] : '',
                 startDate: workerToEdit.startDate ? new Date(workerToEdit.startDate).toISOString().split('T')[0] : '',
-                notes: workerToEdit.notes || "",
-            });
+            };
+            form.reset(formValues);
         } else {
             form.reset(defaultFormValues);
         }
@@ -95,33 +102,42 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
   }, [isOpen, workerToEdit, form]);
 
   const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
-    // Always create a clean data object for saving
     const dataToSave: Partial<Worker> = {};
 
-    // Iterate over the form data keys and only add changed values
-    for (const key in data) {
+    Object.keys(data).forEach(key => {
         const formKey = key as keyof WorkerFormData;
-        const currentValue = data[formKey];
-        
-        // For optional string fields, convert empty strings to null for Firestore
-        const optionalStringFields = ['email', 'sin', 'address', 'homePhone', 'cellPhone', 'emergencyContactName', 'emergencyContactPhone', 'specialNeeds', 'notes'];
-        if (optionalStringFields.includes(formKey)) {
-            dataToSave[formKey as keyof Worker] = currentValue || null;
-        } else if (formKey === 'hireDate' || formKey === 'startDate') {
-            dataToSave[formKey] = currentValue ? new Date(currentValue) : null;
-        } else {
-            (dataToSave as any)[formKey] = currentValue;
+        let currentValue = data[formKey];
+
+        const optionalStringFields: (keyof WorkerFormData)[] = ['email', 'sin', 'address', 'homePhone', 'cellPhone', 'emergencyContactName', 'emergencyContactPhone', 'specialNeeds', 'notes'];
+        const dateFields: (keyof WorkerFormData)[] = ['hireDate', 'startDate'];
+
+        if (optionalStringFields.includes(formKey) && currentValue === '') {
+            currentValue = null;
+        } else if (dateFields.includes(formKey) && !currentValue) {
+            currentValue = null;
+        } else if (dateFields.includes(formKey) && currentValue) {
+            currentValue = new Date(currentValue as string);
         }
-    }
+        
+        (dataToSave as any)[formKey] = currentValue;
+    });
     
     if (workerToEdit) {
-        onWorkerUpdate(workerToEdit.id, dataToSave);
+        const changedData: Partial<Worker> = {};
+        for (const key in dataToSave) {
+            const formKey = key as keyof Worker;
+            if (JSON.stringify(dataToSave[formKey]) !== JSON.stringify(workerToEdit[formKey])) {
+                (changedData as any)[formKey] = dataToSave[formKey];
+            }
+        }
+        if (Object.keys(changedData).length > 0) {
+            onWorkerUpdate(workerToEdit.id, changedData);
+        }
     } else {
-        // For new workers, ensure all required fields are present
         const newWorkerData = {
             ...defaultFormValues,
             ...dataToSave,
-            userId: '', // This will be added by the service
+            userId: '',
         } as Omit<Worker, 'id'>;
         onWorkerSave(newWorkerData);
         if (shouldAddAnother) {

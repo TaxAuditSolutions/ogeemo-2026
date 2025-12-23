@@ -20,6 +20,7 @@ import {
   Smartphone,
   FileText,
   X,
+  Users2,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -65,6 +66,13 @@ export default function HrHubPage() {
       cta: "Manage Workers",
     },
     {
+        icon: Users2,
+        title: "Manage Workers List",
+        description: "A simple list to quickly view, edit, and manage all workers.",
+        href: "/hr-manager/manage-workers-list",
+        cta: "Go to List"
+    },
+    {
         icon: Clock,
         title: "Time Log Report & Entry",
         description: "Review, manually enter, or adjust hours for all workers before payroll.",
@@ -108,7 +116,7 @@ export default function HrHubPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {features.map((feature) => (
           <FeatureCard key={feature.title} {...feature} />
         ))}

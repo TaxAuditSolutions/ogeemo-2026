@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle, Rocket } from "lucide-react";
+import { ArrowLeft, Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle, Rocket, Info, MoreVertical } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -174,9 +174,9 @@ export default function GtdInstructionsPage() {
                         To grasp the scope of Ogeemo, a good idea is to take a journey into its elements by clicking on each topic in the left sidebar menu. You'll notice there are three views for the main menu: a full list of all features, a grouped view, and a favorites list.
                     </p>
                     
-                    <h4>Customize Your Actions</h4>
+                    <h4>The Action Manager</h4>
                     <p>
-                        Your favorites list is your new best friend for super simple navigation. Go to the <strong><Link href="/action-manager/manage">Manage Action Items</Link></strong> page to customize this list. You can add one favorite at a time or many, creating the perfect quick-access menu for your workflow.
+                        The sidebar menu provides access to all Ogeemo features. The main list can be intimidating, so we've created three views: a complete list, a grouped list, and a favorites list. You can customize your favorites by clicking "Manage Dashboard," which takes you to the "Manage Action Items" page. There, you can click "Instructions" to learn how to create your perfect quick-access menu. Your favorite actions will become your new best friend for super simple navigation.
                     </p>
                     
                     <h4>Step 1: Enter Your Information</h4>

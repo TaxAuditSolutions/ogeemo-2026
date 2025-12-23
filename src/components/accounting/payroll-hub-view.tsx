@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -14,12 +14,12 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
-  Users,
   PlayCircle,
   History,
   Landmark,
   Settings,
   Banknote,
+  Clock,
 } from 'lucide-react';
 import { AccountingPageHeader } from './page-header';
 
@@ -60,6 +60,13 @@ export function PayrollHubView() {
   const features = [
     { icon: PlayCircle, title: "Run Payroll", description: "Start a new payroll run, calculate earnings, deductions, and issue payments.", href: "/accounting/payroll/run", cta: "Start New Run" },
     { icon: History, title: "Payroll History & Reports", description: "View past payroll runs, generate pay stubs, and create detailed reports.", href: "/accounting/payroll/history", cta: "View History" },
+    { 
+      icon: Clock, 
+      title: "Time Log Report", 
+      description: "Review, approve, and process logged hours before running payroll.", 
+      href: "/reports/time-log", 
+      cta: "Review Time Logs" 
+    },
     { icon: Landmark, title: "Tax Remittances", description: "View and manage your payroll tax and source deduction remittances.", href: "/accounting/tax/payroll-remittances", cta: "Manage Remittances" },
     { icon: Settings, title: "Payroll Settings", description: "Configure company details, pay schedules, and payroll-related accounts.", href: "/accounting/payroll/settings", cta: "Configure Settings" },
   ];
@@ -79,7 +86,7 @@ export function PayrollHubView() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {features.map((feature) => (
           <FeatureCard key={feature.title} {...feature} />
         ))}

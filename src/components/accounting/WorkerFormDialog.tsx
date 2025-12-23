@@ -83,6 +83,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
             form.reset({
                 ...workerToEdit,
                 email: workerToEdit.email || "",
+                sin: workerToEdit.sin || "",
                 hireDate: workerToEdit.hireDate ? new Date(workerToEdit.hireDate).toISOString().split('T')[0] : '',
                 startDate: workerToEdit.startDate ? new Date(workerToEdit.startDate).toISOString().split('T')[0] : '',
                 notes: workerToEdit.notes || "",
@@ -94,16 +95,26 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
   }, [isOpen, workerToEdit, form]);
 
   const onSubmit = async (data: WorkerFormData, shouldAddAnother = false) => {
+    // Convert empty strings to null for optional fields to satisfy Firestore
     const workerData = {
         ...data,
+        email: data.email || null,
+        sin: data.sin || null,
         hireDate: data.hireDate ? new Date(data.hireDate) : null,
         startDate: data.startDate ? new Date(data.startDate) : null,
+        notes: data.notes || null,
+        address: data.address || null,
+        homePhone: data.homePhone || null,
+        cellPhone: data.cellPhone || null,
+        emergencyContactName: data.emergencyContactName || null,
+        emergencyContactPhone: data.emergencyContactPhone || null,
+        specialNeeds: data.specialNeeds || null,
     };
 
     if (workerToEdit) {
       onWorkerUpdate(workerToEdit.id, workerData);
     } else {
-      onWorkerSave(workerData);
+      onWorkerSave(workerData as Omit<Worker, 'id' | 'userId'>);
       if (shouldAddAnother) {
         form.reset(defaultFormValues);
         return; 

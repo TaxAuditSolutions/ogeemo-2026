@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -242,7 +243,7 @@ export function ManageDashboardView() {
       <div className="p-4 sm:p-6 space-y-6">
         <header className="flex items-center justify-between">
             <div className="text-center flex-1">
-                <h1 className="text-2xl font-bold font-headline text-primary">Manage Dashboard</h1>
+                <h1 className="text-2xl font-bold font-headline text-primary">Manage Action Items</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                     Drag and drop actions to customize your dashboard.
                 </p>

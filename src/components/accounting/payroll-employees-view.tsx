@@ -41,6 +41,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import Link from 'next/link';
 
 export function PayrollEmployeesView() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -186,15 +195,20 @@ export function PayrollEmployeesView() {
 
         <WorkerFormDialog 
             isOpen={isFormOpen} 
-            onOpenChange={setIsFormOpen} 
+            onOpenChange={(isOpen) => {
+                setIsFormOpen(isOpen);
+                if (!isOpen) {
+                    setWorkerToEdit(null); // Clear editing state when dialog closes
+                }
+            }}
             workerToEdit={workerToEdit}
             onWorkerSave={handleSaveWorker}
             onWorkerUpdate={handleUpdateWorker}
         />
-
+    
         <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker "{workerToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{workerToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

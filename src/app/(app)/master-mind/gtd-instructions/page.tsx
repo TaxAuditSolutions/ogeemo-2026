@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle } from "lucide-react";
+import { ArrowLeft, Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle, Rocket } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -71,7 +71,7 @@ export default function GtdInstructionsPage() {
                             </li>
                         </ul>
                         <p>
-                            <strong>The Magic of Integration:</strong> When you create a task in the <Link href="/time">Event Time Manager</Link> and link it to a project, it instantly appears on that project's Task Board and on your Calendar. Everything stays in sync automatically.
+                            <strong>The Magic of Integration:</strong> When you create a task in the <Link href="/master-mind">Master Mind</Link> and link it to a project, it instantly appears on that project's Task Board and on your Calendar. Everything stays in sync automatically.
                         </p>
                     </div>
 
@@ -91,7 +91,7 @@ export default function GtdInstructionsPage() {
                                     <ul>
                                         <li><strong>For Actionable Items:</strong> Use the dedicated <strong><Link href="/projects/inbox/tasks">"Action Items"</Link></strong> project as your primary inbox. This is for anything that needs to be done or decided upon.</li>
                                         <li><strong>For Ideas ("Maybe" Bin):</strong> For less-defined thoughts or future possibilities, use the <strong><Link href="/idea-board">Idea Board</Link></strong>. You can easily convert an idea into a project later.</li>
-                                        <li><strong>For Scheduled Events:</strong> For a specific meeting or appointment, create it directly in the <strong><Link href="/time">Event Time Manager</Link></strong>. This places it on your calendar immediately.</li>
+                                        <li><strong>For Scheduled Events:</strong> For a specific meeting or appointment, create it directly in the <strong><Link href="/master-mind">Master Mind</Link></strong>. This places it on your calendar immediately.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>
@@ -113,7 +113,7 @@ export default function GtdInstructionsPage() {
                                         <li><strong>If it's a task for an existing project:</strong> Drag it from the "Action Items" board to the appropriate project's task board.</li>
                                         <li><strong>If it takes less than 2 minutes:</strong> Do it immediately.</li>
                                         <li><strong>If it needs to happen on a specific day/time:</strong> Ensure it has a date and time set so it appears on your <Link href="/calendar">Calendar</Link>.</li>
-                                        <li><strong>If it's reference material:</strong> Move any related documents to a relevant folder in the <Link href="/file-manager">Document Manager</Link>.</li>
+                                        <li><strong>If it's reference material:</strong> Move any related documents to a relevant folder in the <Link href="/document-manager">Document Manager</Link>.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>
@@ -157,6 +157,45 @@ export default function GtdInstructionsPage() {
                     </Accordion>
                 </CardContent>
             </Card>
+
+            <Card className="max-w-4xl mx-auto mt-6">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                        <Rocket className="h-6 w-6 text-primary" />
+                        Getting Started: A Step-by-Step Guide
+                    </CardTitle>
+                    <CardDescription>
+                        Now that you have reviewed The Ogeemo Method, here is how to get started.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="prose prose-sm dark:prose-invert max-w-none">
+                    <h4>Explore the Application</h4>
+                    <p>
+                        To grasp the scope of Ogeemo, a good idea is to take a journey into its elements by clicking on each topic in the left sidebar menu. You'll notice there are three views for the main menu: a full list of all features, a grouped view, and a favorites list.
+                    </p>
+                    
+                    <h4>Customize Your Actions</h4>
+                    <p>
+                        Your favorites list is your new best friend for super simple navigation. Go to the <strong><Link href="/action-manager/manage">Manage Action Items</Link></strong> page to customize this list. You can add one favorite at a time or many, creating the perfect quick-access menu for your workflow.
+                    </p>
+                    
+                    <h4>Step 1: Enter Your Information</h4>
+                    <p>
+                        You don’t have to enter all kinds of information just to get started. The one thing you need to begin is your business and personal information. Click on the <strong><Link href="/settings">Settings</Link></strong> manager in the sidebar to enter your details.
+                    </p>
+
+                    <h4>Step 2: Ask "What do I want to accomplish?"</h4>
+                    <p>
+                        Perhaps you want to start a to-do list. You have two options: use the main menu to select a to-do list, or, since it's a frequently used option, make it a favorite action as explained above. By completing this step, you have just learned how you will build your Ogeemo Actions Plan.
+                    </p>
+
+                    <h4>Step 3: Decide and Act</h4>
+                    <p>
+                        To continue your journey, think in terms of everything being a decision followed by an action. Decide what you want to do, then select an action item from the sidebar menu to do it. Most items are intuitive, and you can always click an info icon (<Info className="inline h-4 w-4" />) for instructions. Pay special attention to the 3-dot menus (<MoreVertical className="inline h-4 w-4" />), which open up further actions.
+                    </p>
+                </CardContent>
+            </Card>
+
         </div>
     );
 }

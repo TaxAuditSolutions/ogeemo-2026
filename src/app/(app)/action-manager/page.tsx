@@ -158,19 +158,6 @@ export default function ActionManagerDashboardPage() {
                           <p>Manage your actions with action chips.</p>
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button asChild className="h-9">
-                                <Link href="/idea-board">
-                                    <Lightbulb className="mr-2 h-4 w-4" />
-                                    Ideas
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Save your thoughts and ideas</p>
-                        </TooltipContent>
-                      </Tooltip>
                 </TooltipProvider>
                 </div>
             </CardHeader>

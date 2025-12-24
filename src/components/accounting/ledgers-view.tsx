@@ -417,7 +417,7 @@ export function LedgersView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <AccountingPageHeader pageTitle={tabTitles[activeTab] || 'Ledgers'} hubPath="/accounting" hubLabel="Accounting Tools" />
+        <AccountingPageHeader pageTitle={tabTitles[activeTab] || 'Ledgers'} hubPath="/accounting" hubLabel="Accounting Hub" />
         <div className="flex flex-col">
           <header className="text-center mb-6 w-full mx-auto">
             <h1 className="text-3xl font-bold font-headline text-primary">BKS Ledgers</h1>
@@ -653,3 +653,5 @@ export function LedgersView() {
     </>
   );
 }
+
+    

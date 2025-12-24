@@ -122,6 +122,13 @@ export function AccountingToolsView() {
             href="/accounting/invoices/create"
             cta="Go to Invoice Creator"
         />
+        <FeatureCard
+            icon={FileDigit}
+            title="Invoicing Report"
+            description="Filter Invoices"
+            href="/accounting/invoicing-report"
+            cta="Go to Invoicing Report"
+        />
         {hubFeatures.map((item) => (
           <FeatureCard 
             key={item.href}

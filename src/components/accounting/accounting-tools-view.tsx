@@ -82,13 +82,13 @@ export function AccountingToolsView() {
   }, [loadNavItems]);
   
   const hubFeatureHrefs = [
-    "/accounting/bks",
+    "/accounting/ledgers",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
     "/accounting/payroll",
     "/accounting/reports",
     "/accounting/tax",
-  ];
+];
   
   const hubFeatures = accountingMenuItems.filter(item => hubFeatureHrefs.includes(item.href));
 
@@ -129,16 +129,22 @@ export function AccountingToolsView() {
             href="/accounting/invoicing-report"
             cta="Go to Invoicing Report"
         />
-        {hubFeatures.map((item) => (
-          <FeatureCard 
-            key={item.href}
-            icon={item.icon}
-            title={item.label}
-            description={`Manage ${item.label.toLowerCase()}.`} // Generic description
-            href={item.href}
-            cta={`Go to ${item.label}`}
-          />
-        ))}
+        {hubFeatures.map((item) => {
+          let description = `Manage ${item.label.toLowerCase()}.`;
+          if (item.href === '/accounting/ledgers') {
+              description = "Go to BKS Entries";
+          }
+          return (
+            <FeatureCard 
+              key={item.href}
+              icon={item.icon}
+              title={item.label}
+              description={description}
+              href={item.href}
+              cta={`Go to ${item.label}`}
+            />
+          );
+        })}
       </div>
     </div>
   );

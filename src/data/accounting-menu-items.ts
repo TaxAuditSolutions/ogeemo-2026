@@ -33,7 +33,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/service-items", icon: ListPlus, label: "Products & Services" },
     { href: "/accounting/ledgers?tab=income", icon: TrendingUp, label: "Manage Income" },
     { href: "/accounting/ledgers?tab=expenses", icon: TrendingDown, label: "Manage Expenses" },
-    { href: "/accounting/ledgers", icon: BookText, label: "General Ledger" },
+    { href: "/accounting/ledgers", icon: BookOpen, label: "BKS Ledger" },
     { href: "/accounting/cash-accounting", icon: DollarSign, label: "Cash Accounting" },
     { href: "/accounting/accrual-accounting", icon: BookOpen, label: "Accrual Accounting" },
     { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement"},
@@ -52,8 +52,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
     { href: "/accounting/financial-snapshot?summary=matchbook", icon: FileDigit, label: "Matchbook Loan Summary" },
     { href: "/accounting/loan-application", icon: FileText, label: "Generic Loan Application" },
-    { href: "/accounting/onboarding", icon: UserPlus, label: "Client Onboarding" },
-    { href: "/accounting/bks", icon: Info, label: "BKS Welcome" },
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
 ];
 

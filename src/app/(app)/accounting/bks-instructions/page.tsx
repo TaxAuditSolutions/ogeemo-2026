@@ -49,7 +49,7 @@ export default function BksInstructionsPage() {
                             <li><strong>Cash Flow:</strong> Recording when the money actually arrives in or leaves your bank account (Income & Expense Ledgers).</li>
                         </ol>
                         <p>
-                           Ogeemo helps you track both, keeping your books accurate for both cash-basis and accrual-basis accounting.
+                           Ogeemo helps you track both, keeping your books accurate for both cash-basis and accrual-basis accounting. For full audit-readiness, it's best practice to save a digital copy of every source document (invoice, bill) to a cloud service like Google Drive and link it to the transaction in Ogeemo.
                         </p>
                     </div>
 
@@ -64,11 +64,12 @@ export default function BksInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>This is for money your clients owe you.</p>
-                                    <h4>Step 1: Create an Invoice</h4>
+                                    <h4>Step 1: Create and Save Your Invoice</h4>
                                     <ul>
-                                        <li><strong>Action:</strong> You complete work for a client and need to bill them. You go to the <Link href="/accounting/invoices/create">"Create Invoice"</Link> page.</li>
-                                        <li><strong>System:</strong> You fill out the invoice with line items, and when you save it, Ogeemo automatically adds this invoice to your <Link href="/accounting/accounts-receivable">Accounts Receivable</Link> list.</li>
-                                        <li><strong>Result:</strong> You now have a record of money owed to you. Your income ledger has **not** been affected yet, because you haven't been paid.</li>
+                                        <li><strong>Action:</strong> You complete work and use the <Link href="/accounting/invoices/create">"Create Invoice"</Link> page to generate a professional invoice.</li>
+                                        <li><strong>System:</strong> When you save the invoice in Ogeemo, it automatically adds this invoice to your <Link href="/accounting/accounts-receivable">Accounts Receivable</Link> list.</li>
+                                        <li><strong>Important:</strong> After creating, download the invoice as a PDF and save it to your "Accounts Receivable" folder in Google Drive.</li>
+                                        <li><strong>Result:</strong> You now have a record of money owed to you, and a digital copy for your records. Your income ledger is not yet affected.</li>
                                     </ul>
                                     <h4>Step 2: Record a Payment</h4>
                                      <ul>
@@ -94,20 +95,20 @@ export default function BksInstructionsPage() {
                             <AccordionContent>
                                <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                    <p>This is for money you owe to your suppliers or vendors.</p>
-                                   <h4>Step 1: Log a Bill You've Received</h4>
+                                   <h4>Step 1: Scan and Log a Bill</h4>
                                     <ul>
-                                        <li><strong>Action:</strong> You receive a bill from a supplier (e.g., your internet provider). You go to the BKS Ledgers and click <strong>"Post Transaction"</strong>.</li>
-                                        <li><strong>System:</strong> In the dialog, you select the transaction type: <strong>"Bill (Accounts Payable)"</strong>. You enter the details (who it's from, the amount, due date).</li>
-                                        <li><strong>Result:</strong> Ogeemo adds this to your <Link href="/accounting/accounts-payable">Accounts Payable</Link> list. It is now an official bill you need to pay. Your expense ledger has **not** been affected yet, because you haven't paid it.</li>
+                                        <li><strong>Action:</strong> You receive a bill from a supplier (e.g., your internet provider). First, scan or save a digital copy of this bill to your "Accounts Payable" folder in Google Drive. Then, go to the BKS Ledgers and click <strong>"Post Transaction"</strong>.</li>
+                                        <li><strong>System:</strong> In the dialog, select the transaction type: <strong>"Bill (Accounts Payable)"</strong>. Enter the details (vendor, amount, due date) and paste the link to your scanned document in the "Document Link" field.</li>
+                                        <li><strong>Result:</strong> Ogeemo adds this to your <Link href="/accounting/accounts-payable">Accounts Payable</Link> list. The Document # becomes a clickable link to the source file in Google Drive. Your expense ledger is not yet affected.</li>
                                     </ul>
                                     <h4>Step 2: Record Your Payment</h4>
                                      <ul>
-                                        <li><strong>Action:</strong> When you are ready to pay the bill, you go to the <Link href="/accounting/accounts-payable">Accounts Payable</Link> page.</li>
+                                        <li><strong>Action:</strong> When you pay the bill, you go to the <Link href="/accounting/accounts-payable">Accounts Payable</Link> page.</li>
                                         <li><strong>System:</strong> You find the bill and click "Record Payment".</li>
                                         <li><strong>Result:</strong> Two things happen automatically:
                                             <ol>
                                                 <li>The bill is removed from your list of outstanding payables.</li>
-                                                <li>A new transaction is created in your <Link href="/accounting/ledgers?tab=expenses">Expense Ledger</Link>, showing that cash has left your business.</li>
+                                                <li>A new transaction is created in your <Link href="/accounting/ledgers?tab=expenses">Expense Ledger</Link>, including the link to the original bill, showing that cash has left your business.</li>
                                             </ol>
                                         </li>
                                     </ul>

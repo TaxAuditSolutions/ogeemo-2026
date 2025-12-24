@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -316,7 +317,7 @@ export function InvoiceGeneratorView() {
     if (isEditing) {
         setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
     } else {
-        setContacts(prev => [savedContact, ...prev]);
+        setContacts(prev => [...prev, savedContact]);
     }
     const contactCompany = companies.find(c => c.name === savedContact.businessName);
     if (!contactCompany && savedContact.businessName && user) {
@@ -382,11 +383,19 @@ export function InvoiceGeneratorView() {
     <>
       <div className="p-4 sm:p-6 space-y-6">
         <AccountingPageHeader pageTitle="Create Invoice" />
-        <header className="text-center">
+        <header className="relative text-center">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Generate professional invoices by selecting a client and adding line items.
           </p>
+          <div className="absolute top-0 right-0">
+             <Button asChild variant="ghost" size="icon">
+                <a onClick={() => router.back()} className="cursor-pointer">
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Close</span>
+                </a>
+            </Button>
+          </div>
         </header>
 
         <Card>

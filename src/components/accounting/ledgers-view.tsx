@@ -60,9 +60,8 @@ import {
     getCompanies, addCompany, type Company, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
-    getPayableBills, type PayableBill,
-    deletePayableBill,
-} from "@/services/accounting-service";
+    addPayableBill,
+} from '@/services/accounting-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { InvoicePaymentsView } from "./invoice-payments-view";
 import { AccountsPayableView } from "./accounts-payable-view";
@@ -101,7 +100,7 @@ export function LedgersView() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
   const [transactionToEdit, setTransactionToEdit] = React.useState<GeneralTransaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
-  const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense'>('income');
+  const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense' | 'bill'>('income');
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
   
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
@@ -142,34 +141,35 @@ export function LedgersView() {
     }
   }, [highlightedId, isLoading]);
 
-  React.useEffect(() => {
+  const loadData = React.useCallback(async () => {
     if (!user) {
         setIsLoading(false);
         return;
     }
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [income, expenses, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
-                getIncomeTransactions(user.uid),
-                getExpenseTransactions(user.uid),
-                getCompanies(user.uid),
-                getExpenseCategories(user.uid),
-                getIncomeCategories(user.uid),
-            ]);
-            setIncomeLedger(income);
-            setExpenseLedger(expenses);
-            setCompanies(fetchedCompanies);
-            setExpenseCategories(fetchedExpenseCategories);
-            setIncomeCategories(fetchedIncomeCategories);
-        } catch (error: any) {
-             toast({ variant: "destructive", title: "Failed to load ledger data", description: error.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    loadData();
+    setIsLoading(true);
+    try {
+        const [income, expenses, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
+            getIncomeTransactions(user.uid),
+            getExpenseTransactions(user.uid),
+            getCompanies(user.uid),
+            getExpenseCategories(user.uid),
+            getIncomeCategories(user.uid),
+        ]);
+        setIncomeLedger(income);
+        setExpenseLedger(expenses);
+        setCompanies(fetchedCompanies);
+        setExpenseCategories(fetchedExpenseCategories);
+        setIncomeCategories(fetchedIncomeCategories);
+    } catch (error: any) {
+         toast({ variant: "destructive", title: "Failed to load ledger data", description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
   }, [user, toast]);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
   
 
   const generalLedger = React.useMemo(() => {
@@ -222,7 +222,7 @@ export function LedgersView() {
         }
     }, [newTransaction.totalAmount, newTransaction.taxRate]);
   
-    const handleOpenTransactionDialog = (type: 'income' | 'expense', transaction?: GeneralTransaction) => {
+    const handleOpenTransactionDialog = (type: 'income' | 'expense' | 'bill', transaction?: GeneralTransaction) => {
         setNewTransactionType(type);
         if (transaction) {
             setTransactionToEdit(transaction);
@@ -262,9 +262,12 @@ export function LedgersView() {
         const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
         
         let categoryNumber: string | undefined;
+        let finalCategoryName = '';
         if (newTransactionType === 'income') {
+            finalCategoryName = newTransaction.incomeCategory;
             categoryNumber = incomeCategories.find(c => c.name === newTransaction.incomeCategory)?.categoryNumber;
-        } else {
+        } else { // 'expense' or 'bill'
+            finalCategoryName = newTransaction.category;
             categoryNumber = expenseCategories.find(c => c.name === newTransaction.category)?.categoryNumber;
         }
 
@@ -291,7 +294,24 @@ export function LedgersView() {
         };
 
         try {
-            if (transactionToEdit) {
+            if (newTransactionType === 'bill') {
+                const billData = {
+                    vendor: baseData.company,
+                    invoiceNumber: baseData.documentNumber || '',
+                    dueDate: newTransaction.date,
+                    totalAmount: baseData.totalAmount,
+                    preTaxAmount: baseData.preTaxAmount,
+                    taxAmount: baseData.taxAmount,
+                    taxRate: baseData.taxRate,
+                    category: finalCategoryName,
+                    description: baseData.description,
+                    documentUrl: baseData.documentUrl,
+                    userId: user.uid,
+                };
+                await addPayableBill(billData);
+                toast({ title: "Bill Added", description: "The bill has been added to Accounts Payable." });
+                // We don't update local state here as it's for a different view.
+            } else if (transactionToEdit) {
                  if (transactionToEdit.transactionType === 'income') {
                     const updatedData = { ...baseData, incomeCategory: categoryNumber, depositedTo: newTransaction.depositedTo };
                     await updateIncomeTransaction(transactionToEdit.id, updatedData);
@@ -523,13 +543,14 @@ export function LedgersView() {
       <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
         <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
           <DialogHeader className="text-center sm:text-center shrink-0">
-            <DialogTitle className="text-2xl text-primary font-bold">{transactionToEdit ? 'Edit Transaction' : `Post New ${newTransactionType === 'income' ? 'Income' : 'Expense'}`}</DialogTitle>
+            <DialogTitle className="text-2xl text-primary font-bold">{transactionToEdit ? 'Edit Transaction' : `Post New Transaction`}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0">
             <div className="grid gap-4 py-4 px-6">
-                <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense')} className="grid grid-cols-2 gap-4">
+                <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense' | 'bill')} className="grid grid-cols-3 gap-4">
                     <div><RadioGroupItem value="income" id="r-income" className="peer sr-only" /><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600">Income</Label></div>
                     <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600">Expense</Label></div>
+                    <div><RadioGroupItem value="bill" id="r-bill" className="peer sr-only" /><Label htmlFor="r-bill" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-600 [&:has([data-state=checked])]:border-blue-600">Bill (A/P)</Label></div>
                 </RadioGroup>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="tx-date-gl" className="text-right">Date <span className="text-destructive">*</span></Label>
@@ -544,7 +565,7 @@ export function LedgersView() {
                     </Popover>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="tx-company-gl" className="text-right">Company <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="tx-company-gl" className="text-right">{newTransactionType === 'bill' ? 'Vendor' : 'Company'} <span className="text-destructive">*</span></Label>
                     <div className="col-span-3 space-y-2">
                         <div className="flex gap-2">
                             <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.company || "Select company..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}><CommandInput placeholder="Search company..." /><CommandList><CommandEmpty>No company found.</CommandEmpty><CommandGroup>{companies.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>

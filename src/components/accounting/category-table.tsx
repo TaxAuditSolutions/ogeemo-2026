@@ -73,7 +73,9 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
 }) => {
     
     const isStandardCategory = (category: Category) => {
-        return category.categoryNumber ? !category.categoryNumber.startsWith('C-') : false;
+        // A standard category will have a numeric categoryNumber (as a string)
+        // A custom category will either not have one, or it will start with 'C-'
+        return category.categoryNumber && /^\d+$/.test(category.categoryNumber);
     };
     
     const handleToggleSelect = (id: string, isStandard: boolean) => {

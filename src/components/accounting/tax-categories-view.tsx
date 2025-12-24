@@ -141,7 +141,7 @@ export function TaxCategoriesView() {
   };
 
   const handleDelete = (category: Category, type: CategoryType) => {
-    if (category.categoryNumber && !category.categoryNumber.startsWith('C-')) {
+    if (category.categoryNumber && !String(category.categoryNumber).startsWith('C-')) {
         toast({ variant: 'destructive', title: 'Cannot Delete', description: 'Standard CRA categories cannot be deleted, only archived.' });
         return;
     }
@@ -355,7 +355,7 @@ export function TaxCategoriesView() {
       <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>This will permanently delete the category "{categoryToDelete?.category.name}". This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -39,8 +39,13 @@ import {
 } from 'lucide-react';
 import type { IncomeCategory, ExpenseCategory } from '@/services/accounting-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 
 type Category = IncomeCategory | ExpenseCategory;
+type CategoryType = 'income' | 'expense';
+
+const standardIncomeLines = new Set(t2125IncomeCategories.map(c => c.line));
+const standardExpenseLines = new Set(t2125ExpenseCategories.map(c => c.line));
 
 interface CategoryTableProps {
     title: string;
@@ -55,6 +60,7 @@ interface CategoryTableProps {
     selectedIds: string[];
     onSelectedIdsChange: (ids: string[]) => void;
     onBulkDelete: () => void;
+    categoryType: CategoryType;
 }
 
 export const CategoryTable: React.FC<CategoryTableProps> = ({ 
@@ -70,12 +76,12 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     selectedIds,
     onSelectedIdsChange,
     onBulkDelete,
+    categoryType,
 }) => {
     
     const isStandardCategory = (category: Category) => {
-        // A standard category will have a numeric categoryNumber (as a string)
-        // A custom category will either not have one, or it will start with 'C-'
-        return category.categoryNumber && /^\d+$/.test(category.categoryNumber);
+        const standardLines = categoryType === 'income' ? standardIncomeLines : standardExpenseLines;
+        return category.categoryNumber ? standardLines.has(category.categoryNumber) : false;
     };
     
     const handleToggleSelect = (id: string, isStandard: boolean) => {

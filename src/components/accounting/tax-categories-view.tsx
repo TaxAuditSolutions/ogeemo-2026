@@ -40,6 +40,9 @@ import { ScrollArea } from '../ui/scroll-area';
 type Category = IncomeCategory | ExpenseCategory;
 type CategoryType = 'income' | 'expense';
 
+const standardIncomeLines = new Set(t2125IncomeCategories.map(c => c.line));
+const standardExpenseLines = new Set(t2125ExpenseCategories.map(c => c.line));
+
 export function TaxCategoriesView() {
   const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
@@ -469,7 +472,7 @@ export function TaxCategoriesView() {
                     <SelectTrigger><SelectValue placeholder="Select a standard category..." /></SelectTrigger>
                     <SelectContent>
                         {getMergeOptions(mergeDialogState.type).map(cat => (
-                            <SelectItem key={cat.code} value={cat.line}>{cat.description}</SelectItem>
+                            <SelectItem key={cat.line} value={cat.line}>{cat.description}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

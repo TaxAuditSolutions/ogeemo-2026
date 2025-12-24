@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Calculator,
   Settings,
+  FileDigit,
 } from 'lucide-react';
 import { getActionChips as getQuickNavItems, type ActionChipData } from '@/services/project-service';
 import accountingMenuItems from '@/data/accounting-menu-items';
@@ -114,6 +115,13 @@ export function AccountingToolsView() {
       </header>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <FeatureCard
+            icon={FileDigit}
+            title="Invoicing"
+            description="Create an Invoice"
+            href="/accounting/invoices/create"
+            cta="Go to Invoice Creator"
+        />
         {hubFeatures.map((item) => (
           <FeatureCard 
             key={item.href}

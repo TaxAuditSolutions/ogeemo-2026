@@ -8,7 +8,7 @@ import { AccountingPageHeader } from "@/components/accounting/page-header";
 export default function BksWelcomePage() {
   return (
     <div className="p-4 sm:p-6 space-y-8 flex flex-col items-center">
-      <AccountingPageHeader pageTitle="BKS Welcome" hubPath="/accounting" hubLabel="Accounting Tools" />
+      <AccountingPageHeader pageTitle="BKS Welcome" hubPath="/accounting" hubLabel="Accounting Hub" />
       <header className="text-center max-w-3xl">
         <h1 className="text-2xl font-bold font-headline text-primary">
           Welcome to Bookkeeping Kept Simple (BKS)

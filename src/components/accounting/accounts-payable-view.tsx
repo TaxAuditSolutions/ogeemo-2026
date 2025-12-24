@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -322,17 +323,16 @@ export function AccountsPayableView({
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
+                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                             <CommandInput placeholder="Search vendor..." value={vendorSearchValue} onValueChange={setVendorSearchValue} />
                             <CommandList>
-                                <CommandEmpty>
+                               <CommandEmpty>No vendor found.</CommandEmpty>
+                                <CommandGroup>
                                     {vendorSearchValue && !companies.some(c => c.name.toLowerCase() === vendorSearchValue.toLowerCase()) && (
                                         <CommandItem onSelect={() => handleCreateCompany(vendorSearchValue)} className="cursor-pointer">
                                             <PlusCircle className="mr-2 h-4 w-4" /> Create "{vendorSearchValue}"
                                         </CommandItem>
                                     )}
-                                </CommandEmpty>
-                                <CommandGroup>
                                     {companies.map((c) => (
                                         <CommandItem key={c.id} value={c.name} onSelect={() => { setNewBill(prev => ({ ...prev, vendor: c.name })); setIsVendorPopoverOpen(false); }}>
                                             <Check className={cn("mr-2 h-4 w-4", newBill.vendor === c.name ? "opacity-100" : "opacity-0")} />
@@ -367,17 +367,16 @@ export function AccountsPayableView({
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
+                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                             <CommandInput placeholder="Search category..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
                             <CommandList>
-                                <CommandEmpty>
-                                     {categorySearchValue && !expenseCategories.some(c => c.name.toLowerCase() === categorySearchValue.toLowerCase()) && (
+                               <CommandEmpty>No category found.</CommandEmpty>
+                                <CommandGroup>
+                                    {categorySearchValue && !expenseCategories.some(c => c.name.toLowerCase() === categorySearchValue.toLowerCase()) && (
                                         <CommandItem onSelect={() => handleCreateExpenseCategory(categorySearchValue)} className="cursor-pointer">
                                             <PlusCircle className="mr-2 h-4 w-4" /> Create "{categorySearchValue}"
                                         </CommandItem>
                                     )}
-                                </CommandEmpty>
-                                <CommandGroup>
                                     {expenseCategories.map((c) => (
                                         <CommandItem
                                             key={c.id}

@@ -22,6 +22,7 @@ import {
   getExpenseCategories, addExpenseCategory, updateExpenseCategory, deleteExpenseCategory, deleteExpenseCategories,
   archiveIncomeCategory, restoreIncomeCategory,
   archiveExpenseCategory, restoreExpenseCategory,
+  mergeCategories,
   type IncomeCategory,
   type ExpenseCategory,
 } from '@/services/accounting-service';
@@ -244,19 +245,33 @@ export function TaxCategoriesView() {
     setMergeTarget('');
   };
 
-  const handleConfirmMerge = () => {
-    if (!mergeDialogState.category || !mergeTarget) return;
-    console.log(`Merging "${mergeDialogState.category.name}" into "${mergeTarget}"`);
-    toast({ title: "Merge successful (Simulated)" });
-    setMergeDialogState({ isOpen: false, category: null, type: null });
+  const handleConfirmMerge = async () => {
+    if (!user || !mergeDialogState.category || !mergeDialogState.type || !mergeTarget) {
+      toast({ variant: 'destructive', title: 'Invalid Operation', description: 'Missing information to perform merge.' });
+      return;
+    }
+    try {
+        await mergeCategories(
+            user.uid,
+            mergeDialogState.category.id,
+            mergeTarget,
+            mergeDialogState.type
+        );
+        toast({ title: 'Merge Successful', description: `All transactions from "${mergeDialogState.category.name}" have been reassigned.` });
+        loadData(); // Reload all data
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+    } finally {
+        setMergeDialogState({ isOpen: false, category: null, type: null });
+    }
   };
 
   const getMergeOptions = (type: CategoryType | null) => {
     if (type === 'income') {
-        return t2125IncomeCategories.map(c => c.description);
+        return t2125IncomeCategories;
     }
     if (type === 'expense') {
-        return t2125ExpenseCategories.map(c => c.description);
+        return t2125ExpenseCategories;
     }
     return [];
   };
@@ -410,7 +425,7 @@ export function TaxCategoriesView() {
       <AlertDialog open={!!bulkDeleteType} onOpenChange={() => setBulkDeleteType(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
                     This will permanently delete the selected {bulkDeleteType === 'income' ? selectedIncomeIds.length : selectedExpenseIds.length} categories. This action cannot be undone.
                 </AlertDialogDescription>
@@ -454,7 +469,7 @@ export function TaxCategoriesView() {
                     <SelectTrigger><SelectValue placeholder="Select a standard category..." /></SelectTrigger>
                     <SelectContent>
                         {getMergeOptions(mergeDialogState.type).map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            <SelectItem key={cat.code} value={cat.line}>{cat.description}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

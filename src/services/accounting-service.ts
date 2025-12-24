@@ -692,6 +692,44 @@ export async function restoreExpenseCategory(categoryId: string): Promise<void> 
     await updateExpenseCategory(categoryId, { isArchived: false });
 }
 
+// --- Merge Function ---
+export async function mergeCategories(userId: string, sourceCategoryId: string, targetCategoryNumber: string, type: 'income' | 'expense') {
+  const db = await getDb();
+  
+  const { categoryCollection, transactionCollection, categoryField, docToCategory } = type === 'income' 
+    ? { categoryCollection: INCOME_CATEGORIES_COLLECTION, transactionCollection: INCOME_COLLECTION, categoryField: 'incomeCategory', docToCategory: docToIncomeCategory }
+    : { categoryCollection: EXPENSE_CATEGORIES_COLLECTION, transactionCollection: EXPENSE_COLLECTION, categoryField: 'category', docToCategory: docToExpenseCategory };
+
+  const sourceCategoryRef = doc(db, categoryCollection, sourceCategoryId);
+  const sourceCategorySnap = await getDoc(sourceCategoryRef);
+
+  if (!sourceCategorySnap.exists()) {
+    throw new Error('Source category not found.');
+  }
+
+  const sourceCategory = docToCategory(sourceCategorySnap);
+  if (!sourceCategory.categoryNumber) {
+    throw new Error('Source category does not have a category number.');
+  }
+
+  const batch = writeBatch(db);
+  const transactionsQuery = query(
+    collection(db, transactionCollection),
+    where('userId', '==', userId),
+    where(categoryField, '==', sourceCategory.categoryNumber)
+  );
+  const transactionsSnapshot = await getDocs(transactionsQuery);
+  
+  transactionsSnapshot.forEach(txDoc => {
+    batch.update(txDoc.ref, { [categoryField]: targetCategoryNumber });
+  });
+
+  batch.delete(sourceCategoryRef);
+
+  await batch.commit();
+}
+
+
 // --- Service Item Interfaces & Functions ---
 export interface ServiceItem {
   id: string;

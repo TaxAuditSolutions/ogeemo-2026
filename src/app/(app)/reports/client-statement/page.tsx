@@ -16,9 +16,10 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getInvoices, type Invoice } from '@/services/accounting-service';
+import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction } from '@/services/accounting-service';
 import { cn } from '@/lib/utils';
-import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { ReportsPageHeader } from '@/components/reports/page-header';
+import type { DateRange } from 'react-day-picker';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -34,15 +35,13 @@ type StatementEntry = {
 export default function ClientStatementPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [incomeTransactions, setIncomeTransactions] = useState<IncomeTransaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
-    const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
-    const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
-
+    
     const { user } = useAuth();
     const { toast } = useToast();
     const { handlePrint, contentRef } = useReactToPrint();
@@ -56,12 +55,14 @@ export default function ClientStatementPage() {
             }
             setIsLoading(true);
             try {
-                const [accounts, allInvoices] = await Promise.all([
+                const [accounts, allInvoices, allIncome] = await Promise.all([
                     getContacts(user.uid),
                     getInvoices(user.uid),
+                    getIncomeTransactions(user.uid),
                 ]);
                 setContacts(accounts);
                 setInvoices(allInvoices);
+                setIncomeTransactions(allIncome);
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
             } finally {
@@ -74,15 +75,20 @@ export default function ClientStatementPage() {
     const statementData = useMemo(() => {
         if (!selectedContactId) return { entries: [], startingBalance: 0, endingBalance: 0 };
         
+        const contact = contacts.find(c => c.id === selectedContactId);
+        if (!contact) return { entries: [], startingBalance: 0, endingBalance: 0 };
+
         const clientInvoices = invoices.filter(inv => inv.contactId === selectedContactId);
+        const clientPayments = incomeTransactions.filter(tx => tx.company === contact.name);
         
         const allEntries: StatementEntry[] = [];
+        
         clientInvoices.forEach(inv => {
             allEntries.push({ date: inv.invoiceDate, description: `Invoice #${inv.invoiceNumber}`, invoiceAmount: inv.originalAmount, paymentAmount: null });
-            if (inv.amountPaid > 0) {
-                 // For now, we assume payment is made on the due date. This could be enhanced later.
-                allEntries.push({ date: inv.dueDate, description: `Payment for Invoice #${inv.invoiceNumber}`, invoiceAmount: null, paymentAmount: inv.amountPaid });
-            }
+        });
+
+        clientPayments.forEach(tx => {
+            allEntries.push({ date: new Date(tx.date), description: tx.description || 'Payment Received', invoiceAmount: null, paymentAmount: tx.totalAmount });
         });
         
         const sortedEntries = allEntries.sort((a,b) => a.date.getTime() - b.date.getTime());
@@ -90,31 +96,34 @@ export default function ClientStatementPage() {
         let filteredEntries = sortedEntries;
         let startingBalance = 0;
 
-        if (startDate) {
+        const fromDate = dateRange?.from ? startOfDay(dateRange.from) : null;
+        const toDate = dateRange?.to ? endOfDay(dateRange.to) : null;
+
+        if (fromDate) {
             startingBalance = sortedEntries
-                .filter(entry => entry.date < startDate)
+                .filter(entry => entry.date < fromDate)
                 .reduce((acc, entry) => acc + (entry.invoiceAmount || 0) - (entry.paymentAmount || 0), 0);
             
-            const toDate = endDate ? endOfDay(endDate) : endOfDay(startDate);
-            filteredEntries = sortedEntries.filter(entry => entry.date >= startDate && entry.date <= toDate);
-        } else {
-             // If no start date, show all entries
-            filteredEntries = sortedEntries;
+            filteredEntries = sortedEntries.filter(entry => {
+                const entryDate = entry.date;
+                if (toDate) {
+                    return entryDate >= fromDate && entryDate <= toDate;
+                }
+                return entryDate >= fromDate;
+            });
         }
 
         const endingBalance = filteredEntries.reduce((acc, entry) => acc + (entry.invoiceAmount || 0) - (entry.paymentAmount || 0), startingBalance);
 
         return { entries: filteredEntries, startingBalance, endingBalance };
-    }, [selectedContactId, invoices, startDate, endDate]);
+    }, [selectedContactId, contacts, invoices, incomeTransactions, dateRange]);
     
     const setMonthToDate = () => {
-        setStartDate(startOfMonth(new Date()));
-        setEndDate(new Date());
+        setDateRange({ from: startOfMonth(new Date()), to: new Date() });
     };
     
     const clearDates = () => {
-        setStartDate(undefined);
-        setEndDate(undefined);
+        setDateRange(undefined);
     };
 
     const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -122,7 +131,7 @@ export default function ClientStatementPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <AccountingPageHeader pageTitle="Client Statement" hubPath="/reports" hubLabel="Reports" />
+                <ReportsPageHeader pageTitle="Client Statement" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Client Statement</h1>
                   <p className="text-muted-foreground">Generate a statement of account for a specific client.</p>
@@ -148,32 +157,22 @@ export default function ClientStatementPage() {
                             </Popover>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                                <Label>Start Date</Label>
-                                <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
+                             <div className="space-y-2">
+                                <Label>Date Range</Label>
+                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {startDate ? format(startDate, "PPP") : <span>Start Date</span>}
+                                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>All Time</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} disabled={(date) => endDate ? date > endDate : false} initialFocus /></PopoverContent>
+                                    <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2}/></PopoverContent>
                                 </Popover>
                             </div>
-                            <div className="space-y-2">
-                                <Label>End Date</Label>
-                                <Popover open={isEndPopoverOpen} onOpenChange={setIsEndPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {endDate ? format(endDate, "PPP") : <span>End Date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus /></PopoverContent>
-                                </Popover>
+                            <div className="flex items-end gap-2">
+                                <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
+                                <Button variant="ghost" onClick={clearDates} className="w-full">Clear Dates</Button>
                             </div>
-                            <Button variant="secondary" onClick={setMonthToDate} className="w-full">Month to Date</Button>
-                            <Button variant="ghost" onClick={clearDates} className="w-full">Clear Dates</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -183,7 +182,7 @@ export default function ClientStatementPage() {
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl">Statement for {selectedContact?.name || "Client"}</CardTitle>
                             <CardDescription>
-                                {startDate ? endDate ? `${format(startDate, "PPP")} to ${format(endDate, "PPP")}` : `Since ${format(startDate, "PPP")}` : "All Time"}
+                                {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `Since ${format(dateRange.from, "PPP")}` : "All Time"}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -241,3 +240,5 @@ export default function ClientStatementPage() {
         </>
     );
 }
+
+    

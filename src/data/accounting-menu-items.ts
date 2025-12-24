@@ -55,6 +55,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/loan-application", icon: FileText, label: "Generic Loan Application" },
     { href: "/accounting/onboarding", icon: UserPlus, label: "Client Onboarding" },
     { href: "/accounting/bks", icon: Info, label: "BKS Welcome" },
+    { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
 ];
 
 export default accountingMenuItems;

@@ -8,7 +8,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, HandCoins, Receipt } from "lucide-react";
+import { ArrowLeft, BookOpen, HandCoins, Receipt, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,

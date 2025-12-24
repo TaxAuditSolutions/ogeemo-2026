@@ -62,10 +62,10 @@ export function PayrollHubView() {
     { icon: History, title: "Payroll History & Reports", description: "View past payroll runs, generate pay stubs, and create detailed reports.", href: "/accounting/payroll/history", cta: "View History" },
     { 
       icon: Clock, 
-      title: "Time Log Report", 
-      description: "Review, approve, and process logged hours before running payroll.", 
+      title: "Log Employee Time", 
+      description: "Log individual worker time.", 
       href: "/reports/time-log", 
-      cta: "Review Time Logs" 
+      cta: "Go to Time Log Entry" 
     },
     { icon: Landmark, title: "Tax Remittances", description: "View and manage your payroll tax and source deduction remittances.", href: "/accounting/tax/payroll-remittances", cta: "Manage Remittances" },
     { icon: Settings, title: "Payroll Settings", description: "Configure company details, pay schedules, and payroll-related accounts.", href: "/accounting/payroll/settings", cta: "Configure Settings" },

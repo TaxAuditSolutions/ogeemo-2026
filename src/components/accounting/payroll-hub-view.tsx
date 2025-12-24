@@ -64,7 +64,7 @@ export function PayrollHubView() {
       icon: Clock, 
       title: "Log Employee Time", 
       description: "Log individual worker time.", 
-      href: "/reports/time-log", 
+      href: "/reports/time-log?action=log", 
       cta: "Go to Time Log Entry" 
     },
     { icon: Landmark, title: "Tax Remittances", description: "View and manage your payroll tax and source deduction remittances.", href: "/accounting/tax/payroll-remittances", cta: "Manage Remittances" },

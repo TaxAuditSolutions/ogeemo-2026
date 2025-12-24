@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -73,6 +73,7 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
@@ -87,6 +88,12 @@ export function TimeLogReport() {
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+
+    useEffect(() => {
+        if (searchParams.get('action') === 'log') {
+            setIsLogTimeDialogOpen(true);
+        }
+    }, [searchParams]);
 
     const loadData = useCallback(async () => {
         if (!user) {

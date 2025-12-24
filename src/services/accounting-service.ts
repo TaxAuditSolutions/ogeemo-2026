@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -521,41 +520,75 @@ const docToIncomeCategory = (doc: any): IncomeCategory => ({ id: doc.id, ...doc.
 const docToExpenseCategory = (doc: any): ExpenseCategory => ({ id: doc.id, ...doc.data() } as ExpenseCategory);
 
 
-async function getCategories<T extends BaseCategory>(userId: string, collectionName: string, standardCategories: any[], docConverter: (doc: any) => T): Promise<T[]> {
+async function getCategories<T extends BaseCategory>(
+    userId: string, 
+    collectionName: string, 
+    standardCategories: any[], 
+    docConverter: (doc: any) => T,
+    transactionCollectionName: string,
+    categoryFieldName: string
+): Promise<T[]> {
   const db = await getDb();
   const q = query(collection(db, collectionName), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   const existingCategories = snapshot.docs.map(docConverter);
-  const existingCategoryNames = new Set(existingCategories.map(c => c.name.toLowerCase().trim()));
   const batch = writeBatch(db);
   let hasWrites = false;
 
+  // Group existing standard categories by line number to find duplicates
+  const standardCategoriesByLine: Record<string, T[]> = {};
+  existingCategories.forEach(cat => {
+    if (cat.categoryNumber && !cat.categoryNumber.startsWith('C-')) {
+        if (!standardCategoriesByLine[cat.categoryNumber]) {
+            standardCategoriesByLine[cat.categoryNumber] = [];
+        }
+        standardCategoriesByLine[cat.categoryNumber].push(cat);
+    }
+  });
+
+  // Consolidate duplicates
+  for (const line in standardCategoriesByLine) {
+    const duplicates = standardCategoriesByLine[line];
+    if (duplicates && duplicates.length > 1) {
+        const master = duplicates[0];
+        const duplicatesToDelete = duplicates.slice(1);
+
+        for (const duplicate of duplicatesToDelete) {
+            const txQuery = query(collection(db, transactionCollectionName), where("userId", "==", userId), where(categoryFieldName, "==", duplicate.categoryNumber));
+            const txSnapshot = await getDocs(txQuery);
+            txSnapshot.forEach(txDoc => {
+                batch.update(txDoc.ref, { [categoryFieldName]: master.categoryNumber });
+            });
+            batch.delete(doc(db, collectionName, duplicate.id));
+            hasWrites = true;
+        }
+    }
+  }
+
+  // Seed missing standard categories
+  const existingLineNumbers = new Set(existingCategories.map(c => c.categoryNumber));
   for (const stdCat of standardCategories) {
-      const stdNameLower = stdCat.description.toLowerCase().trim();
-      if (!existingCategoryNames.has(stdNameLower)) {
+      if (!existingLineNumbers.has(stdCat.line)) {
           const docRef = doc(collection(db, collectionName));
           batch.set(docRef, { name: stdCat.description, userId, categoryNumber: stdCat.line, explanation: stdCat.explanation, isArchived: false });
           hasWrites = true;
-      } else {
-          const existingCat = existingCategories.find(c => c.name.toLowerCase().trim() === stdNameLower);
-          if (existingCat && (existingCat.categoryNumber !== stdCat.line || existingCat.explanation !== stdCat.explanation)) {
-              const docRef = doc(db, collectionName, existingCat.id);
-              batch.update(docRef, { categoryNumber: stdCat.line, explanation: stdCat.explanation });
-              hasWrites = true;
-          }
       }
   }
+
   if (hasWrites) {
     await batch.commit();
+    // Re-fetch all after writes to get the clean list
     const finalSnapshot = await getDocs(q);
-    return finalSnapshot.docs.map(docConverter).sort((a,b) => a.name.localeCompare(b.name));
+    return finalSnapshot.docs.map(docConverter).sort((a, b) => a.name.localeCompare(b.name));
   }
+
   return existingCategories.sort((a,b) => a.name.localeCompare(b.name));
 }
 
+
 // --- Income Category Functions ---
 export async function getIncomeCategories(userId: string): Promise<IncomeCategory[]> {
-  return getCategories<IncomeCategory>(userId, INCOME_CATEGORIES_COLLECTION, t2125IncomeCategories, docToIncomeCategory);
+  return getCategories<IncomeCategory>(userId, INCOME_CATEGORIES_COLLECTION, t2125IncomeCategories, docToIncomeCategory, INCOME_COLLECTION, 'incomeCategory');
 }
 
 export async function addIncomeCategory(data: { name: string, userId: string, categoryNumber?: string }): Promise<IncomeCategory> {
@@ -595,7 +628,7 @@ export async function deleteIncomeCategories(ids: string[]): Promise<void> {
 
 // --- Expense Category Functions ---
 export async function getExpenseCategories(userId: string): Promise<ExpenseCategory[]> {
-  return getCategories<ExpenseCategory>(userId, EXPENSE_CATEGORIES_COLLECTION, t2125ExpenseCategories, docToExpenseCategory);
+  return getCategories<ExpenseCategory>(userId, EXPENSE_CATEGORIES_COLLECTION, t2125ExpenseCategories, docToExpenseCategory, EXPENSE_COLLECTION, 'category');
 }
 
 export async function addExpenseCategory(data: { name: string, userId: string, categoryNumber?: string }): Promise<ExpenseCategory> {

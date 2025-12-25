@@ -64,24 +64,24 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 export function AccountingToolsView() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   
+  const hubFeatureHrefs = [
+    "/accounting/bks",
+    "/accounting/accounts-receivable",
+    "/accounting/accounts-payable",
+    "/accounting/payroll/run",
+    "/accounting/payroll/manage-workers",
+    "/accounting/invoices/create",
+    "/accounting/invoicing-report",
+    "/accounting/bks-instructions",
+    // Added reports
+    "/accounting/reports/income-statement",
+    "/accounting/reports/accrual-adjustments",
+    "/reports/client-statement",
+    "/reports/time-log",
+  ];
+
   const hubFeatures = accountingMenuItems
-    .filter(item => [
-      "/accounting/ledgers",
-      "/accounting/accounts-receivable",
-      "/accounting/accounts-payable",
-      "/accounting/reports",
-      "/accounting/tax",
-      "/accounting/payroll/run",
-      "/accounting/payroll/manage-workers",
-      "/accounting/invoices/create",
-      "/accounting/invoicing-report",
-      "/accounting/bks-instructions",
-      // Added reports
-      "/accounting/reports/income-statement",
-      "/accounting/reports/accrual-adjustments",
-      "/reports/client-statement",
-      "/reports/time-log",
-    ].includes(item.href))
+    .filter(item => hubFeatureHrefs.includes(item.href))
     .sort((a, b) => a.label.localeCompare(b.label));
 
   return (

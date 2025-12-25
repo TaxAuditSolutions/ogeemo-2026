@@ -66,18 +66,21 @@ export function AccountingToolsView() {
   
   const hubFeatures = accountingMenuItems
     .filter(item => [
-      "/accounting/bks",
+      "/accounting/ledgers",
       "/accounting/accounts-receivable",
       "/accounting/accounts-payable",
       "/accounting/reports",
       "/accounting/tax",
       "/accounting/payroll/run",
-      "/accounting/payroll/history",
-      "/accounting/payroll/settings",
       "/accounting/payroll/manage-workers",
       "/accounting/invoices/create",
       "/accounting/invoicing-report",
       "/accounting/bks-instructions",
+      // Added reports
+      "/accounting/reports/income-statement",
+      "/accounting/reports/accrual-adjustments",
+      "/reports/client-statement",
+      "/reports/time-log",
     ].includes(item.href))
     .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -116,10 +119,6 @@ export function AccountingToolsView() {
                     description = "Go to BKS Entries";
                     cta = "Go to BKS Ledger";
                     break;
-                case "/accounting/invoices/create":
-                    description = "Create an Invoice";
-                    cta = "Go to Invoice Creator";
-                    break;
                 case "/accounting/invoicing-report":
                     description = "Filter Invoices";
                     cta = "Go to Invoicing Report";
@@ -128,7 +127,7 @@ export function AccountingToolsView() {
                     description = "Learn how to use the BKS Ledgers";
                     cta = "View Instructions";
                     break;
-                case "/accounting/bks":
+                case "/accounting/bks": // Kept for backward compatibility
                     description = "Go to BKS Entries";
                     cta = "Go to BKS Ledger";
                     break;

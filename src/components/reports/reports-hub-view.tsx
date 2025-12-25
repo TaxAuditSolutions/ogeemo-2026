@@ -43,13 +43,6 @@ export function ReportsHubView() {
       cta: "Open Tasks List",
     },
     {
-      icon: Clock,
-      title: "Employee Time Log Report",
-      description: "Generate detailed reports on all logged time for employees and contractors for payroll.",
-      cta: "Generate Time Report",
-      href: "/reports/time-log",
-    },
-    {
       icon: Activity,
       title: "Activity Report",
       description: "A high-level overview of your workspace, including key metrics and recent activities.",
@@ -62,34 +55,6 @@ export function ReportsHubView() {
       description: "Perform deep, conditional searches across all your data to find exactly what you need.",
       cta: "Go to Advanced Search",
       href: "/reports/search",
-    },
-    {
-      icon: UserCheck,
-      title: "Client Statement",
-      description: "Generate a statement of account for a specific client, showing all invoices and payments.",
-      cta: "View Statement",
-      href: "/reports/client-statement",
-    },
-    {
-      icon: FileText,
-      title: "Income Statement",
-      description: "Generate a statement of business activities based on your income and expense ledger data.",
-      cta: "View Statement",
-      href: "/accounting/reports/income-statement",
-    },
-    {
-        icon: ClipboardList,
-        title: "Accrual Adjustments",
-        description: "View unpaid invoices and bills to help prepare accrual-based financial statements for tax purposes.",
-        cta: "View Adjustments",
-        href: "/accounting/reports/accrual-adjustments",
-    },
-     {
-      icon: ShieldCheck,
-      title: "Tax Center",
-      description: "Your hub for generating tax forms and reviewing sales tax and payroll remittance information.",
-      cta: "Go to Tax Center",
-      href: "/accounting/tax",
     },
   ];
 

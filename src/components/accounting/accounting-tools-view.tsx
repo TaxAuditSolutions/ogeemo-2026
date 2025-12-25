@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -18,6 +17,7 @@ import {
   Calculator,
   Settings,
   FileDigit,
+  BookOpen,
 } from 'lucide-react';
 import { getActionChips as getQuickNavItems, type ActionChipData } from '@/services/project-service';
 import accountingMenuItems from '@/data/accounting-menu-items';
@@ -128,6 +128,13 @@ export function AccountingToolsView() {
             description="Filter Invoices"
             href="/accounting/invoicing-report"
             cta="Go to Invoicing Report"
+        />
+        <FeatureCard
+            icon={BookOpen}
+            title="BKS Instructions"
+            description="Learn how to use the BKS Ledgers"
+            href="/accounting/bks-instructions"
+            cta="View Instructions"
         />
         {hubFeatures.map((item) => {
           let description = `Manage ${item.label.toLowerCase()}.`;

@@ -29,20 +29,6 @@ import { AccountingPageHeader } from "../accounting/page-header";
 export function ReportsHubView() {
   const features = [
     {
-      icon: Briefcase,
-      title: "Project Manager",
-      description: "Oversee all your high-level projects. Click a project to see its detailed task board.",
-      href: "/projects",
-      cta: "Go to Projects",
-    },
-     {
-      icon: ListTodo,
-      title: "All Project Tasks",
-      description: "A list of all tasks and events, including those scheduled on your calendar.",
-      href: "/all-project-tasks",
-      cta: "Open Tasks List",
-    },
-    {
       icon: Activity,
       title: "Activity Report",
       description: "A high-level overview of your workspace, including key metrics and recent activities.",

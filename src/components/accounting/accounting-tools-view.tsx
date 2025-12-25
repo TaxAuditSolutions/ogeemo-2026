@@ -18,10 +18,20 @@ import {
   Settings,
   FileDigit,
   BookOpen,
+  Info,
 } from 'lucide-react';
 import { getActionChips as getQuickNavItems, type ActionChipData } from '@/services/project-service';
 import accountingMenuItems from '@/data/accounting-menu-items';
 import { useAuth } from '@/context/auth-context';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface FeatureCardProps {
   icon: React.ElementType;
@@ -60,6 +70,7 @@ export function AccountingToolsView() {
   const [navItems, setNavItems] = useState<ActionChipData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   const loadNavItems = useCallback(async () => {
     if (user) {
@@ -93,66 +104,90 @@ export function AccountingToolsView() {
   const hubFeatures = accountingMenuItems.filter(item => hubFeatureHrefs.includes(item.href));
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <header className="text-center mb-6">
-        <div className="flex justify-center items-center gap-4 mb-2">
-            <Calculator className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold font-headline text-primary">
-              Accounting Hub
-            </h1>
+    <>
+      <div className="p-4 sm:p-6 space-y-6">
+        <header className="text-center mb-6">
+          <div className="flex justify-center items-center gap-2 mb-2">
+              <Calculator className="h-8 w-8 text-primary" />
+              <h1 className="text-2xl font-bold font-headline text-primary">
+                Accounting Hub
+              </h1>
+              <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
+                <Info className="h-5 w-5 text-muted-foreground" />
+                <span className="sr-only">About the Accounting Hub</span>
+              </Button>
+          </div>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Your central command for managing finances. Use the cards below to navigate to key areas.
+          </p>
+          <div className="mt-4">
+              <Button asChild>
+                  <Link href="/accounting/manage-navigation">
+                    <Settings className="mr-2 h-4 w-4"/>
+                    Manage Quick Navigation
+                  </Link>
+              </Button>
+          </div>
+        </header>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <FeatureCard
+              icon={FileDigit}
+              title="Invoicing"
+              description="Create an Invoice"
+              href="/accounting/invoices/create"
+              cta="Go to Invoice Creator"
+          />
+          <FeatureCard
+              icon={FileDigit}
+              title="Invoicing Report"
+              description="Filter Invoices"
+              href="/accounting/invoicing-report"
+              cta="Go to Invoicing Report"
+          />
+          <FeatureCard
+              icon={BookOpen}
+              title="BKS Ledger"
+              description="Go to BKS Entries"
+              href="/accounting/ledgers"
+              cta="Go to BKS Ledger"
+          />
+          {hubFeatures.map((item) => {
+            let description = `Manage ${item.label.toLowerCase()}.`;
+            if (item.href === '/accounting/ledgers') {
+                return null;
+            }
+            return (
+              <FeatureCard 
+                key={item.href}
+                icon={item.icon}
+                title={item.label}
+                description={description}
+                href={item.href}
+                cta={`Go to ${item.label}`}
+              />
+            );
+          })}
         </div>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Your central command for managing finances. Use the cards below to navigate to key areas.
-        </p>
-         <div className="mt-4">
-            <Button asChild>
-                <Link href="/accounting/manage-navigation">
-                  <Settings className="mr-2 h-4 w-4"/>
-                  Manage Quick Navigation
-                </Link>
-            </Button>
-        </div>
-      </header>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        <FeatureCard
-            icon={FileDigit}
-            title="Invoicing"
-            description="Create an Invoice"
-            href="/accounting/invoices/create"
-            cta="Go to Invoice Creator"
-        />
-        <FeatureCard
-            icon={FileDigit}
-            title="Invoicing Report"
-            description="Filter Invoices"
-            href="/accounting/invoicing-report"
-            cta="Go to Invoicing Report"
-        />
-        <FeatureCard
-            icon={BookOpen}
-            title="BKS Instructions"
-            description="Learn how to use the BKS Ledgers"
-            href="/accounting/bks-instructions"
-            cta="View Instructions"
-        />
-        {hubFeatures.map((item) => {
-          let description = `Manage ${item.label.toLowerCase()}.`;
-          if (item.href === '/accounting/ledgers') {
-              description = "Go to BKS Entries";
-          }
-          return (
-            <FeatureCard 
-              key={item.href}
-              icon={item.icon}
-              title={item.label}
-              description={description}
-              href={item.href}
-              cta={`Go to ${item.label}`}
-            />
-          );
-        })}
       </div>
-    </div>
+      <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>About the Accounting Hub</DialogTitle>
+                  <DialogDescription>
+                      This is your main center for all financial activities.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                  <p className="text-sm text-muted-foreground">
+                      From here, you can access your BKS ledgers, manage invoices and bills, process payroll for your team, and generate financial reports to understand your business's performance. Use the cards as shortcuts to each specific accounting module.
+                  </p>
+              </div>
+              <DialogFooter>
+                  <Button onClick={() => setIsInfoOpen(false)}>Close</Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+    </>
   );
 }

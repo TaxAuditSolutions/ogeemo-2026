@@ -23,6 +23,8 @@ import {
     ClipboardList,
     PlayCircle,
     Settings,
+    History,
+    Users,
 } from 'lucide-react';
 import type { MenuItem } from '@/lib/menu-items';
 
@@ -43,9 +45,10 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/loan-manager", icon: Landmark, label: "Loan Manager" },
     { href: "/accounting/bank-statements", icon: WalletCards, label: "Bank Statements" },
     { href: "/accounting/asset-management", icon: WalletCards, label: "Capital Assets" },
-    { href: "/accounting/payroll", icon: Banknote, label: "Payroll Hub" },
     { href: "/accounting/payroll/run", icon: PlayCircle, label: "Run Payroll" },
     { href: "/accounting/payroll/settings", icon: Settings, label: "Payroll Settings" },
+    { href: "/accounting/payroll/history", icon: History, label: "Payroll History" },
+    { href: "/accounting/payroll/manage-workers", icon: Users, label: "Manage Workers" },
     { href: "/accounting/reports", icon: BarChart3, label: "Reporting Hub" },
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },

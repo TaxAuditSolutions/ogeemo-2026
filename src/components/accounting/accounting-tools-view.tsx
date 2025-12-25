@@ -16,13 +16,9 @@ import {
   ArrowRight,
   Calculator,
   Settings,
-  FileDigit,
-  BookOpen,
   Info,
 } from 'lucide-react';
-import { getActionChips as getQuickNavItems, type ActionChipData } from '@/services/project-service';
 import accountingMenuItems from '@/data/accounting-menu-items';
-import { useAuth } from '@/context/auth-context';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +26,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 
 interface FeatureCardProps {
@@ -67,41 +62,22 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 );
 
 export function AccountingToolsView() {
-  const [navItems, setNavItems] = useState<ActionChipData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-
-  const loadNavItems = useCallback(async () => {
-    if (user) {
-      setIsLoading(true);
-      try {
-        const items = await getQuickNavItems(user.uid, 'accountingQuickNavItems');
-        setNavItems(items);
-      } catch (error) {
-        console.error("Failed to load quick nav items:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    loadNavItems();
-  }, [loadNavItems]);
   
-  const hubFeatureHrefs = [
+  const hubFeatures = accountingMenuItems.filter(item => [
     "/accounting/ledgers",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
-    "/accounting/payroll",
+    "/accounting/payroll/run",
+    "/accounting/payroll/history",
+    "/accounting/payroll/settings",
+    "/accounting/payroll/manage-workers",
     "/accounting/reports",
     "/accounting/tax",
-];
-  
-  const hubFeatures = accountingMenuItems.filter(item => hubFeatureHrefs.includes(item.href));
+    "/accounting/invoices/create",
+    "/accounting/invoicing-report",
+    "/accounting/bks-instructions",
+  ].includes(item.href));
 
   return (
     <>
@@ -131,32 +107,30 @@ export function AccountingToolsView() {
         </header>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          <FeatureCard
-              icon={FileDigit}
-              title="Invoicing"
-              description="Create an Invoice"
-              href="/accounting/invoices/create"
-              cta="Go to Invoice Creator"
-          />
-          <FeatureCard
-              icon={FileDigit}
-              title="Invoicing Report"
-              description="Filter Invoices"
-              href="/accounting/invoicing-report"
-              cta="Go to Invoicing Report"
-          />
-          <FeatureCard
-              icon={BookOpen}
-              title="BKS Ledger"
-              description="Go to BKS Entries"
-              href="/accounting/ledgers"
-              cta="Go to BKS Ledger"
-          />
           {hubFeatures.map((item) => {
-            let description = `Manage ${item.label.toLowerCase()}.`;
-            if (item.href === '/accounting/ledgers') {
-                return null;
+            let description, cta;
+            switch(item.href) {
+                case "/accounting/ledgers":
+                    description = "Go to BKS Entries";
+                    cta = "Go to BKS Ledger";
+                    break;
+                case "/accounting/invoices/create":
+                    description = "Create an Invoice";
+                    cta = "Go to Invoice Creator";
+                    break;
+                case "/accounting/invoicing-report":
+                    description = "Filter Invoices";
+                    cta = "Go to Invoicing Report";
+                    break;
+                 case "/accounting/bks-instructions":
+                    description = "Learn how to use the BKS Ledgers";
+                    cta = "View Instructions";
+                    break;
+                default:
+                    description = `Manage ${item.label.toLowerCase()}`;
+                    cta = `Go to ${item.label}`;
             }
+
             return (
               <FeatureCard 
                 key={item.href}
@@ -164,7 +138,7 @@ export function AccountingToolsView() {
                 title={item.label}
                 description={description}
                 href={item.href}
-                cta={`Go to ${item.label}`}
+                cta={cta}
               />
             );
           })}

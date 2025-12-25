@@ -64,20 +64,22 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 export function AccountingToolsView() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   
-  const hubFeatures = accountingMenuItems.filter(item => [
-    "/accounting/ledgers",
-    "/accounting/accounts-receivable",
-    "/accounting/accounts-payable",
-    "/accounting/payroll/run",
-    "/accounting/payroll/history",
-    "/accounting/payroll/settings",
-    "/accounting/payroll/manage-workers",
-    "/accounting/reports",
-    "/accounting/tax",
-    "/accounting/invoices/create",
-    "/accounting/invoicing-report",
-    "/accounting/bks-instructions",
-  ].includes(item.href));
+  const hubFeatures = accountingMenuItems
+    .filter(item => [
+      "/accounting/bks",
+      "/accounting/accounts-receivable",
+      "/accounting/accounts-payable",
+      "/accounting/reports",
+      "/accounting/tax",
+      "/accounting/payroll/run",
+      "/accounting/payroll/history",
+      "/accounting/payroll/settings",
+      "/accounting/payroll/manage-workers",
+      "/accounting/invoices/create",
+      "/accounting/invoicing-report",
+      "/accounting/bks-instructions",
+    ].includes(item.href))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <>
@@ -125,6 +127,10 @@ export function AccountingToolsView() {
                  case "/accounting/bks-instructions":
                     description = "Learn how to use the BKS Ledgers";
                     cta = "View Instructions";
+                    break;
+                case "/accounting/bks":
+                    description = "Go to BKS Entries";
+                    cta = "Go to BKS Ledger";
                     break;
                 default:
                     description = `Manage ${item.label.toLowerCase()}`;

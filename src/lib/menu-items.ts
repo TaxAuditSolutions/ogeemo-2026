@@ -81,7 +81,6 @@ export const allMenuItems: MenuItem[] = [
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },
   { href: "/google", label: "Google Apps", icon: Wand2 },
   { href: "/backup", label: "Backup", icon: DatabaseBackup },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },
   { href: "/debug", label: "Debug", icon: Bug },
   { href: "/dev-notes", label: "Dev Notes", icon: BookText },

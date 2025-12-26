@@ -68,7 +68,6 @@ export function AccountingToolsView() {
     "/accounting/bks",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
-    "/accounting/financial-snapshot",
     "/accounting/payroll/run",
     "/accounting/payroll/manage-workers",
     "/accounting/invoices/create",
@@ -78,7 +77,6 @@ export function AccountingToolsView() {
     "/accounting/reports/accrual-adjustments",
     "/reports/client-statement",
     "/reports/time-log",
-    "/accounting/reports/income-statement",
 ];
 
   const hubFeatures = accountingMenuItems

@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   DollarSign,
@@ -19,6 +18,7 @@ import {
   Landmark,
   Building,
   Wallet,
+  Coins,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
@@ -28,12 +28,19 @@ import {
   getExpenseTransactions,
   getInvoices,
   getPayableBills,
+  getAssets,
+  getLoans,
+  getEquityTransactions,
   type IncomeTransaction,
   type ExpenseTransaction,
   type Invoice,
   type PayableBill,
+  type Asset,
+  type Loan,
+  type EquityTransaction,
 } from '@/services/accounting-service';
 import { MatchbookLoanSummaryDialog } from './MatchbookLoanSummaryDialog';
+import { Separator } from '../ui/separator';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -55,11 +62,23 @@ const VitalsCard = ({ title, value, icon: Icon, description, colorClass }: { tit
     </Card>
 );
 
+const BalanceSheetRow = ({ label, value, colorClass }: { label: string; value: string; colorClass?: string }) => (
+    <div className="flex justify-between items-center text-sm py-1">
+        <p className="text-muted-foreground">{label}</p>
+        <p className={`font-mono ${colorClass || ''}`}>{value}</p>
+    </div>
+);
+
+
 export function FinancialSnapshotView() {
   const [income, setIncome] = useState<IncomeTransaction[]>([]);
   const [expenses, setExpenses] = useState<ExpenseTransaction[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payableBills, setPayableBills] = useState<PayableBill[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [equity, setEquity] = useState<EquityTransaction[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
@@ -86,16 +105,25 @@ export function FinancialSnapshotView() {
           expenseData,
           invoiceData,
           payableData,
+          assetsData,
+          loansData,
+          equityData,
         ] = await Promise.all([
           getIncomeTransactions(user.uid),
           getExpenseTransactions(user.uid),
           getInvoices(user.uid),
           getPayableBills(user.uid),
+          getAssets(user.uid),
+          getLoans(user.uid),
+          getEquityTransactions(user.uid),
         ]);
         setIncome(incomeData);
         setExpenses(expenseData);
         setInvoices(invoiceData);
         setPayableBills(payableData);
+        setAssets(assetsData);
+        setLoans(loansData);
+        setEquity(equityData);
       } catch (error: any) {
         toast({
           variant: 'destructive',
@@ -110,19 +138,37 @@ export function FinancialSnapshotView() {
   }, [user, toast]);
   
   const financialMetrics = useMemo(() => {
+    // Profitability
     const totalIncome = income.reduce((sum, tx) => sum + tx.totalAmount, 0);
     const totalExpenses = expenses.reduce((sum, tx) => sum + tx.totalAmount, 0);
     const netIncome = totalIncome - totalExpenses;
     
+    // Assets
     const accountsReceivable = invoices.reduce((sum, inv) => {
         const balance = inv.originalAmount - inv.amountPaid;
         return sum + (balance > 0 ? balance : 0);
     }, 0);
+    const capitalAssets = assets.reduce((sum, asset) => sum + asset.undepreciatedCapitalCost, 0);
+    const loansReceivable = loans.filter(l => l.loanType === 'receivable').reduce((sum, l) => sum + l.outstandingBalance, 0);
+    const totalAssets = accountsReceivable + capitalAssets + loansReceivable;
 
+    // Liabilities
     const accountsPayable = payableBills.reduce((sum, bill) => sum + bill.totalAmount, 0);
+    const loansPayable = loans.filter(l => l.loanType === 'payable').reduce((sum, l) => sum + l.outstandingBalance, 0);
+    const totalLiabilities = accountsPayable + loansPayable;
+
+    // Equity
+    const totalContributions = equity.filter(e => e.type === 'contribution').reduce((sum, e) => sum + e.amount, 0);
+    const totalDraws = equity.filter(e => e.type === 'draw').reduce((sum, e) => sum + e.amount, 0);
+    const netOwnerEquity = totalContributions - totalDraws; // Simplified view
     
-    return { totalIncome, totalExpenses, netIncome, accountsReceivable, accountsPayable };
-  }, [income, expenses, invoices, payableBills]);
+    return { 
+        totalIncome, totalExpenses, netIncome, 
+        accountsReceivable, capitalAssets, loansReceivable, totalAssets,
+        accountsPayable, loansPayable, totalLiabilities,
+        netOwnerEquity,
+    };
+  }, [income, expenses, invoices, payableBills, assets, loans, equity]);
 
 
   if (isLoading) {
@@ -181,24 +227,30 @@ export function FinancialSnapshotView() {
               </Card>
               <Card>
                 <CardHeader>
-                    <CardTitle>Balance Sheet Summary</CardTitle>
-                    <CardDescription>A high-level look at your assets and liabilities.</CardDescription>
+                    <CardTitle>Financial Position (Balance Sheet)</CardTitle>
+                    <CardDescription>A snapshot of what your business owns and what it owes.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                    <VitalsCard
-                        title="Accounts Receivable"
-                        value={formatCurrency(financialMetrics.accountsReceivable)}
-                        description="Money owed to you by clients."
-                        icon={Landmark}
-                        colorClass="text-green-600"
-                    />
-                    <VitalsCard
-                        title="Accounts Payable"
-                        value={formatCurrency(financialMetrics.accountsPayable)}
-                        description="Money you owe to vendors."
-                        icon={Building}
-                        colorClass="text-red-600"
-                    />
+                <CardContent className="grid gap-x-8 gap-y-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Wallet className="h-5 w-5 text-primary"/> Assets</h3>
+                        <Separator />
+                        <BalanceSheetRow label="Accounts Receivable" value={formatCurrency(financialMetrics.accountsReceivable)} />
+                        <BalanceSheetRow label="Capital Assets (UCC)" value={formatCurrency(financialMetrics.capitalAssets)} />
+                        <BalanceSheetRow label="Loans Receivable" value={formatCurrency(financialMetrics.loansReceivable)} />
+                        <Separator />
+                        <BalanceSheetRow label="Total Assets" value={formatCurrency(financialMetrics.totalAssets)} colorClass="font-bold" />
+                    </div>
+                     <div className="space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Coins className="h-5 w-5 text-primary"/> Liabilities & Equity</h3>
+                        <Separator />
+                        <BalanceSheetRow label="Accounts Payable" value={formatCurrency(financialMetrics.accountsPayable)} />
+                        <BalanceSheetRow label="Loans Payable" value={formatCurrency(financialMetrics.loansPayable)} />
+                        <BalanceSheetRow label="Total Liabilities" value={formatCurrency(financialMetrics.totalLiabilities)} />
+                        <Separator />
+                        <BalanceSheetRow label="Owner's Equity" value={formatCurrency(financialMetrics.netOwnerEquity)} />
+                        <Separator />
+                         <BalanceSheetRow label="Total Liabilities & Equity" value={formatCurrency(financialMetrics.totalLiabilities + financialMetrics.netOwnerEquity)} colorClass="font-bold" />
+                    </div>
                 </CardContent>
               </Card>
           </div>
@@ -209,9 +261,9 @@ export function FinancialSnapshotView() {
         onOpenChange={setIsSummaryDialogOpen}
         metrics={{ 
             netIncome: financialMetrics.netIncome,
-            totalAssets: financialMetrics.accountsReceivable,
-            totalLiabilities: financialMetrics.accountsPayable,
-            netEquity: 0 // Placeholder
+            totalAssets: financialMetrics.totalAssets,
+            totalLiabilities: financialMetrics.totalLiabilities,
+            netEquity: financialMetrics.netOwnerEquity,
         }}
       />
     </>

@@ -19,23 +19,13 @@ const initializeFirebaseAdmin = () => {
   }
 
   try {
-    let serviceAccount;
-    // The service account key might be a JSON string or already a parsed object
-    // depending on the environment. We need to handle both cases.
-    if (typeof serviceAccountKey === 'string') {
-        try {
-            serviceAccount = JSON.parse(serviceAccountKey);
-        } catch (e) {
-            throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY as JSON. Please ensure it's a valid JSON string. Error: ${(e as Error).message}`);
-        }
-    } else if (typeof serviceAccountKey === 'object') {
-        serviceAccount = serviceAccountKey;
-    } else {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not a valid string or object.');
-    }
+    // The service account key is expected to be a JSON string from the environment variable.
+    // This will parse it into a JavaScript object.
+    const serviceAccount = JSON.parse(serviceAccountKey);
     
-    // FIX: The private_key needs to have its escaped newlines replaced with actual newlines.
-    // This is a common issue when passing multiline strings through environment variables.
+    // The private_key field often has its newlines escaped as `\n` when stored in an
+    // environment variable. This line replaces those escaped characters with actual newline characters,
+    // which is required for the key to be parsed correctly by the Firebase SDK.
     if (serviceAccount.private_key) {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
@@ -47,7 +37,7 @@ const initializeFirebaseAdmin = () => {
     return adminApp;
   } catch (e: any) {
     // Provide a more detailed error message to help with debugging.
-    throw new Error(`Failed to initialize Firebase Admin SDK. Error: ${e.message}`);
+    throw new Error(`Failed to initialize Firebase Admin SDK. Error: ${e.message}. Ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid, un-escaped JSON string.`);
   }
 };
 

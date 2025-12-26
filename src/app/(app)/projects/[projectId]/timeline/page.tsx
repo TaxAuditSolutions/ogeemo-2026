@@ -1,15 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
-import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
+import { LoaderCircle } from 'lucide-react';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
 const ProjectTimelineView = dynamic(

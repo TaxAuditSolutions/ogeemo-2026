@@ -33,7 +33,6 @@ import {
   type Invoice,
   type PayableBill,
 } from '@/services/accounting-service';
-import { Separator } from '@/components/ui/separator';
 import { MatchbookLoanSummaryDialog } from './MatchbookLoanSummaryDialog';
 
 const formatCurrency = (amount: number) => {
@@ -180,13 +179,40 @@ export function FinancialSnapshotView() {
                       />
                   </CardContent>
               </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle>Balance Sheet Summary</CardTitle>
+                    <CardDescription>A high-level look at your assets and liabilities.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                    <VitalsCard
+                        title="Accounts Receivable"
+                        value={formatCurrency(financialMetrics.accountsReceivable)}
+                        description="Money owed to you by clients."
+                        icon={Landmark}
+                        colorClass="text-green-600"
+                    />
+                    <VitalsCard
+                        title="Accounts Payable"
+                        value={formatCurrency(financialMetrics.accountsPayable)}
+                        description="Money you owe to vendors."
+                        icon={Building}
+                        colorClass="text-red-600"
+                    />
+                </CardContent>
+              </Card>
           </div>
         </div>
       </div>
       <MatchbookLoanSummaryDialog
         isOpen={isSummaryDialogOpen}
         onOpenChange={setIsSummaryDialogOpen}
-        metrics={{ netIncome: 0, totalAssets: 0, totalLiabilities: 0, netEquity: 0}}
+        metrics={{ 
+            netIncome: financialMetrics.netIncome,
+            totalAssets: financialMetrics.accountsReceivable,
+            totalLiabilities: financialMetrics.accountsPayable,
+            netEquity: 0 // Placeholder
+        }}
       />
     </>
   );

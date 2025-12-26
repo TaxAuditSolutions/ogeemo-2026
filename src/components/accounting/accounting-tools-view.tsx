@@ -73,10 +73,6 @@ export function AccountingToolsView() {
     "/accounting/invoices/create",
     "/accounting/invoicing-report",
     "/accounting/bks-instructions",
-    // Added reports
-    "/accounting/reports/accrual-adjustments",
-    "/reports/client-statement",
-    "/reports/time-log",
     "/accounting/financial-snapshot",
     "/accounting/reports/income-statement"
 ];

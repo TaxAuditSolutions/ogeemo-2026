@@ -71,6 +71,7 @@ export function AccountingToolsView() {
     "/accounting/payroll/run",
     "/accounting/payroll/manage-workers",
     "/accounting/invoices/create",
+    "/accounting/financial-snapshot",
     "/accounting/invoicing-report",
     "/accounting/bks-instructions",
     // Added reports
@@ -78,7 +79,7 @@ export function AccountingToolsView() {
     "/accounting/reports/accrual-adjustments",
     "/reports/client-statement",
     "/reports/time-log",
-  ];
+];
 
   const hubFeatures = accountingMenuItems
     .filter(item => hubFeatureHrefs.includes(item.href))

@@ -72,6 +72,7 @@ export function AccountingToolsView() {
     "/accounting/payroll/manage-workers",
     "/accounting/invoices/create",
     "/accounting/financial-snapshot",
+    "/accounting/balance-income-summary",
     "/accounting/invoicing-report",
     "/accounting/bks-instructions",
     // Added reports

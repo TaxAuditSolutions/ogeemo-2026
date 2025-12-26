@@ -32,6 +32,14 @@ export default function BksInstructionsPage() {
                     A guide to tracking money you're owed (Accounts Receivable) and money you owe (Accounts Payable) and how it connects to your ledgers.
                 </p>
             </header>
+            
+            <div className="text-center">
+                <Button asChild size="lg">
+                    <Link href="/accounting/ledgers">
+                        Go to BKS Ledgers <BookOpen className="ml-2 h-5 w-5" />
+                    </Link>
+                </Button>
+            </div>
 
             <Card className="max-w-4xl mx-auto">
                 <CardHeader>
@@ -119,13 +127,6 @@ export default function BksInstructionsPage() {
                     </Accordion>
                 </CardContent>
             </Card>
-             <div className="text-center mt-4">
-                <Button asChild size="lg">
-                    <Link href="/accounting/ledgers">
-                        Go to Ledgers
-                    </Link>
-                </Button>
-            </div>
         </div>
     );
 }

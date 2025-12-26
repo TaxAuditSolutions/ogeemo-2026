@@ -50,6 +50,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
+    { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
 ];
 
 export default accountingMenuItems;

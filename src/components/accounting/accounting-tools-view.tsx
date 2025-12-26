@@ -68,6 +68,7 @@ export function AccountingToolsView() {
     "/accounting/bks",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
+    "/accounting/financial-snapshot",
     "/accounting/payroll/run",
     "/accounting/payroll/manage-workers",
     "/accounting/invoices/create",

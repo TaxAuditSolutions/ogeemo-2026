@@ -31,6 +31,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -246,10 +247,12 @@ export default function AllProjectTasksView() {
 
     const handleDeleteSelected = async () => {
         if (selectedTaskIds.length === 0) return;
-        
+        setIsBulkDeleteAlertOpen(true);
+    };
+    
+    const handleConfirmBulkDelete = async () => {
         const originalTasks = [...tasks];
         setTasks(prev => prev.filter(t => !selectedTaskIds.includes(t.id)));
-
         try {
             await deleteTasks(selectedTaskIds);
             toast({ title: `${selectedTaskIds.length} Task(s) Deleted` });
@@ -261,7 +264,7 @@ export default function AllProjectTasksView() {
             setIsBulkDeleteAlertOpen(false);
         }
     };
-
+    
     const handleMarkSelectedDone = async () => {
         if (selectedTaskIds.length === 0) return;
         
@@ -284,8 +287,8 @@ export default function AllProjectTasksView() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-full pt-16">
-                <LoaderCircle className="h-8 w-8 animate-spin" />
+            <div className="flex h-full w-full items-center justify-center p-4">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
             </div>
         );
     }
@@ -314,7 +317,7 @@ export default function AllProjectTasksView() {
                                {selectedTaskIds.length > 0 && (
                                    <div className="flex items-center gap-2">
                                        <Button variant="outline" size="sm" onClick={handleMarkSelectedDone}>Mark as Done</Button>
-                                       <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>Delete Selected</Button>
+                                       <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>Delete Selected</Button>
                                        <span className="text-sm text-muted-foreground">{selectedTaskIds.length} selected</span>
                                    </div>
                                )}
@@ -403,7 +406,7 @@ export default function AllProjectTasksView() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">
+                        <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
                             Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>

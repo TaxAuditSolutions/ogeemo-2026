@@ -38,8 +38,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/ledgers", icon: BookOpen, label: "BKS Ledger" },
     { href: "/accounting/cash-accounting", icon: DollarSign, label: "Cash Accounting" },
     { href: "/accounting/accrual-accounting", icon: BookOpen, label: "Accrual Accounting" },
-    { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement"},
-    { href: "/accounting/reports/accrual-adjustments", icon: ClipboardList, label: "Accrual Adjustments"},
     { href: "/accounting/tax/sales-tax", icon: Percent, label: "Sales Tax Calculator" },
     { href: "/accounting/accounts-payable", icon: FileInput, label: "Accounts Payable" },
     { href: "/accounting/loan-manager", icon: Landmark, label: "Loan Manager" },
@@ -51,9 +49,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/payroll/manage-workers", icon: Users, label: "Manage Workers" },
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
-    { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
-    { href: "/accounting/financial-snapshot?summary=matchbook", icon: FileDigit, label: "Matchbook Loan Summary" },
-    { href: "/accounting/loan-application", icon: FileText, label: "Generic Loan Application" },
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
 ];
 

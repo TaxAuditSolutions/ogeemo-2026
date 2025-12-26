@@ -97,7 +97,7 @@ export function AccountingToolsView() {
               </Button>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Your central command for managing finances. Use the cards below to navigate to key areas.
+            Your central command for managing finances. Use the cards below to navigate to key areas. You can edit this list of available actions by selecting "Manage Quick Nav" from the Quick Navigation drop down list.
           </p>
           <div className="mt-4">
               <Button asChild>

@@ -3,7 +3,7 @@
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
-import { ReportsPageHeader } from '@/components/reports/page-header';
+import { AccountingPageHeader } from '@/components/accounting/page-header';
 
 const IncomeStatementView = dynamic(
   () => import('@/components/accounting/income-statement-view').then((mod) => mod.IncomeStatementView),
@@ -23,7 +23,7 @@ const IncomeStatementView = dynamic(
 export default function IncomeStatementPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <ReportsPageHeader pageTitle="Income Statement" />
+      <AccountingPageHeader pageTitle="Income Statement" hubPath="/accounting" hubLabel="Accounting Hub" />
       <IncomeStatementView />
     </div>
   );

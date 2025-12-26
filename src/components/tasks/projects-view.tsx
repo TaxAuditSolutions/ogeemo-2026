@@ -1,7 +1,7 @@
 
-"use client";
+'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -20,14 +20,15 @@ import {
   Plus,
   Info,
   ListTodo,
+  Route,
 } from 'lucide-react';
 import { NewTaskDialog } from './NewTaskDialog';
 import { useAuth } from '@/context/auth-context';
 import { addProject } from '@/services/project-service';
-import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 
 interface FeatureCardProps {
@@ -109,8 +110,8 @@ export function ProjectsView() {
 
   const features = [
     { icon: Briefcase, title: "Project List", description: "A comprehensive list of every project. Use this view to edit project details.", href: "/projects/all", cta: "View Project List" },
+    { icon: Route, title: "Timeline", description: "A high-level Gantt chart view of your project schedules and phases.", href: "/projects/placeholder/timeline", cta: "Go to Timeline" },
     { icon: ListChecks, title: "Status Board", description: "A Kanban-style board to visualize project status and quickly assess your workload.", href: "/project-status", cta: "Go to Status Board" },
-    { icon: ListTodo, title: "To-Do List", description: "A simple place to quickly capture your tasks and ideas.", href: "/to-do", cta: "Go to To-Do List" },
     { icon: ListTodo, title: "All Project Tasks", description: "A list of all tasks and events, including those scheduled on your calendar.", href: "/all-project-tasks", cta: "Open Tasks List" },
   ];
 
@@ -128,7 +129,7 @@ export function ProjectsView() {
 
         <ProjectManagementHeader />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {features.map((feature) => (
             <FeatureCard key={feature.title} {...feature} />
           ))}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -26,7 +27,6 @@ const ProjectTimelineView = dynamic(
 );
 
 export default function ProjectTimelinePage({ params }: { params: { projectId: string } }) {
-  const projectIdToShow = params.projectId === 'placeholder' ? '' : params.projectId;
 
   return (
     <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">
@@ -37,10 +37,10 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
             <p className="text-muted-foreground">A high-level view of your project's phases and schedule.</p>
         </header>
 
-        <ProjectManagementHeader projectId={projectIdToShow} />
+        <ProjectManagementHeader projectId={params.projectId} />
 
         <div className="flex-1 min-h-0">
-            <ProjectTimelineView projectId={projectIdToShow} />
+            <ProjectTimelineView projectId={params.projectId} />
         </div>
     </div>
   );

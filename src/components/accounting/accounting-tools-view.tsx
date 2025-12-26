@@ -66,6 +66,7 @@ export function AccountingToolsView() {
   
   const hubFeatureHrefs = [
     "/accounting/bks",
+    "/accounting/ledgers",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
     "/accounting/payroll/run",

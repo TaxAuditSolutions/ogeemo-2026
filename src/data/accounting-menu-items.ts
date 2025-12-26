@@ -49,7 +49,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/payroll/settings", icon: Settings, label: "Payroll Settings" },
     { href: "/accounting/payroll/history", icon: History, label: "Payroll History" },
     { href: "/accounting/payroll/manage-workers", icon: Users, label: "Manage Workers" },
-    { href: "/accounting/reports", icon: BarChart3, label: "Reporting Hub" },
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },

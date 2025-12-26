@@ -118,6 +118,13 @@ export default function BksInstructionsPage() {
                     </Accordion>
                 </CardContent>
             </Card>
+             <div className="text-center mt-4">
+                <Button asChild size="lg">
+                    <Link href="/accounting/ledgers">
+                        Go to Ledgers
+                    </Link>
+                </Button>
+            </div>
         </div>
     );
 }

@@ -52,7 +52,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
-    { href: "/accounting/balance-income-summary", icon: BarChart3, label: "Balance & Income Summary" },
     { href: "/accounting/financial-snapshot?summary=matchbook", icon: FileDigit, label: "Matchbook Loan Summary" },
     { href: "/accounting/loan-application", icon: FileText, label: "Generic Loan Application" },
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },

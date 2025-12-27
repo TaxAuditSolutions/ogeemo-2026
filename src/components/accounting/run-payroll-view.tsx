@@ -44,7 +44,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge } from 'lucide-react';
-import { format, startOfMonth, startOfWeek, endOfWeek, endOfMonth, addMonths, lastDayOfWeek, lastDayOfMonth } from 'date-fns';
+import { format, set, addMonths, lastDayOfWeek, lastDayOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
@@ -379,39 +379,39 @@ export function RunPayrollView() {
               <Label>Pay Period</Label>
               <div className="flex flex-wrap items-center gap-2">
                   <Popover>
-                      <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !payPeriod?.from && "text-muted-foreground")}>
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {payPeriod?.from ? format(payPeriod.from, "LLL dd, y") : <span>Start Date</span>}
-                          </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                              mode="single"
-                              selected={payPeriod?.from}
-                              onSelect={(date) => setPayPeriod(prev => ({ from: date, to: prev?.to }))}
-                              classNames={{ head_cell: 'text-center' }}
-                              initialFocus
-                          />
-                      </PopoverContent>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {payPeriod?.from ? format(payPeriod.from, 'PPP') : <span>Start Date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={payPeriod?.from}
+                        onSelect={(date) => setPayPeriod(prev => ({ from: date, to: prev?.to }))}
+                        classNames={{ head_cell: 'text-center' }}
+                        initialFocus
+                      />
+                    </PopoverContent>
                   </Popover>
                   <Popover>
-                      <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !payPeriod?.to && "text-muted-foreground")}>
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {payPeriod?.to ? format(payPeriod.to, "LLL dd, y") : <span>End Date</span>}
-                          </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                              mode="single"
-                              selected={payPeriod?.to}
-                              onSelect={(date) => setPayPeriod(prev => ({ from: prev?.from, to: date }))}
-                              disabled={(date) => payPeriod?.from ? date < payPeriod.from : false}
-                              classNames={{ head_cell: 'text-center' }}
-                              initialFocus
-                          />
-                      </PopoverContent>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {payPeriod?.to ? format(payPeriod.to, 'PPP') : <span>End Date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={payPeriod?.to}
+                        onSelect={(date) => setPayPeriod(prev => ({ from: prev?.from, to: date }))}
+                        disabled={(date) => payPeriod?.from ? date < payPeriod.from : false}
+                        classNames={{ head_cell: 'text-center' }}
+                        initialFocus
+                      />
+                    </PopoverContent>
                   </Popover>
               </div>
           </div>
@@ -671,3 +671,4 @@ export function RunPayrollView() {
     </>
   );
 }
+

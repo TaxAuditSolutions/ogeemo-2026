@@ -44,7 +44,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge } from 'lucide-react';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, startOfWeek, endOfWeek, endOfMonth, addMonths } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
@@ -113,7 +113,7 @@ export function RunPayrollView() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const [allTasks, setAllTasks] = useState<TaskEvent[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-  const [payPeriod, setPayPeriod] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: new Date() });
+  const [payPeriod, setPayPeriod] = useState<DateRange | undefined>(undefined);
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
   
@@ -121,6 +121,8 @@ export function RunPayrollView() {
   const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -364,42 +366,47 @@ export function RunPayrollView() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Pay Period</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !payPeriod && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {payPeriod?.from ? (
-                    payPeriod.to ? (
-                      <>
-                        {format(payPeriod.from, 'LLL dd, y')} -{' '}
-                        {format(payPeriod.to, 'LLL dd, y')}
-                      </>
-                    ) : (
-                      format(payPeriod.from, 'LLL dd, y')
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={payPeriod?.from}
-                  selected={payPeriod}
-                  onSelect={setPayPeriod}
-                  numberOfMonths={2}
-                  classNames={{ head_cell: "text-center" }}
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-[280px] justify-start text-left font-normal',
+                        !payPeriod && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {payPeriod?.from ? (
+                        payPeriod.to ? (
+                          <>
+                            {format(payPeriod.from, 'LLL dd, y')} -{' '}
+                            {format(payPeriod.to, 'LLL dd, y')}
+                          </>
+                        ) : (
+                          format(payPeriod.from, 'LLL dd, y')
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={payPeriod?.from}
+                      selected={payPeriod}
+                      onSelect={setPayPeriod}
+                      numberOfMonths={2}
+                      classNames={{ head_cell: 'text-center' }}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="secondary" onClick={() => setPayPeriod({ from: new Date(), to: new Date() })}>Today</Button>
+                <Button variant="secondary" onClick={() => setPayPeriod({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
+                <Button variant="secondary" onClick={() => setPayPeriod({ from: startOfWeek(addMonths(new Date(), -1)), to: endOfWeek(addMonths(new Date(), -1)) })}>Last Month</Button>
+            </div>
           </div>
           <div className="space-y-2">
              <div className="flex justify-between items-center">
@@ -646,5 +653,7 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    
 
     

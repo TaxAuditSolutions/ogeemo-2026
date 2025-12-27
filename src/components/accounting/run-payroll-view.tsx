@@ -413,6 +413,7 @@ export function RunPayrollView() {
                       />
                     </PopoverContent>
                   </Popover>
+                  <Button>Stop Truncating</Button>
               </div>
           </div>
           <div className="space-y-2">
@@ -671,4 +672,3 @@ export function RunPayrollView() {
     </>
   );
 }
-

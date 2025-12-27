@@ -377,46 +377,42 @@ export function RunPayrollView() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Pay Period</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={'outline'}
-                      className={cn(
-                        'w-[280px] justify-start text-left font-normal',
-                        !payPeriod && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {payPeriod?.from ? (
-                        payPeriod.to ? (
-                          <>
-                            {format(payPeriod.from, 'LLL dd, y')} -{' '}
-                            {format(payPeriod.to, 'LLL dd, y')}
-                          </>
-                        ) : (
-                          format(payPeriod.from, 'LLL dd, y')
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={payPeriod?.from}
-                      selected={payPeriod}
-                      onSelect={setPayPeriod}
-                      numberOfMonths={2}
-                      classNames={{ head_cell: 'text-center' }}
-                    />
-                  </PopoverContent>
+                    <PopoverTrigger asChild>
+                        <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !payPeriod?.from && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {payPeriod?.from ? format(payPeriod.from, "LLL dd, y") : <span>Start Date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={payPeriod?.from}
+                            onSelect={(date) => setPayPeriod(prev => ({ from: date, to: prev?.to }))}
+                            classNames={{ head_cell: 'text-center' }}
+                            initialFocus
+                        />
+                    </PopoverContent>
                 </Popover>
-                <Button variant="secondary" onClick={() => setPayPeriod({ from: new Date(), to: new Date() })}>Today</Button>
-                <Button variant="secondary" onClick={() => setPayPeriod({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
-                <Button variant="secondary" onClick={() => setPayPeriod({ from: startOfWeek(addMonths(new Date(), -1)), to: endOfWeek(addMonths(new Date(), -1)) })}>Last Month</Button>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !payPeriod?.to && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {payPeriod?.to ? format(payPeriod.to, "LLL dd, y") : <span>End Date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={payPeriod?.to}
+                            onSelect={(date) => setPayPeriod(prev => ({ from: prev?.from, to: date }))}
+                            disabled={(date) => payPeriod?.from ? date < payPeriod.from : false}
+                            classNames={{ head_cell: 'text-center' }}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
             </div>
           </div>
           <div className="space-y-2">
@@ -675,9 +671,3 @@ export function RunPayrollView() {
     </>
   );
 }
-
-    
-
-    
-
-    

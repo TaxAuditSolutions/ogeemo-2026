@@ -689,7 +689,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                     <Label>Start Time</Label>
                                     <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                                         <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, 'PPP') : <span>Pick a start date</span>}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} classNames={{ head_cell: 'text-center' }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
                                         <Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -700,7 +700,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                     <Label>End Time</Label>
                                     <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
                                         <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, 'PPP') : <span>Pick an end date</span>}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} classNames={{ head_cell: 'text-center' }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
                                         <Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -770,16 +770,18 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     </Card>
                 </div>
             </div>
-            {isContactFormOpen && (
-                <ContactFormDialog 
-                    isOpen={isContactFormOpen}
-                    onOpenChange={setIsContactFormOpen}
-                    contactToEdit={null}
-                    folders={contactFolders}
-                    onFoldersChange={setContactFolders}
-                    onSave={handleContactSave}
-                />
-            )}
+            <ContactFormDialog 
+                isOpen={isContactFormOpen}
+                onOpenChange={setIsContactFormOpen}
+                contactToEdit={null}
+                folders={contactFolders}
+                onFoldersChange={setContactFolders}
+                onSave={handleContactSave}
+                companies={companies}
+                onCompaniesChange={setCompanies}
+                customIndustries={[]}
+                onCustomIndustriesChange={() => {}}
+            />
              <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -836,4 +838,5 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
 
 
     
+
 

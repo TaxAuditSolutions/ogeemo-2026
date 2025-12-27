@@ -44,7 +44,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge } from 'lucide-react';
-import { format, startOfMonth, startOfWeek, endOfWeek, endOfMonth, addMonths } from 'date-fns';
+import { format, startOfMonth, startOfWeek, endOfWeek, endOfMonth, addMonths, lastDayOfWeek, lastDayOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +54,7 @@ import { type Event as TaskEvent } from '@/types/calendar';
 import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from './WorkerFormDialog';
 import { cn } from '@/lib/utils';
+import { MergeWorkerDialog } from './MergeWorkerDialog';
 
 
 type PayrollEmployee = Worker & {
@@ -314,6 +315,16 @@ export function RunPayrollView() {
         }
     };
 
+    const handleMergeConfirm = async (sourceWorkerId: string, masterWorkerId: string) => {
+        try {
+            await mergeWorkers(sourceWorkerId, masterWorkerId);
+            toast({ title: "Workers Merged", description: "All records have been reassigned." });
+            loadData(); // Refresh data
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+        }
+    };
+
   const handleStartNewPayroll = () => {
     setPayrollStatus('idle');
     setSelectedEmployeeIds([]);
@@ -353,7 +364,7 @@ export function RunPayrollView() {
              <div className="space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="h-6 w-6 text-primary" />
-                  Step 1: Select the period and select Worker.
+                  Step 1: Select Pay Period & Workers
                 </CardTitle>
                 <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
@@ -455,6 +466,7 @@ export function RunPayrollView() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                           <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4" />Edit Worker</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => { setWorkerToMerge(emp); setIsMergeDialogOpen(true); }}><GitMerge className="mr-2 h-4 w-4" />Merge Duplicate</DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Worker</DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
@@ -650,9 +662,21 @@ export function RunPayrollView() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+
+     {workerToMerge && (
+        <MergeWorkerDialog
+            isOpen={isMergeDialogOpen}
+            onOpenChange={setIsMergeDialogOpen}
+            sourceWorker={workerToMerge}
+            allWorkers={employees}
+            onMergeConfirm={handleMergeConfirm}
+        />
+    )}
     </>
   );
 }
+
+    
 
     
 

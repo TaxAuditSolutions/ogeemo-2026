@@ -396,6 +396,7 @@ export function RunPayrollView() {
                   selected={payPeriod}
                   onSelect={setPayPeriod}
                   numberOfMonths={2}
+                  classNames={{ head_cell: "text-center" }}
                 />
               </PopoverContent>
             </Popover>
@@ -645,3 +646,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

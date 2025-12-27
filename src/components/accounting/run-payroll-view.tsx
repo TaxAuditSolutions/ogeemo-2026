@@ -44,7 +44,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X } from 'lucide-react';
-import { format, set, addMonths, lastDayOfWeek, lastDayOfMonth } from 'date-fns';
+import { format, set } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
@@ -385,11 +385,11 @@ export function RunPayrollView() {
            <div className="space-y-2">
               <Label>Pay Period</Label>
               <div className="flex flex-wrap items-center gap-2">
-                 <Popover>
+                <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                        <Button variant={"outline"} className={cn("w-[200px] justify-start text-left font-normal", !payPeriod?.from && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {payPeriod?.from ? format(payPeriod.from, 'PPP') : <span>Start Date</span>}
+                            {payPeriod?.from ? format(payPeriod.from, "PPP") : <span>Start Date</span>}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -401,12 +401,12 @@ export function RunPayrollView() {
                         initialFocus
                         />
                     </PopoverContent>
-                  </Popover>
-                  <Popover>
+                </Popover>
+                <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                        <Button variant={"outline"} className={cn("w-[200px] justify-start text-left font-normal", !payPeriod?.to && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {payPeriod?.to ? format(payPeriod.to, 'PPP') : <span>End Date</span>}
+                            {payPeriod?.to ? format(payPeriod.to, "PPP") : <span>End Date</span>}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -419,11 +419,7 @@ export function RunPayrollView() {
                         initialFocus
                         />
                     </PopoverContent>
-                  </Popover>
-                  <Button variant="secondary" onClick={() => setPayPeriod({ from: new Date(new Date().setDate(new Date().getDate() - 14)), to: new Date() })}>Last 14 Days</Button>
-                  <Button variant="secondary" onClick={() => setPayPeriod({ from: lastDayOfWeek(new Date(), {weekStartsOn: 1}), to: new Date() })}>This Week</Button>
-                  <Button variant="secondary" onClick={() => setPayPeriod({ from: lastDayOfMonth(new Date()), to: new Date() })}>This Month</Button>
-                  <Button>Stop Truncating</Button>
+                </Popover>
               </div>
           </div>
           <div className="space-y-2">
@@ -682,3 +678,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

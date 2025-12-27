@@ -15,7 +15,8 @@ import { type Project, type Event as TaskEvent, type TimeSession } from '@/types
 import { type Contact } from '@/data/contacts';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
 import { getContacts } from '@/services/contact-service';
-import { getFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, type Company } from '@/services/accounting-service';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn, formatTime } from '@/lib/utils';
@@ -71,6 +72,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [projects, setProjects] = React.useState<Project[]>(initialProjects);
     const [contacts, setContacts] = React.useState<Contact[]>(initialContacts);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
+    const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
 
     // Form state
@@ -364,10 +366,12 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setProjects(initialProjects);
             setContacts(initialContacts);
 
-            const [fetchedFolders] = await Promise.all([
+            const [fetchedFolders, fetchedCompanies] = await Promise.all([
                 getFolders(user.uid),
+                getCompanies(user.uid),
             ]);
             setContactFolders(fetchedFolders);
+            setCompanies(fetchedCompanies);
             
             const sourceParam = searchParams.get('source');
             if (sourceParam === 'log-email') {
@@ -834,9 +838,4 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     );
 }
 
-  
-
-
     
-
-

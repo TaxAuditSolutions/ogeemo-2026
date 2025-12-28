@@ -66,6 +66,7 @@ function NewTestCalendar({
 
 export default function CalendarTestPage() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
+    const headerCells = Array.from({ length: 7 });
     const gridCells = Array.from({ length: 35 }); // 7x5 grid
 
     return (
@@ -76,6 +77,13 @@ export default function CalendarTestPage() {
             <div className="flex flex-col items-center gap-4 pt-8">
                 <h2 className="text-xl font-semibold">Test Grid Frame</h2>
                 <div className="p-4 border rounded-lg bg-background">
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                        {headerCells.map((_, index) => (
+                            <div key={index} className="h-9 w-16 bg-primary/10 border flex items-center justify-center text-xs text-primary font-semibold">
+                                {/* Header {index + 1} */}
+                            </div>
+                        ))}
+                    </div>
                     <div className="grid grid-cols-7 gap-1">
                         {gridCells.map((_, index) => (
                             <div key={index} className="h-16 w-16 bg-muted border flex items-center justify-center text-xs text-muted-foreground">

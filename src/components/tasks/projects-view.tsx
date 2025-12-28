@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, Check, GitMerge } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, ListTodo } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from "@/components/ui/progress";

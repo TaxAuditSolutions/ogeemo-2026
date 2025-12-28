@@ -332,8 +332,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     <ResizablePanel defaultSize={30} minSize={25}>
                         <Card className="h-full flex flex-col border-0 rounded-none">
                             <CardHeader>
-                                <CardTitle>Project Plan</CardTitle>
-                                <CardDescription>{project.description}</CardDescription>
+                                <CardTitle>Project Steps</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 space-y-2 overflow-y-auto">
                                 {steps.map((step, index) => (
@@ -492,7 +491,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     );
 }
 
-
-    
-
-    

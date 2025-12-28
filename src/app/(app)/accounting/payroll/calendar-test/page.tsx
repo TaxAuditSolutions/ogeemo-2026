@@ -1,18 +1,23 @@
 'use client';
 
 import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css'; // Use the library's base stylesheet
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-import { buttonVariants } from '@/components/ui/button';
-import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Button } from '@/components/ui/button';
+import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { format, addMonths, subMonths } from 'date-fns';
 
 export default function CalendarTestPage() {
+    const [currentDate, setCurrentDate] = React.useState(new Date());
     const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     const gridCells = Array.from({ length: 35 }); // 7x5 grid
+
+    const handlePrevMonth = () => {
+        setCurrentDate(subMonths(currentDate, 1));
+    };
+
+    const handleNextMonth = () => {
+        setCurrentDate(addMonths(currentDate, 1));
+    };
 
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
@@ -23,11 +28,11 @@ export default function CalendarTestPage() {
                 <h2 className="text-xl font-semibold">Test Grid Frame</h2>
                 <div className="p-4 border rounded-lg bg-background">
                     <div className="h-9 mb-2 flex items-center justify-between px-2 bg-muted border rounded-md">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <h3 className="font-semibold text-sm">August 2024</h3>
-                      <Button variant="ghost" size="icon">
+                      <h3 className="font-semibold text-sm">{format(currentDate, 'MMMM yyyy')}</h3>
+                      <Button variant="ghost" size="icon" onClick={handleNextMonth}>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>

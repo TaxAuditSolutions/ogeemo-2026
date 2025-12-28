@@ -42,6 +42,7 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -313,7 +314,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                 <header className="text-center mb-6 relative">
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Planning</h1>
-                    <h2 className="text-xl font-semibold text-muted-foreground mt-1">{project.name}</h2>
+                    <h2 className="text-xl font-semibold text-muted-foreground mt-1">Here is where you do the planning of your specific project.</h2>
                     <div className="absolute top-0 right-0">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <X className="h-5 w-5" />
@@ -343,6 +344,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                                     onBlur={handleUpdateStepTitle}
                                                     onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateStepTitle(); if (e.key === 'Escape') setEditingStepId(null); }}
                                                     className="h-8 border-0 shadow-none focus-visible:ring-1 flex-1"
+                                                    onClick={e => e.stopPropagation()}
                                                 />
                                             ) : (
                                                 <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">
@@ -391,12 +393,15 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onAddTask={() => handleAddTask()} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={handleTaskDeleted}
+                                onTaskDelete={(taskId) => {
+                                    const task = tasks.find(t => t.id === taskId);
+                                    if (task) handleDeleteTask(task.id);
+                                }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                onMakeProjectTask={() => {}}
                                 selectedTaskIds={selectedTaskIds}
-                                onToggleSelect={handleToggleComplete}
+                                onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                             <TaskColumn 
@@ -405,12 +410,15 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onAddTask={() => handleAddTask()} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={handleTaskDeleted}
+                                onTaskDelete={(taskId) => {
+                                    const task = tasks.find(t => t.id === taskId);
+                                    if (task) handleDeleteTask(task.id);
+                                }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                onMakeProjectTask={() => {}} 
                                 selectedTaskIds={selectedTaskIds}
-                                onToggleSelect={handleToggleComplete}
+                                onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                             <TaskColumn 
@@ -419,12 +427,15 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onAddTask={() => handleAddTask()} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={handleTaskDeleted}
+                                onTaskDelete={(taskId) => {
+                                    const task = tasks.find(t => t.id === taskId);
+                                    if (task) handleDeleteTask(task.id);
+                                }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                onMakeProjectTask={() => {}} 
                                 selectedTaskIds={selectedTaskIds}
-                                onToggleSelect={handleToggleComplete}
+                                onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                         </div>
@@ -439,7 +450,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    This will permanently delete the step "{stepToDelete?.title}". This cannot be undone.
+                    This will permanently delete the step "{stepToDelete?.title}". This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -476,7 +487,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
-
-    
-
-    

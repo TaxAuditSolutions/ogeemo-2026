@@ -8,7 +8,7 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, deleteTasks, updateProject } from '@/services/project-service';
+import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
 import {
   AlertDialog,
@@ -41,6 +41,7 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -475,5 +476,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
+
+    
 
     

@@ -1,28 +1,14 @@
-
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+import { AccountingPageHeader } from "@/components/accounting/page-header";
 
 export default function CalendarTestPage() {
-    const [date, setDate] = useState<Date | undefined>(new Date());
-
     return (
-        <div className="p-8 flex items-center justify-center">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Calendar Test</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        className="rounded-md border"
-                    />
-                </CardContent>
-            </Card>
+        <div className="p-4 sm:p-6 space-y-6">
+            <AccountingPageHeader pageTitle="Calendar Test" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
+            <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">This is the calendar test page.</p>
+            </div>
         </div>
     );
 }

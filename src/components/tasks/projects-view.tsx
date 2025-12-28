@@ -17,7 +17,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +36,7 @@ import { type Project, type Event as TaskEvent, type ProjectUrgency, type Projec
 import { NewTaskDialog } from './NewTaskDialog';
 import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -301,10 +301,9 @@ export function ProjectsView() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
                     <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
                 </header>
-                <ProjectManagementHeader />
-
                 <div className="w-full max-w-7xl flex-1 space-y-8">
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <ProjectManagementHeader />
                         <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Button>
@@ -384,3 +383,4 @@ export function ProjectsView() {
         </>
     );
 }
+

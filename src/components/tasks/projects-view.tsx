@@ -32,7 +32,7 @@ import { type Project, type Event as TaskEvent, type ProjectUrgency, type Projec
 import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import MergeContactsDialog from '../contacts/MergeContactsDialog';
+import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -51,7 +51,7 @@ const getPrioritySortValue = (p: Project) => {
 
 const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityChange }: { project: Project, tasks: TaskEvent[], contacts: Contact[], onEdit: (p: Project) => void, onDelete: (p: Project) => void, onPriorityChange: (projectId: string, priority: 'urgency' | 'importance', value: ProjectUrgency | ProjectImportance) => void }) => {
     const router = useRouter();
-    const isActionItems = project.id === 'inbox';
+    const isActionItems = project.id === ACTION_ITEMS_PROJECT_ID;
     const projectTasks = tasks.filter(t => t.projectId === project.id || (isActionItems && !t.projectId));
     const completedTasks = projectTasks.filter(t => t.status === 'done').length;
     const totalTasks = projectTasks.length;
@@ -225,7 +225,7 @@ export function ProjectsView() {
     const handleConfirmDelete = async () => {
         if (!projectToDelete) return;
         try {
-            const tasksToDelete = await getTasksForProject(projectToDelete.id);
+            const tasksToDelete = await getTasksForUser(projectToDelete.id);
             await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
             
             const newProjects = projects.filter(p => p.id !== projectToDelete.id);
@@ -277,6 +277,12 @@ export function ProjectsView() {
                 <ProjectManagementHeader />
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
+                    <div className="flex justify-end mb-4">
+                        <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" /> New Project
+                        </Button>
+                    </div>
+
                     {isLoading ? (
                         <div className="flex items-center justify-center h-full pt-16">
                             <LoaderCircle className="h-8 w-8 animate-spin" />

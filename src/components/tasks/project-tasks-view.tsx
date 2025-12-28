@@ -311,26 +311,25 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     return (
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col">
-                <header className="text-center mb-6 relative">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Project Planning</h1>
+                 <header className="text-center mb-6">
+                    <h1 className="text-3xl font-bold font-headline text-primary">
+                        Project Planning
+                    </h1>
                     <h2 className="text-xl font-semibold mt-2">{project.name}</h2>
-                    <p className="text-muted-foreground">
-                       Here is where you do the planning of your specific project.
+                     <p className="text-muted-foreground">
+                        Here is where you do the planning of your specific project.
                     </p>
-                    <div className="absolute top-0 right-0">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                            <X className="h-5 w-5" />
-                            <span className="sr-only">Close</span>
-                        </Button>
-                    </div>
                 </header>
                 <ProjectManagementHeader projectId={projectId} />
                 
                 <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
                     <ResizablePanel defaultSize={30} minSize={25}>
                         <Card className="h-full flex flex-col border-0 rounded-none">
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>Project Steps</CardTitle>
+                                <Button size="sm" onClick={handleAddStep} variant="outline">
+                                    <Plus className="mr-2 h-4 w-4" /> Add
+                                </Button>
                             </CardHeader>
                             <CardContent className="flex-1 space-y-2 overflow-y-auto">
                                 {steps.map((step, index) => (
@@ -370,7 +369,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                     </DraggableStep>
                                 ))}
                             </CardContent>
-                             <div className="p-2 border-t">
+                            <div className="p-2 border-t">
                                 <div className="flex items-center gap-2">
                                      <Input
                                         placeholder="Add a new step..."
@@ -378,9 +377,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                         onChange={(e) => setNewStepTitle(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
                                     />
-                                    <Button size="sm" onClick={handleAddStep}>
-                                        <Plus className="mr-2 h-4 w-4" /> Add
-                                    </Button>
                                 </div>
                             </div>
                         </Card>
@@ -488,4 +484,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

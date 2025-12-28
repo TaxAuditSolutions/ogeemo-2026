@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, ArrowDownAZ, ArrowUpAZ, SortDesc, Route } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from "@/components/ui/progress";
@@ -13,7 +13,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
@@ -35,11 +34,11 @@ import { getProjects, deleteProject, getTasksForUser, addProject, updateProject 
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar';
 import { NewTaskDialog } from './NewTaskDialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
 import { cn } from '@/lib/utils';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -66,7 +65,7 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
     const client = contacts.find(c => c.id === project.contactId);
 
     return (
-        <Card className={cn("flex flex-col", isActionItems && "bg-primary/5 border-primary/20")}>
+        <Card className="flex flex-col">
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
@@ -81,9 +80,7 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                             <DropdownMenuContent>
                                 <DropdownMenuItem onSelect={() => onEdit(project)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                        <ArrowDownAZ className="mr-2 h-4 w-4" /> Set Urgency
-                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubTrigger>Set Urgency</DropdownMenuSubTrigger>
                                     <DropdownMenuPortal>
                                         <DropdownMenuSubContent>
                                             <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'urgency', 'urgent')}>Urgent</DropdownMenuItem>
@@ -93,9 +90,7 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                                     </DropdownMenuPortal>
                                 </DropdownMenuSub>
                                 <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                        <ArrowDownAZ className="mr-2 h-4 w-4" /> Set Importance
-                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubTrigger>Set Importance</DropdownMenuSubTrigger>
                                     <DropdownMenuPortal>
                                         <DropdownMenuSubContent>
                                             <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'importance', 'A')}>A - Critical</DropdownMenuItem>
@@ -229,7 +224,7 @@ export function ProjectsView() {
     const handleConfirmDelete = async () => {
         if (!projectToDelete) return;
         try {
-            const tasksToDelete = await getTasksForUser(projectToDelete.id);
+            const tasksToDelete = await getTasksForProject(projectToDelete.id);
             await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
             
             const newProjects = projects.filter(p => p.id !== projectToDelete.id);
@@ -288,11 +283,12 @@ export function ProjectsView() {
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
                 <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
-                    <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
+                    <p className="text-muted-foreground">A high-level view of all your projects.</p>
                 </header>
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <ProjectManagementHeader />
                         <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Button>

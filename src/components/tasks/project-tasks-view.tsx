@@ -313,8 +313,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col">
                 <header className="text-center mb-6 relative">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Project Planning</h1>
-                    <h2 className="text-xl font-semibold text-muted-foreground mt-1">Here is where you do the planning of your specific project.</h2>
+                    <h1 className="text-3xl font-bold font-headline text-primary">
+                        {project.name}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Here is where you do the planning of your specific project.
+                    </p>
                     <div className="absolute top-0 right-0">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <X className="h-5 w-5" />
@@ -395,7 +399,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
+                                    if (task) handleTaskDeleted(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -412,7 +416,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
+                                    if (task) handleTaskDeleted(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -429,7 +433,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
+                                    if (task) handleTaskDeleted(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -487,3 +491,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
+
+
+    

@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { Button } from '@/components/ui/button';
 
 export default function CalendarTestPage() {
     const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -21,8 +22,14 @@ export default function CalendarTestPage() {
             <div className="flex flex-col items-center gap-4 pt-8">
                 <h2 className="text-xl font-semibold">Test Grid Frame</h2>
                 <div className="p-4 border rounded-lg bg-background">
-                    <div className="h-9 mb-2 flex items-center justify-center bg-muted border rounded-md">
-                      {/* This is the new row */}
+                    <div className="h-9 mb-2 flex items-center justify-between px-2 bg-muted border rounded-md">
+                      <Button variant="ghost" size="icon">
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <h3 className="font-semibold text-sm">August 2024</h3>
+                      <Button variant="ghost" size="icon">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                     <div className="grid grid-cols-7 gap-1 mb-2">
                         {daysOfWeek.map((day, index) => (

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -24,7 +23,7 @@ import {
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { NewTaskDialog } from './NewTaskDialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
 import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
 import { cn } from '@/lib/utils';
@@ -42,7 +41,6 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -161,21 +159,21 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             await deleteTask(taskId);
             toast({ title: "Task Deleted" });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
             setTasks(originalTasks);
         }
     };
     
-    const handleMoveTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus, newPosition: number) => {
+    const onDropTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => {
         if (!user) return;
-    
+        
         if ('isCompleted' in item) { // Type guard for ProjectStep
             try {
                 const newTaskData: Omit<TaskEvent, 'id'> = {
                     title: item.title || 'New Task from Plan',
                     description: item.description || '',
                     status: newStatus,
-                    position: newPosition,
+                    position: tasks.filter(t => t.status === newStatus).length,
                     projectId: projectId === 'inbox' ? null : projectId,
                     userId: user.uid,
                 };
@@ -188,35 +186,50 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             return;
         }
 
-        const taskId = item.id;
-        const taskToMove = tasks.find(t => t.id === taskId);
-        if (!taskToMove) return;
+        if (item.status === newStatus) return;
 
         const originalTasks = [...tasks];
-        
-        const tasksInNewColumn = tasks.filter(t => t.status === newStatus && t.id !== taskId);
-        tasksInNewColumn.splice(newPosition, 0, { ...taskToMove, status: newStatus });
-        
-        const otherTasks = tasks.filter(t => t.status !== newStatus && t.id !== taskId);
-        
-        const updatedTasks = [...otherTasks, ...tasksInNewColumn].map((t, index) => ({ ...t, position: index }));
-
-        const tasksToUpdateInDb = tasksInNewColumn.map((task, index) => ({
-            id: task.id,
-            position: index,
-            status: newStatus,
-        }));
-
+        const updatedTasks = tasks.map(t => t.id === item.id ? { ...t, status: newStatus } : t);
         setTasks(updatedTasks);
         
         try {
-            await updateTaskPositions(tasksToUpdateInDb);
+            await updateTask(item.id, { status: newStatus });
         } catch (error: any) {
             setTasks(originalTasks);
-            toast({ variant: 'destructive', title: 'Failed to move task', description: error.message });
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
         }
-    }, [tasks, user, projectId, toast]);
+    }, [user, projectId, toast, tasks]);
 
+    const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
+        const dragTask = tasks.find(t => t.id === dragId);
+        const hoverTask = tasks.find(t => t.id === hoverId);
+        if (!dragTask || !hoverTask || dragTask.status !== hoverTask.status) return;
+
+        const dragIndex = tasks.findIndex(t => t.id === dragId);
+        const hoverIndex = tasks.findIndex(t => t.id === hoverId);
+
+        const newTasks = [...tasks];
+        const [draggedItem] = newTasks.splice(dragIndex, 1);
+        newTasks.splice(hoverIndex, 0, draggedItem);
+        
+        const tasksInColumn = newTasks.filter(t => t.status === dragTask.status);
+        const updates = tasksInColumn.map((task, index) => ({
+            id: task.id,
+            position: index,
+            status: task.status,
+        }));
+        
+        setTasks(newTasks);
+        await updateTaskPositions(updates);
+    }, [tasks]);
+
+    const handleToggleComplete = async (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        onDropTask(task, newStatus);
+    };
+    
     const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
         if (project && !isActionItemsView) {
             try {
@@ -287,23 +300,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         await handleSaveSteps(newSteps);
     }, [steps, handleSaveSteps]);
 
-    const handleToggleComplete = async (taskId: string) => {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-
-        const newStatus = task.status === 'done' ? 'todo' : 'done';
-        const updatedTask = { ...task, status: newStatus };
-
-        setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
-
-        try {
-            await updateTask(taskId, { status: newStatus });
-            toast({ title: `Task ${newStatus === 'done' ? 'completed' : 'reopened'}` });
-        } catch (error: any) {
-            setTasks(prev => prev.map(t => t.id === taskId ? task : t));
-            toast({ variant: 'destructive', title: 'Failed to update task status' });
-        }
-    };
     
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
@@ -331,6 +327,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                         <Card className="h-full flex flex-col border-0 rounded-none">
                             <CardHeader>
                                 <CardTitle>Project Plan</CardTitle>
+                                <CardDescription>{project.description}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1 space-y-2 overflow-y-auto">
                                 {steps.map((step, index) => (
@@ -387,9 +384,48 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     <ResizableHandle withHandle />
                     <ResizablePanel defaultSize={70}>
                         <div className="h-full grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-                            <TaskColumn status="todo" tasks={tasksByStatus.todo} onAddTask={() => handleAddTask()} onMoveTask={handleMoveTask} onTaskUpdate={handleTaskUpdated} onTaskDelete={handleTaskDeleted} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} selectedTaskIds={[]} onToggleSelect={()=>{}} onToggleSelectAll={()=>{}} />
-                            <TaskColumn status="inProgress" tasks={tasksByStatus.inProgress} onAddTask={() => handleAddTask()} onMoveTask={handleMoveTask} onTaskUpdate={handleTaskUpdated} onTaskDelete={handleTaskDeleted} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} selectedTaskIds={[]} onToggleSelect={()=>{}} onToggleSelectAll={()=>{}} />
-                            <TaskColumn status="done" tasks={tasksByStatus.done} onAddTask={() => handleAddTask()} onMoveTask={handleMoveTask} onTaskUpdate={handleTaskUpdated} onTaskDelete={handleTaskDeleted} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} selectedTaskIds={[]} onToggleSelect={()=>{}} onToggleSelectAll={()=>{}} />
+                            <TaskColumn 
+                                status="todo" 
+                                tasks={tasksByStatus.todo} 
+                                onAddTask={() => handleAddTask()} 
+                                onDropTask={onDropTask} 
+                                onMoveCard={onMoveCard}
+                                onTaskDelete={handleTaskDeleted}
+                                onToggleComplete={handleToggleComplete}
+                                onEdit={handleEditTask}
+                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                selectedTaskIds={selectedTaskIds}
+                                onToggleSelect={handleToggleComplete}
+                                onToggleSelectAll={() => {}}
+                            />
+                            <TaskColumn 
+                                status="inProgress" 
+                                tasks={tasksByStatus.inProgress}
+                                onAddTask={() => handleAddTask()} 
+                                onDropTask={onDropTask} 
+                                onMoveCard={onMoveCard}
+                                onTaskDelete={handleTaskDeleted}
+                                onToggleComplete={handleToggleComplete}
+                                onEdit={handleEditTask}
+                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                selectedTaskIds={selectedTaskIds}
+                                onToggleSelect={handleToggleComplete}
+                                onToggleSelectAll={() => {}}
+                            />
+                            <TaskColumn 
+                                status="done" 
+                                tasks={tasksByStatus.done}
+                                onAddTask={() => handleAddTask()} 
+                                onDropTask={onDropTask} 
+                                onMoveCard={onMoveCard}
+                                onTaskDelete={handleTaskDeleted}
+                                onToggleComplete={handleToggleComplete}
+                                onEdit={handleEditTask}
+                                onMakeProjectTask={() => {}} // This is handled at the project level
+                                selectedTaskIds={selectedTaskIds}
+                                onToggleSelect={handleToggleComplete}
+                                onToggleSelectAll={() => {}}
+                            />
                         </div>
                     </ResizablePanel>
                 </ResizablePanelGroup>

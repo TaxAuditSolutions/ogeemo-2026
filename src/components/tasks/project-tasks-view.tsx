@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
+import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar-types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,6 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -314,7 +313,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                  <header className="text-center mb-6 relative">
                     <h1 className="text-3xl font-bold font-headline text-primary">{project.name}</h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">make a mostest best moist fruitcake Here is where you do the planning of your specific project. </p>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">Here is where you do the planning of your specific project.</p>
                     <div className="absolute top-0 right-0">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <X className="h-5 w-5" />
@@ -456,7 +455,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Step Details</DialogTitle>
-                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
+                        <CardDescription>{stepToDetail?.title}</CardDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="step-description">Description</Label>

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, Info } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Route, Inbox, ListTodo } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from "@/components/ui/progress";
@@ -35,9 +35,8 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar';
 import { NewTaskDialog } from './NewTaskDialog';
 import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
-import { cn } from '@/lib/utils';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Label } from '@/components/ui/label';
+import { ProjectManagementHeader } from './ProjectManagementHeader';
+
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -115,7 +114,39 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                 <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4" /> Task Board</Button>
+                <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListTodo className="mr-2 h-4 w-4" /> Task Board</Button>
+                    {!isActionItems ? (
+                      <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/timeline`)}><Route className="mr-2 h-4 w-4" /> Timeline</Button>
+                    ) : <div />}
+                </div>
+                {!isActionItems && (
+                  <div className="grid grid-cols-2 gap-2 items-center">
+                    <div>
+                        <Select value={project.urgency || 'important'} onValueChange={(v) => onPriorityChange(project.id, 'urgency', v as ProjectUrgency)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="urgent">Urgent</SelectItem>
+                                <SelectItem value="important">Important</SelectItem>
+                                <SelectItem value="optional">Optional</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                         <Select value={project.importance || 'B'} onValueChange={(v) => onPriorityChange(project.id, 'importance', v as ProjectImportance)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="A">A - Critical</SelectItem>
+                                <SelectItem value="B">B - Important</SelectItem>
+                                <SelectItem value="C">C - Optional</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                  </div>
+                )}
+                 {!isActionItems && (
+                    <Button variant="secondary" className="w-full" onClick={() => onEdit(project)}>Edit Details</Button>
+                )}
             </CardFooter>
         </Card>
     );
@@ -132,7 +163,6 @@ export function ProjectsView() {
     const [isLoading, setIsLoading] = useState(true);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState(emptyInitialData);
-    const [sortKey, setSortKey] = useState<'priority' | 'name' | 'status'>('priority');
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -243,20 +273,7 @@ export function ProjectsView() {
     };
 
     const planningProjects = projects.filter(p => p.status === 'planning');
-    
-    const activeProjects = useMemo(() => {
-        const filtered = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID);
-        if (sortKey === 'priority') {
-            return filtered.sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
-        }
-        if (sortKey === 'name') {
-            return filtered.sort((a, b) => a.name.localeCompare(b.name));
-        }
-        if (sortKey === 'status') {
-            return filtered.sort((a,b) => (a.status || '').localeCompare(b.status || ''));
-        }
-        return filtered;
-    }, [projects, sortKey]);
+    const activeProjects = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID).sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
 
     return (
         <>
@@ -284,9 +301,10 @@ export function ProjectsView() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
                     <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
                 </header>
+                <ProjectManagementHeader />
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-end mb-4">
                         <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Button>
@@ -318,17 +336,7 @@ export function ProjectsView() {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-semibold text-center">Active Projects & Action Items</h2>
-                                <div className="flex items-center gap-2">
-                                    <Label className="text-sm">Sort by:</Label>
-                                    <ToggleGroup type="single" value={sortKey} onValueChange={(value) => value && setSortKey(value as any)}>
-                                        <ToggleGroupItem value="priority" aria-label="Sort by priority">Priority</ToggleGroupItem>
-                                        <ToggleGroupItem value="name" aria-label="Sort by name">Name</ToggleGroupItem>
-                                        <ToggleGroupItem value="status" aria-label="Sort by status">Status</ToggleGroupItem>
-                                    </ToggleGroup>
-                                </div>
-                            </div>
+                            <h2 className="text-xl font-semibold mb-4 text-center">Active Projects & Action Items</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <ProjectCard
                                     key={inboxProject.id}

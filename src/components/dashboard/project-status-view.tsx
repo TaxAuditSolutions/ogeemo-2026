@@ -274,7 +274,7 @@ export function ProjectStatusView() {
     <>
         <div className="space-y-6 p-4 sm:p-6">
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Project Status Board</h1>
+                <h1 className="text-3xl font-bold font-headline text-primary">Projects</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                     A Kanban-style overview of all your projects. Drag and drop to change a project's status.
                 </p>

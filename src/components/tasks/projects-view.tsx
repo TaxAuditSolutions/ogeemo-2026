@@ -12,11 +12,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
-  DropdownMenuSubContent
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -99,7 +98,6 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                                         </DropdownMenuSubContent>
                                     </DropdownMenuPortal>
                                 </DropdownMenuSub>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -117,13 +115,14 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4" /> Task Board</Button>
+                 <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4" /> Task Board</Button>
             </CardFooter>
         </Card>
     );
 };
 
 
+const emptyInitialData = {};
 export function ProjectsView() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -132,7 +131,7 @@ export function ProjectsView() {
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-    const [initialDialogData, setInitialDialogData] = useState({});
+    const [initialDialogData, setInitialDialogData] = useState(emptyInitialData);
     const [sortKey, setSortKey] = useState<'priority' | 'name' | 'status'>('priority');
     
     const { user } = useAuth();
@@ -283,12 +282,12 @@ export function ProjectsView() {
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
                 <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
-                    <p className="text-muted-foreground">A high-level view of all your projects.</p>
+                    <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
                 </header>
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
                     <div className="flex justify-between items-center mb-4">
-                        <ProjectManagementHeader />
+                        <div />
                         <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Button>

@@ -1,149 +1,353 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  ArrowRight,
-  Briefcase,
-  ListChecks,
-  Inbox,
-  Plus,
-  Info,
-  ListTodo,
-  Route,
-} from 'lucide-react';
-import { NewTaskDialog } from './NewTaskDialog';
-import { useAuth } from '@/context/auth-context';
-import { addProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, Check, GitMerge } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getProjects, deleteProject, getTasksForUser, addProject, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
+import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
+import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
-interface FeatureCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  href: string;
-  cta: string;
-}
+const getPrioritySortValue = (p: Project) => {
+    let score = 0;
+    // Time Urgency: Urgent > Important > Optional
+    if (p.urgency === 'urgent') score += 1000;
+    if (p.urgency === 'important') score += 500;
+    if (p.urgency === 'optional') score += 100;
+    
+    // Task Importance: A > B > C
+    if (p.importance === 'A') score += 0.1;
+    if (p.importance === 'B') score += 0.05;
+    if (p.importance === 'C') score += 0.01;
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, href, cta }) => (
-  <Card className="flex flex-col">
-    <CardHeader>
-      <div className="flex items-start gap-4">
-        <div className="p-3 bg-primary/10 rounded-lg">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription className="mt-1">{description}</CardDescription>
-        </div>
-      </div>
-    </CardHeader>
-    <CardContent className="flex-1" />
-    <CardFooter>
-      <Button asChild className="w-full">
-        <Link href={href}>
-          {cta}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Link>
-      </Button>
-    </CardFooter>
-  </Card>
-);
+    return score;
+};
+
+const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityChange }: { project: Project, tasks: TaskEvent[], contacts: Contact[], onEdit: (p: Project) => void, onDelete: (p: Project) => void, onPriorityChange: (projectId: string, priority: 'urgency' | 'importance', value: ProjectUrgency | ProjectImportance) => void }) => {
+    const router = useRouter();
+    const isActionItems = project.id === 'inbox';
+    const projectTasks = tasks.filter(t => t.projectId === project.id || (isActionItems && !t.projectId));
+    const completedTasks = projectTasks.filter(t => t.status === 'done').length;
+    const totalTasks = projectTasks.length;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    const client = contacts.find(c => c.id === project.contactId);
+
+    return (
+        <Card className="flex flex-col">
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                        {isActionItems ? <Inbox className="h-5 w-5" /> : <Briefcase className="h-5 w-5" />}
+                        <CardTitle>{project.name}</CardTitle>
+                    </div>
+                    {!isActionItems && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onSelect={() => onEdit(project)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
+                <CardDescription>{isActionItems ? 'Your central place to capture new tasks.' : (client?.name || 'No client assigned')}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-4">
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-medium">Progress</p>
+                        <p className="text-sm text-muted-foreground">{completedTasks} of {totalTasks} tasks complete</p>
+                    </div>
+                    <Progress value={progress} />
+                </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-2 items-stretch">
+                <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListTodo className="mr-2 h-4 w-4" /> Task Board</Button>
+                    {!isActionItems ? (
+                      <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/timeline`)}><Route className="mr-2 h-4 w-4" /> Timeline</Button>
+                    ) : <div />}
+                </div>
+                {!isActionItems && (
+                  <div className="grid grid-cols-2 gap-2 items-center">
+                    <div>
+                        <Select value={project.urgency || 'important'} onValueChange={(v) => onPriorityChange(project.id, 'urgency', v as ProjectUrgency)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="urgent">Urgent</SelectItem>
+                                <SelectItem value="important">Important</SelectItem>
+                                <SelectItem value="optional">Optional</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                         <Select value={project.importance || 'B'} onValueChange={(v) => onPriorityChange(project.id, 'importance', v as ProjectImportance)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="A">A - Critical</SelectItem>
+                                <SelectItem value="B">B - Important</SelectItem>
+                                <SelectItem value="C">C - Optional</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                  </div>
+                )}
+            </CardFooter>
+        </Card>
+    );
+};
+
 
 export function ProjectsView() {
-  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
-  const [initialDialogData, setInitialDialogData] = React.useState({});
-  const [contacts, setContacts] = React.useState<Contact[]>([]);
-  
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const router = useRouter();
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [tasks, setTasks] = useState<TaskEvent[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+    const [initialDialogData, setInitialDialogData] = useState({});
+    
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const router = useRouter();
 
-  React.useEffect(() => {
-    async function loadContacts() {
-        if (user) {
+    const inboxProject: Project = useMemo(() => ({
+        id: ACTION_ITEMS_PROJECT_ID,
+        name: "Action Items",
+        description: "A place to capture all your incoming tasks and ideas before organizing them.",
+        userId: user?.uid || '',
+        createdAt: new Date(0), // Puts it at the top when sorting
+    }), [user]);
+
+
+    useEffect(() => {
+        async function loadInitialData() {
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true);
             try {
-                const fetchedContacts = await getContacts(user.uid);
+                const [fetchedProjects, fetchedContacts, fetchedTasks] = await Promise.all([
+                    getProjects(user.uid),
+                    getContacts(user.uid),
+                    getTasksForUser(user.uid),
+                ]);
+                setProjects(fetchedProjects);
                 setContacts(fetchedContacts);
-            } catch (error) {
-                console.error("Failed to load contacts for Project Hub:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Failed to load contacts',
-                    description: 'Could not retrieve client list for the new project form.',
-                });
+                setTasks(fetchedTasks);
+
+                const ideaToProjectRaw = sessionStorage.getItem('ogeemo-idea-to-project');
+                if (ideaToProjectRaw) {
+                    const ideaData = JSON.parse(ideaToProjectRaw);
+                    setInitialDialogData({ name: ideaData.title, description: ideaData.description });
+                    setIsNewItemDialogOpen(true);
+                }
+
+            } catch (error: any) {
+                 toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
+            } finally {
+                setIsLoading(false);
             }
         }
-    }
-    loadContacts();
-  }, [user, toast]);
+        loadInitialData();
+    }, [user, toast]);
+    
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            setProjects(prev => [newProject, ...prev]);
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created and placed in 'Planning'.` });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        }
+    };
 
-  const handleNewProjectClick = () => {
-      setInitialDialogData({}); // Clear any previous initial data
-      setIsNewProjectDialogOpen(true);
-  };
+    const handleProjectUpdated = async (updatedProject: Project) => {
+        try {
+            const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
+            await updateProject(id, dataToUpdate);
+            setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+            toast({ title: "Project Updated" });
+        } catch (error: any) {
+             toast({ variant: "destructive", title: "Failed to update project", description: error.message });
+        }
+    };
+    
+    const handlePriorityChange = async (projectId: string, priority: 'urgency' | 'importance', value: ProjectUrgency | ProjectImportance) => {
+        const projectToUpdate = projects.find(p => p.id === projectId);
+        if (!projectToUpdate) return;
+        
+        const updatedProject = { ...projectToUpdate, [priority]: value };
+        
+        // Optimistic UI update
+        setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p));
+        
+        try {
+            await updateProject(projectId, { [priority]: value });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save priority change.'});
+            // Revert on failure
+            setProjects(prev => prev.map(p => p.id === projectId ? projectToUpdate : p));
+        }
+    };
 
-  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-      if (!user) return;
-      try {
-          const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-          toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-          router.push(`/projects/${newProject.id}/tasks`); // Navigate to the new project board
-      } catch (error: any) {
-          toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-      }
-  };
+    const handleConfirmDelete = async () => {
+        if (!projectToDelete) return;
+        try {
+            const tasksToDelete = await getTasksForProject(projectToDelete.id);
+            await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
+            
+            const newProjects = projects.filter(p => p.id !== projectToDelete.id);
+            setProjects(newProjects);
+            
+            toast({ title: "Project Deleted" });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
+        } finally {
+            setProjectToDelete(null);
+        }
+    };
+    
+    const handleEditProject = (project: Project) => {
+        setProjectToEdit(project);
+        setIsNewItemDialogOpen(true);
+    };
 
-  const features = [
-    { icon: Briefcase, title: "Project List", description: "A comprehensive list of every project. Use this view to edit project details.", href: "/projects/all", cta: "View Project List" },
-    { icon: Route, title: "Timeline", description: "A high-level Gantt chart view of your project schedules and phases.", href: "/projects/placeholder/timeline", cta: "Go to Timeline" },
-    { icon: ListChecks, title: "Status Board", description: "A Kanban-style board to visualize project status and quickly assess your workload.", href: "/project-status", cta: "Go to Status Board" },
-    { icon: ListTodo, title: "All Project Tasks", description: "A list of all tasks and events, including those scheduled on your calendar.", href: "/all-project-tasks", cta: "Open Tasks List" },
-  ];
+    const planningProjects = projects.filter(p => p.status === 'planning');
+    const activeProjects = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID).sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
 
-  return (
-    <>
-      <div className="p-4 sm:p-6 space-y-6">
-        <header className="text-center mb-6">
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            Project Hub
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Your central command for managing projects and tasks, from high-level planning to daily execution.
-          </p>
-        </header>
+    return (
+        <>
+            <NewTaskDialog
+                isOpen={isNewItemDialogOpen}
+                onOpenChange={(open) => {
+                    setIsNewItemDialogOpen(open);
+                    if (!open) {
+                        setProjectToEdit(null);
+                        if (sessionStorage.getItem('ogeemo-idea-to-project')) {
+                             sessionStorage.removeItem('ogeemo-idea-to-project');
+                        }
+                    }
+                }}
+                onProjectCreate={handleProjectCreated}
+                onProjectUpdate={handleProjectUpdated}
+                contacts={contacts}
+                onContactsChange={setContacts}
+                projectToEdit={projectToEdit}
+                initialData={initialDialogData}
+            />
+            
+            <div className="p-4 sm:p-6 flex flex-col h-full items-center">
+                <header className="text-center mb-6">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
+                    <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
+                </header>
 
-        <ProjectManagementHeader />
+                <ProjectManagementHeader />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {features.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
-          ))}
-        </div>
-      </div>
-      <NewTaskDialog
-          isOpen={isNewProjectDialogOpen}
-          onOpenChange={setIsNewProjectDialogOpen}
-          onProjectCreate={handleProjectCreated}
-          contacts={contacts}
-          onContactsChange={setContacts}
-          projectToEdit={null}
-          initialData={initialDialogData}
-      />
-    </>
-  );
+                <div className="w-full max-w-7xl flex-1 space-y-8">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-full pt-16">
+                            <LoaderCircle className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <>
+                            {planningProjects.length > 0 && (
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4 text-center">In Planning</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {planningProjects.map((p) => (
+                                            <ProjectCard
+                                                key={p.id}
+                                                project={p}
+                                                tasks={tasks}
+                                                contacts={contacts}
+                                                onEdit={handleEditProject}
+                                                onDelete={setProjectToDelete}
+                                                onPriorityChange={handlePriorityChange}
+                                            />
+                                        ))}
+                                    </div>
+                                    <hr className="my-8" />
+                                </div>
+                            )}
+
+                            <h2 className="text-xl font-semibold mb-4 text-center">Active Projects & Action Items</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <ProjectCard
+                                    key={inboxProject.id}
+                                    project={inboxProject}
+                                    tasks={tasks}
+                                    contacts={contacts}
+                                    onEdit={handleEditProject}
+                                    onDelete={setProjectToDelete}
+                                    onPriorityChange={handlePriorityChange}
+                                />
+                                {activeProjects.map((p) => (
+                                    <ProjectCard
+                                        key={p.id}
+                                        project={p}
+                                        tasks={tasks}
+                                        contacts={contacts}
+                                        onEdit={handleEditProject}
+                                        onDelete={setProjectToDelete}
+                                        onPriorityChange={handlePriorityChange}
+                                    />
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+            
+
+            <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the project "{projectToDelete?.name}" and all of its tasks. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
 }

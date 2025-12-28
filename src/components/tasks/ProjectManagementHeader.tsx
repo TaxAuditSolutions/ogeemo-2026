@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Briefcase, ListChecks, Info, Plus, ListTodo, Route, Beaker } from 'lucide-react';
+import { Briefcase, ListChecks, Info, Plus, ListTodo, Route } from 'lucide-react';
 import { NewTaskDialog } from './NewTaskDialog';
 import { useAuth } from '@/context/auth-context';
 import { addProject } from '@/services/project-service';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { getContacts, type Contact } from '@/services/contact-service';
 
-export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
+export function ProjectManagementHeader() {
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState({});
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -50,8 +50,6 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
         }
     };
-    
-    const timelineHref = `/projects/${projectId || 'placeholder'}/timeline`;
 
     return (
         <>
@@ -59,11 +57,6 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
                 <Button asChild variant="outline">
                     <Link href="/projects">
                         <Briefcase className="mr-2 h-4 w-4" /> Project Hub
-                    </Link>
-                </Button>
-                <Button asChild variant="outline">
-                    <Link href={timelineHref}>
-                        <Route className="mr-2 h-4 w-4" /> Timeline
                     </Link>
                 </Button>
                 <Button asChild variant="outline">

@@ -311,9 +311,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     return (
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col">
-                 <header className="text-center mb-6 relative">
-                    <h1 className="text-3xl font-bold font-headline text-primary">{project.name}</h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">Here is where you do the planning of your specific project.</p>
+                <header className="text-center mb-6 relative">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Project Planning</h1>
+                    <h2 className="text-xl font-semibold text-muted-foreground mt-1">{project.name}</h2>
                     <div className="absolute top-0 right-0">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <X className="h-5 w-5" />
@@ -455,7 +455,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Step Details</DialogTitle>
-                        <CardDescription>{stepToDetail?.title}</CardDescription>
+                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="step-description">Description</Label>

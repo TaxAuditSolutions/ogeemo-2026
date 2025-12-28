@@ -147,7 +147,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setIsNewTaskDialogOpen(false);
     };
     
-    const handleTaskDeleted = async (taskId: string) => {
+    const handleDeleteTask = async (taskId: string) => {
         const originalTasks = [...tasks];
         setTasks(prev => prev.filter(t => t.id !== taskId));
         try {
@@ -294,9 +294,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                  <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">
-                        {project.name}
+                        Project Planning
                     </h1>
-                     <p className="text-muted-foreground">
+                     <h2 className="text-xl font-bold font-headline">{project.name}</h2>
+                    <p className="text-muted-foreground">
                         Here is where you do the planning of your specific project.
                     </p>
                 </header>
@@ -357,41 +358,38 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                             <TaskColumn 
                                 status="todo" 
                                 tasks={tasksByStatus.todo} 
-                                onAddTask={() => handleAddTask()} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
                                     if (task) handleDeleteTask(task.id);
                                 }}
-                                onToggleComplete={handleToggleComplete}
+                                onToggleComplete={() => {}}
                                 onEdit={handleEditTask}
                                 onMakeProjectTask={() => {}}
-                                selectedTaskIds={selectedTaskIds}
+                                selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                             <TaskColumn 
                                 status="inProgress" 
                                 tasks={tasksByStatus.inProgress}
-                                onAddTask={() => handleAddTask({ status: 'inProgress'})} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
                                     if (task) handleDeleteTask(task.id);
                                 }}
-                                onToggleComplete={handleToggleComplete}
+                                onToggleComplete={() => {}}
                                 onEdit={handleEditTask}
                                 onMakeProjectTask={() => {}} 
-                                selectedTaskIds={selectedTaskIds}
+                                selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                             <TaskColumn 
                                 status="done" 
                                 tasks={tasksByStatus.done}
-                                onAddTask={() => handleAddTask({ status: 'done'})} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
@@ -401,7 +399,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
                                 onMakeProjectTask={() => {}} 
-                                selectedTaskIds={selectedTaskIds}
+                                selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />

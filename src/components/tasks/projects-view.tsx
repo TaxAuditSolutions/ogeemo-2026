@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, Route, ListTodo } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, Inbox, ArrowDownAZ, ArrowUpAZ, SortDesc, Route } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +13,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -30,9 +35,11 @@ import { getProjects, deleteProject, getTasksForUser, addProject, updateProject 
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar';
 import { NewTaskDialog } from './NewTaskDialog';
-import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
+import { cn } from '@/lib/utils';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -59,12 +66,12 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
     const client = contacts.find(c => c.id === project.contactId);
 
     return (
-        <Card className="flex flex-col">
+        <Card className={cn("flex flex-col", isActionItems && "bg-primary/5 border-primary/20")}>
             <CardHeader>
                 <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                        {isActionItems ? <Inbox className="h-5 w-5" /> : <Briefcase className="h-5 w-5" />}
-                        <CardTitle>{project.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                        {isActionItems ? <Inbox className="h-6 w-6 text-primary" /> : <Briefcase className="h-6 w-6 text-primary" />}
+                        <CardTitle className="text-lg">{project.name}</CardTitle>
                     </div>
                     {!isActionItems && (
                         <DropdownMenu>
@@ -73,12 +80,37 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuItem onSelect={() => onEdit(project)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
+                                 <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                        <ArrowDownAZ className="mr-2 h-4 w-4" /> Set Urgency
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                        <DropdownMenuSubContent>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'urgency', 'urgent')}>Urgent</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'urgency', 'important')}>Important</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'urgency', 'optional')}>Optional</DropdownMenuItem>
+                                        </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                        <ArrowDownAZ className="mr-2 h-4 w-4" /> Set Importance
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                        <DropdownMenuSubContent>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'importance', 'A')}>A - Critical</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'importance', 'B')}>B - Standard</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => onPriorityChange(project.id, 'importance', 'C')}>C - Low</DropdownMenuItem>
+                                        </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
                 </div>
-                <CardDescription>{isActionItems ? 'Your central place to capture new tasks.' : (client?.name || 'No client assigned')}</CardDescription>
+                <CardDescription>{isActionItems ? 'Your central inbox to capture new tasks.' : (client?.name || 'No client assigned')}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
                 <div>
@@ -90,39 +122,7 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListTodo className="mr-2 h-4 w-4" /> Task Board</Button>
-                    {!isActionItems ? (
-                      <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/timeline`)}><Route className="mr-2 h-4 w-4" /> Timeline</Button>
-                    ) : <div />}
-                </div>
-                {!isActionItems && (
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div>
-                        <Select value={project.urgency || 'important'} onValueChange={(v) => onPriorityChange(project.id, 'urgency', v as ProjectUrgency)}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="urgent">Urgent</SelectItem>
-                                <SelectItem value="important">Important</SelectItem>
-                                <SelectItem value="optional">Optional</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                         <Select value={project.importance || 'B'} onValueChange={(v) => onPriorityChange(project.id, 'importance', v as ProjectImportance)}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="A">A - Critical</SelectItem>
-                                <SelectItem value="B">B - Important</SelectItem>
-                                <SelectItem value="C">C - Optional</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                  </div>
-                )}
-                 {!isActionItems && (
-                    <Button variant="secondary" className="w-full" onClick={() => onEdit(project)}>Edit Details</Button>
-                )}
+                <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4" /> Task Board</Button>
             </CardFooter>
         </Card>
     );
@@ -138,6 +138,7 @@ export function ProjectsView() {
     const [isLoading, setIsLoading] = useState(true);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState({});
+    const [sortKey, setSortKey] = useState<'priority' | 'name' | 'status'>('priority');
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -248,7 +249,20 @@ export function ProjectsView() {
     };
 
     const planningProjects = projects.filter(p => p.status === 'planning');
-    const activeProjects = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID).sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
+    
+    const activeProjects = useMemo(() => {
+        const filtered = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID);
+        if (sortKey === 'priority') {
+            return filtered.sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
+        }
+        if (sortKey === 'name') {
+            return filtered.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        if (sortKey === 'status') {
+            return filtered.sort((a,b) => (a.status || '').localeCompare(b.status || ''));
+        }
+        return filtered;
+    }, [projects, sortKey]);
 
     return (
         <>
@@ -277,9 +291,12 @@ export function ProjectsView() {
                     <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
                 </header>
 
-                <ProjectManagementHeader />
-
                 <div className="w-full max-w-7xl flex-1 space-y-8">
+                    <div className="flex justify-end mb-4">
+                        <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" /> New Project
+                        </Button>
+                    </div>
 
                     {isLoading ? (
                         <div className="flex items-center justify-center h-full pt-16">
@@ -307,7 +324,17 @@ export function ProjectsView() {
                                 </div>
                             )}
 
-                            <h2 className="text-xl font-semibold mb-4 text-center">Active Projects & Action Items</h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-center">Active Projects & Action Items</h2>
+                                <div className="flex items-center gap-2">
+                                    <Label className="text-sm">Sort by:</Label>
+                                    <ToggleGroup type="single" value={sortKey} onValueChange={(value) => value && setSortKey(value as any)}>
+                                        <ToggleGroupItem value="priority" aria-label="Sort by priority">Priority</ToggleGroupItem>
+                                        <ToggleGroupItem value="name" aria-label="Sort by name">Name</ToggleGroupItem>
+                                        <ToggleGroupItem value="status" aria-label="Sort by status">Status</ToggleGroupItem>
+                                    </ToggleGroup>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <ProjectCard
                                     key={inboxProject.id}

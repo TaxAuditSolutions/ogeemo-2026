@@ -1,13 +1,14 @@
 
 'use client';
 
-import * as React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getProjects, getTasksForUser, updateProject, deleteProject } from '@/services/project-service';
+import { getProjects, getTasksForUser, updateProject, deleteProject, addProject } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
-import { LoaderCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Plus } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,7 @@ import {
 import { Button } from '../ui/button';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
 import { useRouter } from 'next/navigation';
+import { NewTaskDialog } from '../tasks/NewTaskDialog';
 
 const ItemTypes = {
   PROJECT: 'project',
@@ -119,7 +121,7 @@ function ProjectColumn({ status, projects, tasks, onDropProject, onEditProject, 
     const displayTitle = titleMap[status];
 
     return (
-        <Card ref={drop} className={cn("bg-muted/30 transition-colors", isOver && canDrop && "bg-primary/10")}>
+        <Card ref={drop} className={cn("flex flex-col bg-muted/30 transition-colors", isOver && canDrop && "bg-primary/10")}>
             <CardHeader>
                 <CardTitle>{displayTitle}</CardTitle>
             </CardHeader>
@@ -134,8 +136,12 @@ function ProjectColumn({ status, projects, tasks, onDropProject, onEditProject, 
 export function ProjectStatusView() {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [tasks, setTasks] = React.useState<TaskEvent[]>([]);
+  const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
+  const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
+  
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -147,12 +153,14 @@ export function ProjectStatusView() {
     }
     setIsLoading(true);
     try {
-        const [fetchedProjects, fetchedTasks] = await Promise.all([
+        const [fetchedProjects, fetchedTasks, fetchedContacts] = await Promise.all([
             getProjects(user.uid),
             getTasksForUser(user.uid),
+            getContacts(user.uid),
         ]);
         setProjects(fetchedProjects);
         setTasks(fetchedTasks);
+        setContacts(fetchedContacts);
     } catch (error) {
         console.error("Failed to load project status data:", error);
     } finally {
@@ -191,8 +199,8 @@ export function ProjectStatusView() {
   };
   
   const handleEditProject = (project: Project) => {
-      // Placeholder for edit dialog
-      toast({ title: "Edit Clicked", description: `Editing for "${project.name}" would open here.` });
+      setProjectToEdit(project);
+      setIsNewProjectDialogOpen(true);
   };
   
   const handleConfirmDelete = async () => {
@@ -215,6 +223,23 @@ export function ProjectStatusView() {
       } finally {
           setProjectToDelete(null);
       }
+  };
+
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    if (!user) return;
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        setProjects(prev => [newProject, ...prev]);
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        setIsNewProjectDialogOpen(false);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    }
+  };
+
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    setIsNewProjectDialogOpen(false);
   };
 
   const projectsByStatus = React.useMemo(() => {
@@ -254,7 +279,12 @@ export function ProjectStatusView() {
                     A Kanban-style overview of all your projects. Drag and drop to change a project's status.
                 </p>
             </header>
-            <ProjectManagementHeader />
+            <div className="flex justify-between items-center">
+                <ProjectManagementHeader />
+                <Button onClick={() => { setProjectToEdit(null); setIsNewProjectDialogOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" /> New Project
+                </Button>
+            </div>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <ProjectColumn status="planning" projects={projectsByStatus.planning} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
@@ -263,6 +293,14 @@ export function ProjectStatusView() {
             <ProjectColumn status="completed" projects={projectsByStatus.completed} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
           </div>
         </div>
+        <NewTaskDialog 
+            isOpen={isNewProjectDialogOpen}
+            onOpenChange={setIsNewProjectDialogOpen}
+            projectToEdit={projectToEdit}
+            onProjectCreate={handleProjectCreated}
+            onProjectUpdate={handleProjectUpdated}
+            contacts={contacts}
+        />
         <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>

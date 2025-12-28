@@ -376,9 +376,6 @@ export function RunPayrollView() {
                 <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
              <div className="flex items-center gap-2">
-                <Button asChild variant="outline">
-                    <Link href="/accounting/payroll/calendar-test">Test</Link>
-                </Button>
                 <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
                     <Users className="mr-2 h-4 w-4" />
                     Manage Workers
@@ -421,7 +418,6 @@ export function RunPayrollView() {
                         />
                     </PopoverContent>
                 </Popover>
-                <Button>Stop Truncating</Button>
               </div>
           </div>
           <div className="space-y-2">
@@ -680,3 +676,5 @@ export function RunPayrollView() {
     </>
   );
 }
+
+    

@@ -312,12 +312,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col">
                 <header className="text-center mb-6 relative">
-                    <h1 className="text-3xl font-bold font-headline text-primary">
-                        Project Planning
-                    </h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary">Project Planning</h1>
                     <h2 className="text-xl font-semibold mt-2">{project.name}</h2>
                     <p className="text-muted-foreground">
-                        Here is where you do the planning of your specific project.
+                       Here is where you do the planning of your specific project.
                     </p>
                     <div className="absolute top-0 right-0">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>

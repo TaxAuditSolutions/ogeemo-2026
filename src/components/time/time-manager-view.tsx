@@ -14,8 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
-import { getContacts } from '@/services/contact-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getContacts, type FolderData, getFolders as getContactFolders } from '@/services/contact-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -45,7 +44,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { Calendar } from '../ui/calendar';
+import { CustomCalendar } from '../ui/custom-calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import {
@@ -54,6 +53,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getIndustries, type Industry } from '@/services/industry-service';
 
 
 export interface StoredTimerState {
@@ -74,6 +74,8 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
+    const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
+
 
     // Form state
     const [subject, setSubject] = React.useState("");
@@ -367,7 +369,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setContacts(initialContacts);
 
             const [fetchedFolders, fetchedCompanies] = await Promise.all([
-                getFolders(user.uid),
+                getContactFolders(user.uid),
                 getCompanies(user.uid),
             ]);
             setContactFolders(fetchedFolders);
@@ -693,7 +695,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                     <Label>Start Time</Label>
                                     <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                                         <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, 'PPP') : <span>Pick a start date</span>}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} classNames={{ head_cell: 'text-center' }} initialFocus /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
                                         <Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -704,7 +706,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                     <Label>End Time</Label>
                                     <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
                                         <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, 'PPP') : <span>Pick an end date</span>}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} classNames={{ head_cell: 'text-center' }} initialFocus /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
                                         <Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -837,5 +839,3 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         </>
     );
 }
-
-    

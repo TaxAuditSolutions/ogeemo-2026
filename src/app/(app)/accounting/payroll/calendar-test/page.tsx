@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { DayPicker } from "react-day-picker";
 import 'react-day-picker/dist/style.css';
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,10 +56,7 @@ export default function CalendarTestPage() {
                             day_disabled: "text-muted-foreground opacity-50",
                             day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
                         }}
-                        components={{
-                            IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-                            IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-                        }}
+                        
                     />
                 </CardContent>
             </Card>

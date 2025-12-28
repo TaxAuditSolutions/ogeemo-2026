@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -398,12 +398,10 @@ export function RunPayrollView() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            initialFocus
+                        <CustomCalendar
                             mode="single"
                             selected={payPeriod?.from}
                             onSelect={(date) => setPayPeriod(prev => ({ from: date, to: prev?.to }))}
-                            classNames={{ head_cell: 'text-center' }}
                         />
                     </PopoverContent>
                 </Popover>
@@ -415,13 +413,11 @@ export function RunPayrollView() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                         <Calendar
-                            initialFocus
+                         <CustomCalendar
                             mode="single"
                             selected={payPeriod?.to}
                             onSelect={(date) => setPayPeriod(prev => ({ from: prev?.from, to: date }))}
                             disabled={(date) => payPeriod?.from ? date < payPeriod.from : false}
-                            classNames={{ head_cell: 'text-center' }}
                         />
                     </PopoverContent>
                 </Popover>

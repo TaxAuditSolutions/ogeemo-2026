@@ -25,7 +25,7 @@ function Calendar({
         caption: "flex justify-center relative items-center",
         caption_label: "text-sm font-medium",
         table: "w-full border-collapse",
-        head_row: "flex justify-center gap-1",
+        head_row: "flex",
         head_cell:
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center",
         row: "flex w-full",

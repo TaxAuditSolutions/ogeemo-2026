@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, DialogDescription } from 'lucide-react';
 import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -42,7 +42,6 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -314,8 +313,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                 <header className="text-center mb-6 relative">
                     <h1 className="text-3xl font-bold font-headline text-primary">
-                        {project.name}
+                        Project Planning
                     </h1>
+                    <h2 className="text-xl font-semibold mt-2">{project.name}</h2>
                     <p className="text-muted-foreground">
                         Here is where you do the planning of your specific project.
                     </p>
@@ -492,5 +492,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     );
 }
 
+
+    
 
     

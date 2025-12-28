@@ -16,6 +16,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
   DropdownMenuSubContent,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -37,7 +38,6 @@ import { ACTION_ITEMS_PROJECT_ID } from './project-tasks-view';
 import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const getPrioritySortValue = (p: Project) => {
     let score = 0;
@@ -287,7 +287,6 @@ export function ProjectsView() {
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
                     <div className="flex justify-between items-center mb-4">
-                        <div />
                         <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Button>

@@ -54,7 +54,7 @@ import { type Event as TaskEvent } from '@/types/calendar';
 import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from './WorkerFormDialog';
 import { cn } from '@/lib/utils';
-import { MergeWorkerDialog } from './MergeWorkerDialog';
+import MergeWorkerDialog from './MergeWorkerDialog';
 
 
 type PayrollEmployee = Worker & {
@@ -410,7 +410,7 @@ export function RunPayrollView() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
+                         <Calendar
                             initialFocus
                             mode="single"
                             selected={payPeriod?.to}

@@ -23,13 +23,14 @@ const ProjectTasksView = dynamic(
 );
 
 export default function ProjectTaskPage({ params }: { params: { projectId: string } }) {
+  const { projectId } = params;
   const [project, setProject] = useState<Project | null>(null);
 
   useEffect(() => {
     async function fetchProject() {
-      if (params.projectId) {
+      if (projectId) {
         try {
-          const projectData = await getProjectById(params.projectId);
+          const projectData = await getProjectById(projectId);
           setProject(projectData);
         } catch (error) {
           console.error("Failed to fetch project:", error);
@@ -38,12 +39,12 @@ export default function ProjectTaskPage({ params }: { params: { projectId: strin
       }
     }
     fetchProject();
-  }, [params.projectId]);
+  }, [projectId]);
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0">
-        <ProjectTasksView projectId={params.projectId} />
+        <ProjectTasksView projectId={projectId} />
       </div>
     </div>
   );

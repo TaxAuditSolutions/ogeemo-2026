@@ -99,9 +99,9 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [isEndPickerOpen, setIsEndPickerOpen] = React.useState(false);
 
 
-    // State for new client selection UI
+    // State for new contact selection UI
     const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
-    const [clientAction, setClientAction] = React.useState<string>('select');
+    const [contactAction, setContactAction] = React.useState<string>('select');
     const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
 
     // New state for project selection UI
@@ -614,24 +614,24 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card>
-                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Client</CardTitle></CardHeader>
+                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Contact</CardTitle></CardHeader>
                                     <CardContent className="p-4 pt-0">
                                         <div className="space-y-2">
-                                            <RadioGroup onValueChange={(value) => setClientAction(value)} value={clientAction} className="flex space-x-4">
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="select" id="select-client" /><Label htmlFor="select-client">Select/Search</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-client" /><Label htmlFor="add-client">Add New</Label></div>
+                                            <RadioGroup onValueChange={(value) => setContactAction(value)} value={contactAction} className="flex space-x-4">
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="select" id="select-contact" /><Label htmlFor="select-contact">Select/Search</Label></div>
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-contact" /><Label htmlFor="add-contact">Add New</Label></div>
                                             </RadioGroup>
 
-                                            {clientAction === 'select' ? (
+                                            {contactAction === 'select' ? (
                                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select client..."}
+                                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                        <Command><CommandInput placeholder="Search clients..." /><CommandList><CommandEmpty>No client found.</CommandEmpty><CommandGroup>{contacts.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                                        <Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
                                                     </PopoverContent>
                                                 </Popover>
                                             ) : (
@@ -842,3 +842,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         </>
     );
 }
+
+
+    

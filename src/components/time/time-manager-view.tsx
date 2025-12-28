@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Edit, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
-import { getContacts, type FolderData, getFolders as getContactFolders } from '@/services/contact-service';
+import { getContacts, type FolderData } from '@/services/contact-service';
+import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -368,12 +369,14 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setProjects(initialProjects);
             setContacts(initialContacts);
 
-            const [fetchedFolders, fetchedCompanies] = await Promise.all([
+            const [fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
+                getIndustries(user.uid),
             ]);
             setContactFolders(fetchedFolders);
             setCompanies(fetchedCompanies);
+            setCustomIndustries(fetchedIndustries);
             
             const sourceParam = searchParams.get('source');
             if (sourceParam === 'log-email') {
@@ -785,8 +788,8 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                 onSave={handleContactSave}
                 companies={companies}
                 onCompaniesChange={setCompanies}
-                customIndustries={[]}
-                onCustomIndustriesChange={() => {}}
+                customIndustries={customIndustries}
+                onCustomIndustriesChange={setCustomIndustries}
             />
              <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}>
                 <DialogContent>

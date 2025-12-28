@@ -25,6 +25,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Link from "next/link";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { CustomCalendar } from "../ui/custom-calendar";
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { cn } from "@/lib/utils";
+
 
 interface AssetFormDialogProps {
   isOpen: boolean;
@@ -60,6 +65,9 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
   const [formData, setFormData] = useState(emptyAssetForm);
   const [depreciationEntries, setDepreciationEntries] = useState<DepreciationEntry[]>([]);
   const [newDepreciation, setNewDepreciation] = useState({ date: format(new Date(), 'yyyy-MM-dd'), amount: '' });
+  const [isPurchaseDatePickerOpen, setIsPurchaseDatePickerOpen] = useState(false);
+  const [isDepDatePickerOpen, setIsDepDatePickerOpen] = useState(false);
+
   const { toast } = useToast();
 
   const currentDepreciatedValue = useMemo(() => {
@@ -240,7 +248,17 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="purchaseDate">Purchase Date</Label>
-                        <Input id="purchaseDate" type="date" value={formData.purchaseDate} onChange={(e) => handleValueChange('purchaseDate', e.target.value)} />
+                         <Popover open={isPurchaseDatePickerOpen} onOpenChange={setIsPurchaseDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.purchaseDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {formData.purchaseDate ? format(parseISO(formData.purchaseDate), "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <CustomCalendar mode="single" selected={parseISO(formData.purchaseDate)} onSelect={(date) => { if (date) handleValueChange('purchaseDate', format(date, 'yyyy-MM-dd')); setIsPurchaseDatePickerOpen(false); }} initialFocus />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="undepreciatedCapitalCost">Current Value</Label>
@@ -298,7 +316,17 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                         <CardContent className="p-4 pt-0 grid grid-cols-[1fr_1fr_auto] gap-4 items-end">
                             <div className="space-y-2">
                                 <Label htmlFor="dep-date">Date</Label>
-                                <Input id="dep-date" type="date" value={newDepreciation.date} onChange={(e) => setNewDepreciation(p => ({ ...p, date: e.target.value }))} />
+                                <Popover open={isDepDatePickerOpen} onOpenChange={setIsDepDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newDepreciation.date && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {newDepreciation.date ? format(parseISO(newDepreciation.date), "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <CustomCalendar mode="single" selected={parseISO(newDepreciation.date)} onSelect={(date) => { if(date) setNewDepreciation(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDepDatePickerOpen(false); }} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="dep-amount">Amount</Label>

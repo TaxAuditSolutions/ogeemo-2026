@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, TrendingUp, TrendingDown, DollarSign, Calendar as CalendarIcon } from "lucide-react";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -43,13 +43,16 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogFooter
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
 import { getEquityTransactions, addEquityTransaction, updateEquityTransaction, deleteEquityTransaction, type EquityTransaction } from "@/services/accounting-service";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { CustomCalendar } from "../ui/custom-calendar";
+import { cn } from "@/lib/utils";
 
 const emptyTransactionForm = { date: '', description: '', amount: '' };
 
@@ -63,6 +66,8 @@ export function EquityView() {
   const [transactionToDelete, setTransactionToDelete] = useState<EquityTransaction | null>(null);
   const [dialogType, setDialogType] = useState<'contribution' | 'draw'>('contribution');
   const [formData, setFormData] = useState(emptyTransactionForm);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
 
   const { toast } = useToast();
 
@@ -172,8 +177,8 @@ export function EquityView() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => handleOpenDialog(type, tx)}><Pencil className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onSelect={() => setTransactionToDelete(tx)}><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleOpenDialog(type, tx)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive" onSelect={() => setTransactionToDelete(tx)}><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
@@ -251,7 +256,17 @@ export function EquityView() {
           <div className="py-4 space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
-                <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({...p, date: e.target.value}))}/>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4"/>
+                            {formData.date ? format(parseISO(formData.date), 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <CustomCalendar mode="single" selected={formData.date ? parseISO(formData.date) : new Date()} onSelect={(date) => { if(date) setFormData(p => ({...p, date: format(date, 'yyyy-MM-dd')})); setIsDatePickerOpen(false); }} initialFocus />
+                    </PopoverContent>
+                </Popover>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>

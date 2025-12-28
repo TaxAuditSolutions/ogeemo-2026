@@ -36,8 +36,9 @@ import {
   PlusCircle,
   LoaderCircle,
   Trash2,
+  Calendar as CalendarIcon
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -47,6 +48,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle } from '../ui/alert-dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { CustomCalendar } from '../ui/custom-calendar';
+import { cn } from '@/lib/utils';
 
 
 const formatCurrency = (amount: number) => {
@@ -168,6 +172,23 @@ export function PayrollRemittancesView() {
     }
   };
 
+  const DatePicker = ({ value, onChange }: { value: string, onChange: (date: string) => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(parseISO(value), 'PPP') : <span>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <CustomCalendar mode="single" selected={value ? parseISO(value) : undefined} onSelect={(date) => { if(date) onChange(format(date, 'yyyy-MM-dd')); setIsOpen(false); }} initialFocus />
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   return (
     <>
       <div className="space-y-6 p-4 sm:p-6">
@@ -279,16 +300,16 @@ export function PayrollRemittancesView() {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="pay-period-start">Pay Period Start</Label>
-                        <Input id="pay-period-start" type="date" value={formState.payPeriodStart} onChange={e => setFormState(p => ({...p, payPeriodStart: e.target.value}))}/>
+                        <DatePicker value={formState.payPeriodStart} onChange={(date) => setFormState(p => ({...p, payPeriodStart: date}))} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="pay-period-end">Pay Period End</Label>
-                        <Input id="pay-period-end" type="date" value={formState.payPeriodEnd} onChange={e => setFormState(p => ({...p, payPeriodEnd: e.target.value}))}/>
+                         <DatePicker value={formState.payPeriodEnd} onChange={(date) => setFormState(p => ({...p, payPeriodEnd: date}))} />
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="due-date">Remittance Due Date</Label>
-                    <Input id="due-date" type="date" value={formState.dueDate} onChange={e => setFormState(p => ({...p, dueDate: e.target.value}))}/>
+                    <DatePicker value={formState.dueDate} onChange={(date) => setFormState(p => ({...p, dueDate: date}))} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="amount">Amount Due</Label>

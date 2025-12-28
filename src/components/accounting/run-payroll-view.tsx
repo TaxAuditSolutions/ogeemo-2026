@@ -52,7 +52,7 @@ import { useAuth } from '@/context/auth-context';
 import { getWorkers, type Worker, savePayrollRun, deleteWorker, addWorker, updateWorker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
 import { type Event as TaskEvent } from '@/types/calendar';
 import { isWithinInterval } from 'date-fns';
-import { WorkerFormDialog } from './WorkerFormDialog';
+import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
 
@@ -375,10 +375,15 @@ export function RunPayrollView() {
                 </CardTitle>
                 <CardDescription>Select the pay period and the workers you wish to include in this run.</CardDescription>
              </div>
-             <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
-                <Users className="mr-2 h-4 w-4" />
-                Manage Workers
-             </Button>
+             <div className="flex items-center gap-2">
+                <Button asChild variant="outline">
+                    <Link href="/accounting/payroll/calendar-test">Test</Link>
+                </Button>
+                <Button variant="outline" onClick={() => handleOpenWorkerForm(null)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Manage Workers
+                </Button>
+             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -679,7 +684,3 @@ export function RunPayrollView() {
     </>
   );
 }
-
-    
-
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -67,6 +66,7 @@ function NewTestCalendar({
 
 export default function CalendarTestPage() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
+    const gridCells = Array.from({ length: 35 }); // 7x5 grid
 
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
@@ -74,17 +74,16 @@ export default function CalendarTestPage() {
               <AccountingPageHeader pageTitle="Calendar Test" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
             </div>
             <div className="flex flex-col items-center gap-4 pt-8">
-              <h2 className="text-xl font-semibold">New Calendar Implementation</h2>
-              <div className="border rounded-md">
-                 <NewTestCalendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                />
-              </div>
-               <p className="text-sm text-muted-foreground">
-                    Selected date: {date ? date.toLocaleDateString() : 'None'}
-                </p>
+                <h2 className="text-xl font-semibold">Test Grid Frame</h2>
+                <div className="p-4 border rounded-lg bg-background">
+                    <div className="grid grid-cols-7 gap-1">
+                        {gridCells.map((_, index) => (
+                            <div key={index} className="h-16 w-16 bg-muted border flex items-center justify-center text-xs text-muted-foreground">
+                                {index + 1}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

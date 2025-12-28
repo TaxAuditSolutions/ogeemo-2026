@@ -23,8 +23,18 @@ const ProjectTasksView = dynamic(
 );
 
 export default function ProjectTaskPage({ params }: { params: { projectId: string } }) {
-  const { projectId } = params;
+  const [projectId, setProjectId] = useState<string>('');
   const [project, setProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    // Correctly handle the params promise
+    const resolveParams = async () => {
+        const resolvedParams = await params;
+        setProjectId(resolvedParams.projectId);
+    };
+    resolveParams();
+  }, [params]);
+
 
   useEffect(() => {
     async function fetchProject() {

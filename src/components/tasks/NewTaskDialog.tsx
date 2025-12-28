@@ -103,7 +103,7 @@ export function NewTaskDialog({
         if (isTaskMode) {
             const defaults = taskToEdit 
               ? { title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null }
-              : { title: "", description: "", stepId: null };
+              : { ...initialData, title: initialData?.title || "", description: initialData?.description || "", stepId: null };
             taskForm.reset(defaults);
         } else {
             const defaults = projectToEdit 
@@ -140,10 +140,10 @@ export function NewTaskDialog({
     setIsLoading(true);
     try {
         if (isEditingTask && taskToEdit) {
-            const updatedTaskData = { ...taskToEdit, ...values };
-            await updateTask(taskToEdit.id, { title: values.title, description: values.description });
+            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description };
+            await updateTask(taskToEdit.id, updatedTaskData);
             if (onTaskUpdate) {
-                onTaskUpdate(updatedTaskData);
+                onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
             }
             toast({ title: "Task Updated" });
         } else if (projectId) {
@@ -228,5 +228,3 @@ export function NewTaskDialog({
       </Dialog>
   );
 }
-
-    

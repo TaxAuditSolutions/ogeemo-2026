@@ -52,7 +52,6 @@ export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
-    const [newStepTitle, setNewStepTitle] = useState("");
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
@@ -88,7 +87,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             if (isActionItemsView) {
                 projectData = {
                     id: ACTION_ITEMS_PROJECT_ID,
-                    name: "To Do",
+                    name: "Action Items",
                     description: "A place for all your unscheduled tasks.",
                     userId: user.uid,
                     createdAt: new Date(0),
@@ -143,16 +142,11 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setIsNewTaskDialogOpen(true);
     };
 
-    const handleTaskCreated = (newTask: TaskEvent) => {
-        setTasks(prev => [newTask, ...prev]);
+    const handleTaskSaved = () => {
+        loadData(); // Refresh data after save/update
         setIsNewTaskDialogOpen(false);
     };
-
-    const handleTaskUpdated = (updatedTask: TaskEvent) => {
-        setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-        setIsNewTaskDialogOpen(false);
-    };
-
+    
     const handleTaskDeleted = async (taskId: string) => {
         const originalTasks = [...tasks];
         setTasks(prev => prev.filter(t => t.id !== taskId));
@@ -241,19 +235,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             }
         }
     }, [project, isActionItemsView, toast]);
-
-    const handleAddStep = () => {
-        if (!newStepTitle.trim()) return;
-        const newStep: Partial<ProjectStep> = {
-            id: `temp_${Date.now()}`,
-            title: newStepTitle,
-            isCompleted: false,
-        };
-        const updatedSteps = [...steps, newStep];
-        setSteps(updatedSteps);
-        setNewStepTitle("");
-        handleSaveSteps(updatedSteps);
-    };
     
     const handleStartEditStep = (step: Partial<ProjectStep>) => {
         setEditingStepId(step.id || null);
@@ -313,9 +294,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                  <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">
-                        Project Planning
+                        {project.name}
                     </h1>
-                    <h2 className="text-xl font-semibold mt-2">{project.name}</h2>
                      <p className="text-muted-foreground">
                         Here is where you do the planning of your specific project.
                     </p>
@@ -327,7 +307,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                         <Card className="h-full flex flex-col border-0 rounded-none">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>Project Steps</CardTitle>
-                                <Button size="sm" onClick={handleAddStep} variant="outline">
+                                <Button size="sm" onClick={() => handleAddTask()} variant="outline">
                                     <Plus className="mr-2 h-4 w-4" /> Add
                                 </Button>
                             </CardHeader>
@@ -369,16 +349,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                     </DraggableStep>
                                 ))}
                             </CardContent>
-                            <div className="p-2 border-t">
-                                <div className="flex items-center gap-2">
-                                     <Input
-                                        placeholder="Add a new step..."
-                                        value={newStepTitle}
-                                        onChange={(e) => setNewStepTitle(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
-                                    />
-                                </div>
-                            </div>
                         </Card>
                     </ResizablePanel>
                     <ResizableHandle withHandle />
@@ -392,7 +362,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleTaskDeleted(task.id);
+                                    if (task) handleDeleteTask(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -404,12 +374,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                             <TaskColumn 
                                 status="inProgress" 
                                 tasks={tasksByStatus.inProgress}
-                                onAddTask={() => handleAddTask()} 
+                                onAddTask={() => handleAddTask({ status: 'inProgress'})} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleTaskDeleted(task.id);
+                                    if (task) handleDeleteTask(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -421,12 +391,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                             <TaskColumn 
                                 status="done" 
                                 tasks={tasksByStatus.done}
-                                onAddTask={() => handleAddTask()} 
+                                onAddTask={() => handleAddTask({ status: 'done'})} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
                                 onTaskDelete={(taskId) => {
                                     const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleTaskDeleted(task.id);
+                                    if (task) handleDeleteTask(task.id);
                                 }}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
@@ -440,7 +410,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 </ResizablePanelGroup>
             </div>
             
-            <NewTaskDialog isOpen={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen} onTaskCreate={handleTaskCreated} onTaskUpdate={handleTaskUpdated} projectId={projectId} taskToEdit={taskToEdit} initialData={initialTaskData} />
+            <NewTaskDialog isOpen={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen} onTaskCreate={handleTaskSaved} onTaskUpdate={handleTaskSaved} projectId={projectId} taskToEdit={taskToEdit} initialData={initialTaskData} />
 
             <AlertDialog open={!!stepToDelete} onOpenChange={() => setStepToDelete(null)}>
                 <AlertDialogContent>

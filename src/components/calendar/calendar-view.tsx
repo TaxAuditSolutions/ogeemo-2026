@@ -47,7 +47,7 @@ import {
   PopoverTrigger,
   PopoverClose,
 } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
@@ -314,6 +314,7 @@ export function CalendarView() {
   }
   
   const TimeSlot = ({ date, hour, slot, slotsPerHour }: { date: Date; hour: number; slot: number, slotsPerHour: number }) => {
+    const slotDuration = 60 / slotsPerHour;
     const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
     const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
     
@@ -380,9 +381,6 @@ export function CalendarView() {
       router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
   };
 
-  const slotsPerHour = slotsConfig[0] || 1;
-  const slotDuration = 60 / slotsPerHour;
-
   return (
     <>
       <div className="p-4 sm:p-6 flex flex-col h-full bg-background">
@@ -432,7 +430,7 @@ export function CalendarView() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar
+                <CustomCalendar
                   mode="single"
                   selected={currentDate}
                   onSelect={(date) => {
@@ -615,6 +613,7 @@ export function CalendarView() {
           <ScrollArea className="flex-1 border-t-0">
             {hoursToDisplay.map((hour, hourIndex) => {
                 const slotsPerHour = slotsConfig[hour] || 1;
+                const slotDuration = 60 / slotsPerHour;
                 return (
                     <div key={hour} className="flex border-b border-black">
                         <div className="w-[5rem] flex-shrink-0 border-r-black border-r flex items-center justify-center p-1">

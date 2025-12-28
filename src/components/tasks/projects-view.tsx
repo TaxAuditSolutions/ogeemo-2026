@@ -28,7 +28,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjects, deleteProject, getTasksForUser, addProject, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar';
 import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -119,6 +119,9 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                         </Select>
                     </div>
                   </div>
+                )}
+                 {!isActionItems && (
+                    <Button variant="secondary" className="w-full" onClick={() => onEdit(project)}>Edit Details</Button>
                 )}
             </CardFooter>
         </Card>
@@ -277,11 +280,6 @@ export function ProjectsView() {
                 <ProjectManagementHeader />
 
                 <div className="w-full max-w-7xl flex-1 space-y-8">
-                    <div className="flex justify-end mb-4">
-                        <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
-                            <Plus className="mr-2 h-4 w-4" /> New Project
-                        </Button>
-                    </div>
 
                     {isLoading ? (
                         <div className="flex items-center justify-center h-full pt-16">

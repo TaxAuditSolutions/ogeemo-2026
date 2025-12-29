@@ -23,7 +23,7 @@ const publicPaths = ['/login', '/register'];
 const marketingPaths = ['/home', '/for-small-businesses', '/for-accountants', '/news', '/about', '/contact', '/privacy', '/terms', '/explore'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { services: firebaseServices, isLoading: isFirebaseLoading } = useFirebase();
+  const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -32,13 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   
   useEffect(() => {
-    if (isFirebaseLoading) return;
-    if (!firebaseServices?.auth) {
+    if (!auth) {
         setIsAuthLoading(false);
         return;
     };
 
-    const unsubscribe = firebaseServices.auth.onAuthStateChanged(async (currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
@@ -59,11 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [firebaseServices, isFirebaseLoading]);
+  }, [auth]);
 
 
   useEffect(() => {
-    if (!isAuthLoading && !isFirebaseLoading) {
+    if (!isAuthLoading) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
@@ -73,17 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/action-manager');
       }
     }
-  }, [user, isAuthLoading, isFirebaseLoading, pathname, router]);
+  }, [user, isAuthLoading, pathname, router]);
   
   const signInWithGoogle = async () => {
-    if (!firebaseServices?.auth) {
+    if (!auth) {
         throw new Error("Firebase is not initialized.");
     }
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file'); 
     provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
     
-    const result = await signInWithPopup(firebaseServices.auth, provider);
+    const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (credential?.accessToken) {
         sessionStorage.setItem('google_access_token', credential.accessToken);
@@ -104,18 +103,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Failed to sign in to get Google Access Token", error);
         return null;
     }
-  }, []);
+  }, [signInWithGoogle]);
 
 
   const logout = async () => {
-    if (firebaseServices?.auth) {
-      await signOut(firebaseServices.auth);
+    if (auth) {
+      await signOut(auth);
     }
   };
   
-  const isLoadingCombined = isAuthLoading || isFirebaseLoading;
-
-  if (isLoadingCombined) {
+  if (isAuthLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="text-center">
@@ -126,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const value = { user, isLoading: isLoadingCombined, accessToken, logout, signInWithGoogle, getGoogleAccessToken };
+  const value = { user, isLoading: isAuthLoading, accessToken, logout, signInWithGoogle, getGoogleAccessToken };
 
   return (
     <AuthContext.Provider value={value}>

@@ -46,6 +46,7 @@ const projectSchema = z.object({
 const taskSchema = z.object({
     title: z.string().min(2, { message: "Task title is required." }),
     description: z.string().optional(),
+    projectId: z.string().optional().nullable(),
     stepId: z.string().optional().nullable(),
     isTodoItem: z.boolean().optional(),
     urgency: z.enum(['urgent', 'important', 'optional']).default('important'),
@@ -64,6 +65,7 @@ interface NewTaskDialogProps {
   onTaskUpdate?: (task: TaskEvent) => void;
   contacts?: Contact[];
   onContactsChange?: (contacts: Contact[]) => void;
+  projects?: Project[]; // Add projects prop
   projectToEdit?: Project | null;
   taskToEdit?: TaskEvent | null; 
   projectId?: string;
@@ -82,6 +84,7 @@ const defaultProjectFormValues: ProjectFormData = {
 const defaultTaskFormValues: TaskFormData = {
   title: "",
   description: "",
+  projectId: null,
   stepId: null,
   isTodoItem: false,
   urgency: 'important',
@@ -98,6 +101,7 @@ export function NewTaskDialog({
   onTaskUpdate,
   contacts = [],
   onContactsChange,
+  projects = [], // Add projects prop
   projectToEdit,
   taskToEdit,
   projectId,
@@ -129,8 +133,8 @@ export function NewTaskDialog({
     if (isOpen) {
         if (isTaskMode) {
             const defaults = taskToEdit 
-              ? { title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem, urgency: taskToEdit.urgency || 'important', importance: taskToEdit.importance || 'B' }
-              : { ...defaultTaskFormValues, ...initialData };
+              ? { ...defaultTaskFormValues, title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem, urgency: taskToEdit.urgency || 'important', importance: taskToEdit.importance || 'B', projectId: taskToEdit.projectId || projectId }
+              : { ...defaultTaskFormValues, ...initialData, projectId: projectId };
             taskForm.reset(defaults);
         } else {
             const defaults = projectToEdit 
@@ -142,7 +146,7 @@ export function NewTaskDialog({
             form.reset(defaults);
         }
     }
-  }, [isOpen, projectToEdit, taskToEdit, isTaskMode, initialData, form, taskForm]);
+  }, [isOpen, projectToEdit, taskToEdit, isTaskMode, initialData, form, taskForm, projectId]);
 
   async function onProjectSubmit(values: ProjectFormData) {
     if (!user) return;
@@ -168,7 +172,7 @@ export function NewTaskDialog({
     setIsLoading(true);
     try {
         if (isEditingTask && taskToEdit) {
-            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, stepId: values.stepId, urgency: values.urgency, importance: values.importance };
+            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, projectId: values.projectId, stepId: values.stepId, urgency: values.urgency, importance: values.importance };
             await updateTask(taskToEdit.id, updatedTaskData);
             if (onTaskUpdate) {
                 onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
@@ -180,7 +184,7 @@ export function NewTaskDialog({
                 description: values.description || '',
                 status: 'todo' as TaskStatus,
                 position: 0, 
-                projectId: projectId === 'inbox' ? null : projectId,
+                projectId: values.projectId === 'inbox' ? null : values.projectId,
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
@@ -216,7 +220,7 @@ export function NewTaskDialog({
                 <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Client (Optional)</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign a client to this project" /></SelectTrigger></FormControl><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem> <FormLabel>Status</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="planning">In Planning</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On-Hold</SelectItem><SelectItem value="completed">Completed</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
-                    <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">A - Urgent</SelectItem><SelectItem value="important">B - Important</SelectItem><SelectItem value="optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">Urgent</SelectItem><SelectItem value="important">Important</SelectItem><SelectItem value="optional">Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                     <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                 </div>
             </div>
@@ -243,6 +247,7 @@ export function NewTaskDialog({
             <div className="py-4 space-y-4">
                 <FormField control={taskForm.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={taskForm.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                <FormField control={taskForm.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="inbox">Action Items (Inbox)</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={taskForm.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">A - Urgent</SelectItem><SelectItem value="important">B - Important</SelectItem><SelectItem value="optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                     <FormField control={taskForm.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />

@@ -145,36 +145,37 @@ export default function AllProjectTasksView() {
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
 
-    useEffect(() => {
-        async function loadInitialData() {
-            if (!user) {
-                setIsLoading(false);
-                return;
-            }
-            setIsLoading(true);
-            try {
-                const [fetchedProjects, fetchedTasks, fetchedContacts] = await Promise.all([
-                    getProjects(user.uid),
-                    getTasksForUser(user.uid),
-                    getContacts(user.uid),
-                ]);
-                setProjects(fetchedProjects);
-                setTasks(fetchedTasks);
-                setContacts(fetchedContacts);
-            } catch (error: any) {
-                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
-            } finally {
-                setIsLoading(false);
-            }
+    const loadData = useCallback(async () => {
+        if (!user) {
+            setIsLoading(false);
+            return;
         }
-        loadInitialData();
+        setIsLoading(true);
+        try {
+            const [fetchedProjects, fetchedTasks, fetchedContacts] = await Promise.all([
+                getProjects(user.uid),
+                getTasksForUser(user.uid),
+                getContacts(user.uid),
+            ]);
+            setProjects(fetchedProjects);
+            setTasks(fetchedTasks);
+            setContacts(fetchedContacts);
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
+        } finally {
+            setIsLoading(false);
+        }
     }, [user, toast]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
     
     const handleEditTask = (task: TaskEvent) => {
         router.push(`/master-mind?eventId=${task.id}`);
@@ -249,8 +250,9 @@ export default function AllProjectTasksView() {
     };
 
     const handleDeleteSelected = async () => {
-        if (selectedTaskIds.length === 0) return;
-        setIsBulkDeleteAlertOpen(true);
+        if (selectedTaskIds.length > 0) {
+            setIsBulkDeleteAlertOpen(true);
+        }
     };
     
     const handleConfirmBulkDelete = async () => {
@@ -275,7 +277,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, 'done');
+            await updateTasksStatus(selectedTaskIds, true);
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -284,16 +286,8 @@ export default function AllProjectTasksView() {
         }
     };
     
-    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-        if (!user) return;
-        try {
-            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-            setProjects(prev => [newProject, ...prev]);
-            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-            router.push(`/projects/${newProject.id}/tasks`);
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-        }
+    const handleTaskCreated = () => {
+        loadData(); // Reload all data to show the new task
     };
 
     const allVisibleSelected = sortedTasks.length > 0 && sortedTasks.every(t => selectedTaskIds.includes(t.id));
@@ -338,8 +332,8 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4"/> New Project
+                                <Button onClick={() => setIsNewTaskDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4"/> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -432,11 +426,18 @@ export default function AllProjectTasksView() {
             </AlertDialog>
             <TaskCreationInfoDialog isOpen={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
             <NewTaskDialog
-                isOpen={isNewProjectDialogOpen}
-                onOpenChange={setIsNewProjectDialogOpen}
-                onProjectCreate={handleProjectCreated}
-                contacts={contacts}
-                projectToEdit={null}
+                isOpen={isNewTaskDialogOpen}
+                onOpenChange={(open) => {
+                    setIsNewTaskDialogOpen(open);
+                    if (!open) {
+                        setTaskToEdit(null);
+                    }
+                }}
+                onTaskCreate={handleTaskCreated}
+                onTaskUpdate={handleTaskSaved}
+                taskToEdit={taskToEdit}
+                projectId={selectedProjectId !== 'all' ? selectedProjectId : undefined}
+                projects={projects} // Pass projects to the dialog
             />
         </>
     );

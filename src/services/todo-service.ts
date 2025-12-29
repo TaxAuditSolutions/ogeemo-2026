@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -41,7 +40,6 @@ const docToTodo = (doc: any): TaskEvent => {
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
     // This now fetches general tasks (not assigned to a specific project)
-    // and filters out any items specifically marked as 'reminder'.
     const q = query(
         collection(db, TASKS_COLLECTION), 
         where("userId", "==", userId),
@@ -49,8 +47,8 @@ export async function getTodos(userId: string): Promise<TaskEvent[]> {
     );
     const snapshot = await getDocs(q);
     
-    // Additional client-side filtering to exclude reminders
-    return snapshot.docs.map(docToTodo).filter(task => task.type !== 'reminder');
+    // Additional client-side filtering to exclude reminders and rituals
+    return snapshot.docs.map(docToTodo).filter(task => task.type !== 'reminder' && !task.ritualType);
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {

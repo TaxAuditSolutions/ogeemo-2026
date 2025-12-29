@@ -4,14 +4,14 @@
 import type { User } from 'firebase/auth';
 import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { initializeFirebase, FirebaseServices } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { useFirebase } from '@/firebase/provider'; // Updated import
+import LoadingModal from '@/components/ui/loading-modal';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   accessToken: string | null;
-  firebaseServices: FirebaseServices | null;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   getGoogleAccessToken: () => Promise<string | null>;
@@ -23,51 +23,47 @@ const publicPaths = ['/login', '/register'];
 const marketingPaths = ['/home', '/for-small-businesses', '/for-accountants', '/news', '/about', '/contact', '/privacy', '/terms', '/explore'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { services: firebaseServices, isLoading: isFirebaseLoading } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
-  const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  
   const pathname = usePathname();
   const router = useRouter();
   
   useEffect(() => {
-    initializeFirebase()
-      .then(services => {
-        setFirebaseServices(services);
-        const unsubscribe = onAuthStateChanged(services.auth, async (currentUser) => {
-          setUser(currentUser);
-          
-          if (currentUser) {
-            const token = sessionStorage.getItem('google_access_token');
-            setAccessToken(token);
-            const idToken = await currentUser.getIdToken();
-            // Create session cookie on login
-            await fetch('/api/auth/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken }),
-            });
-          } else {
-            setAccessToken(null);
-            sessionStorage.removeItem('google_access_token');
-            // Trigger server-side session deletion on logout
-            await fetch('/api/auth/session', { method: 'DELETE' });
-          }
-          setIsLoading(false);
+    if (isFirebaseLoading) return;
+    if (!firebaseServices?.auth) {
+        setIsAuthLoading(false);
+        return;
+    };
+
+    const unsubscribe = firebaseServices.auth.onAuthStateChanged(async (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        const token = sessionStorage.getItem('google_access_token');
+        setAccessToken(token);
+        const idToken = await currentUser.getIdToken();
+        await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
         });
-        return unsubscribe;
-      })
-      .catch(err => {
-        console.error("Firebase initialization failed:", err);
-        setInitializationError(err.message);
-        setIsLoading(false);
-      });
-  }, []);
+      } else {
+        setAccessToken(null);
+        sessionStorage.removeItem('google_access_token');
+        await fetch('/api/auth/session', { method: 'DELETE' });
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [firebaseServices, isFirebaseLoading]);
 
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isAuthLoading && !isFirebaseLoading) {
       const isPublicPath = publicPaths.includes(pathname);
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
@@ -77,10 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/action-manager');
       }
     }
-  }, [user, isLoading, pathname, router]);
+  }, [user, isAuthLoading, isFirebaseLoading, pathname, router]);
   
   const signInWithGoogle = async () => {
-    if (!firebaseServices) {
+    if (!firebaseServices?.auth) {
         throw new Error("Firebase is not initialized.");
     }
     const provider = new GoogleAuthProvider();
@@ -100,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken) {
         return storedToken;
     }
-    // If no token, trigger the sign-in process
     try {
         await signInWithGoogle();
         const newStoredToken = sessionStorage.getItem('google_access_token');
@@ -113,23 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const logout = async () => {
-    if (firebaseServices) {
+    if (firebaseServices?.auth) {
       await signOut(firebaseServices.auth);
-      // The onAuthStateChanged listener will handle the session cookie deletion
     }
   };
   
-  if (initializationError) {
-    return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-red-100 p-4 text-center text-red-800">
-        <h1 className="mb-4 text-2xl font-bold">Firebase Initialization Error</h1>
-        <p className="mb-2">{initializationError}</p>
-        <p>Please check your Firebase configuration in your project's environment variables and ensure all required values are set correctly.</p>
-      </div>
-    );
-  }
+  const isLoadingCombined = isAuthLoading || isFirebaseLoading;
 
-  if (isLoading) {
+  if (isLoadingCombined) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="text-center">
@@ -140,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const value = { user, isLoading, accessToken, firebaseServices, logout, signInWithGoogle, getGoogleAccessToken };
+  const value = { user, isLoading: isLoadingCombined, accessToken, logout, signInWithGoogle, getGoogleAccessToken };
 
   return (
     <AuthContext.Provider value={value}>

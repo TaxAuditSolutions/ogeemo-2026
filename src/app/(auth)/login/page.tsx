@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import LoadingModal from "@/components/ui/loading-modal";
 import { Logo } from "@/components/logo";
+import { initializeFirebase } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -37,7 +38,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const { toast } = useToast();
-  const { firebaseServices, signInWithGoogle } = useAuth(); // Get services from context
+  const { signInWithGoogle } = useAuth(); // Get services from context
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,13 +48,14 @@ export default function LoginPage() {
   });
 
   async function handleEmailSignIn(values: z.infer<typeof loginSchema>): Promise<void> {
-    if (!firebaseServices) {
+    const { auth } = await initializeFirebase();
+    if (!auth) {
         toast({ variant: "destructive", title: "Login Failed", description: "Firebase is not ready. Please try again in a moment." });
         return;
     }
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(firebaseServices.auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful sign-in, the AuthProvider will handle session creation and redirect.
       // The loading modal will stay until the redirect happens.
     } catch (error: any) {

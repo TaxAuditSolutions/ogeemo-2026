@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -38,7 +39,7 @@ function GoogleIcon() {
 export default function LoginPage() {
   const { toast } = useToast();
   const { signInWithGoogle } = useAuth(); // Get services from context
-  const { services } = useFirebase();
+  const { auth } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -47,13 +48,13 @@ export default function LoginPage() {
   });
 
   async function handleEmailSignIn(values: z.infer<typeof loginSchema>): Promise<void> {
-    if (!services?.auth) {
+    if (!auth) {
         toast({ variant: "destructive", title: "Login Failed", description: "Firebase is not ready. Please try again in a moment." });
         return;
     }
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(services.auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful sign-in, the AuthProvider will handle session creation and redirect.
       // The loading modal will stay until the redirect happens.
     } catch (error: any) {

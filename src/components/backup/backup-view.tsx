@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { httpsCallable } from "firebase/functions";
 import { ToastAction } from "@/components/ui/toast";
-import { useAuth } from "@/context/auth-context";
+import { useFirebase } from "@/firebase";
 
 
 type Backup = {
@@ -70,17 +70,17 @@ export function BackupView() {
   const [backupToRestore, setBackupToRestore] = useState<Backup | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   const { toast } = useToast();
-  const { firebaseServices } = useAuth();
+  const { functions } = useFirebase();
 
   const handleCreateBackup = async () => {
-    if (backupStatus === 'running' || !firebaseServices) {
+    if (backupStatus === 'running' || !functions) {
         toast({ variant: "destructive", title: "Error", description: "Firebase services are not available." });
         return;
     }
     setBackupStatus("running");
 
     try {
-      const triggerBackup = httpsCallable(firebaseServices.functions, 'triggerBackup');
+      const triggerBackup = httpsCallable(functions, 'triggerBackup');
       
       const result = await triggerBackup();
       console.log("Cloud Function result:", result.data);

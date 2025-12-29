@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -32,7 +33,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const { toast } = useToast();
-  const { services } = useFirebase();
+  const { auth } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<RegisterFormData | null>(null);
@@ -48,12 +49,12 @@ export default function RegisterPage() {
   };
 
   const handleFinalSubmit = async () => {
-    if (!formData || !services?.auth) return;
+    if (!formData || !auth) return;
     
     setIsLoading(true);
     try {
         // 1. Create Firebase Auth user
-        const userCredential = await createUserWithEmailAndPassword(services.auth, formData.email, formData.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
 
         if (!user) {

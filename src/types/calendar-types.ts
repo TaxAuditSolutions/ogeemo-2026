@@ -31,6 +31,8 @@ export interface Event {
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];
   isTodoItem?: boolean;
+  urgency?: ProjectUrgency;
+  importance?: ProjectImportance;
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';

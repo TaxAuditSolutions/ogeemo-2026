@@ -48,6 +48,8 @@ const taskSchema = z.object({
     description: z.string().optional(),
     stepId: z.string().optional().nullable(),
     isTodoItem: z.boolean().optional(),
+    urgency: z.enum(['urgent', 'important', 'optional']).default('important'),
+    importance: z.enum(['A', 'B', 'C']).default('B'),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -82,6 +84,8 @@ const defaultTaskFormValues: TaskFormData = {
   description: "",
   stepId: null,
   isTodoItem: false,
+  urgency: 'important',
+  importance: 'B',
 };
 
 
@@ -125,7 +129,7 @@ export function NewTaskDialog({
     if (isOpen) {
         if (isTaskMode) {
             const defaults = taskToEdit 
-              ? { title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem }
+              ? { title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem, urgency: taskToEdit.urgency || 'important', importance: taskToEdit.importance || 'B' }
               : { ...defaultTaskFormValues, ...initialData };
             taskForm.reset(defaults);
         } else {
@@ -164,7 +168,7 @@ export function NewTaskDialog({
     setIsLoading(true);
     try {
         if (isEditingTask && taskToEdit) {
-            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, stepId: values.stepId };
+            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, stepId: values.stepId, urgency: values.urgency, importance: values.importance };
             await updateTask(taskToEdit.id, updatedTaskData);
             if (onTaskUpdate) {
                 onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
@@ -180,6 +184,8 @@ export function NewTaskDialog({
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
+                urgency: values.urgency,
+                importance: values.importance,
             };
             const savedTask = await addTask(newTaskData);
             if (onTaskCreate) {
@@ -237,6 +243,10 @@ export function NewTaskDialog({
             <div className="py-4 space-y-4">
                 <FormField control={taskForm.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={taskForm.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={taskForm.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">Urgent</SelectItem><SelectItem value="important">Important</SelectItem><SelectItem value="optional">Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                    <FormField control={taskForm.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                </div>
                  <FormField control={taskForm.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>
             <DialogFooter>

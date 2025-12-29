@@ -1,5 +1,4 @@
 
-
 import type { LucideIcon } from 'lucide-react';
 
 export type TaskStatus = 'todo' | 'inProgress' | 'done';
@@ -31,6 +30,7 @@ export interface Event {
   isBillable?: boolean;
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];
+  isTodoItem?: boolean;
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';

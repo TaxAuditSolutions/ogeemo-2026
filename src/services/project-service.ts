@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -88,10 +87,10 @@ const docToTask = (doc: any): TaskEvent => {
     contactId: data.contactId || null,
     workerId: data.workerId || null,
     isScheduled: data.isScheduled || false,
+    isTodoItem: data.isTodoItem || false,
     duration: data.duration,
     isBillable: data.isBillable,
     billableRate: data.billableRate,
-    ritualType: data.ritualType,
     sessions: (data.sessions || []).map((session: any) => ({
         ...session,
         startTime: (session.startTime as Timestamp)?.toDate() || new Date(),
@@ -406,19 +405,6 @@ export async function deleteAllTasksForUser(userId: string): Promise<void> {
     if (snapshot.empty) {
         return; // No tasks to delete
     }
-
-    snapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-
-    await batch.commit();
-}
-
-export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
-    const db = await getDb();
-    const batch = writeBatch(db);
-    const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId), where("ritualType", "==", ritualType));
-    const snapshot = await getDocs(q);
 
     snapshot.docs.forEach(doc => {
         batch.delete(doc.ref);

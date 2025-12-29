@@ -41,14 +41,12 @@ export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
     const q = query(
         collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId)
+        where("userId", "==", userId),
+        where("isTodoItem", "==", true) // Only fetch items explicitly marked as to-dos.
     );
     const snapshot = await getDocs(q);
     
-    // This is now the single source of truth for what a "To-Do" is.
-    return snapshot.docs
-        .map(docToTodo)
-        .filter(task => !task.projectId || task.projectId === 'inbox');
+    return snapshot.docs.map(docToTodo);
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
@@ -59,6 +57,7 @@ export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEven
         status: 'todo' as const,
         projectId: null,
         position: todoData.position || 0,
+        isTodoItem: true, // Explicitly mark this as a to-do item
     };
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave };

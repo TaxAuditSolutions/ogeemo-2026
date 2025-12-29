@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp, Calendar } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp, Calendar, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTodos, addTodo as saveTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodosStatus, deleteTodos } from '@/services/todo-service';
-import { type Event as TaskEvent, type Project } from '@/types/calendar-types';
+import { getTodos, addTodo as saveTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, updateTodosStatus, deleteTodos } from '@/services/todo-service';
+import { type Event as TaskEvent, type Project, type TaskStatus } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
 import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
@@ -33,14 +33,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from '../ui/input';
-import { Checkbox } from '../ui/checkbox';
+import { TaskCard } from '../tasks/TaskCard';
+import { TaskColumn } from '../tasks/TaskColumn';
 
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
   const [newTodoText, setNewTodoText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
@@ -49,6 +48,8 @@ export function ToDoListView() {
   const [initialDialogData, setInitialDialogData] = useState({});
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
 
 
   const router = useRouter();
@@ -83,80 +84,75 @@ export function ToDoListView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleAddTodo = async () => {
-    if (!newTodoText.trim() || !user) return;
-
-    try {
-      const newTodoData: Omit<TaskEvent, 'id'> = {
-        title: newTodoText.trim(),
-        status: 'todo',
-        position: todos.length,
-        userId: user.uid,
-        isTodoItem: true, // Mark as a to-do item
-      };
-      const savedTodo = await saveTodo(newTodoData);
-      setTodos(prev => [savedTodo, ...prev]);
-      setNewTodoText('');
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not save new to-do.' });
-    }
-  };
-
-  const handleStartEdit = (todo: TaskEvent) => {
-    setEditingId(todo.id);
-    setEditingText(todo.title);
+  
+  const handleAddTask = () => {
+    setTaskToEdit(null);
+    setIsNewTaskDialogOpen(true);
   };
   
-  const handleUpdateTodo = async () => {
-    if (!editingId || !editingText.trim()) {
-      setEditingId(null);
-      return;
-    }
-    const todoToUpdate = todos.find(t => t.id === editingId);
-    if (!todoToUpdate || todoToUpdate.title === editingText.trim()) {
-      setEditingId(null);
-      return;
-    }
+  const handleTaskSaved = () => {
+    loadData(); // Refresh data after save/update
+    setIsNewTaskDialogOpen(false);
+  };
+  
+  const onDropTask = useCallback(async (item: TaskEvent, newStatus: TaskStatus) => {
+    if (item.status === newStatus) return;
 
-    const updatedTodo = { ...todoToUpdate, title: editingText.trim() };
-    setTodos(prev => prev.map(t => t.id === editingId ? updatedTodo : t));
+    const originalTasks = [...todos];
+    setTodos(prev => prev.map(t => t.id === item.id ? { ...t, status: newStatus } : t));
     
     try {
-      await updateTodo(editingId, { title: editingText.trim() });
-    } catch (error) {
-      setTodos(prev => prev.map(t => t.id === editingId ? todoToUpdate : t));
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not update item.' });
-    } finally {
-      setEditingId(null);
+        await updateTodo(item.id, { status: newStatus });
+    } catch (error: any) {
+        setTodos(originalTasks);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
     }
-  };
+  }, [todos, toast]);
+  
+  const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
+    const dragTask = todos.find(t => t.id === dragId);
+    const hoverTask = todos.find(t => t.id === hoverId);
+    if (!dragTask || !hoverTask || dragTask.status !== hoverTask.status) return;
 
-  const handleToggleComplete = async (todo: TaskEvent) => {
-    const originalTodos = [...todos];
-    const newStatus = todo.status === 'done' ? 'todo' : 'done';
-    setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, status: newStatus } : t));
-    try {
-      await updateTodo(todo.id, { status: newStatus });
-    } catch (error) {
-      setTodos(originalTodos);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not update status.' });
-    }
-  };
+    const dragIndex = todos.findIndex(t => t.id === dragId);
+    const hoverIndex = todos.findIndex(t => t.id === hoverId);
 
-  const handleDeleteTodo = (id: string) => {
-    const todo = todos.find(t => t.id === id);
-    if (todo) setTaskToDelete(todo);
+    const newTasks = [...todos];
+    const [draggedItem] = newTasks.splice(dragIndex, 1);
+    newTasks.splice(hoverIndex, 0, draggedItem);
+    
+    const tasksInColumn = newTasks.filter(t => t.status === dragTask.status);
+    const updates = tasksInColumn.map((task, index) => ({
+        id: task.id,
+        position: index,
+        status: task.status,
+    }));
+    
+    setTodos(newTasks);
+    await updateTodoPositions(updates);
+  }, [todos]);
+  
+  const tasksByStatus = useMemo(() => {
+    const sortedTasks = [...todos].sort((a, b) => a.position - b.position);
+    return {
+        todo: sortedTasks.filter(t => t.status === 'todo'),
+        inProgress: sortedTasks.filter(t => t.status === 'inProgress'),
+        done: sortedTasks.filter(t => t.status === 'done'),
+    };
+  }, [todos]);
+
+  const handleEditTask = (task: TaskEvent) => {
+    setTaskToEdit(task);
+    setIsNewTaskDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
-    const originalTodos = [...todos];
-    setTodos(todos.filter(t => t.id !== taskToDelete.id));
     try {
       await deleteTodoFromDb(taskToDelete.id);
-    } catch (error) {
-      setTodos(originalTodos);
+      loadData();
+      toast({ title: 'Task Deleted' });
+    } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the to-do.' });
     } finally {
       setTaskToDelete(null);
@@ -188,146 +184,146 @@ export function ToDoListView() {
     if (!user) return;
     try {
       await archiveTaskAsFile(user.uid, task);
-      await handleDeleteTodo(task.id);
+      await deleteTodoFromDb(task.id);
+      loadData();
       toast({ title: 'Archived', description: 'To-Do item saved to File Manager.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
     }
   };
   
-  const handleSchedule = (task: TaskEvent) => {
-    router.push(`/master-mind?title=${encodeURIComponent(task.title)}&notes=${encodeURIComponent(task.description || '')}`);
+  const handleToggleSelect = (taskId: string) => {
+    setSelectedTaskIds(prev =>
+        prev.includes(taskId)
+            ? prev.filter(id => id !== taskId)
+            : [...prev, id]
+    );
   };
   
-   const handleDeleteSelected = () => {
+  const handleToggleSelectAll = (status: TaskStatus) => {
+    const columnTaskIds = tasks.filter(t => t.status === status).map(t => t.id);
+    const selectedInColumn = selectedTaskIds.filter(id => columnTaskIds.includes(id));
+
+    if (selectedInColumn.length === columnTaskIds.length) {
+      // Deselect all in this column
+      setSelectedTaskIds(prev => prev.filter(id => !columnTaskIds.includes(id)));
+    } else {
+      // Select all in this column
+      setSelectedTaskIds(prev => [...new Set([...prev, ...columnTaskIds])]);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
     if (selectedTaskIds.length > 0) {
       setIsBulkDeleteAlertOpen(true);
     }
   };
-
+  
   const handleConfirmBulkDelete = async () => {
-    const originalTodos = [...todos];
-    setTodos(prev => prev.filter(t => !selectedTaskIds.includes(t.id)));
     try {
       await deleteTodos(selectedTaskIds);
       toast({ title: `${selectedTaskIds.length} tasks deleted.` });
       setSelectedTaskIds([]);
+      loadData();
     } catch (error: any) {
-      setTodos(originalTodos);
       toast({ variant: 'destructive', title: 'Bulk delete failed.', description: error.message });
     } finally {
       setIsBulkDeleteAlertOpen(false);
     }
   };
 
-  const sortedTodos = [...todos].sort((a,b) => (a.status === 'done' ? 1 : -1) - (b.status === 'done' ? 1 : -1) || (a.position || 0) - (b.position || 0));
-
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col items-center h-full">
+      <div className="p-4 sm:p-6 flex flex-col h-full items-center">
         <header className="text-center mb-6">
-          <h1 className="text-3xl font-bold font-headline text-primary">My To-Do List</h1>
-          <p className="text-muted-foreground">A simple place to quickly capture your tasks.</p>
-          {selectedTaskIds.length > 0 && (
-            <div className="mt-4 flex justify-center items-center gap-2">
-              <span className="text-sm font-medium">{selectedTaskIds.length} selected</span>
-              <Button variant="destructive" size="sm" onClick={handleDeleteSelected}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
-            </div>
-          )}
+          <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
+          <p className="text-muted-foreground">Drag tasks between columns to update their status.</p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button onClick={handleAddTask}><Plus className="mr-2 h-4 w-4"/> Add Task</Button>
+            {selectedTaskIds.length > 0 && (
+                <Button variant="destructive" onClick={handleDeleteSelected}>
+                    <Trash2 className="mr-2 h-4 w-4"/> Delete Selected ({selectedTaskIds.length})
+                </Button>
+            )}
+          </div>
         </header>
 
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <div className="flex w-full items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="Add a new to-do..."
-                value={newTodoText}
-                onChange={(e) => setNewTodoText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddTodo(); }}
-              />
-              <Button onClick={handleAddTodo}>
-                <Plus className="mr-2 h-4 w-4" /> Add
-              </Button>
+        {isLoading ? (
+            <div className="flex items-center justify-center h-full pt-16">
+                <LoaderCircle className="h-8 w-8 animate-spin" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {isLoading ? (
-                  <div className="flex items-center justify-center p-8">
-                      <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-              ) : sortedTodos.length > 0 ? (
-                sortedTodos.map(todo => (
-                  <div key={todo.id} className="flex items-center gap-2 p-2 rounded-md border bg-muted/50 group">
-                    <Checkbox
-                      id={`task-${todo.id}`}
-                      checked={todo.status === 'done'}
-                      onCheckedChange={() => handleToggleComplete(todo)}
-                      aria-label={`Mark task ${todo.title} as ${todo.status === 'done' ? 'not done' : 'done'}`}
-                    />
-                    {editingId === todo.id ? (
-                        <Input
-                            autoFocus
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            onBlur={handleUpdateTodo}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateTodo(); if (e.key === 'Escape') setEditingId(null); }}
-                            className="flex-1"
-                        />
-                    ) : (
-                        <label
-                          htmlFor={`task-${todo.id}`}
-                          className="flex-1 cursor-pointer"
-                        >
-                          <p className={todo.status === 'done' ? 'text-muted-foreground line-through' : ''}>{todo.title}</p>
-                        </label>
-                    )}
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleStartEdit(todo)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleSchedule(todo)}>
-                          <Calendar className="mr-2 h-4 w-4" /> Schedule to Calendar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleMakeProject(todo)}>
-                          <Briefcase className="mr-2 h-4 w-4" /> Make a Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleArchive(todo)}>
-                          <Archive className="mr-2 h-4 w-4" /> Archive as Note
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => handleDeleteTodo(todo.id)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                  <p>Your to-do list is empty. Add a task above to get started!</p>
-                </div>
-              )}
+        ) : (
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mt-6">
+                <TaskColumn 
+                    status="todo" 
+                    tasks={tasksByStatus.todo}
+                    onAddTask={handleAddTask}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={(taskId) => { const task = todos.find(t => t.id === taskId); if (task) setTaskToDelete(task); }}
+                    onToggleComplete={() => {}}
+                    onEdit={handleEditTask}
+                    onMakeProject={handleMakeProject}
+                    onArchive={handleArchive}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
+                />
+                <TaskColumn 
+                    status="inProgress" 
+                    tasks={tasksByStatus.inProgress}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={(taskId) => { const task = todos.find(t => t.id === taskId); if (task) setTaskToDelete(task); }}
+                    onToggleComplete={() => {}}
+                    onEdit={handleEditTask}
+                    onMakeProject={handleMakeProject}
+                    onArchive={handleArchive}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
+                />
+                <TaskColumn 
+                    status="done" 
+                    tasks={tasksByStatus.done}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={(taskId) => { const task = todos.find(t => t.id === taskId); if (task) setTaskToDelete(task); }}
+                    onToggleComplete={(taskId) => { const task = todos.find(t => t.id === taskId); if(task) onDropTask(task, 'todo') }}
+                    onEdit={handleEditTask}
+                    onMakeProject={handleMakeProject}
+                    onArchive={handleArchive}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
+                />
             </div>
-          </CardContent>
-        </Card>
+        )}
       </div>
-      <NewTaskDialog
-        isOpen={isNewProjectDialogOpen}
-        onOpenChange={setIsNewProjectDialogOpen}
-        onProjectCreate={handleProjectCreated}
-        contacts={contacts}
-        onContactsChange={setContacts}
-        projectToEdit={null}
-        initialData={initialDialogData}
-      />
+
+       <NewTaskDialog
+            isOpen={isNewTaskDialogOpen}
+            onOpenChange={(open) => {
+                setIsNewTaskDialogOpen(open);
+                if (!open) {
+                    setTaskToEdit(null);
+                }
+            }}
+            onTaskCreate={handleTaskSaved}
+            onTaskUpdate={handleTaskSaved}
+            projectId={'inbox'}
+            taskToEdit={taskToEdit}
+        />
+      
+        <NewTaskDialog
+            isOpen={isNewProjectDialogOpen}
+            onOpenChange={setIsNewProjectDialogOpen}
+            onProjectCreate={handleProjectCreated}
+            contacts={contacts}
+            onContactsChange={setContacts}
+            projectToEdit={null}
+            initialData={initialDialogData}
+        />
       
       <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
         <AlertDialogContent>

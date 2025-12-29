@@ -98,6 +98,7 @@ const docToTask = (doc: any): TaskEvent => {
     })),
     urgency: data.urgency,
     importance: data.importance,
+    ritualType: data.ritualType,
   };
 };
 
@@ -325,13 +326,7 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
 
 export async function getTasksForUser(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
-    // This query now filters out entries that don't have a projectId,
-    // which includes calendar-only events like rituals.
-    const q = query(
-      collection(db, TASKS_COLLECTION),
-      where("userId", "==", userId),
-      where("projectId", "!=", null)
-    );
+    const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTask);
 }
@@ -419,6 +414,21 @@ export async function deleteAllTasksForUser(userId: string): Promise<void> {
         batch.delete(doc.ref);
     });
 
+    await batch.commit();
+}
+
+export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
+    const db = await getDb();
+    const batch = writeBatch(db);
+    const q = query(
+        collection(db, TASKS_COLLECTION), 
+        where("userId", "==", userId),
+        where("ritualType", "==", ritualType)
+    );
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
     await batch.commit();
 }
 
@@ -550,8 +560,13 @@ export async function getTrashedActionChips(userId: string): Promise<ActionChipD
 export async function trashActionChips(userId: string, chipsToTrash: ActionChipData[], type: 'dashboard' | 'accounting' = 'dashboard'): Promise<void> {
     const userChipsCollection = type === 'accounting' ? ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION : ACTION_CHIPS_COLLECTION;
     const availableChipsCollection = type === 'accounting' ? AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION : AVAILABLE_ACTION_CHIPS_COLLECTION;
-    const trashedChips = await getTrashedActionChips(userId);
-
+    
+    const [userChips, availableChips, trashedChips] = await Promise.all([
+      getChipsFromCollection(userId, userChipsCollection),
+      getChipsFromCollection(userId, availableChipsCollection),
+      getTrashedActionChips(userId)
+    ]);
+    
     const chipIdsToTrash = new Set(chipsToTrash.map(c => c.id));
 
     await Promise.all([
@@ -629,5 +644,4 @@ export async function updateActionChip(userId: string, updatedChip: ActionChipDa
         await updateAvailableActionChips(userId, newAvailableChips, type === 'accounting' ? 'availableAccountingNavItems' : 'dashboard');
     }
 }
-
     

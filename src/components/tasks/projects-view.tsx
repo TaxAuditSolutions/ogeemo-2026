@@ -137,7 +137,7 @@ const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityCha
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="A">A - Critical</SelectItem>
-                                <SelectItem value="B">B - Important</SelectItem>
+                                <SelectItem value="B">B - Standard</SelectItem>
                                 <SelectItem value="C">C - Optional</SelectItem>
                             </SelectContent>
                         </Select>
@@ -301,6 +301,7 @@ export function ProjectsView() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
                     <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
                 </header>
+
                 <div className="w-full max-w-7xl flex-1 space-y-8">
                     <div className="flex justify-between items-center mb-4">
                         <ProjectManagementHeader />
@@ -383,4 +384,3 @@ export function ProjectsView() {
         </>
     );
 }
-

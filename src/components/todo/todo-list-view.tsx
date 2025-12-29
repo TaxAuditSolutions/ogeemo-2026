@@ -4,8 +4,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp, Calendar, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, Archive, ArrowDownUp, Calendar, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -40,16 +40,16 @@ export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
   const [newTodoText, setNewTodoText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [initialDialogData, setInitialDialogData] = useState({});
+  const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
 
 
   const router = useRouter();
@@ -87,6 +87,7 @@ export function ToDoListView() {
   
   const handleAddTask = () => {
     setTaskToEdit(null);
+    setInitialDialogData({ isTodoItem: true });
     setIsNewTaskDialogOpen(true);
   };
   
@@ -196,12 +197,12 @@ export function ToDoListView() {
     setSelectedTaskIds(prev =>
         prev.includes(taskId)
             ? prev.filter(id => id !== taskId)
-            : [...prev, id]
+            : [...prev, taskId]
     );
   };
   
   const handleToggleSelectAll = (status: TaskStatus) => {
-    const columnTaskIds = tasks.filter(t => t.status === status).map(t => t.id);
+    const columnTaskIds = todos.filter(t => t.status === status).map(t => t.id);
     const selectedInColumn = selectedTaskIds.filter(id => columnTaskIds.includes(id));
 
     if (selectedInColumn.length === columnTaskIds.length) {
@@ -261,7 +262,7 @@ export function ToDoListView() {
                     onDropTask={onDropTask} 
                     onMoveCard={onMoveCard}
                     onTaskDelete={(taskId) => { const task = todos.find(t => t.id === taskId); if (task) setTaskToDelete(task); }}
-                    onToggleComplete={() => {}}
+                    onToggleComplete={(taskId) => { const task = todos.find(t => t.id === taskId); if(task) onDropTask(task, 'done') }}
                     onEdit={handleEditTask}
                     onMakeProject={handleMakeProject}
                     onArchive={handleArchive}
@@ -313,6 +314,7 @@ export function ToDoListView() {
             onTaskUpdate={handleTaskSaved}
             projectId={'inbox'}
             taskToEdit={taskToEdit}
+            initialData={initialDialogData}
         />
       
         <NewTaskDialog
@@ -357,3 +359,5 @@ export function ToDoListView() {
     </>
   );
 }
+
+    

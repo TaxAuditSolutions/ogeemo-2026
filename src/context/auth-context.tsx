@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthLoading && !isFirebaseLoading) {
-      const isPublicPath = publicPaths.includes(pathname);
+      const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
       if (!user && !isPublicPath && !isMarketingPath) {

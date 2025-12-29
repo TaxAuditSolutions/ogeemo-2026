@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import LoadingModal from "@/components/ui/loading-modal";
 import { Logo } from "@/components/logo";
-import { initializeFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -39,7 +39,7 @@ function GoogleIcon() {
 export default function LoginPage() {
   const { toast } = useToast();
   const { signInWithGoogle } = useAuth(); // Get services from context
-  const router = useRouter();
+  const { auth } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -48,7 +48,6 @@ export default function LoginPage() {
   });
 
   async function handleEmailSignIn(values: z.infer<typeof loginSchema>): Promise<void> {
-    const { auth } = await initializeFirebase();
     if (!auth) {
         toast({ variant: "destructive", title: "Login Failed", description: "Firebase is not ready. Please try again in a moment." });
         return;
@@ -57,7 +56,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful sign-in, the AuthProvider will handle session creation and redirect.
-      // The loading modal will stay until the redirect happens.
+      // The loading state is managed by the AuthProvider's loading state.
     } catch (error: any) {
       let description = "An unknown error occurred. Please try again.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

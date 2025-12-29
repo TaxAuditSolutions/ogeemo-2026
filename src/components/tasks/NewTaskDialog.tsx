@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -30,14 +29,20 @@ import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrg
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { cn } from '@/lib/utils';
+import ContactFormDialog from '../contacts/contact-form-dialog';
+
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters." }),
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
+  projectManagerId: z.string().optional().nullable(),
   status: z.enum(['planning', 'active', 'on-hold', 'completed']).default('planning'),
   urgency: z.enum(['urgent', 'important', 'optional']).default('important'),
   importance: z.enum(['A', 'B', 'C']).default('B'),
@@ -49,7 +54,7 @@ const taskSchema = z.object({
     projectId: z.string().optional().nullable(),
     stepId: z.string().optional().nullable(),
     isTodoItem: z.boolean().optional(),
-    urgency: z.enum(['urgent', 'important', 'optional']).default('important'),
+    urgency: z.enum(['A - Urgent', 'B - Important', 'C - Optional']).default('B - Important'),
     importance: z.enum(['A', 'B', 'C']).default('B'),
 });
 
@@ -65,7 +70,7 @@ interface NewTaskDialogProps {
   onTaskUpdate?: (task: TaskEvent) => void;
   contacts?: Contact[];
   onContactsChange?: (contacts: Contact[]) => void;
-  projects?: Project[]; // Add projects prop
+  projects?: Project[];
   projectToEdit?: Project | null;
   taskToEdit?: TaskEvent | null; 
   projectId?: string;
@@ -76,6 +81,7 @@ const defaultProjectFormValues: ProjectFormData = {
   name: "",
   description: "",
   contactId: null,
+  projectManagerId: null,
   status: 'planning',
   urgency: 'important',
   importance: 'B',
@@ -87,7 +93,7 @@ const defaultTaskFormValues: TaskFormData = {
   projectId: null,
   stepId: null,
   isTodoItem: false,
-  urgency: 'important',
+  urgency: 'B - Important',
   importance: 'B',
 };
 
@@ -126,6 +132,9 @@ export function NewTaskDialog({
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+  const [isManagerPopoverOpen, setIsManagerPopoverOpen] = useState(false);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   
   const initialDataString = JSON.stringify(initialData);
 
@@ -133,7 +142,7 @@ export function NewTaskDialog({
     if (isOpen) {
         if (isTaskMode) {
             const defaults = taskToEdit 
-              ? { ...defaultTaskFormValues, title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem, urgency: taskToEdit.urgency || 'important', importance: taskToEdit.importance || 'B', projectId: taskToEdit.projectId || projectId }
+              ? { ...defaultTaskFormValues, title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null, isTodoItem: taskToEdit.isTodoItem, urgency: taskToEdit.urgency || 'B - Important', importance: taskToEdit.importance || 'B', projectId: taskToEdit.projectId || projectId }
               : { ...defaultTaskFormValues, ...initialData, projectId: projectId };
             taskForm.reset(defaults);
         } else {
@@ -171,8 +180,11 @@ export function NewTaskDialog({
 
     setIsLoading(true);
     try {
+        const urgencyMap = { 'A - Urgent': 'urgent', 'B - Important': 'important', 'C - Optional': 'optional' };
+        const finalUrgency = urgencyMap[values.urgency] as ProjectFormData['urgency'];
+
         if (isEditingTask && taskToEdit) {
-            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, projectId: values.projectId, stepId: values.stepId, urgency: values.urgency, importance: values.importance };
+            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, projectId: values.projectId, stepId: values.stepId, urgency: finalUrgency, importance: values.importance };
             await updateTask(taskToEdit.id, updatedTaskData);
             if (onTaskUpdate) {
                 onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
@@ -188,7 +200,7 @@ export function NewTaskDialog({
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
-                urgency: values.urgency,
+                urgency: finalUrgency,
                 importance: values.importance,
             };
             const savedTask = await addTask(newTaskData);
@@ -217,7 +229,10 @@ export function NewTaskDialog({
             <div className="py-4 space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Project Name</FormLabel> <FormControl><Input placeholder="e.g., Q4 Marketing Campaign" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Describe the main goal of this project" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Client (Optional)</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign a client to this project" /></SelectTrigger></FormControl><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Client (Optional)</FormLabel> <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a client...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search clients..."/><CommandList><CommandEmpty>No client found. <Button variant="link" size="sm" onClick={() => { setIsContactPopoverOpen(false); setIsContactFormOpen(true);}}>Create one?</Button></CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('contactId', c.id); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="projectManagerId" render={({ field }) => ( <FormItem> <FormLabel>Project Manager (Optional)</FormLabel> <Popover open={isManagerPopoverOpen} onOpenChange={setIsManagerPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a manager...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..."/><CommandList><CommandEmpty>No contact found. <Button variant="link" size="sm" onClick={() => { setIsManagerPopoverOpen(false); setIsContactFormOpen(true);}}>Create one?</Button></CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('projectManagerId', c.id); setIsManagerPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem> <FormLabel>Status</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="planning">In Planning</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On-Hold</SelectItem><SelectItem value="completed">Completed</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                     <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">Urgent</SelectItem><SelectItem value="important">Important</SelectItem><SelectItem value="optional">Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
@@ -249,7 +264,7 @@ export function NewTaskDialog({
                 <FormField control={taskForm.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={taskForm.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="inbox">Action Items (Inbox)</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={taskForm.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="urgent">A - Urgent</SelectItem><SelectItem value="important">B - Important</SelectItem><SelectItem value="optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                    <FormField control={taskForm.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                     <FormField control={taskForm.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                 </div>
                  <FormField control={taskForm.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
@@ -266,10 +281,12 @@ export function NewTaskDialog({
   );
 
   return (
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent>
-          {isTaskMode ? renderTaskForm() : renderProjectForm()}
-        </DialogContent>
-      </Dialog>
+      <>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+            {isTaskMode ? renderTaskForm() : renderProjectForm()}
+            </DialogContent>
+        </Dialog>
+      </>
   );
 }

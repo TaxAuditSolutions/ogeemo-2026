@@ -39,31 +39,26 @@ const docToTodo = (doc: any): TaskEvent => {
 
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
-    // Fetch all tasks for the user that are either unassigned OR in the 'inbox' project,
-    // AND are not a 'reminder' or a 'ritual'. This is the correct, robust filtering.
     const q = query(
         collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId),
-        where("projectId", "in", [null, "inbox"])
+        where("userId", "==", userId)
     );
     const snapshot = await getDocs(q);
     
-    // Final client-side filter to be absolutely certain no automated tasks get through.
+    // This is now the single source of truth for what a "To-Do" is.
     return snapshot.docs
         .map(docToTodo)
-        .filter(task => task.type !== 'reminder' && !task.ritualType);
+        .filter(task => !task.projectId || task.projectId === 'inbox');
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
     const db = await getDb();
     // Ensure it's treated as a general "to-do" by not having a project ID
-    // and defaulting the type to 'task'.
     const dataToSave = {
         ...todoData,
         status: 'todo' as const,
         projectId: null,
         position: todoData.position || 0,
-        type: 'task' as const,
     };
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave };

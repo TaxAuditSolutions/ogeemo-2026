@@ -148,7 +148,6 @@ export default function PlanningRitualsPage() {
                         end: addMinutes(startTime, dailyRitual.duration),
                         status: 'todo',
                         isScheduled: true,
-                        ritualType: 'daily',
                         position: 0,
                     });
                 }
@@ -164,7 +163,6 @@ export default function PlanningRitualsPage() {
                     end: addMinutes(startTime, dailyRitual.duration),
                     status: 'todo',
                     isScheduled: true,
-                    ritualType: 'daily',
                     position: 0,
                 });
                 scheduledCount = 1;
@@ -233,7 +231,6 @@ export default function PlanningRitualsPage() {
                         end: addMinutes(startTime, 90),
                         status: 'todo',
                         isScheduled: true,
-                        ritualType: 'weekly',
                         position: 0,
                     });
                 }
@@ -390,7 +387,7 @@ export default function PlanningRitualsPage() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
-                                        <Calendar mode="single" selected={weeklyStartDate} onSelect={(date) => { setWeeklyStartDate(date); setIsWeeklyStartPickerOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={weeklyStartDate} onSelect={(date) => { setWeeklyStartDate(date); setIsWeeklyStartPickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>
@@ -404,7 +401,7 @@ export default function PlanningRitualsPage() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
-                                        <Calendar mode="single" selected={weeklyEndDate} onSelect={(date) => { setWeeklyEndDate(date); setIsWeeklyEndPickerOpen(false); }} disabled={(date) => weeklyStartDate ? date < weeklyStartDate : false} initialFocus />
+                                        <CustomCalendar mode="single" selected={weeklyEndDate} onSelect={(date) => { setWeeklyEndDate(date); setIsWeeklyEndPickerOpen(false); }} disabled={(date) => weeklyStartDate ? date < weeklyStartDate : false} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>

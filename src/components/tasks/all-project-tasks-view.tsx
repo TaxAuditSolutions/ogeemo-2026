@@ -139,6 +139,7 @@ export default function AllProjectTasksView() {
     const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
     
     const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
@@ -178,7 +179,8 @@ export default function AllProjectTasksView() {
     }, [loadData]);
     
     const handleEditTask = (task: TaskEvent) => {
-        router.push(`/master-mind?eventId=${task.id}`);
+        setTaskToEdit(task);
+        setIsNewTaskDialogOpen(true);
     };
 
     const handleAssignProject = async (taskId: string, projectId: string | null) => {
@@ -290,6 +292,10 @@ export default function AllProjectTasksView() {
         loadData(); // Reload all data to show the new task
     };
 
+    const handleTaskSaved = () => {
+        loadData();
+    };
+
     const allVisibleSelected = sortedTasks.length > 0 && sortedTasks.every(t => selectedTaskIds.includes(t.id));
     const someVisibleSelected = selectedTaskIds.length > 0 && !allVisibleSelected;
 
@@ -313,7 +319,7 @@ export default function AllProjectTasksView() {
                         </Button>
                     </div>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A list of all tasks and events, including those scheduled on your calendar.
+                        A comprehensive list of all tasks across all your projects.
                     </p>
                 </header>
                 <ProjectManagementHeader />
@@ -332,7 +338,7 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={() => setIsNewTaskDialogOpen(true)}>
+                                <Button onClick={() => { setTaskToEdit(null); setIsNewTaskDialogOpen(true); }}>
                                     <Plus className="mr-2 h-4 w-4"/> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
@@ -375,7 +381,7 @@ export default function AllProjectTasksView() {
                                             task={task}
                                             project={projects.find(p => p.id === task.projectId)}
                                             onEdit={handleEditTask}
-                                            onDelete={setTaskToDelete}
+                                            onDelete={() => setTaskToDelete(task)}
                                             onAssignProject={handleAssignProject}
                                             projects={projects}
                                             isSelected={selectedTaskIds.includes(task.id)}
@@ -437,7 +443,7 @@ export default function AllProjectTasksView() {
                 onTaskUpdate={handleTaskSaved}
                 taskToEdit={taskToEdit}
                 projectId={selectedProjectId !== 'all' ? selectedProjectId : undefined}
-                projects={projects} // Pass projects to the dialog
+                projects={projects}
             />
         </>
     );

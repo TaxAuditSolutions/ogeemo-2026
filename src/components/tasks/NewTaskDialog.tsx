@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,6 +64,20 @@ interface NewTaskDialogProps {
   initialData?: Partial<any>;
 }
 
+const defaultProjectFormValues: ProjectFormData = {
+  name: "",
+  description: "",
+  contactId: null,
+  status: 'planning',
+};
+
+const defaultTaskFormValues: TaskFormData = {
+  title: "",
+  description: "",
+  stepId: null,
+};
+
+
 export function NewTaskDialog({
   isOpen,
   onOpenChange,
@@ -88,29 +102,32 @@ export function NewTaskDialog({
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
-    defaultValues: { name: "", description: "", contactId: null, status: 'planning' },
+    defaultValues: defaultProjectFormValues,
   });
 
   const taskForm = useForm<TaskFormData>({
       resolver: zodResolver(taskSchema),
-      defaultValues: { title: "", description: "", stepId: null },
+      defaultValues: defaultTaskFormValues,
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const contactToEditString = JSON.stringify(contactToEdit);
+  const initialDataString = JSON.stringify(initialData);
 
   useEffect(() => {
     if (isOpen) {
         if (isTaskMode) {
             const defaults = taskToEdit 
               ? { title: taskToEdit.title, description: taskToEdit.description || "", stepId: taskToEdit.stepId || null }
-              : { ...initialData, title: initialData?.title || "", description: initialData?.description || "", stepId: null };
+              : { ...defaultTaskFormValues, ...initialData };
             taskForm.reset(defaults);
         } else {
             const defaults = projectToEdit 
                 ? { 
+                    ...defaultProjectFormValues,
                     ...projectToEdit,
                   }
-                : { ...initialData };
+                : { ...defaultProjectFormValues, ...initialData };
             form.reset(defaults);
         }
     }
@@ -155,6 +172,7 @@ export function NewTaskDialog({
                 projectId: projectId === 'inbox' ? null : projectId,
                 stepId: values.stepId || null,
                 userId: user.uid,
+                isTodoItem: projectId === 'inbox',
             };
             const savedTask = await addTask(newTaskData);
             if (onTaskCreate) {
@@ -182,7 +200,7 @@ export function NewTaskDialog({
             <div className="py-4 space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Project Name</FormLabel> <FormControl><Input placeholder="e.g., Q4 Marketing Campaign" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Describe the main goal of this project" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Client (Optional)</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign a client to this project" /></SelectTrigger></FormControl><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Client (Optional)</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign a client to this project" /></SelectTrigger></FormControl><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="status" render={({ field }) => ( <FormItem> <FormLabel>Status</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="planning">In Planning</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On-Hold</SelectItem><SelectItem value="completed">Completed</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
             </div>
             <DialogFooter>

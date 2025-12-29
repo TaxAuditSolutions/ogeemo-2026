@@ -85,7 +85,7 @@ const docToTask = (doc: any): TaskEvent => {
     userId: data.userId,
     attendees: data.attendees,
     contactId: data.contactId || null,
-    workerId: data.workerId || null,
+    workerId: data.workerId || null, // Added for payroll tracking
     isScheduled: data.isScheduled || false,
     isTodoItem: data.isTodoItem || false,
     duration: data.duration,
@@ -96,6 +96,8 @@ const docToTask = (doc: any): TaskEvent => {
         startTime: (session.startTime as Timestamp)?.toDate() || new Date(),
         endTime: (session.endTime as Timestamp)?.toDate() || new Date(),
     })),
+    urgency: data.urgency,
+    importance: data.importance,
   };
 };
 
@@ -159,6 +161,7 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
     // Ensure optional fields that are undefined are converted to null for Firestore
     const dataToSave = {
         ...projectData,
+        createdAt: projectData.createdAt || new Date(), // Ensure createdAt is set
         startDate: projectData.startDate || null,
         endDate: projectData.endDate || null,
         contactId: projectData.contactId || null,
@@ -322,7 +325,13 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
 
 export async function getTasksForUser(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
-    const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
+    // This query now filters out entries that don't have a projectId,
+    // which includes calendar-only events like rituals.
+    const q = query(
+      collection(db, TASKS_COLLECTION),
+      where("userId", "==", userId),
+      where("projectId", "!=", null)
+    );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTask);
 }
@@ -541,9 +550,6 @@ export async function getTrashedActionChips(userId: string): Promise<ActionChipD
 export async function trashActionChips(userId: string, chipsToTrash: ActionChipData[], type: 'dashboard' | 'accounting' = 'dashboard'): Promise<void> {
     const userChipsCollection = type === 'accounting' ? ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION : ACTION_CHIPS_COLLECTION;
     const availableChipsCollection = type === 'accounting' ? AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION : AVAILABLE_ACTION_CHIPS_COLLECTION;
-
-    const userChips = await getActionChips(userId, type === 'accounting' ? 'accountingQuickNavItems' : 'dashboard');
-    const availableChips = await getAvailableActionChips(userId, type === 'accounting' ? 'availableAccountingNavItems' : 'dashboard');
     const trashedChips = await getTrashedActionChips(userId);
 
     const chipIdsToTrash = new Set(chipsToTrash.map(c => c.id));
@@ -623,3 +629,5 @@ export async function updateActionChip(userId: string, updatedChip: ActionChipDa
         await updateAvailableActionChips(userId, newAvailableChips, type === 'accounting' ? 'availableAccountingNavItems' : 'dashboard');
     }
 }
+
+    

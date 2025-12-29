@@ -11,7 +11,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -33,6 +32,7 @@ import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
+import { Input } from '../ui/input';
 
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
@@ -47,6 +47,9 @@ export function ToDoListView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+
 
   const router = useRouter();
   const { user } = useAuth();
@@ -81,10 +84,21 @@ export function ToDoListView() {
     loadData();
   }, [loadData]);
   
-  const handleAddTask = () => {
-    setTaskToEdit(null);
-    setInitialDialogData({ isTodoItem: true });
-    setIsNewTaskDialogOpen(true);
+  const handleAddTask = async (title: string, status: TaskStatus) => {
+    if (!title.trim() || !user) return;
+    try {
+        const newTodoData = {
+            title: title.trim(),
+            status,
+            position: todos.filter(t => t.status === status).length,
+            isTodoItem: true,
+            userId: user.uid,
+        }
+        const savedTodo = await addTodo(newTodoData);
+        setTodos(prev => [...prev, savedTodo]);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not save new to-do.' });
+    }
   };
   
   const handleTaskSaved = () => {
@@ -271,7 +285,7 @@ export function ToDoListView() {
             <TaskColumn 
               status="todo" 
               tasks={tasksByStatus.todo}
-              onAddTask={handleAddTask}
+              onAddTask={(title: string) => handleAddTask(title, 'todo')}
               onDropTask={onDropTask} 
               onMoveCard={onMoveCard}
               onTaskDelete={(taskId) => {
@@ -344,7 +358,6 @@ export function ToDoListView() {
         onTaskUpdate={handleTaskSaved}
         taskToEdit={taskToEdit}
         initialData={initialDialogData}
-        // projectId is intentionally left undefined here for the general To-Do list context
       />
       
       <NewTaskDialog

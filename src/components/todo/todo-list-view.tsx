@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, ListTodo, Archive, ArrowDownUp, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +40,7 @@ export function ToDoListView() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
-  const [todoToDelete, setTodoToDelete] = useState<TaskEvent | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   
@@ -145,20 +145,20 @@ export function ToDoListView() {
 
   const handleDeleteTodo = (id: string) => {
     const todo = todos.find(t => t.id === id);
-    if (todo) setTodoToDelete(todo);
+    if (todo) setTaskToDelete(todo);
   };
 
   const handleConfirmDelete = async () => {
-    if (!todoToDelete) return;
+    if (!taskToDelete) return;
     const originalTodos = [...todos];
-    setTodos(todos.filter(t => t.id !== todoToDelete.id));
+    setTodos(todos.filter(t => t.id !== taskToDelete.id));
     try {
-      await deleteTodoFromDb(todoToDelete.id);
+      await deleteTodoFromDb(taskToDelete.id);
     } catch (error) {
       setTodos(originalTodos);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the to-do.' });
     } finally {
-      setTodoToDelete(null);
+      setTaskToDelete(null);
     }
   };
   
@@ -328,11 +328,11 @@ export function ToDoListView() {
         initialData={initialDialogData}
       />
       
-      <AlertDialog open={!!todoToDelete} onOpenChange={() => setTodoToDelete(null)}>
+      <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the task "{todoToDelete?.title}".</AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

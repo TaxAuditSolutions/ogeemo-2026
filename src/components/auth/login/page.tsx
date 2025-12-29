@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import LoadingModal from "@/components/ui/loading-modal";
 import { Logo } from "@/components/logo";
-import { useFirebase } from "@/firebase";
+import { useFirebase } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -56,7 +57,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful sign-in, the AuthProvider will handle session creation and redirect.
-      // The loading modal will stay until the redirect happens.
+      // The loading state is managed by the AuthProvider's loading state.
     } catch (error: any) {
       let description = "An unknown error occurred. Please try again.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

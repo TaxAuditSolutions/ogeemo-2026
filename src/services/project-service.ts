@@ -348,6 +348,8 @@ export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEven
     const db = await getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     
+    // Ensure that if projectId is explicitly passed as undefined, it gets set to null.
+    // This happens when dragging an item from a project board to the unassigned "Action Items".
     const dataToUpdate = { ...taskData };
     if ('projectId' in dataToUpdate && dataToUpdate.projectId === undefined) {
         dataToUpdate.projectId = null;

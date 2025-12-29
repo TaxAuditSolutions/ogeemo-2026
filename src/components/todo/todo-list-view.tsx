@@ -143,17 +143,17 @@ export function ToDoListView() {
     }
   };
 
-  const handleDeleteTodo = async (id: string) => {
+  const handleDeleteTodo = (id: string) => {
     const todo = todos.find(t => t.id === id);
     if (todo) setTodoToDelete(todo);
   };
 
   const handleConfirmDelete = async () => {
-    if (!taskToDelete) return;
+    if (!todoToDelete) return;
     const originalTodos = [...todos];
-    setTodos(todos.filter(t => t.id !== taskToDelete.id));
+    setTodos(todos.filter(t => t.id !== todoToDelete.id));
     try {
-      await deleteTodoFromDb(taskToDelete.id);
+      await deleteTodoFromDb(todoToDelete.id);
     } catch (error) {
       setTodos(originalTodos);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the to-do.' });
@@ -302,8 +302,8 @@ export function ToDoListView() {
                           <Archive className="mr-2 h-4 w-4" /> Archive as Note
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => handleDeleteTodo(todo)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        <DropdownMenuItem onSelect={() => handleDeleteTodo(todo.id)} className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -318,7 +318,6 @@ export function ToDoListView() {
           </CardContent>
         </Card>
       </div>
-
       <NewTaskDialog
         isOpen={isNewProjectDialogOpen}
         onOpenChange={setIsNewProjectDialogOpen}
@@ -329,11 +328,11 @@ export function ToDoListView() {
         initialData={initialDialogData}
       />
       
-      <AlertDialog open={!!taskToDelete} onOpenChange={() => setTodoToDelete(null)}>
+      <AlertDialog open={!!todoToDelete} onOpenChange={() => setTodoToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete the task "{todoToDelete?.title}".</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

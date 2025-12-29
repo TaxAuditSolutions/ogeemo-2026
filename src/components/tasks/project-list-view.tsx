@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks, X } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -62,28 +62,29 @@ export function ProjectListView() {
   const { toast } = useToast();
   const router = useRouter();
 
-  useEffect(() => {
-    async function loadData() {
-      if (!user) {
+  const loadData = useCallback(async () => {
+    if (!user) {
         setIsLoading(false);
         return;
-      }
-      setIsLoading(true);
-      try {
+    }
+    setIsLoading(true);
+    try {
         const [fetchedProjects, fetchedContacts] = await Promise.all([
-          getProjects(user.uid),
-          getContacts(user.uid),
+            getProjects(user.uid),
+            getContacts(user.uid),
         ]);
         setProjects(fetchedProjects);
         setContacts(fetchedContacts);
-      } catch (error: any) {
+    } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
-      } finally {
+    } finally {
         setIsLoading(false);
-      }
     }
-    loadData();
   }, [user, toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
   
   const handleToggleSelect = (projectId: string) => {
     setSelectedProjectIds(prev => 
@@ -102,6 +103,12 @@ export function ProjectListView() {
   };
 
   const handleDeleteSelected = async () => {
+    if (selectedProjectIds.length > 0) {
+      setIsBulkDeleteAlertOpen(true);
+    }
+  };
+  
+  const handleConfirmBulkDelete = async () => {
     if (selectedProjectIds.length === 0) return;
     
     const originalProjects = [...projects];
@@ -137,7 +144,7 @@ export function ProjectListView() {
       setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
       toast({ title: "Project Deleted" });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Delete Failed", description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
     } finally {
       setProjectToDelete(null);
     }
@@ -149,6 +156,16 @@ export function ProjectListView() {
     } else {
       setProjects(prev => [savedProject, ...prev]);
     }
+  };
+  
+  const handleProjectCreated = () => {
+    loadData();
+    setIsNewItemDialogOpen(false);
+  };
+  
+  const handleOpenNewProjectDialog = () => {
+      setProjectToEdit(null);
+      setIsNewItemDialogOpen(true);
   };
 
   if (isLoading) {
@@ -177,14 +194,16 @@ export function ProjectListView() {
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">
             <CardTitle>Projects ({projects.length})</CardTitle>
-            {selectedProjectIds.length > 0 ? (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{selectedProjectIds.length} selected</span>
+            <div className="flex items-center gap-2">
+                {selectedProjectIds.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
-                </div>
-            ) : null}
+                )}
+                 <Button variant="outline" onClick={handleOpenNewProjectDialog}>
+                    <Plus className="mr-2 h-4 w-4" /> New Project
+                </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="border rounded-md">
@@ -253,7 +272,7 @@ export function ProjectListView() {
             setIsNewItemDialogOpen(open);
             if (!open) setProjectToEdit(null);
         }}
-        onProjectCreate={() => {}} // Not used for creation here
+        onProjectCreate={handleProjectCreated}
         onProjectUpdate={handleProjectSave}
         contacts={contacts}
         onContactsChange={setContacts}

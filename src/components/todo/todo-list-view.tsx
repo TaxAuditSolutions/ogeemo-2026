@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreVertical, Pencil, Trash2, LoaderCircle, Plus, Briefcase, Archive, Calendar as CalendarIcon, ListChecks } from 'lucide-react';
+import Link from 'next/link';
+import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,14 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getTodos, addTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, deleteTodos, updateTodosStatus } from '@/services/todo-service';
-import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar';
-import { archiveTaskAsFile } from '@/services/file-service';
-import { addProject } from '@/services/project-service';
-import { getContacts, type Contact } from '@/services/contact-service';
-import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +24,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from '../ui/input';
-import { Checkbox } from '../ui/checkbox';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getTodos, addTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, deleteTodos, updateTodosStatus } from '@/services/todo-service';
+import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar';
+import { archiveTaskAsFile } from '@/services/file-service';
+import { addProject } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 
 export function ToDoListView() {
@@ -345,6 +344,7 @@ export function ToDoListView() {
         onTaskUpdate={handleTaskSaved}
         taskToEdit={taskToEdit}
         initialData={initialDialogData}
+        // projectId is intentionally left undefined here for the general To-Do list context
       />
       
       <NewTaskDialog
@@ -381,7 +381,7 @@ export function ToDoListView() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                    Delete Selected
+                    Delete
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

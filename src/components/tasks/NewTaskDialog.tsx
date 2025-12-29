@@ -98,7 +98,7 @@ export function NewTaskDialog({
   const { user } = useAuth();
   const router = useRouter();
   
-  const isTaskMode = !!projectId || !!taskToEdit;
+  const isTaskMode = !!projectId || !!taskToEdit || initialData?.isTodoItem;
   const isEditingProject = !!projectToEdit;
   const isEditingTask = !!taskToEdit;
 
@@ -113,6 +113,7 @@ export function NewTaskDialog({
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  
   const initialDataString = JSON.stringify(initialData);
 
   useEffect(() => {
@@ -164,7 +165,7 @@ export function NewTaskDialog({
                 onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
             }
             toast({ title: "Task Updated" });
-        } else if (projectId) {
+        } else {
             const newTaskData = {
                 title: values.title,
                 description: values.description || '',

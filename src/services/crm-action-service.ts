@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -12,7 +13,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 
 export interface Action {
   id: string;

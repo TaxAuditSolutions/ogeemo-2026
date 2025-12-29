@@ -15,7 +15,7 @@ import {
     Timestamp,
     getDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Contact } from '@/data/contacts';
 
 const CONTACTS_COLLECTION = 'contacts';

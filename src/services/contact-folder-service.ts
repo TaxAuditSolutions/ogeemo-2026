@@ -14,7 +14,7 @@ import {
     writeBatch,
     Timestamp 
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { FolderItem } from '@/data/files';
 
 const FOLDERS_COLLECTION = 'contactFolders'; // The new, unique collection name

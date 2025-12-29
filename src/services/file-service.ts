@@ -17,7 +17,7 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString } from 'firebase/storage';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
@@ -414,6 +414,4 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
 }
-    
-
     

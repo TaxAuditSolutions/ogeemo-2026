@@ -14,7 +14,7 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import { type Worker, mockWorkers } from '@/data/payroll';
 import { addExpenseTransaction } from './accounting-service';
 import { getRemittances as getPayrollRemittances, addRemittance } from './payroll-service';

@@ -16,7 +16,7 @@ import {
   Timestamp,
   setDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import { mockIncome, mockExpenses } from '@/data/accounting';
 import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';

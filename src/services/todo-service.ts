@@ -14,7 +14,7 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { archiveTaskAsFile } from './file-service';
 

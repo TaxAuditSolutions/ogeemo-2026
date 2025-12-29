@@ -12,7 +12,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
 
 export interface LeaveRequest {
   id: string;

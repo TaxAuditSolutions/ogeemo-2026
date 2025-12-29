@@ -26,7 +26,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getTodos, addTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, deleteTodos, updateTodosStatus } from '@/services/todo-service';
-import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar';
+import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
 import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
@@ -47,9 +47,6 @@ export function ToDoListView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
-
 
   const router = useRouter();
   const { user } = useAuth();
@@ -84,21 +81,10 @@ export function ToDoListView() {
     loadData();
   }, [loadData]);
   
-  const handleAddTask = async (title: string, status: TaskStatus) => {
-    if (!title.trim() || !user) return;
-    try {
-        const newTodoData = {
-            title: title.trim(),
-            status,
-            position: todos.filter(t => t.status === status).length,
-            isTodoItem: true,
-            userId: user.uid,
-        }
-        const savedTodo = await addTodo(newTodoData);
-        setTodos(prev => [...prev, savedTodo]);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not save new to-do.' });
-    }
+  const handleAddTask = () => {
+    setTaskToEdit(null);
+    setInitialDialogData({ isTodoItem: true });
+    setIsNewTaskDialogOpen(true);
   };
   
   const handleTaskSaved = () => {
@@ -285,7 +271,7 @@ export function ToDoListView() {
             <TaskColumn 
               status="todo" 
               tasks={tasksByStatus.todo}
-              onAddTask={(title: string) => handleAddTask(title, 'todo')}
+              onAddTask={handleAddTask}
               onDropTask={onDropTask} 
               onMoveCard={onMoveCard}
               onTaskDelete={(taskId) => {

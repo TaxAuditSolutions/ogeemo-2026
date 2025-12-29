@@ -97,6 +97,16 @@ export async function archiveTodos(userId: string, tasksToArchive: TaskEvent[]):
     await deleteTodos(tasksToArchive.map(t => t.id));
 }
 
+export async function updateTodoPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
+  const db = await getDb();
+  const batch = writeBatch(db);
+  updates.forEach(update => {
+    const docRef = doc(db, TASKS_COLLECTION, update.id);
+    batch.update(docRef, { position: update.position, status: update.status });
+  });
+  await batch.commit();
+}
+
 export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {
     const db = await getDb();
     if (todoIds.length === 0) return;

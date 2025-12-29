@@ -140,7 +140,8 @@ export default function AllProjectTasksView() {
     const [isLoading, setIsLoading] = useState(true);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
-    
+    const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
+
     const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
@@ -180,6 +181,7 @@ export default function AllProjectTasksView() {
     
     const handleEditTask = (task: TaskEvent) => {
         setTaskToEdit(task);
+        setInitialDialogData({});
         setIsNewTaskDialogOpen(true);
     };
 
@@ -258,14 +260,12 @@ export default function AllProjectTasksView() {
     };
     
     const handleConfirmBulkDelete = async () => {
-        const originalTasks = [...tasks];
-        setTasks(prev => prev.filter(t => !selectedTaskIds.includes(t.id)));
         try {
             await deleteTasks(selectedTaskIds);
             toast({ title: `${selectedTaskIds.length} Task(s) Deleted` });
             setSelectedTaskIds([]);
+            loadData();
         } catch (error: any) {
-            setTasks(originalTasks);
             toast({ variant: 'destructive', title: 'Bulk Delete Failed', description: error.message });
         } finally {
             setIsBulkDeleteAlertOpen(false);
@@ -279,7 +279,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, true);
+            await updateTasksStatus(selectedTaskIds, 'done');
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -338,7 +338,7 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={() => { setTaskToEdit(null); setIsNewTaskDialogOpen(true); }}>
+                                <Button onClick={() => { setTaskToEdit(null); setInitialDialogData({ isTodoItem: false }); setIsNewTaskDialogOpen(true); }}>
                                     <Plus className="mr-2 h-4 w-4"/> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
@@ -437,6 +437,7 @@ export default function AllProjectTasksView() {
                     setIsNewTaskDialogOpen(open);
                     if (!open) {
                         setTaskToEdit(null);
+                        setInitialDialogData({});
                     }
                 }}
                 onTaskCreate={handleTaskCreated}
@@ -444,7 +445,9 @@ export default function AllProjectTasksView() {
                 taskToEdit={taskToEdit}
                 projectId={selectedProjectId !== 'all' ? selectedProjectId : undefined}
                 projects={projects}
+                initialData={initialDialogData}
             />
         </>
     );
 }
+

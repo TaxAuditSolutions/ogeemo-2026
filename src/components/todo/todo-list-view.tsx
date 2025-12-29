@@ -38,6 +38,7 @@ import { TaskColumn } from '../tasks/TaskColumn';
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
@@ -47,8 +48,6 @@ export function ToDoListView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
-
 
   const router = useRouter();
   const { user } = useAuth();
@@ -268,14 +267,12 @@ export function ToDoListView() {
                 <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedTaskIds.length})
               </Button>
             )}
-            <Button onClick={handleAddTask}>
-              <Plus className="mr-2 h-4 w-4" /> Add Task
-            </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <TaskColumn 
               status="todo" 
-              tasks={tasksByStatus.todo} 
+              tasks={tasksByStatus.todo}
+              onAddTask={handleAddTask}
               onDropTask={onDropTask} 
               onMoveCard={onMoveCard}
               onTaskDelete={(taskId) => {
@@ -287,7 +284,7 @@ export function ToDoListView() {
                 if (task) onDropTask(task, 'done');
               }}
               onEdit={handleEditTask}
-              onMakeProjectTask={handleMakeProject}
+              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}
@@ -307,7 +304,7 @@ export function ToDoListView() {
                 if (task) onDropTask(task, 'done');
               }}
               onEdit={handleEditTask}
-              onMakeProjectTask={handleMakeProject}
+              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}
@@ -327,7 +324,7 @@ export function ToDoListView() {
                 if (task) onDropTask(task, 'todo');
               }}
               onEdit={handleEditTask}
-              onMakeProjectTask={handleMakeProject}
+              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}

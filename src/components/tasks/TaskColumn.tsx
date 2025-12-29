@@ -23,6 +23,7 @@ interface TaskColumnProps {
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: TaskEvent) => void;
   onMakeProjectTask: (task: TaskEvent) => void;
+  onArchive: (task: TaskEvent) => void;
   selectedTaskIds: string[];
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   onToggleSelectAll: (status: TaskStatus) => void;
@@ -44,6 +45,7 @@ export function TaskColumn({
   onToggleComplete,
   onEdit,
   onMakeProjectTask,
+  onArchive,
   selectedTaskIds,
   onToggleSelect,
   onToggleSelectAll,
@@ -69,7 +71,7 @@ export function TaskColumn({
     <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10 ring-2 ring-primary")}>
       <CardHeader className="flex flex-row items-center justify-between p-4">
         <div className="flex items-center gap-2">
-            {status === 'done' && (
+            {(status === 'done' || status === 'todo') && (
               <Checkbox
                 checked={allInColumnSelected ? true : someInColumnSelected ? 'indeterminate' : false}
                 onCheckedChange={() => onToggleSelectAll(status)}
@@ -78,9 +80,10 @@ export function TaskColumn({
             )}
             <CardTitle className="text-lg">{columnTitles[status]} <span className="text-sm font-normal text-muted-foreground">({tasks.length})</span></CardTitle>
         </div>
-        {onAddTask && (
-            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onAddTask}>
-              <Plus className="h-4 w-4" />
+        {status === 'todo' && onAddTask && (
+            <Button size="sm" variant="ghost" onClick={onAddTask}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Task
             </Button>
         )}
       </CardHeader>
@@ -93,8 +96,9 @@ export function TaskColumn({
                 onMoveCard={onMoveCard}
                 onEdit={onEdit}
                 onTaskDelete={() => onTaskDelete(task.id)}
-                onToggleComplete={onToggleComplete}
+                onToggleComplete={() => onToggleComplete(task.id)}
                 onMakeProject={onMakeProjectTask}
+                onArchive={onArchive}
                 isSelected={selectedTaskIds.includes(task.id)}
                 onToggleSelect={onToggleSelect}
                 showCheckbox={status === 'done'}

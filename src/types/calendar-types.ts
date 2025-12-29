@@ -32,6 +32,7 @@ export interface Event {
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];
   ritualType?: 'daily' | 'weekly';
+  type?: 'task' | 'reminder';
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';

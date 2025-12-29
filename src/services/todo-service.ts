@@ -41,6 +41,7 @@ const docToTodo = (doc: any): TaskEvent => {
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
     // This now fetches general tasks (not assigned to a specific project)
+    // and filters out any items specifically marked as 'reminder'.
     const q = query(
         collection(db, TASKS_COLLECTION), 
         where("userId", "==", userId),
@@ -48,17 +49,20 @@ export async function getTodos(userId: string): Promise<TaskEvent[]> {
     );
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(docToTodo);
+    // Additional client-side filtering to exclude reminders
+    return snapshot.docs.map(docToTodo).filter(task => task.type !== 'reminder');
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
     const db = await getDb();
     // Ensure it's treated as a general "to-do" by not having a project ID
+    // and defaulting the type to 'task'.
     const dataToSave = {
         ...todoData,
         status: 'todo' as const,
         projectId: null,
         position: todoData.position || 0,
+        type: 'task' as const,
     };
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave };

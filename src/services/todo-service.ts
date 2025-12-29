@@ -47,7 +47,7 @@ export async function getTodos(userId: string): Promise<TaskEvent[]> {
     );
     const snapshot = await getDocs(q);
     
-    // Additional client-side filtering to exclude reminders and rituals
+    // This is the fix: client-side filtering to exclude reminders and rituals.
     return snapshot.docs.map(docToTodo).filter(task => task.type !== 'reminder' && !task.ritualType);
 }
 

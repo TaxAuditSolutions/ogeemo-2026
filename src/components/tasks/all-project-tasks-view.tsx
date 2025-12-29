@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info } from 'lucide-react';
+import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info, ListChecks, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
@@ -29,6 +29,7 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
+  DropdownMenuSubContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -337,7 +338,9 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(true)}><Plus className="mr-2 h-4 w-4"/> New Project</Button>
+                                <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4"/> New Project
+                                </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="w-64 justify-between">
@@ -438,15 +441,3 @@ export default function AllProjectTasksView() {
         </>
     );
 }
-
-```
-- src/data/research.ts
-```ts
-// I don't see this file in the list.
-
-```
-- src/data/tasks.ts
-```ts
-// I don't see this file in the list.
-
-```

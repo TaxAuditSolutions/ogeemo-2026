@@ -33,6 +33,7 @@ import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { TaskColumn } from '@/components/tasks/TaskColumn';
 import { archiveTaskAsFile } from '@/services/file-service';
+import { Checkbox } from '../ui/checkbox';
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -264,6 +265,17 @@ export function ToDoListView() {
                 </div>
             )}
         </header>
+        
+        <div className="w-full max-w-6xl flex justify-center mb-6 gap-2">
+            <Button onClick={handleAddTask}>
+                <Plus className="mr-2 h-4 w-4" /> Add Task
+            </Button>
+            <Button asChild variant="outline">
+                <Link href="/all-project-tasks">
+                    <Briefcase className="mr-2 h-4 w-4" /> Project Tasks
+                </Link>
+            </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mt-6">
           {columns.map(({ title, status }) => (
@@ -271,7 +283,6 @@ export function ToDoListView() {
               key={status}
               status={status}
               tasks={tasks.filter(t => t.status === status).sort((a,b) => a.position - b.position)}
-              onAddTask={status === 'todo' ? handleAddTask : undefined}
               onDropTask={onDropTask}
               onEdit={handleEditTask}
               onTaskDelete={(taskId) => {
@@ -312,7 +323,7 @@ export function ToDoListView() {
        <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

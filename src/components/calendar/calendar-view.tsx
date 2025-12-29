@@ -295,7 +295,14 @@ export function CalendarView() {
     const newStart = startOfDay(date);
     const newEnd = endOfDay(date);
     try {
-        await updateTask(item.id, { start: newStart, end: newEnd, isScheduled: true });
+        const updatePayload: Partial<Event> = { 
+            start: newStart, 
+            end: newEnd, 
+            isScheduled: true,
+            type: item.type, // Preserve existing type
+            ritualType: item.ritualType, // Preserve existing ritualType
+        };
+        await updateTask(item.id, updatePayload);
         toast({ title: "Event Updated", description: `"${item.title}" is now an all-day event for ${format(newStart, 'PPP')}.`});
         await loadEvents();
     } catch (error: any) {

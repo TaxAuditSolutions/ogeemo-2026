@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, getTasksForUser, updateTask, deleteTask, deleteTasks, updateTasksStatus } from '@/services/project-service';
+import { getProjects, getTasksForUser, updateTask, deleteTask, deleteTasks, updateTasksStatus, addProject } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type TaskStatus } from '@/types/calendar';
 import { getContacts, type Contact } from '@/services/contact-service';
 import {
@@ -31,7 +31,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -43,6 +42,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { TaskCreationInfoDialog } from './task-creation-info-dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { NewTaskDialog } from './NewTaskDialog';
 
 
 const statusDisplayMap: Record<string, string> = {
@@ -94,9 +94,7 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
             <div className="pl-4 w-[52px]">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => onEdit(task)}>
@@ -139,12 +137,14 @@ export default function AllProjectTasksView() {
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     
     const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     
     const router = useRouter();
     const { user } = useAuth();
@@ -158,12 +158,14 @@ export default function AllProjectTasksView() {
             }
             setIsLoading(true);
             try {
-                const [fetchedProjects, fetchedTasks] = await Promise.all([
+                const [fetchedProjects, fetchedTasks, fetchedContacts] = await Promise.all([
                     getProjects(user.uid),
                     getTasksForUser(user.uid),
+                    getContacts(user.uid),
                 ]);
                 setProjects(fetchedProjects);
                 setTasks(fetchedTasks);
+                setContacts(fetchedContacts);
             } catch (error: any) {
                  toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
             } finally {
@@ -281,6 +283,18 @@ export default function AllProjectTasksView() {
         }
     };
     
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            setProjects(prev => [newProject, ...prev]);
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+            router.push(`/projects/${newProject.id}/tasks`);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        }
+    };
+
     const allVisibleSelected = sortedTasks.length > 0 && sortedTasks.every(t => selectedTaskIds.includes(t.id));
     const someVisibleSelected = selectedTaskIds.length > 0 && !allVisibleSelected;
 
@@ -322,10 +336,11 @@ export default function AllProjectTasksView() {
                                    </div>
                                )}
                             </div>
-                            <div className="w-64">
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(true)}><Plus className="mr-2 h-4 w-4"/> New Project</Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                                        <Button variant="outline" role="combobox" className="w-64 justify-between">
                                             {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select project..."}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -385,7 +400,7 @@ export default function AllProjectTasksView() {
              <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action will permanently delete the task: "{taskToDelete?.title}".
                         </AlertDialogDescription>
@@ -413,6 +428,25 @@ export default function AllProjectTasksView() {
                 </AlertDialogContent>
             </AlertDialog>
             <TaskCreationInfoDialog isOpen={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
+            <NewTaskDialog
+                isOpen={isNewProjectDialogOpen}
+                onOpenChange={setIsNewProjectDialogOpen}
+                onProjectCreate={handleProjectCreated}
+                contacts={contacts}
+                projectToEdit={null}
+            />
         </>
     );
 }
+
+```
+- src/data/research.ts
+```ts
+// I don't see this file in the list.
+
+```
+- src/data/tasks.ts
+```ts
+// I don't see this file in the list.
+
+```

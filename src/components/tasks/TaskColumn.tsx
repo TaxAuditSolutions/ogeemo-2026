@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,13 @@ import { TaskCard } from './TaskCard';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { ItemTypes as StepItemTypes } from './DraggableStep';
+import { Input } from '../ui/input';
+
 
 interface TaskColumnProps {
   status: TaskStatus;
   tasks: TaskEvent[];
-  onAddTask?: () => void;
+  onAddTask?: (title: string) => void;
   onDropTask: (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => void;
   onMoveCard: (dragId: string, hoverId: string) => void;
   onTaskDelete: (taskId: string) => void;
@@ -67,6 +69,17 @@ export function TaskColumn({
   const allInColumnSelected = tasks.length > 0 && selectedInColumn.length === tasks.length;
   const someInColumnSelected = selectedInColumn.length > 0 && !allInColumnSelected;
 
+  const [isAdding, setIsAdding] = useState(false);
+  const [newCardTitle, setNewCardTitle] = useState('');
+
+  const handleAddTaskClick = () => {
+    if (newCardTitle.trim() && onAddTask) {
+      onAddTask(newCardTitle.trim());
+      setNewCardTitle('');
+      setIsAdding(false);
+    }
+  };
+
   return (
     <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10 ring-2 ring-primary")}>
       <CardHeader className="flex flex-row items-center justify-between p-4">
@@ -80,12 +93,6 @@ export function TaskColumn({
             )}
             <CardTitle className="text-lg">{columnTitles[status]} <span className="text-sm font-normal text-muted-foreground">({tasks.length})</span></CardTitle>
         </div>
-        {status === 'todo' && onAddTask && (
-            <Button size="sm" variant="ghost" onClick={onAddTask}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-        )}
       </CardHeader>
       <ScrollArea className="flex-1">
         <CardContent className="p-4 pt-0 space-y-3">
@@ -101,9 +108,34 @@ export function TaskColumn({
                 onArchive={onArchive}
                 isSelected={selectedTaskIds.includes(task.id)}
                 onToggleSelect={onToggleSelect}
-                showCheckbox={status === 'done'}
+                showCheckbox={status === 'done' || status === 'todo'}
             />
           ))}
+           {status === 'todo' && onAddTask && (
+            isAdding ? (
+              <div className="space-y-2">
+                <Input
+                  autoFocus
+                  placeholder="Enter task title..."
+                  value={newCardTitle}
+                  onChange={(e) => setNewCardTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddTaskClick();
+                    if (e.key === 'Escape') setIsAdding(false);
+                  }}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
+                  <Button size="sm" onClick={handleAddTaskClick}>Add Task</Button>
+                </div>
+              </div>
+            ) : (
+                <Button size="sm" className="w-full" variant="outline" onClick={() => setIsAdding(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Task
+                </Button>
+            )
+          )}
         </CardContent>
       </ScrollArea>
     </Card>

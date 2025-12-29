@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -40,16 +39,18 @@ const docToTodo = (doc: any): TaskEvent => {
 
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
-    // This now fetches general tasks (not assigned to a specific project)
+    // Fetch all tasks for the user that are not part of a project AND are not rituals.
     const q = query(
         collection(db, TASKS_COLLECTION), 
         where("userId", "==", userId),
-        where("projectId", "==", null)
+        where("projectId", "==", null) // Only get tasks that are not in any project.
     );
     const snapshot = await getDocs(q);
     
-    // This is the fix: client-side filtering to exclude reminders and rituals.
-    return snapshot.docs.map(docToTodo).filter(task => task.type !== 'reminder' && !task.ritualType);
+    // Further filter on the client-side to remove any ritual-based tasks.
+    return snapshot.docs
+        .map(docToTodo)
+        .filter(task => !task.ritualType);
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {

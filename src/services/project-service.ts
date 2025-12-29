@@ -86,6 +86,7 @@ const docToTask = (doc: any): TaskEvent => {
     userId: data.userId,
     attendees: data.attendees,
     contactId: data.contactId || null,
+    workerId: data.workerId || null,
     isScheduled: data.isScheduled || false,
     duration: data.duration,
     isBillable: data.isBillable,
@@ -518,7 +519,7 @@ export async function getAvailableActionChips(userId: string, type: 'dashboard' 
     
     const defaultAvailable = defaultSource
         .filter(item => !usedHrefs.has(item.href))
-        .map(item => ({ ...item, id: `default-${item.label}`, userId }));
+        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
         
     const customAvailable = chips.filter(c => !usedHrefs.has(typeof c.href === 'string' ? c.href : c.href.pathname));
     
@@ -628,7 +629,7 @@ export async function updateActionChip(userId: string, updatedChip: ActionChipDa
 
     if (isUserChip) {
         const newUserChips = userChips.map(c => c.id === updatedChip.id ? updatedChip : c);
-        await updateActionChips(userId, newUserChips, type === 'accounting' ? 'accountingQuickNavItems' : 'dashboard');
+        await updateActionChips(userId, newUserChips, type === 'accounting' ? 'accounting' : 'dashboard');
     } else {
         const newAvailableChips = availableChips.map(c => c.id === updatedChip.id ? updatedChip : c);
         await updateAvailableActionChips(userId, newAvailableChips, type === 'accounting' ? 'availableAccountingNavItems' : 'dashboard');

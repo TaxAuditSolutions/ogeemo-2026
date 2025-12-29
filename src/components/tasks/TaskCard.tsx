@@ -4,7 +4,7 @@
 import React, { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreVertical, Edit, Trash2, Briefcase, Archive } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon } from 'lucide-react';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import {
@@ -45,6 +45,7 @@ export function TaskCard({
     showCheckbox = false,
 }: TaskCardProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const [{ isDragging }, drag] = useDrag({
     type: 'task',
@@ -67,6 +68,10 @@ export function TaskCard({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit(task);
+  };
+  
+  const handleSchedule = () => {
+    router.push(`/master-mind?eventId=${task.id}`);
   };
 
   const isCompleted = task.status === 'done';
@@ -100,6 +105,9 @@ export function TaskCard({
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => onEdit(task)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit / View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleSchedule}>
+                        <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onMakeProject(task)}>
                         <Briefcase className="mr-2 h-4 w-4" /> Make a Project

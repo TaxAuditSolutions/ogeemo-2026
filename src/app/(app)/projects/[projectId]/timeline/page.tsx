@@ -46,7 +46,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
             <h1 className="text-3xl font-bold font-headline text-primary">
                 Project Timeline
             </h1>
-            <p className="text-muted-foreground">make a mostest best moist fruitcake Here is where you do the planning of your specific project. </p>
+            <p className="text-muted-foreground">Here is where you do the planning of your specific project. </p>
         </header>
 
         <ProjectManagementHeader projectId={projectId} />

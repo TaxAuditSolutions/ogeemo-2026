@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -33,6 +32,7 @@ import { Button } from '../ui/button';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
 import { useRouter } from 'next/navigation';
 import { NewTaskDialog } from '../tasks/NewTaskDialog';
+import { CreateTaskDialog } from '../tasks/CreateTaskDialog'; // Import the new component
 
 const ItemTypes = {
   PROJECT: 'project',
@@ -148,10 +148,9 @@ export function ProjectStatusView() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
   const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
 
-  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
-  const [initialDialogData, setInitialDialogData] = useState({});
-  
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = React.useState(false);
+  const [initialTaskData, setInitialTaskData] = React.useState<Partial<TaskEvent>>({});
+
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -273,8 +272,7 @@ export function ProjectStatusView() {
   };
   
   const handleAddTaskToProject = (project: Project) => {
-      setTaskToEdit(null); // Ensure we're not editing a task
-      setInitialDialogData({ projectId: project.id, isTodoItem: false });
+      setInitialTaskData({ projectId: project.id, isTodoItem: false });
       setIsNewTaskDialogOpen(true);
   };
   
@@ -327,20 +325,17 @@ export function ProjectStatusView() {
             onContactsChange={setContacts}
             projectToEdit={projectToEdit}
         />
-         <NewTaskDialog
+         <CreateTaskDialog
             isOpen={isNewTaskDialogOpen}
             onOpenChange={(open) => {
                 setIsNewTaskDialogOpen(open);
                 if (!open) {
-                    setInitialDialogData({});
-                    setTaskToEdit(null);
+                    setInitialTaskData({});
                 }
             }}
             onTaskCreate={handleTaskSaved}
-            onTaskUpdate={handleTaskSaved}
-            taskToEdit={taskToEdit}
-            initialData={initialDialogData}
             projects={projects}
+            initialData={initialTaskData}
         />
         <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
             <AlertDialogContent>

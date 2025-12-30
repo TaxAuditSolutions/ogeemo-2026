@@ -49,7 +49,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
     fetchProject();
   }, [projectId]);
 
-  if (!projectId || !project) {
+  if (!projectId) {
       return (
           <div className="flex h-full w-full items-center justify-center p-4">
             <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
@@ -61,9 +61,11 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
     <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">
         <header className="text-center">
             <h1 className="text-3xl font-bold font-headline text-primary">
-                {project.name}
+                Project Timeline & Plan
             </h1>
-            <p className="text-muted-foreground">Project Timeline & Plan</p>
+            {project && (
+              <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+            )}
         </header>
 
         <ProjectManagementHeader projectId={projectId} />

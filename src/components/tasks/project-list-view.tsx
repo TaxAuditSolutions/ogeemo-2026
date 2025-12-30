@@ -4,7 +4,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Edit, Trash2, LoaderCircle, Briefcase, Plus, ListChecks } from 'lucide-react';
+import {
+  MoreVertical,
+  Edit,
+  Trash2,
+  LoaderCircle,
+  Briefcase,
+  Plus,
+  ListChecks,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -283,7 +292,7 @@ export function ProjectListView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all its associated tasks. This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all of its associated tasks. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -302,7 +311,7 @@ export function ProjectListView() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
                     Delete
                 </AlertDialogAction>
             </AlertDialogFooter>

@@ -24,7 +24,7 @@ interface TaskColumnProps {
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: TaskEvent) => void;
-  onMakeProjectTask: (task: TaskEvent) => void;
+  onMakeProject: (task: TaskEvent) => void;
   onArchive: (task: TaskEvent) => void;
   selectedTaskIds: string[];
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
@@ -46,7 +46,7 @@ export function TaskColumn({
   onTaskDelete,
   onToggleComplete,
   onEdit,
-  onMakeProjectTask,
+  onMakeProject,
   onArchive,
   selectedTaskIds,
   onToggleSelect,
@@ -99,7 +99,7 @@ export function TaskColumn({
                 onEdit={onEdit}
                 onTaskDelete={() => onTaskDelete(task.id)}
                 onToggleComplete={() => onToggleComplete(task.id)}
-                onMakeProject={onMakeProjectTask}
+                onMakeProject={onMakeProject}
                 onArchive={onArchive}
                 isSelected={selectedTaskIds.includes(task.id)}
                 onToggleSelect={onToggleSelect}

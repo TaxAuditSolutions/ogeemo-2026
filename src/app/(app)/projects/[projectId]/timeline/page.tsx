@@ -76,6 +76,7 @@ const StepBar = ({ step, startDate, totalDays }: { step: Partial<ProjectStep>, s
 };
 
 export default function ProjectTimelinePage({ params }: { params: { projectId: string } }) {
+  const { projectId } = params;
   const [project, setProject] = useState<Project | null>(null);
   const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,13 +88,13 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
   const router = useRouter();
 
   const loadData = useCallback(async () => {
-    if (!user || !params.projectId) {
+    if (!user || !projectId) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      const projectData = await getProjectById(params.projectId);
+      const projectData = await getProjectById(projectId);
       setProject(projectData);
       const projectSteps = (projectData?.steps || []).map(s => ({
         ...s,
@@ -108,15 +109,15 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
     } finally {
       setIsLoading(false);
     }
-  }, [params.projectId, user, toast]);
+  }, [projectId, user, toast]);
 
   useEffect(() => {
-    if (params.projectId && params.projectId !== 'placeholder') {
+    if (projectId && projectId !== 'placeholder') {
       loadData();
     } else {
       setIsLoading(false);
     }
-  }, [params.projectId, loadData]);
+  }, [projectId, loadData]);
 
   const { days, totalDays, timeIntervals } = useMemo(() => {
     let start = viewStartDate;
@@ -183,7 +184,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
     return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (!params.projectId || params.projectId === 'placeholder') {
+  if (!projectId || projectId === 'placeholder') {
     return (
       <div className="text-center p-8 text-muted-foreground">
         <p>Please select a project to view its timeline.</p>
@@ -193,7 +194,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
   }
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="p-4 sm:p-6 space-y-4">
         <header className="text-center">
             <h1 className="text-3xl font-bold font-headline text-primary">
                 Project Timeline & Plan
@@ -205,7 +206,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
             )}
         </header>
 
-        <ProjectManagementHeader projectId={params.projectId} />
+        <ProjectManagementHeader projectId={projectId} />
       
       <header className="flex justify-between items-center">
             <h2 className="text-xl font-bold">Timeline: {project?.name}</h2>
@@ -227,7 +228,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
                         <SelectItem value="quarter">Quarter View</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={() => router.push(`/projects/organizer?projectId=${params.projectId}`)}>
+                <Button variant="outline" onClick={() => router.push(`/projects/organizer?projectId=${projectId}`)}>
                     <Plus className="mr-2 h-4 w-4" /> Add/Edit Steps
                 </Button>
             </div>
@@ -258,7 +259,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
         
         <div className="overflow-auto" style={{ height: 'calc(100vh - 400px)'}}>
             {steps.length > 0 ? steps.map((step, index) => (
-                <DraggableTaskRow key={step.id} index={index} task={step as TaskEvent} moveTask={moveStep}>
+                <DraggableTaskRow key={step.id || index} index={index} task={step as TaskEvent} moveTask={moveStep}>
                     {/* Task Title Cell */}
                     <div className="w-[250px] flex-shrink-0 p-2 border-r flex items-center gap-2">
                         <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
@@ -275,7 +276,7 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
             )) : (
                 <div className="text-center p-8 text-muted-foreground">
                     <p>No steps defined for this project.</p>
-                    <Button asChild variant="link"><Link href={`/projects/organizer?projectId=${params.projectId}`}>Go to Organizer to add steps.</Link></Button>
+                    <Button asChild variant="link"><Link href={`/projects/organizer?projectId=${projectId}`}>Go to Organizer to add steps.</Link></Button>
                 </div>
             )}
         </div>

@@ -11,10 +11,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -131,12 +127,14 @@ export function ToDoListView() {
   };
 
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    if (!user || !taskToConvert) return;
+    if (!user) return;
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        await deleteTodoFromDb(taskToConvert.id);
-        toast({ title: "Project Created", description: `"${newProject.name}" created and original task removed.` });
-        loadData();
+        if (taskToConvert) {
+          await deleteTodoFromDb(taskToConvert.id);
+        }
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        loadData(); // Refresh both projects and todos
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     } finally {
@@ -281,6 +279,9 @@ export function ToDoListView() {
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
           <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setInitialDialogData({}); setIsNewProjectDialogOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" /> New Project
+            </Button>
             {selectedTaskIds.length > 0 && (
               <Button variant="destructive" onClick={handleDeleteSelected}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedTaskIds.length})
@@ -409,4 +410,3 @@ export function ToDoListView() {
     </>
   );
 }
-

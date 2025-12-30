@@ -147,14 +147,35 @@ export function ProjectStatusView() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
   const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
   
-  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-  const [initialDialogData, setInitialDialogData] = useState({});
-  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = React.useState(false);
+  const [initialDialogData, setInitialDialogData] = React.useState({});
+  const [taskToEdit, setTaskToEdit] = React.useState<TaskEvent | null>(null);
 
   
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const projectsByStatus = React.useMemo(() => {
+    const planning: Project[] = [];
+    const active: Project[] = [];
+    const onHold: Project[] = [];
+    const completed: Project[] = [];
+
+    projects.forEach(p => {
+        if (p.status === 'completed') {
+            completed.push(p);
+        } else if (p.status === 'on-hold') {
+            onHold.push(p);
+        } else if (p.status === 'planning') {
+            planning.push(p);
+        } else {
+            active.push(p);
+        }
+    });
+    return { planning, active, onHold, completed };
+  }, [projects]);
+
 
   const loadData = React.useCallback(async () => {
     if (!user) {
@@ -263,25 +284,6 @@ export function ProjectStatusView() {
       setIsNewTaskDialogOpen(false);
   };
   
-  const projectsByStatus = React.useMemo(() => {
-    const planning: Project[] = [];
-    const active: Project[] = [];
-    const onHold: Project[] = [];
-    const completed: Project[] = [];
-
-    projects.forEach(p => {
-        if (p.status === 'completed') {
-            completed.push(p);
-        } else if (p.status === 'on-hold') {
-            onHold.push(p);
-        } else if (p.status === 'planning') {
-            planning.push(p);
-        } else {
-            active.push(p);
-        }
-    });
-    return { planning, active, onHold, completed };
-  }, [projects]);
 
   if (isLoading) {
     return (
@@ -323,6 +325,7 @@ export function ProjectStatusView() {
             onProjectCreate={handleProjectCreated}
             onProjectUpdate={handleProjectUpdated}
             contacts={contacts}
+            onContactsChange={setContacts}
             projectToEdit={projectToEdit}
         />
          <NewTaskDialog
@@ -359,3 +362,4 @@ export function ProjectStatusView() {
     </>
   );
 }
+

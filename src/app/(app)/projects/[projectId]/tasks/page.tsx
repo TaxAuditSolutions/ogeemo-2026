@@ -52,7 +52,16 @@ export default function ProjectTaskPage({ params }: { params: { projectId: strin
   }, [projectId]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">
+       <header className="text-center">
+        <h1 className="text-3xl font-bold font-headline text-primary">
+          Project Workspace
+        </h1>
+        {project && (
+          <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+        )}
+      </header>
+      <ProjectManagementHeader projectId={projectId} />
       <div className="flex-1 min-h-0">
         <ProjectTasksView projectId={projectId} />
       </div>

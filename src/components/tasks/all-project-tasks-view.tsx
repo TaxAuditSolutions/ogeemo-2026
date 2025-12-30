@@ -102,7 +102,7 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                             <Edit className="mr-2 h-4 w-4"/> Open / Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => onToggleComplete(task)}>
-                            <CheckCircle className="mr-2 h-4 w-4"/> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
+                            <CheckCircle className="mr-2 h-4 w-4" /> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
@@ -145,7 +145,7 @@ export default function AllProjectTasksView() {
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
 
-    const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
@@ -189,8 +189,15 @@ export default function AllProjectTasksView() {
     };
     
     const handleAddTask = () => {
+        if (!selectedProjectId) {
+            toast({ variant: 'destructive', title: 'No Project Selected', description: 'Please select a project or "Unassigned Tasks" to add a new task.'});
+            return;
+        }
         setTaskToEdit(null);
-        setInitialDialogData({ isTodoItem: false }); // Ensure this is set to differentiate from a todo list item
+        setInitialDialogData({ 
+            isTodoItem: false, 
+            projectId: selectedProjectId === 'unassigned' ? null : selectedProjectId,
+        });
         setIsNewTaskDialogOpen(true);
     };
 
@@ -213,7 +220,7 @@ export default function AllProjectTasksView() {
     };
     
     const handleToggleComplete = async (task: TaskEvent) => {
-        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        const newStatus: TaskStatus = task.status === 'done' ? 'todo' : 'done';
         const originalTasks = [...tasks];
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
         try {
@@ -242,7 +249,8 @@ export default function AllProjectTasksView() {
     };
 
     const filteredTasks = useMemo(() => {
-        const allTasks = tasks.filter(task => !task.ritualType); // Filter out rituals
+        if (selectedProjectId === null) return [];
+        const allTasks = tasks.filter(task => !task.ritualType);
         if (selectedProjectId === 'all') return allTasks;
         if (selectedProjectId === 'unassigned') return allTasks.filter(t => !t.projectId);
         return allTasks.filter(t => t.projectId === selectedProjectId);
@@ -302,7 +310,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, true);
+            await updateTasksStatus(selectedTaskIds, 'done');
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -363,13 +371,13 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={handleAddTask}>
+                                <Button onClick={handleAddTask} disabled={selectedProjectId === null}>
                                     <Plus className="mr-2 h-4 w-4"/> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="w-64 justify-between">
-                                            {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select project..."}
+                                            {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select a project..."}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -388,6 +396,7 @@ export default function AllProjectTasksView() {
                                         checked={allVisibleSelected ? true : (someVisibleSelected ? 'indeterminate' : false)}
                                         onCheckedChange={() => handleToggleSelectAll(!allVisibleSelected)}
                                         aria-label="Select all visible tasks"
+                                        disabled={sortedTasks.length === 0}
                                     />
                                 </div>
                                 <div className="flex-1 grid grid-cols-4 items-center gap-4">
@@ -417,7 +426,7 @@ export default function AllProjectTasksView() {
                                 ) : (
                                     <div className="text-center p-16 text-muted-foreground">
                                         <Briefcase className="mx-auto h-12 w-12" />
-                                        <p className="mt-4">No tasks found for this selection.</p>
+                                        <p className="mt-4">{selectedProjectId === null ? "Please select a project to view tasks." : "No tasks found for this project."}</p>
                                     </div>
                                 )}
                             </div>
@@ -463,7 +472,6 @@ export default function AllProjectTasksView() {
                     setIsNewTaskDialogOpen(open);
                     if (!open) {
                         setTaskToEdit(null);
-                        setInitialDialogData({});
                     }
                 }}
                 onTaskCreate={handleTaskCreated}

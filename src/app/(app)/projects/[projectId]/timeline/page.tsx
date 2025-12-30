@@ -1,15 +1,16 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, GripVertical, Plus, Wrench } from 'lucide-react';
+import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, GripVertical, Plus, Wrench, ListTodo, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects as getAllProjects, type Project } from '@/services/project-service';
-import { type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar';
+import { type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar-types';
 import { addDays, differenceInDays, format, startOfWeek, eachDayOfInterval, parseISO, endOfDay } from 'date-fns';
 import { useDrop, useDrag } from 'react-dnd';
 import { cn } from '@/lib/utils';
@@ -19,64 +20,6 @@ import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHea
 import { TaskColumn } from '@/components/tasks/TaskColumn';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { getContacts, type Contact } from '@/services/contact-service';
-
-const DAY_WIDTH_PX = 40;
-
-const ItemTypes = {
-  STEP: 'step',
-  TASK: 'task',
-};
-
-const DraggableTaskRow = ({ index, task, moveTask, children }: { index: number, task: TaskEvent, moveTask: (dragIndex: number, hoverIndex: number) => void, children: React.ReactNode }) => {
-    const ref = useRef<HTMLDivElement>(null);
-    const [{ isDragging }, drag] = useDrag({
-        type: ItemTypes.STEP,
-        item: () => ({ id: task.id, index }),
-        collect: (monitor) => ({
-            isDragging: monitor.isDragging(),
-        }),
-    });
-    
-    const [, drop] = useDrop({
-        accept: ItemTypes.STEP,
-        hover(item: { id: string; index: number }, monitor) {
-            if (!ref.current || item.id === task.id) return;
-            moveTask(item.index, index);
-            item.index = index;
-        }
-    });
-
-    drag(drop(ref));
-
-    return (
-        <div ref={ref} className={cn("flex h-10 border-b", isDragging && 'opacity-50')}>
-            {children}
-        </div>
-    );
-};
-
-const StepBar = ({ step, startDate, totalDays }: { step: Partial<ProjectStep>, startDate: Date, totalDays: number }) => {
-    if (!step.startTime || !step.durationMinutes) return null;
-
-    const leftOffsetDays = differenceInDays(step.startTime, startDate);
-    const durationDays = Math.ceil(step.durationMinutes / (60 * 8)); // Assuming 8-hour work days
-
-    if (leftOffsetDays + durationDays <= 0 || leftOffsetDays >= totalDays) return null;
-
-    const left = Math.max(leftOffsetDays, 0);
-    const width = Math.min(durationDays, totalDays - left);
-
-    const style = {
-        left: `${left * DAY_WIDTH_PX}px`,
-        width: `${width * DAY_WIDTH_PX}px`,
-    };
-
-    return (
-        <div style={style} className="absolute h-8 top-1/2 -translate-y-1/2 flex items-center bg-primary/80 rounded-lg px-2 text-white text-xs z-10">
-            <p className="truncate">{step.title}</p>
-        </div>
-    );
-};
 
 export default function ProjectTimelineAndTasksPage() {
   const params = useParams();
@@ -94,6 +37,16 @@ export default function ProjectTimelineAndTasksPage() {
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
   const [initialTaskData, setInitialTaskData] = useState<Partial<TaskEvent>>({});
+
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingStepText, setEditingStepText] = useState('');
+  const [stepToDelete, setStepToDelete] = useState<Partial<ProjectStep> | null>(null);
+  
+  // State for the new "Edit Step Details" dialog
+  const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
+  const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
+  const [stepDetailDescription, setStepDetailDescription] = useState("");
+
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -153,51 +106,6 @@ export default function ProjectTimelineAndTasksPage() {
     loadData();
   }, [loadData]);
 
-  const { days, totalDays, timeIntervals } = useMemo(() => {
-    let start = viewStartDate;
-    let end: Date;
-
-    if (endDate && endDate > startDate) {
-      end = endDate;
-    } else {
-      end = addDays(start, 29); // Default to month view
-    }
-
-    const days = eachDayOfInterval({ start, end });
-    const totalDays = days.length;
-    
-    const intervals = [];
-    for (let i = 0; i < totalDays; i += 7) {
-        const weekEnd = Math.min(i + 6, totalDays - 1);
-        intervals.push({ label: `Week of ${format(days[i], 'MMM d')}`, colSpan: weekEnd - i + 1 });
-    }
-
-    return { days, totalDays, timeIntervals: intervals };
-  }, [viewStartDate, endDate]);
-
-  const moveDate = (amount: number) => {
-    setViewStartDate(prev => addDays(prev, amount * 30));
-  };
-  
-  const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
-    if (project && !isActionItemsView) {
-        try {
-            await updateProject(project.id, { steps: updatedSteps });
-        } catch (error) {
-            console.error("Failed to save steps:", error);
-            toast({ variant: "destructive", title: "Save failed", description: "Could not save the project plan." });
-        }
-    }
-  }, [project, isActionItemsView, toast]);
-
-  const moveStep = useCallback(async (dragIndex: number, hoverIndex: number) => {
-    const newSteps = [...steps];
-    const [draggedItem] = newSteps.splice(dragIndex, 1);
-    newSteps.splice(hoverIndex, 0, draggedItem);
-    setSteps(newSteps);
-    await handleSaveSteps(newSteps);
-  }, [steps, handleSaveSteps]);
-  
   // Kanban handlers
   const tasksByStatus = useMemo(() => {
     const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
@@ -303,6 +211,7 @@ export default function ProjectTimelineAndTasksPage() {
   };
 
 
+  
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
   }
@@ -322,34 +231,10 @@ export default function ProjectTimelineAndTasksPage() {
           </header>
           <ProjectManagementHeader projectId={projectId} />
         
-          <div className="border rounded-lg overflow-hidden">
-            <div className="flex justify-between items-center p-2 border-b">
-                <h3 className="text-lg font-semibold">Timeline</h3>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={() => moveDate(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{viewStartDate ? format(viewStartDate, "PPP") : '...'}</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <CustomCalendar mode="single" selected={viewStartDate} onSelect={date => { if(date) setViewStartDate(date); setIsDatePickerOpen(false); }} initialFocus />
-                        </PopoverContent>
-                    </Popover>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : 'End Date'}</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <CustomCalendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < viewStartDate} />
-                        </PopoverContent>
-                    </Popover>
-                    <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                    <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
-                        <Plus className="mr-2 h-4 w-4" /> Add a Task
-                    </Button>
-                </div>
-            </div>
-            
+          <div className="flex justify-center gap-2 mb-4">
+              <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
+                  <Plus className="mr-2 h-4 w-4" /> Add a Task
+              </Button>
           </div>
           
           {/* Kanban Board Section */}

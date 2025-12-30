@@ -8,7 +8,7 @@ import { getProjects, getTasksForUser, updateProject, deleteProject, addProject 
 import { getContacts, type Contact } from '@/services/contact-service';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Plus } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Plus, ListTodo } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -43,9 +43,10 @@ interface ProjectStatusCardProps {
   tasks: TaskEvent[];
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  onAddTask: (project: Project) => void;
 }
 
-function ProjectStatusCard({ project, tasks, onEdit, onDelete }: ProjectStatusCardProps) {
+function ProjectStatusCard({ project, tasks, onEdit, onDelete, onAddTask }: ProjectStatusCardProps) {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.PROJECT,
         item: { id: project.id, status: project.status },
@@ -72,6 +73,9 @@ function ProjectStatusCard({ project, tasks, onEdit, onDelete }: ProjectStatusCa
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => onAddTask(project)}>
+                            <ListTodo className="mr-2 h-4 w-4" /> Add Task
+                        </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => onEdit(project)}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Details
                         </DropdownMenuItem>
@@ -99,9 +103,10 @@ interface ProjectColumnProps {
     onDropProject: (projectId: string, newStatus: ProjectStatus) => void;
     onEditProject: (project: Project) => void;
     onDeleteProject: (project: Project) => void;
+    onAddTaskToProject: (project: Project) => void;
 }
 
-function ProjectColumn({ status, projects, tasks, onDropProject, onEditProject, onDeleteProject }: ProjectColumnProps) {
+function ProjectColumn({ status, projects, tasks, onDropProject, onEditProject, onDeleteProject, onAddTaskToProject }: ProjectColumnProps) {
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.PROJECT,
         drop: (item: { id: string }) => onDropProject(item.id, status),
@@ -126,7 +131,7 @@ function ProjectColumn({ status, projects, tasks, onDropProject, onEditProject, 
                 <CardTitle>{displayTitle}</CardTitle>
             </CardHeader>
             <CardContent className="min-h-96">
-                {projects.map(p => <ProjectStatusCard key={p.id} project={p} tasks={tasks} onEdit={onEditProject} onDelete={onDeleteProject} />)}
+                {projects.map(p => <ProjectStatusCard key={p.id} project={p} tasks={tasks} onEdit={onEditProject} onDelete={onDeleteProject} onAddTask={onAddTaskToProject} />)}
             </CardContent>
         </Card>
     );
@@ -141,6 +146,9 @@ export function ProjectStatusView() {
   const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
   const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [initialDialogData, setInitialDialogData] = useState({});
+
   
   const router = useRouter();
   const { user } = useAuth();
@@ -261,6 +269,11 @@ export function ProjectStatusView() {
     });
     return { planning, active, onHold, completed };
   }, [projects]);
+
+  const handleAddTaskToProject = (project: Project) => {
+    setInitialDialogData({ projectId: project.id });
+    setIsNewTaskDialogOpen(true);
+  };
   
   if (isLoading) {
     return (
@@ -287,18 +300,27 @@ export function ProjectStatusView() {
             </div>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <ProjectColumn status="planning" projects={projectsByStatus.planning} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
-            <ProjectColumn status="active" projects={projectsByStatus.active} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
-            <ProjectColumn status="on-hold" projects={projectsByStatus.onHold} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
-            <ProjectColumn status="completed" projects={projectsByStatus.completed} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} />
+            <ProjectColumn status="planning" projects={projectsByStatus.planning} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} onAddTaskToProject={handleAddTaskToProject}/>
+            <ProjectColumn status="active" projects={projectsByStatus.active} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} onAddTaskToProject={handleAddTaskToProject}/>
+            <ProjectColumn status="on-hold" projects={projectsByStatus.onHold} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} onAddTaskToProject={handleAddTaskToProject}/>
+            <ProjectColumn status="completed" projects={projectsByStatus.completed} tasks={tasks} onDropProject={handleDropProject} onEditProject={handleEditProject} onDeleteProject={setProjectToDelete} onAddTaskToProject={handleAddTaskToProject}/>
           </div>
         </div>
         <NewTaskDialog 
             isOpen={isNewProjectDialogOpen}
-            onOpenChange={setIsNewProjectDialogOpen}
+            onOpenChange={(open) => {
+                setIsNewProjectDialogOpen(open);
+                if (!open) setProjectToEdit(null);
+            }}
             onProjectCreate={handleProjectCreated}
             onProjectUpdate={handleProjectUpdated}
             contacts={contacts}
+        />
+         <NewTaskDialog
+            isOpen={isNewTaskDialogOpen}
+            onOpenChange={setIsNewTaskDialogOpen}
+            onTaskCreate={loadData}
+            initialData={initialDialogData}
         />
         <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
             <AlertDialogContent>

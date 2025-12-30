@@ -335,9 +335,17 @@ export default function ProjectTimelineAndTasksPage() {
                             <CustomCalendar mode="single" selected={viewStartDate} onSelect={date => { if(date) setViewStartDate(date); setIsDatePickerOpen(false); }} initialFocus />
                         </PopoverContent>
                     </Popover>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : 'End Date'}</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <CustomCalendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < viewStartDate} />
+                        </PopoverContent>
+                    </Popover>
                     <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                     <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
-                        <Plus className="mr-2 h-4 w-4" /> Add a Task
+                     <Button variant="outline" onClick={() => router.push(`/projects/organizer?projectId=${projectId}`)}>
+                        <Wrench className="mr-2 h-4 w-4" /> Organize Plan
                     </Button>
                 </div>
             </div>

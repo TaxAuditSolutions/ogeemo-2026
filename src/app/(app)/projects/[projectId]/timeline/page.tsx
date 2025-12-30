@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, GripVertical, Plus, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -75,8 +75,9 @@ const StepBar = ({ step, startDate, totalDays }: { step: Partial<ProjectStep>, s
     );
 };
 
-export default function ProjectTimelinePage({ params }: { params: { projectId: string } }) {
-  const { projectId } = params;
+export default function ProjectTimelinePage() {
+  const params = useParams();
+  const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
   const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -64,7 +64,9 @@ export default function ProjectTimelinePage({ params }: { params: { projectId: s
                 Project Timeline & Plan
             </h1>
             {project && (
-              <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+              <h2 className="text-xl text-muted-foreground border border-black p-2 rounded-md mt-2 inline-block">
+                {project.name}
+              </h2>
             )}
         </header>
 

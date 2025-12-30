@@ -81,7 +81,10 @@ export default function ProjectTimelinePage() {
   const [project, setProject] = useState<Project | null>(null);
   const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewStartDate, setViewStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [isStartPickerOpen, setIsStartPickerOpen] = useState(false);
+  const [isEndPickerOpen, setIsEndPickerOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<'month' | 'quarter'>('month');
 
   const { user } = useAuth();
@@ -103,7 +106,10 @@ export default function ProjectTimelinePage() {
       }));
       setSteps(projectSteps);
       if (projectData?.startDate) {
-        setViewStartDate(startOfWeek(projectData.startDate, { weekStartsOn: 1 }));
+        setStartDate(startOfWeek(projectData.startDate, { weekStartsOn: 1 }));
+      }
+      if (projectData?.endDate) {
+        setEndDate(projectData.endDate);
       }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
@@ -121,17 +127,22 @@ export default function ProjectTimelinePage() {
   }, [projectId, loadData]);
 
   const { days, totalDays, timeIntervals } = useMemo(() => {
-    let start = viewStartDate;
+    let start = startDate;
     let end: Date;
-    if (zoomLevel === 'quarter') {
+
+    if (endDate && endDate > startDate) {
+      end = endDate;
+    } else if (zoomLevel === 'quarter') {
       end = addDays(start, 89);
     } else {
       end = addDays(start, 29);
     }
+
     const days = eachDayOfInterval({ start, end });
     const totalDays = days.length;
     
     const intervals = [];
+    // This logic can be complex, for now we will keep it simple based on zoom level
     if (zoomLevel === 'quarter') {
         let currentMonthLabel = '';
         let currentColSpan = 0;
@@ -154,15 +165,15 @@ export default function ProjectTimelinePage() {
     }
 
     return { days, totalDays, timeIntervals: intervals };
-  }, [viewStartDate, zoomLevel]);
+  }, [startDate, endDate, zoomLevel]);
 
   const moveDate = (amount: number) => {
     const daysToMove = zoomLevel === 'month' ? 30 : 90;
-    setViewStartDate(prev => addDays(prev, amount * daysToMove));
+    setStartDate(prev => addDays(prev, amount * daysToMove));
   };
   
   const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
-    if (project && project.id !== 'inbox') {
+    if (project && !isActionItemsView) {
         try {
             await updateProject(project.id, { steps: updatedSteps });
         } catch (error) {
@@ -180,6 +191,8 @@ export default function ProjectTimelinePage() {
     setSteps(newSteps);
     await handleSaveSteps(newSteps);
   }, [steps, handleSaveSteps]);
+
+  const isActionItemsView = projectId === 'inbox';
 
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
@@ -209,16 +222,24 @@ export default function ProjectTimelinePage() {
 
         <ProjectManagementHeader projectId={projectId} />
       
-      <header className="flex justify-between items-center">
+        <header className="flex justify-between items-center">
             <h2 className="text-xl font-bold">Timeline: {project?.name}</h2>
             <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => moveDate(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-                 <Popover>
+                 <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{format(viewStartDate, "PPP")}</Button>
+                        <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />Start Date: {format(startDate, "PPP")}</Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
-                        <CustomCalendar mode="single" selected={viewStartDate} onSelect={date => date && setViewStartDate(date)} initialFocus />
+                        <CustomCalendar mode="single" selected={startDate} onSelect={date => { if(date) setStartDate(date); setIsStartPickerOpen(false); }} initialFocus />
+                    </PopoverContent>
+                </Popover>
+                <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />End Date: {endDate ? format(endDate, "PPP") : '...'}</Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <CustomCalendar mode="single" selected={endDate} onSelect={date => { if(date) setEndDate(date); setIsEndPickerOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus />
                     </PopoverContent>
                 </Popover>
                 <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
@@ -271,7 +292,7 @@ export default function ProjectTimelinePage() {
                          <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, 1fr)` }}>
                             {days.map((day, i) => <div key={i} className="h-full border-r" />)}
                         </div>
-                        <StepBar step={step} startDate={viewStartDate} totalDays={totalDays} />
+                        <StepBar step={step} startDate={startDate} totalDays={totalDays} />
                     </div>
                 </DraggableTaskRow>
             )) : (
@@ -285,3 +306,5 @@ export default function ProjectTimelinePage() {
     </div>
   );
 }
+
+    

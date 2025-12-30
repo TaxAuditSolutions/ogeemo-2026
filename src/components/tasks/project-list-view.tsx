@@ -260,7 +260,7 @@ export function ProjectListView() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4"/>View Task Board</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4"/>View Project Status</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -292,7 +292,7 @@ export function ProjectListView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all of its associated tasks. This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all of its tasks. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

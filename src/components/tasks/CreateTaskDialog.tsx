@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -24,9 +25,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { useAuth } from '@/context/auth-context';
-import { addTask } from '@/services/project-service';
+import { addTask, updateTask } from '@/services/project-service';
 import { LoaderCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -34,6 +35,8 @@ const taskSchema = z.object({
   title: z.string().min(2, { message: "Task title is required." }),
   description: z.string().optional(),
   projectId: z.string().optional().nullable(),
+  stepId: z.string().optional().nullable(),
+  isTodoItem: z.boolean().optional(),
   urgency: z.enum(['A - Urgent', 'B - Important', 'C - Optional']).default('B - Important'),
   importance: z.enum(['A', 'B', 'C']).default('B'),
 });
@@ -44,14 +47,19 @@ interface CreateTaskDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onTaskCreate: (task: TaskEvent) => void;
+  onTaskUpdate?: (task: TaskEvent) => void;
   projects?: Project[];
   initialData?: Partial<any>;
+  taskToEdit?: TaskEvent | null; 
+  projectId?: string;
 }
 
 const defaultTaskFormValues: TaskFormData = {
   title: "",
   description: "",
   projectId: null,
+  stepId: null,
+  isTodoItem: false,
   urgency: 'B - Important',
   importance: 'B',
 };
@@ -60,8 +68,11 @@ export function CreateTaskDialog({
   isOpen,
   onOpenChange,
   onTaskCreate,
+  onTaskUpdate,
   projects = [],
   initialData = {},
+  taskToEdit,
+  projectId,
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -75,33 +86,58 @@ export function CreateTaskDialog({
 
   useEffect(() => {
     if (isOpen) {
-      form.reset({ ...defaultTaskFormValues, ...initialData });
+      if (taskToEdit) {
+        form.reset({
+          ...defaultTaskFormValues,
+          title: taskToEdit.title,
+          description: taskToEdit.description || "",
+          projectId: taskToEdit.projectId,
+          stepId: taskToEdit.stepId,
+          isTodoItem: taskToEdit.isTodoItem,
+          urgency: (taskToEdit.urgency as any) || 'B - Important', // Map internal value if needed
+          importance: taskToEdit.importance || 'B',
+        });
+      } else {
+        const defaultProjectId = projectId || initialData.projectId || null;
+        form.reset({ ...defaultTaskFormValues, ...initialData, projectId: defaultProjectId });
+      }
     }
-  }, [isOpen, initialData, form]);
+  }, [isOpen, taskToEdit, projectId, initialData, form]);
 
   async function onSubmit(values: TaskFormData) {
     if (!user) return;
 
     setIsLoading(true);
     try {
-      const urgencyMap = { 'A - Urgent': 'urgent', 'B - Important': 'important', 'C - Optional': 'optional' };
-      const finalUrgency = urgencyMap[values.urgency];
+        const urgencyMap = { 'A - Urgent': 'urgent', 'B - Important': 'important', 'C - Optional': 'optional' };
+        const finalUrgency = urgencyMap[values.urgency] as TaskEvent['urgency'];
 
-      const newTaskData = {
-        title: values.title,
-        description: values.description || '',
-        status: 'todo' as const,
-        position: 0,
-        projectId: values.projectId === 'inbox' ? null : values.projectId,
-        userId: user.uid,
-        urgency: finalUrgency,
-        importance: values.importance,
-      };
-      const savedTask = await addTask(newTaskData as Omit<TaskEvent, 'id'>);
-      if (onTaskCreate) {
-        onTaskCreate(savedTask);
+        const taskDataPayload: Partial<TaskEvent> = {
+            title: values.title,
+            description: values.description,
+            projectId: values.projectId === 'unassigned' ? null : values.projectId,
+            urgency: finalUrgency,
+            importance: values.importance,
+            isTodoItem: values.isTodoItem,
+        };
+        
+      if (taskToEdit && onTaskUpdate) {
+        await updateTask(taskToEdit.id, taskDataPayload);
+        onTaskUpdate({ ...taskToEdit, ...taskDataPayload });
+        toast({ title: "Task Updated" });
+      } else {
+        const newTaskData: Omit<TaskEvent, 'id'> = {
+          ...taskDataPayload,
+          status: 'todo',
+          position: 0,
+          userId: user.uid,
+        };
+        const savedTask = await addTask(newTaskData);
+        if (onTaskCreate) {
+          onTaskCreate(savedTask);
+        }
+        toast({ title: "Task Created" });
       }
-      toast({ title: "Task Created" });
       onOpenChange(false);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to save task', description: error.message });
@@ -116,25 +152,26 @@ export function CreateTaskDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Add Task</DialogTitle>
+              <DialogTitle>{taskToEdit ? "Edit Task" : "New Task"}</DialogTitle>
               <DialogDescription>
-                Add a new task to the selected project.
+                {taskToEdit ? "Update the details for this task." : "Add a new task."}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="inbox">Action Items (Inbox)</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || 'unassigned'}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
               </div>
+                 <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                Add Task
+                {taskToEdit ? "Save Changes" : "Add Task"}
               </Button>
             </DialogFooter>
           </form>

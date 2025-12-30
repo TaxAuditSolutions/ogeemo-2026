@@ -44,6 +44,14 @@ import { Label } from '../ui/label';
 import { TaskCreationInfoDialog } from './task-creation-info-dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CreateTaskDialog } from './CreateTaskDialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 
 const statusDisplayMap: Record<string, string> = {
@@ -60,40 +68,25 @@ const statusColorMap: Record<string, string> = {
 
 const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projects, isSelected, onToggleSelect, onToggleComplete }: { task: TaskEvent, project: Project | undefined, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onAssignProject: (taskId: string, projectId: string | null) => void, projects: Project[], isSelected: boolean, onToggleSelect: (taskId: string) => void, onToggleComplete: (task: TaskEvent) => void }) => {
     return (
-        <div className="group flex items-center p-3 border-b hover:bg-muted/50 transition-colors">
-            <div className="flex items-center w-[50px] pl-4">
+        <TableRow className="group">
+            <TableCell className="w-[50px] pl-4">
                 <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(task.id)} />
-            </div>
-            <div className="flex-1 grid grid-cols-4 items-center gap-4 cursor-pointer" onClick={() => onEdit(task)}>
-                <div className="col-span-1">
-                    <p className="font-medium text-sm">{task.title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
-                </div>
-                 <div className="col-span-1">
-                     <p className="text-sm text-muted-foreground">{project?.name || "Unassigned"}</p>
-                </div>
-                 <div className="col-span-1 text-center">
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <Badge variant="outline" className={cn(statusColorMap[task.status] || 'bg-gray-100 text-gray-800')}>
-                                    {statusDisplayMap[task.status] || 'Unknown'}
-                                </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{task.status === 'done' ? 'This task is completed.' : `Status: ${statusDisplayMap[task.status]}`}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
-                 <div className="col-span-1 text-center">
-                    <p className="text-sm text-muted-foreground">
-                        {task.start ? format(new Date(task.start), 'PP') : 'Not scheduled'}
-                    </p>
-                </div>
-            </div>
-            <div className="pl-4 w-[52px]">
-                 <DropdownMenu>
+            </TableCell>
+            <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => onEdit(task)}>
+              <p>{task.title}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+            </TableCell>
+            <TableCell>{project?.name || "Unassigned"}</TableCell>
+            <TableCell className="text-center">
+              <Badge variant="outline" className={cn(statusColorMap[task.status] || 'bg-gray-100 text-gray-800')}>
+                {statusDisplayMap[task.status] || 'Unknown'}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-center text-muted-foreground">
+                {task.start ? format(new Date(task.start), 'PP') : 'Not scheduled'}
+            </TableCell>
+            <TableCell className="w-[52px]">
+                <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
@@ -102,7 +95,7 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                             <Edit className="mr-2 h-4 w-4"/> Open / Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => onToggleComplete(task)}>
-                            <CheckCircle className="mr-2 h-4 w-4" /> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
+                           <CheckCircle className="mr-2 h-4 w-4" /> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
@@ -130,8 +123,8 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
-        </div>
+            </TableCell>
+        </TableRow>
     );
 };
 
@@ -187,6 +180,12 @@ export default function AllProjectTasksView() {
         setInitialDialogData({});
         setIsNewTaskDialogOpen(true);
     };
+    
+     const handleAddTask = () => {
+        setTaskToEdit(null);
+        setInitialDialogData({ projectId: selectedProjectId !== 'unassigned' ? selectedProjectId : null });
+        setIsNewTaskDialogOpen(true);
+    };
 
     const handleAssignProject = async (taskId: string, projectId: string | null) => {
         const originalTasks = [...tasks];
@@ -222,13 +221,11 @@ export default function AllProjectTasksView() {
 
     const handleConfirmDelete = async () => {
         if (!taskToDelete) return;
-        const originalTasks = [...tasks];
-        setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
         try {
             await deleteTask(taskToDelete.id);
+            setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
             toast({ title: 'Task Deleted' });
         } catch (error: any) {
-            setTasks(originalTasks);
             toast({ variant: 'destructive', title: 'Failed to delete task', description: error.message });
         } finally {
             setTaskToDelete(null);
@@ -251,8 +248,7 @@ export default function AllProjectTasksView() {
         });
     }, [filteredTasks]);
 
-    const allProjectsOption = { id: 'all', name: 'All Projects' };
-    const projectOptions = [allProjectsOption, ...projects];
+    const projectOptions = [{ id: 'all', name: 'All Projects' }, { id: 'unassigned', name: 'Unassigned Tasks' }, ...projects];
 
     const handleToggleSelect = (taskId: string) => {
         setSelectedTaskIds(prev =>
@@ -296,7 +292,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, true);
+            await updateTasksStatus(selectedTaskIds, 'done');
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -309,7 +305,7 @@ export default function AllProjectTasksView() {
         loadData();
     };
 
-    const allVisibleSelected = sortedTasks.length > 0 && sortedTasks.every(t => selectedTaskIds.includes(t.id));
+    const allVisibleSelected = sortedTasks.length > 0 && selectedTaskIds.length === sortedTasks.length;
     const someVisibleSelected = selectedTaskIds.length > 0 && !allVisibleSelected;
 
 
@@ -353,10 +349,8 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button asChild>
-                                    <Link href="/to-do">
-                                        <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
-                                    </Link>
+                                <Button onClick={() => router.push('/to-do')} disabled={selectedProjectId === null}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>

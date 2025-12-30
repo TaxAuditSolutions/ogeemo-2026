@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getProjects, getTasksForUser, updateProject, deleteProject, addProject } from '@/services/project-service';
@@ -8,7 +9,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type ProjectStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { LoaderCircle, MoreVertical, Edit, Trash2, Plus, ListTodo } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';

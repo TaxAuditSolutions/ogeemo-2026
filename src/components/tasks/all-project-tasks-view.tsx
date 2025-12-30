@@ -67,7 +67,7 @@ const statusColorMap: Record<string, string> = {
 };
 
 
-const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projects, isSelected, onToggleSelect, onToggleComplete }: { task: TaskEvent, project: Project | undefined, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onAssignProject: (taskId: string, projectId: string | null) => void, projects: Project[], isSelected: boolean, onToggleSelect: (taskId: string) => void, onToggleComplete: (task: TaskEvent) => void }) => {
+const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projects, isSelected, onToggleSelect, onToggleComplete, onMakeProject }: { task: TaskEvent, project: Project | undefined, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onAssignProject: (taskId: string, projectId: string | null) => void, projects: Project[], isSelected: boolean, onToggleSelect: (taskId: string) => void, onToggleComplete: (task: TaskEvent) => void, onMakeProject: (task: TaskEvent) => void }) => {
     return (
         <TableRow className="group">
             <TableCell className="w-[50px] pl-4">
@@ -97,6 +97,9 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => onToggleComplete(task)}>
                            <CheckCircle className="mr-2 h-4 w-4" /> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
+                        </DropdownMenuItem>
+                         <DropdownMenuItem onSelect={() => onMakeProject(task)}>
+                            <Briefcase className="mr-2 h-4 w-4" /> Make it a project
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
@@ -147,6 +150,7 @@ export default function AllProjectTasksView() {
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+    const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
 
     
     const router = useRouter();
@@ -313,6 +317,12 @@ export default function AllProjectTasksView() {
         setInitialDialogData({});
         setIsNewProjectDialogOpen(true);
     };
+    
+    const handleMakeProject = (task: TaskEvent) => {
+        setTaskToConvert(task);
+        setInitialDialogData({ name: task.title, description: task.description || '' });
+        setIsNewProjectDialogOpen(true);
+    };
 
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
         if (!user) return;
@@ -320,9 +330,15 @@ export default function AllProjectTasksView() {
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             setProjects(prev => [newProject, ...prev]);
             toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-            setIsNewProjectDialogOpen(false);
+            if (taskToConvert) {
+                await deleteTask(taskToConvert.id);
+                loadData();
+            }
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsNewProjectDialogOpen(false);
+            setTaskToConvert(null);
         }
     };
     
@@ -424,6 +440,7 @@ export default function AllProjectTasksView() {
                                                 isSelected={selectedTaskIds.includes(task.id)}
                                                 onToggleSelect={handleToggleSelect}
                                                 onToggleComplete={handleToggleComplete}
+                                                onMakeProject={handleMakeProject}
                                             />
                                         ))
                                     ) : (
@@ -487,15 +504,12 @@ export default function AllProjectTasksView() {
             />
             <NewTaskDialog
                 isOpen={isNewProjectDialogOpen}
-                onOpenChange={(open) => {
-                    setIsNewProjectDialogOpen(open);
-                    if (!open) setProjectToEdit(null);
-                }}
+                onOpenChange={setIsNewProjectDialogOpen}
                 onProjectCreate={handleProjectCreated}
-                onProjectUpdate={() => {}}
                 contacts={contacts}
                 onContactsChange={setContacts}
-                projectToEdit={projectToEdit}
+                projectToEdit={null}
+                initialData={initialDialogData}
             />
         </>
     );

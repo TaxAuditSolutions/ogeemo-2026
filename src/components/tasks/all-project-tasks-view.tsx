@@ -187,19 +187,6 @@ export default function AllProjectTasksView() {
         setInitialDialogData({});
         setIsNewTaskDialogOpen(true);
     };
-    
-    const handleAddTask = () => {
-        if (!selectedProjectId) {
-            toast({ variant: 'destructive', title: 'No Project Selected', description: 'Please select a project or "Unassigned Tasks" to add a new task.'});
-            return;
-        }
-        setTaskToEdit(null);
-        setInitialDialogData({ 
-            isTodoItem: false, 
-            projectId: selectedProjectId === 'unassigned' ? null : selectedProjectId,
-        });
-        setIsNewTaskDialogOpen(true);
-    };
 
     const handleAssignProject = async (taskId: string, projectId: string | null) => {
         const originalTasks = [...tasks];
@@ -265,8 +252,7 @@ export default function AllProjectTasksView() {
     }, [filteredTasks]);
 
     const allProjectsOption = { id: 'all', name: 'All Projects' };
-    const unassignedOption = { id: 'unassigned', name: 'Unassigned Tasks' };
-    const projectOptions = [allProjectsOption, unassignedOption, ...projects];
+    const projectOptions = [allProjectsOption, ...projects];
 
     const handleToggleSelect = (taskId: string) => {
         setSelectedTaskIds(prev =>
@@ -310,7 +296,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, 'done');
+            await updateTasksStatus(selectedTaskIds, true);
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -319,10 +305,6 @@ export default function AllProjectTasksView() {
         }
     };
     
-    const handleTaskCreated = () => {
-        loadData(); // Reload all data to show the new task
-    };
-
     const handleTaskSaved = () => {
         loadData();
     };
@@ -371,8 +353,10 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={handleAddTask} disabled={selectedProjectId === null}>
-                                    <Plus className="mr-2 h-4 w-4"/> Add Project Task
+                                <Button asChild>
+                                    <Link href="/to-do">
+                                        <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
+                                    </Link>
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -474,7 +458,7 @@ export default function AllProjectTasksView() {
                         setTaskToEdit(null);
                     }
                 }}
-                onTaskCreate={handleTaskCreated}
+                onTaskCreate={handleTaskSaved}
                 onTaskUpdate={handleTaskSaved}
                 taskToEdit={taskToEdit}
                 projectId={selectedProjectId !== 'all' ? selectedProjectId : undefined}
@@ -484,4 +468,3 @@ export default function AllProjectTasksView() {
         </>
     );
 }
-

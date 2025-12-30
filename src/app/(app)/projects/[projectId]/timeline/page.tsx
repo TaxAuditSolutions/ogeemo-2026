@@ -10,7 +10,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects as getAllProjects, getTasksForUser } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar';
-import { addDays, differenceInDays, format, startOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
+import { addDays, differenceInDays, format, startOfWeek, eachDayOfInterval, parseISO, endOfDay } from 'date-fns';
 import { useDrop, useDrag } from 'react-dnd';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -335,7 +335,7 @@ export default function ProjectTimelineAndTasksPage() {
                             <CustomCalendar mode="single" selected={viewStartDate} onSelect={date => { if(date) setViewStartDate(date); setIsDatePickerOpen(false); }} initialFocus />
                         </PopoverContent>
                     </Popover>
-                    <Popover>
+                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : 'End Date'}</Button>
                         </PopoverTrigger>
@@ -344,8 +344,8 @@ export default function ProjectTimelineAndTasksPage() {
                         </PopoverContent>
                     </Popover>
                     <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                     <Button variant="outline" onClick={() => router.push(`/projects/organizer?projectId=${projectId}`)}>
-                        <Wrench className="mr-2 h-4 w-4" /> Organize Plan
+                    <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
+                        <Plus className="mr-2 h-4 w-4" /> Add Task
                     </Button>
                 </div>
             </div>

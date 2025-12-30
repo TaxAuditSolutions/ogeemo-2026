@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectManagementHeader } from './ProjectManagementHeader';
-import { NewTaskDialog } from './NewTaskDialog';
+import { CreateTaskDialog } from './CreateTaskDialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
@@ -54,7 +54,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     const [initialTaskData, setInitialTaskData] = useState<Partial<TaskEvent>>({});
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
@@ -294,22 +293,22 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col">
                  <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">
-                        Project Planning
+                        {project.name}
                     </h1>
-                     <h2 className="text-xl font-bold font-headline">{project.name}</h2>
                     <p className="text-muted-foreground">
-                        Here is where you do the planning of your specific project.
+                        {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}
                     </p>
                 </header>
                 <ProjectManagementHeader projectId={projectId} />
                 
                 <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
+                    {!isActionItemsView && (
                     <ResizablePanel defaultSize={30} minSize={25}>
                         <Card className="h-full flex flex-col border-0 rounded-none">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>Project Steps</CardTitle>
                                 <Button size="sm" onClick={() => handleAddTask()} variant="outline">
-                                    <Plus className="mr-2 h-4 w-4" /> Add
+                                    <Plus className="mr-2 h-4 w-4" /> Add Task
                                 </Button>
                             </CardHeader>
                             <CardContent className="flex-1 space-y-2 overflow-y-auto">
@@ -352,37 +351,33 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                             </CardContent>
                         </Card>
                     </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={70}>
+                    )}
+                    {!isActionItemsView && <ResizableHandle withHandle />}
+                    <ResizablePanel defaultSize={isActionItemsView ? 100 : 70}>
                         <div className="h-full grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
                             <TaskColumn 
                                 status="todo" 
-                                tasks={tasksByStatus.todo} 
+                                tasks={tasksByStatus.todo}
+                                onAddTask={() => handleAddTask({ status: 'todo' })}
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={(taskId) => {
-                                    const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
-                                }}
-                                onToggleComplete={() => {}}
+                                onTaskDelete={handleDeleteTask}
+                                onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}}
+                                onArchive={() => {}}
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
                             />
                             <TaskColumn 
                                 status="inProgress" 
-                                tasks={tasksByStatus.inProgress}
+                                tasks={tasksByStatus.inProgress} 
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={(taskId) => {
-                                    const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
-                                }}
-                                onToggleComplete={() => {}}
+                                onTaskDelete={handleDeleteTask}
+                                onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}} 
+                                onArchive={() => {}}
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
@@ -392,13 +387,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 tasks={tasksByStatus.done}
                                 onDropTask={onDropTask} 
                                 onMoveCard={onMoveCard}
-                                onTaskDelete={(taskId) => {
-                                    const task = tasks.find(t => t.id === taskId);
-                                    if (task) handleDeleteTask(task.id);
-                                }}
+                                onTaskDelete={handleDeleteTask}
                                 onToggleComplete={handleToggleComplete}
                                 onEdit={handleEditTask}
-                                onMakeProjectTask={() => {}} 
+                                onArchive={() => {}}
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
@@ -408,7 +400,21 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 </ResizablePanelGroup>
             </div>
             
-            <NewTaskDialog isOpen={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen} onTaskCreate={handleTaskSaved} onTaskUpdate={handleTaskSaved} projectId={projectId} taskToEdit={taskToEdit} initialData={initialTaskData} />
+            <CreateTaskDialog
+                isOpen={isNewTaskDialogOpen}
+                onOpenChange={(open) => {
+                    setIsNewTaskDialogOpen(open);
+                    if (!open) {
+                        setTaskToEdit(null);
+                    }
+                }}
+                onTaskCreate={handleTaskSaved}
+                onTaskUpdate={handleTaskSaved}
+                taskToEdit={taskToEdit}
+                projects={projects}
+                initialData={initialTaskData}
+                projectId={projectId}
+            />
 
             <AlertDialog open={!!stepToDelete} onOpenChange={() => setStepToDelete(null)}>
                 <AlertDialogContent>

@@ -25,7 +25,6 @@ interface TaskCardProps {
   onEdit: (task: TaskEvent) => void;
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
-  onMakeProject: (task: TaskEvent) => void;
   onArchive: (task: TaskEvent) => void;
   isSelected: boolean;
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
@@ -38,7 +37,6 @@ export function TaskCard({
     onEdit, 
     onTaskDelete, 
     onToggleComplete, 
-    onMakeProject,
     onArchive,
     isSelected,
     onToggleSelect,
@@ -108,9 +106,6 @@ export function TaskCard({
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={handleSchedule}>
                         <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onMakeProject(task)}>
-                        <Briefcase className="mr-2 h-4 w-4" /> Make a Project
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onArchive(task)}>
                         <Archive className="mr-2 h-4 w-4" /> Archive

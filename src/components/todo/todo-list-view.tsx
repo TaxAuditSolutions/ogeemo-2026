@@ -43,7 +43,7 @@ export function ToDoListView() {
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
+  const [initialDialogData, setInitialDialogData] = useState({});
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
@@ -279,13 +279,18 @@ export function ToDoListView() {
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
           <div className="flex justify-end gap-2">
+            <Button asChild variant="outline">
+              <Link href="/projects/all">
+                <ListChecks className="mr-2 h-4 w-4" /> Project List
+              </Link>
+            </Button>
             <Button variant="outline" onClick={() => { setInitialDialogData({}); setIsNewProjectDialogOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" /> New Project
+                <Plus className="mr-2 h-4 w-4" /> New Project
             </Button>
             {selectedTaskIds.length > 0 && (
-              <Button variant="destructive" onClick={handleDeleteSelected}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedTaskIds.length})
-              </Button>
+                <Button variant="destructive" onClick={handleDeleteSelected}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedTaskIds.length})
+                </Button>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

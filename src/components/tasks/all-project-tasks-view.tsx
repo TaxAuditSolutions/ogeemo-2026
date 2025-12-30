@@ -183,7 +183,7 @@ export default function AllProjectTasksView() {
     
      const handleAddTask = () => {
         setTaskToEdit(null);
-        setInitialDialogData({ projectId: selectedProjectId !== 'unassigned' ? selectedProjectId : null });
+        setInitialDialogData({ projectId: selectedProjectId });
         setIsNewTaskDialogOpen(true);
     };
 
@@ -292,7 +292,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, 'done');
+            await updateTasksStatus(selectedTaskIds, true);
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -349,8 +349,8 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={() => router.push('/to-do')} disabled={selectedProjectId === null}>
-                                    <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
+                                <Button onClick={handleAddTask} disabled={selectedProjectId === null}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -368,46 +368,49 @@ export default function AllProjectTasksView() {
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="border-t">
-                            <div className="flex items-center p-4 border-b bg-muted/50">
-                                <div className="flex items-center w-[50px] pl-4">
-                                    <Checkbox
-                                        checked={allVisibleSelected ? true : (someVisibleSelected ? 'indeterminate' : false)}
-                                        onCheckedChange={() => handleToggleSelectAll(!allVisibleSelected)}
-                                        aria-label="Select all visible tasks"
-                                        disabled={sortedTasks.length === 0}
-                                    />
-                                </div>
-                                <div className="flex-1 grid grid-cols-4 items-center gap-4">
-                                    <div className="col-span-1"><p className="font-semibold text-sm">Task Title</p></div>
-                                    <div className="col-span-1"><p className="font-semibold text-sm">Project</p></div>
-                                    <div className="col-span-1 text-center"><p className="font-semibold text-sm">Status</p></div>
-                                    <div className="col-span-1 text-center"><p className="font-semibold text-sm">Date</p></div>
-                                </div>
-                                <div className="pl-4 w-[52px]" />
-                            </div>
-                            <div>
-                                {sortedTasks.length > 0 ? (
-                                    sortedTasks.map((task) => (
-                                        <TaskListItem
-                                            key={task.id}
-                                            task={task}
-                                            project={projects.find(p => p.id === task.projectId)}
-                                            onEdit={handleEditTask}
-                                            onDelete={() => setTaskToDelete(task)}
-                                            onAssignProject={handleAssignProject}
-                                            projects={projects}
-                                            isSelected={selectedTaskIds.includes(task.id)}
-                                            onToggleSelect={handleToggleSelect}
-                                            onToggleComplete={handleToggleComplete}
-                                        />
-                                    ))
-                                ) : (
-                                    <div className="text-center p-16 text-muted-foreground">
-                                        <Briefcase className="mx-auto h-12 w-12" />
-                                        <p className="mt-4">{selectedProjectId === null ? "Please select a project to view tasks." : "No tasks found for this project."}</p>
-                                    </div>
-                                )}
-                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[50px] pl-4">
+                                            <Checkbox
+                                                checked={allVisibleSelected ? true : (someVisibleSelected ? 'indeterminate' : false)}
+                                                onCheckedChange={() => handleToggleSelectAll(!allVisibleSelected)}
+                                                aria-label="Select all visible tasks"
+                                                disabled={sortedTasks.length === 0}
+                                            />
+                                        </TableHead>
+                                        <TableHead>Task Title</TableHead>
+                                        <TableHead>Project</TableHead>
+                                        <TableHead className="text-center">Status</TableHead>
+                                        <TableHead className="text-center">Date</TableHead>
+                                        <TableHead className="w-[52px]"><span className="sr-only">Actions</span></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedTasks.length > 0 ? (
+                                        sortedTasks.map((task) => (
+                                            <TaskListItem
+                                                key={task.id}
+                                                task={task}
+                                                project={projects.find(p => p.id === task.projectId)}
+                                                onEdit={handleEditTask}
+                                                onDelete={() => setTaskToDelete(task)}
+                                                onAssignProject={handleAssignProject}
+                                                projects={projects}
+                                                isSelected={selectedTaskIds.includes(task.id)}
+                                                onToggleSelect={handleToggleSelect}
+                                                onToggleComplete={handleToggleComplete}
+                                            />
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                                {selectedProjectId === null ? "Please select a project to view tasks." : "No tasks found for this project."}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                 </Card>
@@ -455,7 +458,6 @@ export default function AllProjectTasksView() {
                 onTaskCreate={handleTaskSaved}
                 onTaskUpdate={handleTaskSaved}
                 taskToEdit={taskToEdit}
-                projectId={selectedProjectId !== 'all' ? selectedProjectId : undefined}
                 projects={projects}
                 initialData={initialDialogData}
             />

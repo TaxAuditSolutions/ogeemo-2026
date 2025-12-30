@@ -9,7 +9,7 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
+import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, getProjects } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
 import {
   AlertDialog,
@@ -51,6 +51,7 @@ export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 
 export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,21 +83,24 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         try {
             let projectData: Project | null;
             let tasksData: TaskEvent[];
+            let allProjects: Project[] = [];
             
             if (isActionItemsView) {
                 projectData = {
                     id: ACTION_ITEMS_PROJECT_ID,
                     name: "Action Items",
-                    description: "A place for all your unscheduled tasks.",
+                    description: "A place for all your unscheduled tasks and ideas.",
                     userId: user.uid,
                     createdAt: new Date(0),
                 };
                 const allUserTasks = await getTasksForUser(user.uid);
                 tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === ACTION_ITEMS_PROJECT_ID) && !task.ritualType);
+                allProjects = await getProjects(user.uid);
             } else {
-                [projectData, tasksData] = await Promise.all([
+                [projectData, tasksData, allProjects] = await Promise.all([
                     getProjectById(projectId),
                     getTasksForProject(projectId),
+                    getProjects(user.uid),
                 ]);
                 tasksData = tasksData.filter(task => !task.ritualType);
             }
@@ -108,6 +112,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             }
 
             setProject(projectData);
+            setProjects(allProjects);
             setSteps(projectData.steps || []);
             setTasks(tasksData);
         } catch (error: any) {
@@ -368,6 +373,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
+                                onMakeProject={() => {}}
                             />
                             <TaskColumn 
                                 status="inProgress" 
@@ -381,6 +387,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
+                                onMakeProject={() => {}}
                             />
                             <TaskColumn 
                                 status="done" 
@@ -394,6 +401,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                                 selectedTaskIds={[]}
                                 onToggleSelect={() => {}}
                                 onToggleSelectAll={() => {}}
+                                onMakeProject={() => {}}
                             />
                         </div>
                     </ResizablePanel>

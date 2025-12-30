@@ -28,11 +28,10 @@ import { useToast } from '@/hooks/use-toast';
 import { getTodos, addTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, deleteTodos, updateTodosStatus } from '@/services/todo-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
-import { addProject } from '@/services/project-service';
+import { addProject, getProjects } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
-import { Input } from '../ui/input';
 
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
@@ -47,6 +46,8 @@ export function ToDoListView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+
 
   const router = useRouter();
   const { user } = useAuth();
@@ -59,12 +60,14 @@ export function ToDoListView() {
     }
     setIsLoading(true);
     try {
-      const [userTodos, userContacts] = await Promise.all([
+      const [userTodos, userContacts, userProjects] = await Promise.all([
         getTodos(user.uid),
         getContacts(user.uid),
+        getProjects(user.uid),
       ]);
       setTodos(userTodos);
       setContacts(userContacts);
+      setProjects(userProjects);
     } catch (error) {
       console.error("Failed to load to-do data:", error);
       toast({
@@ -242,6 +245,12 @@ export function ToDoListView() {
     setTodos(newTasks);
     await updateTodoPositions(updates);
   }, [todos]);
+  
+  const handleAssignToProject = (task: TaskEvent) => {
+    setTaskToEdit(task); // Set the task to edit
+    setInitialDialogData({}); // Clear any other initial data
+    setIsNewTaskDialogOpen(true); // Open the dialog
+  };
 
   if (isLoading) {
     return (
@@ -256,7 +265,7 @@ export function ToDoListView() {
       <div className="p-4 sm:p-6 flex flex-col h-full items-center">
         <header className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
-          <p className="text-muted-foreground">Drag and drop your tasks to change their status.</p>
+          <p className="text-muted-foreground">This is your inbox for new ideas and tasks. Drag and drop them to change their status.</p>
         </header>
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
@@ -332,7 +341,7 @@ export function ToDoListView() {
           </div>
         </div>
       </div>
-      <NewTaskDialog
+      <CreateTaskDialog
         isOpen={isNewTaskDialogOpen}
         onOpenChange={(open) => {
             setIsNewTaskDialogOpen(open);
@@ -343,6 +352,7 @@ export function ToDoListView() {
         onTaskCreate={handleTaskSaved}
         onTaskUpdate={handleTaskSaved}
         taskToEdit={taskToEdit}
+        projects={projects}
         initialData={initialDialogData}
       />
       
@@ -388,3 +398,4 @@ export function ToDoListView() {
     </>
   );
 }
+

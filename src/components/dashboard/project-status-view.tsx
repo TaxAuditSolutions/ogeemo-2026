@@ -144,38 +144,17 @@ export function ProjectStatusView() {
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
+  
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
   const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
-  
-  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = React.useState(false);
-  const [initialDialogData, setInitialDialogData] = React.useState({});
-  const [taskToEdit, setTaskToEdit] = React.useState<TaskEvent | null>(null);
 
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
+  const [initialDialogData, setInitialDialogData] = useState({});
   
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const projectsByStatus = React.useMemo(() => {
-    const planning: Project[] = [];
-    const active: Project[] = [];
-    const onHold: Project[] = [];
-    const completed: Project[] = [];
-
-    projects.forEach(p => {
-        if (p.status === 'completed') {
-            completed.push(p);
-        } else if (p.status === 'on-hold') {
-            onHold.push(p);
-        } else if (p.status === 'planning') {
-            planning.push(p);
-        } else {
-            active.push(p);
-        }
-    });
-    return { planning, active, onHold, completed };
-  }, [projects]);
-
 
   const loadData = React.useCallback(async () => {
     if (!user) {
@@ -202,6 +181,26 @@ export function ProjectStatusView() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+  
+  const projectsByStatus = React.useMemo(() => {
+    const planning: Project[] = [];
+    const active: Project[] = [];
+    const onHold: Project[] = [];
+    const completed: Project[] = [];
+
+    projects.forEach(p => {
+        if (p.status === 'completed') {
+            completed.push(p);
+        } else if (p.status === 'on-hold') {
+            onHold.push(p);
+        } else if (p.status === 'planning') {
+            planning.push(p);
+        } else {
+            active.push(p);
+        }
+    });
+    return { planning, active, onHold, completed };
+  }, [projects]);
   
   const handleDropProject = async (projectId: string, newStatus: ProjectStatus) => {
     const projectToMove = projects.find(p => p.id === projectId);
@@ -274,8 +273,8 @@ export function ProjectStatusView() {
   };
   
   const handleAddTaskToProject = (project: Project) => {
+      setTaskToEdit(null); // Ensure we're not editing a task
       setInitialDialogData({ projectId: project.id, isTodoItem: false });
-      setTaskToEdit(null); // Ensure we are not in edit mode for a task
       setIsNewTaskDialogOpen(true);
   };
   
@@ -362,4 +361,3 @@ export function ProjectStatusView() {
     </>
   );
 }
-

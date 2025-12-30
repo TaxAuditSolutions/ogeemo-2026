@@ -142,7 +142,6 @@ export default function ProjectTimelinePage() {
     const totalDays = days.length;
     
     const intervals = [];
-    // This logic can be complex, for now we will keep it simple based on zoom level
     if (zoomLevel === 'quarter') {
         let currentMonthLabel = '';
         let currentColSpan = 0;
@@ -173,7 +172,7 @@ export default function ProjectTimelinePage() {
   };
   
   const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
-    if (project && !isActionItemsView) {
+    if (project && projectId !== 'inbox') {
         try {
             await updateProject(project.id, { steps: updatedSteps });
         } catch (error) {
@@ -181,7 +180,7 @@ export default function ProjectTimelinePage() {
             toast({ variant: "destructive", title: "Save failed", description: "Could not save the project plan." });
         }
     }
-  }, [project, toast]);
+  }, [project, projectId, toast]);
 
 
   const moveStep = useCallback(async (dragIndex: number, hoverIndex: number) => {
@@ -191,8 +190,6 @@ export default function ProjectTimelinePage() {
     setSteps(newSteps);
     await handleSaveSteps(newSteps);
   }, [steps, handleSaveSteps]);
-
-  const isActionItemsView = projectId === 'inbox';
 
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
@@ -306,5 +303,3 @@ export default function ProjectTimelinePage() {
     </div>
   );
 }
-
-    

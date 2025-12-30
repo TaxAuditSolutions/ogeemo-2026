@@ -138,7 +138,7 @@ export default function AllProjectTasksView() {
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
 
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>('unassigned');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
@@ -349,8 +349,8 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={handleAddTask} disabled={selectedProjectId === null}>
-                                    <Plus className="mr-2 h-4 w-4" /> Add Project Task
+                                <Button onClick={handleAddTask}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>

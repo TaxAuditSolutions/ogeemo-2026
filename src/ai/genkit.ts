@@ -17,7 +17,6 @@ configureGenkit({
   plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY }), firebase()],
   logSinks: ['firebase'],
   enableTracingAndMetrics: true,
-  port: 9003, // Assign a different port to avoid conflict with Next.js
 });
 
 // This file should now only be for configuration.

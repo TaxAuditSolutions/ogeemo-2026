@@ -249,7 +249,21 @@ export function ProjectStatusView() {
     setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
     setIsNewProjectDialogOpen(false);
   };
-
+  
+  const handleAddTaskToProject = (project: Project) => {
+      setInitialDialogData({ projectId: project.id, isTodoItem: false });
+      setTaskToEdit(null); // Ensure we're not in edit mode
+      setIsNewTaskDialogOpen(true);
+  };
+  
+  if (isLoading) {
+    return (
+        <div className="flex h-full w-full items-center justify-center">
+            <LoaderCircle className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
+  
   const projectsByStatus = React.useMemo(() => {
     const planning: Project[] = [];
     const active: Project[] = [];
@@ -269,19 +283,6 @@ export function ProjectStatusView() {
     });
     return { planning, active, onHold, completed };
   }, [projects]);
-
-  const handleAddTaskToProject = (project: Project) => {
-    setInitialDialogData({ projectId: project.id });
-    setIsNewTaskDialogOpen(true);
-  };
-  
-  if (isLoading) {
-    return (
-        <div className="flex h-full w-full items-center justify-center">
-            <LoaderCircle className="h-8 w-8 animate-spin" />
-        </div>
-    );
-  }
   
   return (
     <>
@@ -315,12 +316,17 @@ export function ProjectStatusView() {
             onProjectCreate={handleProjectCreated}
             onProjectUpdate={handleProjectUpdated}
             contacts={contacts}
+            projectToEdit={projectToEdit}
         />
          <NewTaskDialog
             isOpen={isNewTaskDialogOpen}
-            onOpenChange={setIsNewTaskDialogOpen}
+            onOpenChange={(open) => {
+                setIsNewTaskDialogOpen(open);
+                if (!open) setInitialDialogData({});
+            }}
             onTaskCreate={loadData}
             initialData={initialDialogData}
+            projects={projects}
         />
         <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
             <AlertDialogContent>

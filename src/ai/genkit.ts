@@ -17,6 +17,9 @@ configureGenkit({
   plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY }), firebase()],
   logSinks: ['firebase'],
   enableTracingAndMetrics: true,
+  devUi: {
+      enabled: false
+  }
 });
 
 // This file should now only be for configuration.

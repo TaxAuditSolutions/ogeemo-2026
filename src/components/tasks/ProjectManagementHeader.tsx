@@ -56,7 +56,7 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
                 </Button>
                 <Button asChild variant="outline">
                     <Link href="/project-status">
-                        <ListChecks className="mr-2 h-4 w-4" /> Status Board
+                        <ListChecks className="mr-2 h-4 w-4" /> Project Status
                     </Link>
                 </Button>
                  <Button asChild variant="outline">
@@ -82,4 +82,3 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
         </>
     );
 }
-

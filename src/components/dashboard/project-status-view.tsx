@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getProjects, getTasksForUser, updateProject, deleteProject, addProject } from '@/services/project-service';
@@ -252,17 +252,14 @@ export function ProjectStatusView() {
   
   const handleAddTaskToProject = (project: Project) => {
       setInitialDialogData({ projectId: project.id, isTodoItem: false });
-      setTaskToEdit(null); // Ensure we're not in edit mode
+      setProjectToEdit(null); // Ensure we're not in project edit mode
       setIsNewTaskDialogOpen(true);
   };
   
-  if (isLoading) {
-    return (
-        <div className="flex h-full w-full items-center justify-center">
-            <LoaderCircle className="h-8 w-8 animate-spin" />
-        </div>
-    );
-  }
+  const handleTaskSaved = () => {
+      loadData();
+      setIsNewTaskDialogOpen(false);
+  };
   
   const projectsByStatus = React.useMemo(() => {
     const planning: Project[] = [];
@@ -283,6 +280,14 @@ export function ProjectStatusView() {
     });
     return { planning, active, onHold, completed };
   }, [projects]);
+
+  if (isLoading) {
+    return (
+        <div className="flex h-full w-full items-center justify-center">
+            <LoaderCircle className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
   
   return (
     <>
@@ -322,9 +327,14 @@ export function ProjectStatusView() {
             isOpen={isNewTaskDialogOpen}
             onOpenChange={(open) => {
                 setIsNewTaskDialogOpen(open);
-                if (!open) setInitialDialogData({});
+                if (!open) {
+                    setInitialDialogData({});
+                    setTaskToEdit(null);
+                }
             }}
-            onTaskCreate={loadData}
+            onTaskCreate={handleTaskSaved}
+            onTaskUpdate={handleTaskSaved}
+            taskToEdit={taskToEdit}
             initialData={initialDialogData}
             projects={projects}
         />

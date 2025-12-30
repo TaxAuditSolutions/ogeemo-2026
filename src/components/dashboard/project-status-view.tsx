@@ -259,7 +259,7 @@ export function ProjectStatusView() {
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
         setProjects(prev => [newProject, ...prev]);
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created and placed in 'Planning'.` });
         setIsNewProjectDialogOpen(false);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });

@@ -39,10 +39,11 @@ const docToTodo = (doc: any): TaskEvent => {
 
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
     const db = await getDb();
+    // A "To-Do" is now defined as any task not assigned to a project.
     const q = query(
         collection(db, TASKS_COLLECTION), 
         where("userId", "==", userId),
-        where("isTodoItem", "==", true) // Only fetch items explicitly marked as to-dos.
+        where("projectId", "==", null)
     );
     const snapshot = await getDocs(q);
     
@@ -57,7 +58,7 @@ export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEven
         status: 'todo' as const,
         projectId: null,
         position: todoData.position || 0,
-        isTodoItem: true, // Explicitly mark this as a to-do item
+        isTodoItem: true, // Keep this flag for potential backward compatibility or future filtering
     };
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave };

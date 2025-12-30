@@ -54,7 +54,7 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
         <>
             <div className="flex justify-center gap-2 pb-4">
                 {navLinks.map(link => (
-                    <Button key={link.href} asChild variant={pathname === link.href ? 'secondary' : 'outline'}>
+                    <Button key={link.href} asChild variant={pathname === link.href ? 'default' : 'outline'}>
                         <Link href={link.href}>
                             <link.icon className="mr-2 h-4 w-4" /> {link.label}
                         </Link>
@@ -78,4 +78,3 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
         </>
     );
 }
-

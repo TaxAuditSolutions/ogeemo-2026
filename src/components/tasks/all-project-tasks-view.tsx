@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info, ListChecks, ListTodo, CheckCircle } from 'lucide-react';
+import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info, ListChecks, ListTodo, CheckCircle, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
@@ -44,6 +44,7 @@ import { Label } from '../ui/label';
 import { TaskCreationInfoDialog } from './task-creation-info-dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CreateTaskDialog } from './CreateTaskDialog';
+import { NewTaskDialog } from './NewTaskDialog';
 import {
   Table,
   TableBody,
@@ -144,6 +145,9 @@ export default function AllProjectTasksView() {
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+
     
     const router = useRouter();
     const { user } = useAuth();
@@ -233,7 +237,6 @@ export default function AllProjectTasksView() {
     };
 
     const filteredTasks = useMemo(() => {
-        if (selectedProjectId === null) return [];
         const allTasks = tasks.filter(task => !task.ritualType);
         if (selectedProjectId === 'all') return allTasks;
         if (selectedProjectId === 'unassigned') return allTasks.filter(t => !t.projectId);
@@ -305,6 +308,24 @@ export default function AllProjectTasksView() {
         loadData();
     };
 
+    const handleNewProject = () => {
+        setProjectToEdit(null);
+        setInitialDialogData({});
+        setIsNewProjectDialogOpen(true);
+    };
+
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            setProjects(prev => [newProject, ...prev]);
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+            setIsNewProjectDialogOpen(false);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        }
+    };
+    
     const allVisibleSelected = sortedTasks.length > 0 && selectedTaskIds.length === sortedTasks.length;
     const someVisibleSelected = selectedTaskIds.length > 0 && !allVisibleSelected;
 
@@ -350,7 +371,10 @@ export default function AllProjectTasksView() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button onClick={handleAddTask}>
-                                    <Plus className="mr-2 h-4 w-4" /> Add to To-Do List
+                                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                                </Button>
+                                <Button variant="outline" onClick={handleNewProject}>
+                                    <FolderPlus className="mr-2 h-4 w-4" /> New Project
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -460,6 +484,18 @@ export default function AllProjectTasksView() {
                 taskToEdit={taskToEdit}
                 projects={projects}
                 initialData={initialDialogData}
+            />
+            <NewTaskDialog
+                isOpen={isNewProjectDialogOpen}
+                onOpenChange={(open) => {
+                    setIsNewProjectDialogOpen(open);
+                    if (!open) setProjectToEdit(null);
+                }}
+                onProjectCreate={handleProjectCreated}
+                onProjectUpdate={() => {}}
+                contacts={contacts}
+                onContactsChange={setContacts}
+                projectToEdit={projectToEdit}
             />
         </>
     );

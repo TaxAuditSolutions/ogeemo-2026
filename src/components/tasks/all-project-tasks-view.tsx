@@ -187,6 +187,12 @@ export default function AllProjectTasksView() {
         setInitialDialogData({});
         setIsNewTaskDialogOpen(true);
     };
+    
+    const handleAddTask = () => {
+        setTaskToEdit(null);
+        setInitialDialogData({ isTodoItem: false }); // Ensure this is set to differentiate from a todo list item
+        setIsNewTaskDialogOpen(true);
+    };
 
     const handleAssignProject = async (taskId: string, projectId: string | null) => {
         const originalTasks = [...tasks];
@@ -357,7 +363,7 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={() => { setTaskToEdit(null); setInitialDialogData({ isTodoItem: false }); setIsNewTaskDialogOpen(true); }}>
+                                <Button onClick={handleAddTask}>
                                     <Plus className="mr-2 h-4 w-4"/> Add Project Task
                                 </Button>
                                 <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 9002",
     "genkit:dev": "genkit start --port 9003 -- tsx src/ai/genkit.ts",
     "genkit:watch": "genkit start --port 9004 -- tsx --watch src/ai/genkit.ts",
     "build": "next build",

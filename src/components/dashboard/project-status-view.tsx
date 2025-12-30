@@ -30,7 +30,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from '../ui/button';
-import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
 import { useRouter } from 'next/navigation';
 import { NewTaskDialog } from '../tasks/NewTaskDialog';
 import { CreateTaskDialog } from '../tasks/CreateTaskDialog'; // Import the new component
@@ -300,8 +299,7 @@ export function ProjectStatusView() {
                     A Kanban-style overview of all your projects. Drag and drop to change a project's status.
                 </p>
             </header>
-            <div className="flex justify-between items-center">
-                <ProjectManagementHeader />
+            <div className="flex justify-end items-center">
                 <Button onClick={() => { setProjectToEdit(null); setIsNewProjectDialogOpen(true); }}>
                     <Plus className="mr-2 h-4 w-4" /> New Project
                 </Button>
@@ -335,6 +333,8 @@ export function ProjectStatusView() {
                 }
             }}
             onTaskCreate={handleTaskSaved}
+            onTaskUpdate={handleTaskSaved}
+            taskToEdit={null}
             projects={projects}
             initialData={initialTaskData}
         />
@@ -343,7 +343,7 @@ export function ProjectStatusView() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the project "{projectToDelete?.name}" and all of its associated tasks. This action cannot be undone.
+                        This will permanently delete the project "{projectToDelete?.name}" and all of its tasks. This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

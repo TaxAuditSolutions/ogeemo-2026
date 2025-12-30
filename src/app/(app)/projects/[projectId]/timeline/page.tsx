@@ -87,7 +87,7 @@ export default function ProjectTimelineAndTasksPage() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [viewStartDate, setViewStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
@@ -137,7 +137,7 @@ export default function ProjectTimelineAndTasksPage() {
       setTasks(tasksData);
       
       if (projectData?.startDate) {
-        setStartDate(startOfWeek(projectData.startDate, { weekStartsOn: 1 }));
+        setViewStartDate(startOfWeek(projectData.startDate, { weekStartsOn: 1 }));
       }
       if (projectData?.endDate) {
         setEndDate(projectData.endDate);
@@ -154,38 +154,29 @@ export default function ProjectTimelineAndTasksPage() {
   }, [loadData]);
 
   const { days, totalDays, timeIntervals } = useMemo(() => {
-    let start = startDate;
+    let start = viewStartDate;
     let end: Date;
 
     if (endDate && endDate > startDate) {
       end = endDate;
     } else {
-      end = addDays(start, 89); // Default to quarter view if no end date
+      end = addDays(start, 29); // Default to month view
     }
 
     const days = eachDayOfInterval({ start, end });
     const totalDays = days.length;
     
     const intervals = [];
-    let currentMonthLabel = '';
-    let currentColSpan = 0;
-    for (const day of days) {
-        const month = format(day, 'MMMM yyyy');
-        if (month !== currentMonthLabel) {
-            if (currentMonthLabel) intervals.push({ label: currentMonthLabel, colSpan: currentColSpan });
-            currentMonthLabel = month;
-            currentColSpan = 1;
-        } else {
-            currentColSpan++;
-        }
+    for (let i = 0; i < totalDays; i += 7) {
+        const weekEnd = Math.min(i + 6, totalDays - 1);
+        intervals.push({ label: `Week of ${format(days[i], 'MMM d')}`, colSpan: weekEnd - i + 1 });
     }
-    if (currentMonthLabel) intervals.push({ label: currentMonthLabel, colSpan: currentColSpan });
 
     return { days, totalDays, timeIntervals: intervals };
-  }, [startDate, endDate]);
+  }, [viewStartDate, endDate]);
 
   const moveDate = (amount: number) => {
-    setViewStartDate(prev => addDays(prev, amount * 90));
+    setViewStartDate(prev => addDays(prev, amount * 30));
   };
   
   const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
@@ -338,17 +329,15 @@ export default function ProjectTimelineAndTasksPage() {
                     <Button variant="outline" size="icon" onClick={() => moveDate(-1)}><ChevronLeft className="h-4 w-4" /></Button>
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{startDate ? format(startDate, "PPP") : '...'}</Button>
+                            <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />{viewStartDate ? format(viewStartDate, "PPP") : '...'}</Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <CustomCalendar mode="single" selected={startDate} onSelect={date => { if(date) setStartDate(date); setIsDatePickerOpen(false); }} initialFocus />
+                            <CustomCalendar mode="single" selected={viewStartDate} onSelect={date => { if(date) setViewStartDate(date); setIsDatePickerOpen(false); }} initialFocus />
                         </PopoverContent>
                     </Popover>
                     <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                     <Button variant="outline" asChild>
-                        <Link href={`/projects/organizer?projectId=${projectId}`}>
-                            <Wrench className="mr-2 h-4 w-4" /> Organize Plan
-                        </Link>
+                     <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
+                        <Plus className="mr-2 h-4 w-4" /> Add a Task
                     </Button>
                 </div>
             </div>
@@ -382,7 +371,7 @@ export default function ProjectTimelineAndTasksPage() {
                              <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, 1fr)` }}>
                                 {days.map((day, i) => <div key={i} className="h-full border-r" />)}
                             </div>
-                            <StepBar step={step} startDate={startDate} totalDays={totalDays} />
+                            <StepBar step={step} startDate={viewStartDate} totalDays={totalDays} />
                         </div>
                     </DraggableTaskRow>
                 )) : (
@@ -396,9 +385,49 @@ export default function ProjectTimelineAndTasksPage() {
           {/* Kanban Board Section */}
           <div className="mt-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-              <TaskColumn status="todo" tasks={tasksByStatus.todo} onAddTask={() => handleAddTask({ status: 'todo' })} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
-              <TaskColumn status="inProgress" tasks={tasksByStatus.inProgress} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
-              <TaskColumn status="done" tasks={tasksByStatus.done} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
+              <TaskColumn 
+                status="todo" 
+                tasks={tasksByStatus.todo}
+                onAddTask={() => handleAddTask({ status: 'todo' })}
+                onDropTask={onDropTask} 
+                onMoveCard={onMoveCard}
+                onTaskDelete={handleDeleteTask}
+                onToggleComplete={handleToggleComplete}
+                onEdit={handleEditTask}
+                onMakeProject={() => {}}
+                onArchive={() => {}}
+                selectedTaskIds={[]}
+                onToggleSelect={() => {}}
+                onToggleSelectAll={() => {}} 
+              />
+              <TaskColumn 
+                status="inProgress" 
+                tasks={tasksByStatus.inProgress} 
+                onDropTask={onDropTask} 
+                onMoveCard={onMoveCard}
+                onTaskDelete={handleDeleteTask}
+                onToggleComplete={handleToggleComplete}
+                onEdit={handleEditTask}
+                 onMakeProject={() => {}}
+                onArchive={() => {}}
+                selectedTaskIds={[]}
+                onToggleSelect={() => {}}
+                onToggleSelectAll={() => {}}
+              />
+              <TaskColumn 
+                status="done" 
+                tasks={tasksByStatus.done}
+                onDropTask={onDropTask} 
+                onMoveCard={onMoveCard}
+                onTaskDelete={handleDeleteTask}
+                onToggleComplete={handleToggleComplete}
+                onEdit={handleEditTask}
+                 onMakeProject={() => {}}
+                onArchive={() => {}}
+                selectedTaskIds={[]}
+                onToggleSelect={() => {}}
+                onToggleSelectAll={() => {}}
+              />
             </div>
           </div>
 

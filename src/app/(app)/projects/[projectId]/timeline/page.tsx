@@ -8,7 +8,7 @@ import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grip
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions } from '@/services/project-service';
+import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects as getAllProjects, getTasksForUser } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar';
 import { addDays, differenceInDays, format, startOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
 import { useDrop, useDrag } from 'react-dnd';
@@ -82,6 +82,7 @@ export default function ProjectTimelineAndTasksPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -92,6 +93,7 @@ export default function ProjectTimelineAndTasksPage() {
   
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
+  const [initialTaskData, setInitialTaskData] = useState<Partial<TaskEvent>>({});
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -107,16 +109,20 @@ export default function ProjectTimelineAndTasksPage() {
     try {
       let projectData: Project | null;
       let tasksData: TaskEvent[];
+      let allProjects: Project[] = [];
       
       if (isActionItemsView) {
         projectData = { id: 'inbox', name: 'Action Items Inbox', description: 'A place for all your unscheduled tasks and ideas.', userId: user.uid, createdAt: new Date(0) };
         const allUserTasks = await getTasksForUser(user.uid);
         tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === 'inbox') && !task.ritualType);
+        allProjects = await getAllProjects(user.uid); // Fetch all projects for the dropdown
       } else {
-        [projectData, tasksData] = await Promise.all([
+        [projectData, tasksData, allProjects] = await Promise.all([
           getProjectById(projectId),
           getTasksForProject(projectId),
+          getAllProjects(user.uid),
         ]);
+        tasksData = tasksData.filter(task => !task.ritualType);
       }
       
       if (!projectData) {
@@ -126,8 +132,9 @@ export default function ProjectTimelineAndTasksPage() {
       }
 
       setProject(projectData);
+      setProjects(allProjects);
       setSteps((projectData.steps || []).map(s => ({ ...s, startTime: s.startTime ? parseISO(s.startTime as unknown as string) : null })));
-      setTasks(tasksData.filter(task => !task.ritualType));
+      setTasks(tasksData);
       
       if (projectData?.startDate) {
         setStartDate(startOfWeek(projectData.startDate, { weekStartsOn: 1 }));
@@ -211,12 +218,30 @@ export default function ProjectTimelineAndTasksPage() {
   }, [tasks]);
 
   const onDropTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => {
-      // Logic for dropping a new task from the plan
-      if ('isCompleted' in item) {
-        handleAddTask({ title: item.title, description: item.description || '', stepId: item.id, status: newStatus });
+      if (!user) return;
+      
+      // Dropping a step from the plan to create a new task
+      if ('isCompleted' in item) { // Type guard for ProjectStep
+        try {
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: item.title || 'New Task from Plan',
+                description: item.description || '',
+                status: newStatus,
+                position: tasks.filter(t => t.status === newStatus).length,
+                projectId: projectId === 'inbox' ? null : projectId,
+                userId: user.uid,
+                isTodoItem: false, // Explicitly set as it's from a project plan
+            };
+            const savedTask = await addTask(newTaskData);
+            setTasks(prev => [...prev, savedTask]);
+            toast({ title: 'Task Created', description: `New task "${savedTask.title}" was created from your plan.` });
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: 'Failed to create task', description: error.message });
+        }
         return;
       }
-      // Logic for moving an existing task
+
+      // Moving an existing task
       if (item.status === newStatus) return;
       const originalTasks = [...tasks];
       setTasks(prev => prev.map(t => t.id === item.id ? { ...t, status: newStatus } : t));
@@ -226,7 +251,7 @@ export default function ProjectTimelineAndTasksPage() {
           setTasks(originalTasks);
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
       }
-  }, [tasks, toast]);
+  }, [tasks, projectId, toast, user]);
 
   const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
       const dragTask = tasks.find(t => t.id === dragId);
@@ -241,7 +266,11 @@ export default function ProjectTimelineAndTasksPage() {
       newTasks.splice(hoverIndex, 0, draggedItem);
       
       const tasksInColumn = newTasks.filter(t => t.status === dragTask.status);
-      const updates = tasksInColumn.map((task, index) => ({ id: task.id, position: index, status: task.status }));
+      const updates = tasksInColumn.map((task, index) => ({
+          id: task.id,
+          position: index,
+          status: task.status,
+      }));
       
       setTasks(newTasks);
       await updateTaskPositions(updates);
@@ -259,9 +288,29 @@ export default function ProjectTimelineAndTasksPage() {
   };
 
   const handleTaskSaved = () => {
-    loadData();
+    loadData(); // This will re-fetch both tasks and projects
     setIsNewTaskDialogOpen(false);
   };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    try {
+      await deleteTask(taskId);
+      toast({ title: 'Task Deleted' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+      setTasks(originalTasks);
+    }
+  };
+  
+  const handleToggleComplete = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newStatus = task.status === 'done' ? 'todo' : 'done';
+    onDropTask(task, newStatus);
+  };
+
 
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>;
@@ -336,16 +385,20 @@ export default function ProjectTimelineAndTasksPage() {
                             <StepBar step={step} startDate={startDate} totalDays={totalDays} />
                         </div>
                     </DraggableTaskRow>
-                )) : null}
+                )) : (
+                     <div className="text-center p-8 text-muted-foreground">
+                        <p>No steps defined for this project.</p>
+                    </div>
+                )}
             </div>
           </div>
           
           {/* Kanban Board Section */}
           <div className="mt-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-              <TaskColumn status="todo" tasks={tasksByStatus.todo} onAddTask={() => handleAddTask({ status: 'todo' })} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={() => {}} onToggleComplete={() => {}} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
-              <TaskColumn status="inProgress" tasks={tasksByStatus.inProgress} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={() => {}} onToggleComplete={() => {}} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
-              <TaskColumn status="done" tasks={tasksByStatus.done} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={() => {}} onToggleComplete={() => {}} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
+              <TaskColumn status="todo" tasks={tasksByStatus.todo} onAddTask={() => handleAddTask({ status: 'todo' })} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
+              <TaskColumn status="inProgress" tasks={tasksByStatus.inProgress} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
+              <TaskColumn status="done" tasks={tasksByStatus.done} onDropTask={onDropTask} onMoveCard={onMoveCard} onTaskDelete={handleDeleteTask} onToggleComplete={handleToggleComplete} onEdit={handleEditTask} onMakeProject={() => {}} onArchive={() => {}} selectedTaskIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} />
             </div>
           </div>
 
@@ -364,4 +417,3 @@ export default function ProjectTimelineAndTasksPage() {
     </>
   );
 }
-

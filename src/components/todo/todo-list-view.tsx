@@ -11,6 +11,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -91,10 +95,16 @@ export function ToDoListView() {
     setIsNewTaskDialogOpen(true);
   };
   
-  const handleTaskSaved = () => {
-    loadData();
+  const handleTaskSaved = (savedTask: TaskEvent) => {
+    setTodos(prev => [savedTask, ...prev]);
     setIsNewTaskDialogOpen(false);
   };
+  
+  const handleTaskUpdated = (updatedTask: TaskEvent) => {
+    setTodos(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+    setIsNewTaskDialogOpen(false);
+  };
+
 
   const handleEditTask = (task: TaskEvent) => {
     setTaskToEdit(task);
@@ -351,7 +361,7 @@ export function ToDoListView() {
             }
         }}
         onTaskCreate={handleTaskSaved}
-        onTaskUpdate={handleTaskSaved}
+        onTaskUpdate={handleTaskUpdated}
         taskToEdit={taskToEdit}
         projects={projects}
         initialData={initialDialogData}

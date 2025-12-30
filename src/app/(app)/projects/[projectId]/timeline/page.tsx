@@ -85,7 +85,7 @@ export default function ProjectTimelinePage() {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [isStartPickerOpen, setIsStartPickerOpen] = useState(false);
   const [isEndPickerOpen, setIsEndPickerOpen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState<'month' | 'quarter'>('month');
+  const [zoomLevel, setZoomLevel] = useState<'quarter'>('quarter');
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -167,8 +167,8 @@ export default function ProjectTimelinePage() {
   }, [startDate, endDate, zoomLevel]);
 
   const moveDate = (amount: number) => {
-    const daysToMove = zoomLevel === 'month' ? 30 : 90;
-    setStartDate(prev => addDays(prev, amount * daysToMove));
+    const daysToMove = zoomLevel === 'quarter' ? 90 : 30;
+    setViewStartDate(prev => addDays(prev, amount * daysToMove));
   };
   
   const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
@@ -225,7 +225,7 @@ export default function ProjectTimelinePage() {
                 <Button variant="outline" size="icon" onClick={() => moveDate(-1)}><ChevronLeft className="h-4 w-4" /></Button>
                  <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />Start Date: {format(startDate, "PPP")}</Button>
+                        <Button variant={"outline"}><CalendarIcon className="mr-2 h-4 w-4" />Start Date: {startDate ? format(startDate, "PPP") : '...'}</Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                         <CustomCalendar mode="single" selected={startDate} onSelect={date => { if(date) setStartDate(date); setIsStartPickerOpen(false); }} initialFocus />
@@ -240,10 +240,9 @@ export default function ProjectTimelinePage() {
                     </PopoverContent>
                 </Popover>
                 <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                <Select value={zoomLevel} onValueChange={(val) => setZoomLevel(val as 'month' | 'quarter')}>
+                 <Select value={zoomLevel} onValueChange={(val) => setZoomLevel(val as 'quarter')}>
                     <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="month">Month View</SelectItem>
                         <SelectItem value="quarter">Quarter View</SelectItem>
                     </SelectContent>
                 </Select>

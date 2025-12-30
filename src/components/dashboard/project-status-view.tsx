@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getProjects, getTasksForUser, updateProject, deleteProject, addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { useAuth } from '@/context/auth-context';
-import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type ProjectStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { LoaderCircle, MoreVertical, Edit, Trash2, Plus, ListTodo } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
@@ -146,8 +146,10 @@ export function ProjectStatusView() {
   const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = React.useState(false);
   const [projectToEdit, setProjectToEdit] = React.useState<Project | null>(null);
+  
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const [initialDialogData, setInitialDialogData] = useState({});
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
 
   
   const router = useRouter();
@@ -252,7 +254,7 @@ export function ProjectStatusView() {
   
   const handleAddTaskToProject = (project: Project) => {
       setInitialDialogData({ projectId: project.id, isTodoItem: false });
-      setProjectToEdit(null); // Ensure we're not in project edit mode
+      setTaskToEdit(null); // Ensure we are not in edit mode for a task
       setIsNewTaskDialogOpen(true);
   };
   

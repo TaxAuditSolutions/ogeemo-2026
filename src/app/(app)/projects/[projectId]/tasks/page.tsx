@@ -24,7 +24,16 @@ const ProjectTasksView = dynamic(
 
 export default function ProjectTaskPage({ params }: { params: { projectId: string } }) {
   const [project, setProject] = useState<Project | null>(null);
-  const projectId = params.projectId;
+  const [projectId, setProjectId] = useState<string>('');
+
+  useEffect(() => {
+    // This resolves the `params` promise when the component mounts
+    const resolveParams = async () => {
+        const resolvedParams = await params;
+        setProjectId(resolvedParams.projectId);
+    };
+    resolveParams();
+  }, [params]);
 
   useEffect(() => {
     async function fetchProject() {
@@ -40,6 +49,14 @@ export default function ProjectTaskPage({ params }: { params: { projectId: strin
     }
     fetchProject();
   }, [projectId]);
+
+  if (!projectId) {
+      return (
+          <div className="flex h-full w-full items-center justify-center p-4">
+            <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+          </div>
+      );
+  }
 
   return (
     <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">

@@ -32,6 +32,7 @@ import { addProject, getProjects } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
+import { CreateTaskDialog } from '../tasks/CreateTaskDialog';
 
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);

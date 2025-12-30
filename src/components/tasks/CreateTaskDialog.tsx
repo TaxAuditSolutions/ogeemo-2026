@@ -30,6 +30,7 @@ import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
 import { LoaderCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const taskSchema = z.object({
   title: z.string().min(2, { message: "Task title is required." }),
@@ -98,7 +99,7 @@ export function CreateTaskDialog({
           importance: taskToEdit.importance || 'B',
         });
       } else {
-        const defaultProjectId = projectId || initialData.projectId || null;
+        const defaultProjectId = projectId || initialData.projectId || 'unassigned';
         form.reset({ ...defaultTaskFormValues, ...initialData, projectId: defaultProjectId });
       }
     }
@@ -112,39 +113,41 @@ export function CreateTaskDialog({
         const urgencyMap = { 'A - Urgent': 'urgent', 'B - Important': 'important', 'C - Optional': 'optional' };
         const finalUrgency = urgencyMap[values.urgency] as TaskEvent['urgency'];
 
-        const taskDataPayload: Partial<TaskEvent> = {
-            title: values.title,
-            description: values.description,
-            projectId: values.projectId === 'unassigned' ? null : values.projectId,
-            urgency: finalUrgency,
-            importance: values.importance,
-            isTodoItem: values.isTodoItem,
-        };
-        
-      if (taskToEdit && onTaskUpdate) {
-        await updateTask(taskToEdit.id, taskDataPayload);
-        onTaskUpdate({ ...taskToEdit, ...taskDataPayload });
-        toast({ title: "Task Updated" });
-      } else {
-        const newTaskData: Omit<TaskEvent, 'id'> = {
-          ...taskDataPayload,
-          status: 'todo',
-          position: 0,
-          userId: user.uid,
-        };
-        const savedTask = await addTask(newTaskData);
-        if (onTaskCreate) {
-          onTaskCreate(savedTask);
+        if (isEditingTask && taskToEdit) {
+            const updatedTaskData: Partial<TaskEvent> = { title: values.title, description: values.description, projectId: values.projectId === 'unassigned' ? null : values.projectId, stepId: values.stepId, urgency: finalUrgency, importance: values.importance };
+            await updateTask(taskToEdit.id, updatedTaskData);
+            if (onTaskUpdate) {
+                onTaskUpdate({ ...taskToEdit, ...updatedTaskData });
+            }
+            toast({ title: "Task Updated" });
+        } else {
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: values.title,
+                description: values.description || '',
+                status: 'todo',
+                position: 0, 
+                projectId: values.projectId === 'unassigned' ? null : values.projectId,
+                stepId: values.stepId || null,
+                userId: user.uid,
+                isTodoItem: !!values.isTodoItem,
+                urgency: finalUrgency,
+                importance: values.importance,
+            };
+            const savedTask = await addTask(newTaskData);
+            if (onTaskCreate) {
+                onTaskCreate(savedTask);
+            }
+            toast({ title: "Task Created" });
         }
-        toast({ title: "Task Created" });
-      }
-      onOpenChange(false);
+        onOpenChange(false);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to save task', description: error.message });
+        toast({ variant: 'destructive', title: 'Failed to save task', description: error.message });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   }
+
+  const isEditingTask = !!taskToEdit;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -171,7 +174,7 @@ export function CreateTaskDialog({
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {taskToEdit ? "Save Changes" : "Add Task"}
+                {isEditingTask ? "Save Changes" : "Add Task"}
               </Button>
             </DialogFooter>
           </form>

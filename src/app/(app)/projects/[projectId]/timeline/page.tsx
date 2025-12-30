@@ -8,8 +8,8 @@ import { LoaderCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grip
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects as getAllProjects, getTasksForUser } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar';
+import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects as getAllProjects, type Project } from '@/services/project-service';
+import { type Event as TaskEvent, type ProjectStep, type TaskStatus } from '@/types/calendar';
 import { addDays, differenceInDays, format, startOfWeek, eachDayOfInterval, parseISO, endOfDay } from 'date-fns';
 import { useDrop, useDrag } from 'react-dnd';
 import { cn } from '@/lib/utils';
@@ -82,7 +82,7 @@ export default function ProjectTimelineAndTasksPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -109,15 +109,15 @@ export default function ProjectTimelineAndTasksPage() {
     try {
       let projectData: Project | null;
       let tasksData: TaskEvent[];
-      let allProjects: Project[] = [];
+      let allProjectsData: Project[] = [];
       
       if (isActionItemsView) {
         projectData = { id: 'inbox', name: 'Action Items Inbox', description: 'A place for all your unscheduled tasks and ideas.', userId: user.uid, createdAt: new Date(0) };
         const allUserTasks = await getTasksForUser(user.uid);
         tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === 'inbox') && !task.ritualType);
-        allProjects = await getAllProjects(user.uid); // Fetch all projects for the dropdown
+        allProjectsData = await getAllProjects(user.uid); // Fetch all projects for the dropdown
       } else {
-        [projectData, tasksData, allProjects] = await Promise.all([
+        [projectData, tasksData, allProjectsData] = await Promise.all([
           getProjectById(projectId),
           getTasksForProject(projectId),
           getAllProjects(user.uid),
@@ -132,7 +132,7 @@ export default function ProjectTimelineAndTasksPage() {
       }
 
       setProject(projectData);
-      setProjects(allProjects);
+      setAllProjects(allProjectsData);
       setSteps((projectData.steps || []).map(s => ({ ...s, startTime: s.startTime ? parseISO(s.startTime as unknown as string) : null })));
       setTasks(tasksData);
       
@@ -290,8 +290,8 @@ export default function ProjectTimelineAndTasksPage() {
       await deleteTask(taskId);
       toast({ title: 'Task Deleted' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
       setTasks(originalTasks);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
     }
   };
   
@@ -345,49 +345,11 @@ export default function ProjectTimelineAndTasksPage() {
                     </Popover>
                     <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
                     <Button variant="outline" onClick={() => handleAddTask({ status: 'todo' })}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Task
+                        <Plus className="mr-2 h-4 w-4" /> Add a Task
                     </Button>
                 </div>
             </div>
-            <div className="flex">
-                <div className="w-[250px] flex-shrink-0 p-2 border-r border-b font-semibold text-sm">Project Steps</div>
-                <div className="flex-1">
-                    <div className="flex">
-                        {timeIntervals.map((interval, i) => (
-                            <div key={i} className="text-center text-sm font-semibold border-b p-1 border-r" style={{width: `${interval.colSpan * DAY_WIDTH_PX}px`}}>
-                                {interval.label}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex">
-                        {days.map((day, i) => (
-                            <div key={i} className="text-center text-xs text-muted-foreground border-r border-b" style={{width: `${DAY_WIDTH_PX}px`}}>
-                                {format(day, 'd')}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            <div className="overflow-auto" style={{ maxHeight: 'calc(50vh - 200px)'}}>
-                {steps.length > 0 ? steps.map((step, index) => (
-                    <DraggableTaskRow key={step.id || index} index={index} task={step as TaskEvent} moveTask={moveStep}>
-                        <div className="w-[250px] flex-shrink-0 p-2 border-r flex items-center gap-2">
-                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                            <p className="font-semibold text-sm truncate">{step.title}</p>
-                        </div>
-                        <div className="flex-1 relative h-10 border-b">
-                             <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${totalDays}, 1fr)` }}>
-                                {days.map((day, i) => <div key={i} className="h-full border-r" />)}
-                            </div>
-                            <StepBar step={step} startDate={viewStartDate} totalDays={totalDays} />
-                        </div>
-                    </DraggableTaskRow>
-                )) : (
-                     <div className="text-center p-8 text-muted-foreground">
-                        <p>No steps defined for this project.</p>
-                    </div>
-                )}
-            </div>
+            
           </div>
           
           {/* Kanban Board Section */}
@@ -447,7 +409,7 @@ export default function ProjectTimelineAndTasksPage() {
         onTaskCreate={handleTaskSaved}
         onTaskUpdate={handleTaskSaved}
         taskToEdit={taskToEdit}
-        projects={projects}
+        projects={allProjects}
         initialData={initialTaskData}
         projectId={projectId}
       />

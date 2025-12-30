@@ -168,7 +168,7 @@ export default function ProjectTimelinePage() {
 
   const moveDate = (amount: number) => {
     const daysToMove = zoomLevel === 'quarter' ? 90 : 30;
-    setViewStartDate(prev => addDays(prev, amount * daysToMove));
+    setStartDate(prev => addDays(prev, amount * daysToMove));
   };
   
   const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
@@ -240,12 +240,6 @@ export default function ProjectTimelinePage() {
                     </PopoverContent>
                 </Popover>
                 <Button variant="outline" size="icon" onClick={() => moveDate(1)}><ChevronRight className="h-4 w-4" /></Button>
-                 <Select value={zoomLevel} onValueChange={(val) => setZoomLevel(val as 'quarter')}>
-                    <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="quarter">Quarter View</SelectItem>
-                    </SelectContent>
-                </Select>
                 <Button variant="outline" onClick={() => router.push(`/projects/organizer?projectId=${projectId}`)}>
                     <Plus className="mr-2 h-4 w-4" /> Add/Edit Steps
                 </Button>

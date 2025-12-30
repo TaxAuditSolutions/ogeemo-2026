@@ -45,11 +45,6 @@ export function ProjectManagementHeader({ projectId }: { projectId?: string }) {
         <>
             <div className="flex justify-center gap-2 pb-4">
                 <Button asChild variant="outline">
-                    <Link href="/projects">
-                        <Briefcase className="mr-2 h-4 w-4" /> Project Hub
-                    </Link>
-                </Button>
-                <Button asChild variant="outline">
                     <Link href="/projects/all">
                         <Briefcase className="mr-2 h-4 w-4" /> Project List
                     </Link>

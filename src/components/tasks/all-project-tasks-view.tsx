@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info, ListChecks, ListTodo } from 'lucide-react';
+import { Plus, LoaderCircle, MoreVertical, Edit, Trash2, ArrowUpDown, Briefcase, Check, ChevronsUpDown, Folder, Calendar, Info, ListChecks, ListTodo, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
@@ -43,7 +43,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { TaskCreationInfoDialog } from './task-creation-info-dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { NewTaskDialog } from './NewTaskDialog';
+import { CreateTaskDialog } from './CreateTaskDialog';
 
 
 const statusDisplayMap: Record<string, string> = {
@@ -58,7 +58,7 @@ const statusColorMap: Record<string, string> = {
 };
 
 
-const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projects, isSelected, onToggleSelect }: { task: TaskEvent, project: Project | undefined, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onAssignProject: (taskId: string, projectId: string | null) => void, projects: Project[], isSelected: boolean, onToggleSelect: (taskId: string) => void }) => {
+const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projects, isSelected, onToggleSelect, onToggleComplete }: { task: TaskEvent, project: Project | undefined, onEdit: (task: TaskEvent) => void, onDelete: (task: TaskEvent) => void, onAssignProject: (taskId: string, projectId: string | null) => void, projects: Project[], isSelected: boolean, onToggleSelect: (taskId: string) => void, onToggleComplete: (task: TaskEvent) => void }) => {
     return (
         <div className="group flex items-center p-3 border-b hover:bg-muted/50 transition-colors">
             <div className="flex items-center w-[50px] pl-4">
@@ -100,6 +100,9 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => onEdit(task)}>
                             <Edit className="mr-2 h-4 w-4"/> Open / Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onToggleComplete(task)}>
+                            <CheckCircle className="mr-2 h-4 w-4"/> {task.status === 'done' ? 'Mark as Not Completed' : 'Mark as Completed'}
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
@@ -202,6 +205,20 @@ export default function AllProjectTasksView() {
             toast({ variant: 'destructive', title: 'Failed to reassign task', description: error.message });
         }
     };
+    
+    const handleToggleComplete = async (task: TaskEvent) => {
+        const newStatus = task.status === 'done' ? 'todo' : 'done';
+        const originalTasks = [...tasks];
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
+        try {
+            await updateTask(task.id, { status: newStatus });
+            toast({ title: "Status Updated", description: `Task marked as "${statusDisplayMap[newStatus]}".`});
+        } catch (error: any) {
+            setTasks(originalTasks);
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update task status.' });
+        }
+    };
+
 
     const handleConfirmDelete = async () => {
         if (!taskToDelete) return;
@@ -266,7 +283,7 @@ export default function AllProjectTasksView() {
             setSelectedTaskIds([]);
             loadData();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Bulk Delete Failed', description: error.message });
+            toast({ variant: 'destructive', title: 'Bulk delete failed.', description: error.message });
         } finally {
             setIsBulkDeleteAlertOpen(false);
         }
@@ -279,7 +296,7 @@ export default function AllProjectTasksView() {
         setTasks(prev => prev.map(t => selectedTaskIds.includes(t.id) ? { ...t, status: 'done' } : t));
         
         try {
-            await updateTasksStatus(selectedTaskIds, 'done');
+            await updateTasksStatus(selectedTaskIds, true);
             toast({ title: 'Tasks Updated', description: `${selectedTaskIds.length} task(s) marked as done.` });
             setSelectedTaskIds([]);
         } catch (error: any) {
@@ -332,7 +349,9 @@ export default function AllProjectTasksView() {
                                {selectedTaskIds.length > 0 && (
                                    <div className="flex items-center gap-2">
                                        <Button variant="outline" size="sm" onClick={handleMarkSelectedDone}>Mark as Done</Button>
-                                       <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>Delete Selected</Button>
+                                       <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                                           <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
+                                       </Button>
                                        <span className="text-sm text-muted-foreground">{selectedTaskIds.length} selected</span>
                                    </div>
                                )}
@@ -386,6 +405,7 @@ export default function AllProjectTasksView() {
                                             projects={projects}
                                             isSelected={selectedTaskIds.includes(task.id)}
                                             onToggleSelect={handleToggleSelect}
+                                            onToggleComplete={handleToggleComplete}
                                         />
                                     ))
                                 ) : (
@@ -431,7 +451,7 @@ export default function AllProjectTasksView() {
                 </AlertDialogContent>
             </AlertDialog>
             <TaskCreationInfoDialog isOpen={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
-            <NewTaskDialog
+            <CreateTaskDialog
                 isOpen={isNewTaskDialogOpen}
                 onOpenChange={(open) => {
                     setIsNewTaskDialogOpen(open);
@@ -450,4 +470,3 @@ export default function AllProjectTasksView() {
         </>
     );
 }
-

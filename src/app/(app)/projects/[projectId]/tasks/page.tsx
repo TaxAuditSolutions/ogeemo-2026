@@ -15,7 +15,7 @@ const ProjectTasksView = dynamic(
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Project Workspace...</p>
+          <p className="text-muted-foreground">Loading Project Status...</p>
         </div>
       </div>
     ),
@@ -62,7 +62,7 @@ export default function ProjectTaskPage({ params }: { params: { projectId: strin
     <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">
        <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">
-          Project Workspace
+          Project Status
         </h1>
         {project && (
           <h2 className="text-xl text-muted-foreground">{project.name}</h2>

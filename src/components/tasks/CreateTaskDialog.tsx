@@ -70,7 +70,7 @@ export function CreateTaskDialog({
   onOpenChange,
   onTaskCreate,
   onTaskUpdate,
-  projects = [],
+  projects = [], // Add projects prop
   initialData = {},
   taskToEdit,
   projectId,
@@ -87,23 +87,24 @@ export function CreateTaskDialog({
 
   useEffect(() => {
     if (isOpen) {
-      if (taskToEdit) {
-        form.reset({
-          ...defaultTaskFormValues,
-          title: taskToEdit.title,
-          description: taskToEdit.description || "",
-          projectId: taskToEdit.projectId,
-          stepId: taskToEdit.stepId,
-          isTodoItem: taskToEdit.isTodoItem,
-          urgency: (taskToEdit.urgency as any) || 'B - Important', // Map internal value if needed
-          importance: taskToEdit.importance || 'B',
-        });
-      } else {
-        const defaultProjectId = projectId || initialData.projectId || 'unassigned';
-        form.reset({ ...defaultTaskFormValues, ...initialData, projectId: defaultProjectId });
-      }
+        if (taskToEdit) {
+            form.reset({
+                ...defaultTaskFormValues,
+                title: taskToEdit.title,
+                description: taskToEdit.description || "",
+                stepId: taskToEdit.stepId || null,
+                isTodoItem: taskToEdit.isTodoItem,
+                urgency: (taskToEdit.urgency as any) || 'B - Important',
+                importance: taskToEdit.importance || 'B',
+                projectId: taskToEdit.projectId,
+            });
+        } else {
+            const defaultProjectId = initialData.isTodoItem ? null : (projectId || initialData.projectId || 'unassigned');
+            form.reset({ ...defaultTaskFormValues, ...initialData, projectId: defaultProjectId });
+        }
     }
-  }, [isOpen, taskToEdit, projectId, initialData, form]);
+}, [isOpen, taskToEdit, projectId, initialData, form]);
+
 
   async function onSubmit(values: TaskFormData) {
     if (!user) return;
@@ -126,7 +127,7 @@ export function CreateTaskDialog({
                 description: values.description || '',
                 status: 'todo',
                 position: 0, 
-                projectId: values.projectId === 'unassigned' ? null : values.projectId,
+                projectId: values.projectId, // Will be null for to-do items
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
@@ -163,10 +164,10 @@ export function CreateTaskDialog({
             <div className="py-4 space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || 'unassigned'}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">None (To-Do List Only)</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
               </div>
                  <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>

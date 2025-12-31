@@ -87,7 +87,7 @@ export function ToDoListView() {
   
   const handleAddTask = () => {
     setTaskToEdit(null);
-    setInitialDialogData({ isTodoItem: true });
+    setInitialDialogData({ isTodoItem: true, projectId: null });
     setIsNewTaskDialogOpen(true);
   };
   
@@ -254,12 +254,6 @@ export function ToDoListView() {
     setTodos(newTasks);
     await updateTodoPositions(updates);
   }, [todos]);
-  
-  const handleAssignToProject = (task: TaskEvent) => {
-    setTaskToEdit(task); // Set the task to edit
-    setInitialDialogData({}); // Clear any other initial data
-    setIsNewTaskDialogOpen(true); // Open the dialog
-  };
 
   if (isLoading) {
     return (

@@ -77,7 +77,7 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
               <p>{task.title}</p>
               <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
             </TableCell>
-            <TableCell>{project?.name || "Unassigned"}</TableCell>
+            <TableCell>{project?.name || "To-Do List"}</TableCell>
             <TableCell className="text-center">
               <Badge variant="outline" className={cn(statusColorMap[task.status] || 'bg-gray-100 text-gray-800')}>
                 {statusDisplayMap[task.status] || 'Unknown'}
@@ -110,7 +110,7 @@ const TaskListItem = ({ task, project, onEdit, onDelete, onAssignProject, projec
                                 <DropdownMenuSubContent>
                                     <DropdownMenuItem onSelect={() => onAssignProject(task.id, null)}>
                                         <Check className={cn("mr-2 h-4 w-4", !task.projectId ? "opacity-100" : "opacity-0")} />
-                                        Unassigned
+                                        To-Do List / Unassigned
                                     </DropdownMenuItem>
                                     {projects.map(p => (
                                         <DropdownMenuItem key={p.id} onSelect={() => onAssignProject(task.id, p.id)}>
@@ -142,7 +142,7 @@ export default function AllProjectTasksView() {
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
 
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>('unassigned');
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
@@ -205,7 +205,7 @@ export default function AllProjectTasksView() {
         
         try {
             await updateTask(taskId, { projectId });
-            const projectName = projectId ? projects.find(p => p.id === projectId)?.name : 'Unassigned';
+            const projectName = projectId ? projects.find(p => p.id === projectId)?.name : 'To-Do List / Unassigned';
             toast({ title: 'Task Reassigned', description: `Task moved to "${projectName}".`});
         } catch (error: any) {
             setTasks(originalTasks);
@@ -255,7 +255,7 @@ export default function AllProjectTasksView() {
         });
     }, [filteredTasks]);
 
-    const projectOptions = [{ id: 'all', name: 'All Projects' }, { id: 'unassigned', name: 'Unassigned Tasks' }, ...projects];
+    const projectOptions = [{ id: 'all', name: 'All Projects' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
     const handleToggleSelect = (taskId: string) => {
         setSelectedTaskIds(prev =>
@@ -514,3 +514,4 @@ export default function AllProjectTasksView() {
         </>
     );
 }
+

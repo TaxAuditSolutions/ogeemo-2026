@@ -169,8 +169,8 @@ export function ProjectListView() {
   };
   
   const handleProjectCreated = () => {
-    loadData();
-    setIsNewItemDialogOpen(false);
+    loadData(); // Refresh the data to show the new project
+    setIsNewItemDialogOpen(false); // Close the dialog
   };
   
   const handleOpenNewProjectDialog = () => {

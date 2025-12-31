@@ -127,7 +127,7 @@ export function CreateTaskDialog({
                 description: values.description || '',
                 status: 'todo',
                 position: 0, 
-                projectId: values.projectId, // Will be null for to-do items
+                projectId: values.projectId === 'unassigned' ? null : values.projectId,
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
@@ -164,7 +164,34 @@ export function CreateTaskDialog({
             <div className="py-4 space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="projectId" render={({ field }) => ( <FormItem> <FormLabel>Project</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Assign to a project..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">None (To-Do List Only)</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /> </FormItem> )} />
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || 'unassigned'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Assign to a project..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="unassigned">
+                          None (To-Do List Only)
+                        </SelectItem>
+                        {projects.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />

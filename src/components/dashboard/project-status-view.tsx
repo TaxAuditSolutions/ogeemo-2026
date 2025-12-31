@@ -8,11 +8,13 @@ import { LoaderCircle, ListChecks } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, updateProject, type Project, type ProjectStatus } from '@/services/project-service';
+import { getProjects, updateProject, deleteProject, getTasksForProject, type Project, type ProjectStatus } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { DraggableProjectCard, ItemTypes } from './DraggableProjectCard';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
+import { NewTaskDialog } from '../tasks/NewTaskDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 const statusColumns: ProjectStatus[] = ['planning', 'active', 'on-hold', 'completed'];
 
@@ -23,7 +25,7 @@ const statusTitles: Record<ProjectStatus, string> = {
     completed: 'Completed',
 };
 
-const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit }: { title: string; status: ProjectStatus; projects: Project[]; clientMap: Map<string, string>; onDrop: (item: Project, targetStatus: ProjectStatus) => void; onEdit: (project: Project) => void; }) => {
+const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onDelete }: { title: string; status: ProjectStatus; projects: Project[]; clientMap: Map<string, string>; onDrop: (item: Project, targetStatus: ProjectStatus) => void; onEdit?: (project: Project) => void; onDelete?: (project: Project) => void; }) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.PROJECT_CARD,
         drop: (item: Project) => onDrop(item, status),
@@ -47,7 +49,9 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit }: {
                         index={index}
                         status={status}
                         moveCard={() => {}} // Simple drag and drop between columns, no reordering within
-                        onClick={() => onEdit(project)}
+                        onClick={() => onEdit ? onEdit(project) : router.push(`/projects/${project.id}/tasks`)}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
                     />
                 ))}
             </CardContent>
@@ -59,6 +63,9 @@ export function ProjectStatusView() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -130,7 +137,28 @@ export function ProjectStatusView() {
     }, [projects, toast]);
 
     const handleEditProject = (project: Project) => {
-        router.push(`/projects/${project.id}/tasks`);
+        setProjectToEdit(project);
+        setIsFormOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!projectToDelete) return;
+        try {
+            const tasksToDelete = await getTasksForProject(projectToDelete.id);
+            await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
+            setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+            toast({ title: 'Project Deleted' });
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
+        } finally {
+            setProjectToDelete(null);
+        }
+    };
+    
+    const handleProjectUpdated = () => {
+        setIsFormOpen(false);
+        setProjectToEdit(null);
+        loadData();
     };
 
     if (isLoading) {
@@ -142,32 +170,57 @@ export function ProjectStatusView() {
     }
     
     return (
-        <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-            <header className="text-center mb-6">
-                <h1 className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
-                    <ListChecks className="h-8 w-8"/>
-                    Project Status
-                </h1>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Drag and drop projects to update their status.
-                </p>
-            </header>
-            
-            <ProjectManagementHeader />
+        <>
+            <div className="p-4 sm:p-6 flex flex-col h-full items-center">
+                <header className="text-center mb-6">
+                    <h1 className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
+                        <ListChecks className="h-8 w-8"/>
+                        Project Status
+                    </h1>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Drag and drop projects to update their status.
+                    </p>
+                </header>
+                
+                <ProjectManagementHeader />
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl mt-4">
-                {statusColumns.map(status => (
-                    <ProjectColumn
-                        key={status}
-                        title={statusTitles[status]}
-                        status={status}
-                        projects={projectsByStatus[status]}
-                        clientMap={clientMap}
-                        onDrop={handleDropProject}
-                        onEdit={handleEditProject}
-                    />
-                ))}
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl mt-4">
+                    {statusColumns.map(status => (
+                        <ProjectColumn
+                            key={status}
+                            title={statusTitles[status]}
+                            status={status}
+                            projects={projectsByStatus[status]}
+                            clientMap={clientMap}
+                            onDrop={handleDropProject}
+                            onEdit={status === 'planning' ? handleEditProject : undefined}
+                            onDelete={status === 'planning' ? setProjectToDelete : undefined}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+
+            <NewTaskDialog
+                isOpen={isFormOpen}
+                onOpenChange={setIsFormOpen}
+                onProjectUpdate={handleProjectUpdated}
+                projectToEdit={projectToEdit}
+                contacts={contacts}
+                onContactsChange={setContacts}
+            />
+
+            <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all associated tasks. This cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

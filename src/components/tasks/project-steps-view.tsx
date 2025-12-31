@@ -4,16 +4,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, DialogDescription } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, DialogDescription } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject } from '@/services/project-service';
-import { type Project, type ProjectStep } from '@/types/calendar-types';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { DraggableStep } from './DraggableStep';
-import { cn } from '@/lib/utils';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,9 +31,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getProjectById, updateProject } from '@/services/project-service';
+import { type Project, type ProjectStep } from '@/types/calendar-types';
+import { DraggableStep } from './DraggableStep';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { ScrollArea } from '../ui/scroll-area';
 import { parseISO } from 'date-fns';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 

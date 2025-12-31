@@ -4,7 +4,7 @@
 import React, { useRef } from 'react';
 import { useDrag, useDrop, XYCoord } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { GripVertical, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, MoreVertical, Pencil, Trash2, Route } from 'lucide-react';
 import { type Project } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import Link from 'next/link';
 
 
 export const ItemTypes = {
@@ -82,6 +83,11 @@ export const DraggableProjectCard = ({ project, clientName, index, status, moveC
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                                 {onEdit && <DropdownMenuItem onSelect={() => onEdit(project)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>}
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/projects/organizer?projectId=${project.id}`}>
+                                    <Route className="mr-2 h-4 w-4" /> Plan Project
+                                  </Link>
+                                </DropdownMenuItem>
                                 {onDelete && <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Project</DropdownMenuItem>}
                             </DropdownMenuContent>
                         </DropdownMenu>

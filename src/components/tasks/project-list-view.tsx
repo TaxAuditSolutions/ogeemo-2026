@@ -13,6 +13,7 @@ import {
   Plus,
   ListChecks,
   X,
+  Route,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,6 +30,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -199,7 +201,7 @@ export function ProjectListView() {
       </div>
     );
   }
-
+  
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
@@ -277,7 +279,8 @@ export function ProjectListView() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => router.push('/project-status')}><ListChecks className="mr-2 h-4 w-4"/>View Project Status</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4"/>Task Board</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => router.push(`/projects/organizer?projectId=${p.id}`)}><Route className="mr-2 h-4 w-4"/>Plan Project</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

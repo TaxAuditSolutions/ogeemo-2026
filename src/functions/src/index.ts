@@ -5,6 +5,11 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 } from "@google-cloud/firestore";
 
+// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
+// to work correctly in modern Node.js environments. It specifies a set of supported
+// SSL cipher suites to avoid low-level DECODER errors.
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+
 // Initialize the Firebase Admin SDK
 admin.initializeApp();
 
@@ -111,5 +116,3 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
         throw new functions.https.HttpsError('internal', error.message || 'An unexpected server error occurred.');
     }
 });
-
-    

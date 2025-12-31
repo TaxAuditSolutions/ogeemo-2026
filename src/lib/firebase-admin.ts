@@ -1,7 +1,11 @@
-
 // src/lib/firebase-admin.ts
 import admin from 'firebase-admin';
 import { getStorage as getAdminStorageSdk } from 'firebase-admin/storage';
+
+// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
+// to work correctly in modern Node.js environments. It specifies a set of supported
+// SSL cipher suites to avoid low-level DECODER errors.
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 let adminApp: admin.app.App;
 
@@ -12,11 +16,6 @@ const initializeFirebaseAdmin = () => {
     return adminApp;
   }
   
-  // This environment variable is crucial for the gRPC client used by Firestore Admin SDK
-  // to work correctly in modern Node.js environments. It specifies a set of supported
-  // SSL cipher suites to avoid low-level DECODER errors.
-  process.env.GRPC_SSL_CIPHER_SUITES = 'HIGH+ECDSA';
-
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (!serviceAccountKey) {

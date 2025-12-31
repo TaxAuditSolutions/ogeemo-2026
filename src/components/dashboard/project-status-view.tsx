@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDrop } from 'react-dnd';
-import { LoaderCircle, ListChecks } from 'lucide-react';
+import { LoaderCircle, ListChecks, Edit, Trash2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +35,16 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
         }),
     }));
 
+    const router = useRouter();
+
+    const handleCardClick = (project: Project) => {
+        if (onEdit && status === 'planning') {
+            onEdit(project);
+        } else {
+            router.push(`/projects/${project.id}/tasks`);
+        }
+    };
+
     return (
         <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
             <CardHeader className="text-center">
@@ -49,9 +59,9 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
                         index={index}
                         status={status}
                         moveCard={() => {}} // Simple drag and drop between columns, no reordering within
-                        onClick={() => onEdit ? onEdit(project) : router.push(`/projects/${project.id}/tasks`)}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
+                        onClick={() => handleCardClick(project)}
+                        onEdit={onEdit && status === 'planning' ? () => onEdit(project) : undefined}
+                        onDelete={onDelete && status === 'planning' ? () => onDelete(project) : undefined}
                     />
                 ))}
             </CardContent>
@@ -155,10 +165,17 @@ export function ProjectStatusView() {
         }
     };
     
-    const handleProjectUpdated = () => {
+    const handleProjectUpdated = async (updatedProject: Project) => {
         setIsFormOpen(false);
         setProjectToEdit(null);
-        loadData();
+        try {
+            const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
+            await updateProject(id, dataToUpdate);
+            toast({ title: 'Project Updated' });
+            loadData(); // Refresh data from the database
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
     };
 
     if (isLoading) {
@@ -193,8 +210,8 @@ export function ProjectStatusView() {
                             projects={projectsByStatus[status]}
                             clientMap={clientMap}
                             onDrop={handleDropProject}
-                            onEdit={status === 'planning' ? handleEditProject : undefined}
-                            onDelete={status === 'planning' ? setProjectToDelete : undefined}
+                            onEdit={handleEditProject}
+                            onDelete={setProjectToDelete}
                         />
                     ))}
                 </div>
@@ -202,7 +219,12 @@ export function ProjectStatusView() {
 
             <NewTaskDialog
                 isOpen={isFormOpen}
-                onOpenChange={setIsFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open);
+                    if (!open) {
+                        setProjectToEdit(null);
+                    }
+                }}
                 onProjectUpdate={handleProjectUpdated}
                 projectToEdit={projectToEdit}
                 contacts={contacts}

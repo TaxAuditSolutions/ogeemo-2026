@@ -23,13 +23,26 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, updateProject } from '@/services/project-service';
 import { type Project, type ProjectStep } from '@/types/calendar-types';
-import { DraggableStep } from './DraggableStep';
+import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
+import { useDrop } from 'react-dnd';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 export default function ProjectStepsView() {
     const [project, setProject] = useState<Project | null>(null);
@@ -45,6 +58,10 @@ export default function ProjectStepsView() {
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+
+    const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
+    const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
+    const [stepDetailDescription, setStepDetailDescription] = useState("");
     
     const loadData = useCallback(async () => {
         if (!user || !projectId) {
@@ -111,6 +128,20 @@ export default function ProjectStepsView() {
         setEditingStepText('');
     };
 
+    const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
+        setStepToDetail(step);
+        setStepDetailDescription(step.description || '');
+        setIsStepDetailDialogOpen(true);
+    };
+    
+    const handleSaveStepDetails = () => {
+        if (!stepToDetail) return;
+        const updatedSteps = steps.map(s => s.id === stepToDetail.id ? { ...s, description: stepDetailDescription } : s);
+        setSteps(updatedSteps);
+        handleSaveSteps(updatedSteps);
+        setIsStepDetailDialogOpen(false);
+    };
+
     const handleDeleteStep = async () => {
         if (!stepToDelete) return;
         const updatedSteps = steps.filter(s => s.id !== stepToDelete.id);
@@ -128,6 +159,7 @@ export default function ProjectStepsView() {
         await handleSaveSteps(newSteps);
     }, [steps, handleSaveSteps]);
 
+    
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -151,7 +183,7 @@ export default function ProjectStepsView() {
         <>
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
                 <header className="relative text-center mb-6 w-full max-w-4xl">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                     <div className="absolute left-0 top-1/2 -translate-y-1/2">
                         <Button asChild variant="outline">
                             <Link href="/projects/all">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -184,7 +216,7 @@ export default function ProjectStepsView() {
                         <CardHeader>
                             <CardTitle>Project Steps</CardTitle>
                             <CardDescription>
-                                Outline the major steps or phases of your project. Drag to reorder. These steps can be dragged onto your task board to create new tasks.
+                                Outline the major steps or phases of your project. Drag to reorder.
                             </CardDescription>
                              <div className="flex items-center gap-2 pt-2">
                                 <Input
@@ -217,7 +249,9 @@ export default function ProjectStepsView() {
                                                         onClick={e => e.stopPropagation()}
                                                     />
                                                 ) : (
-                                                    <span className="text-sm flex-1 text-left truncate">{step.title}</span>
+                                                    <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">
+                                                        {step.title}
+                                                    </button>
                                                 )}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -259,6 +293,29 @@ export default function ProjectStepsView() {
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Step Details</DialogTitle>
+                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="step-description">Description</Label>
+                        <Textarea
+                            id="step-description"
+                            value={stepDetailDescription}
+                            onChange={(e) => setStepDetailDescription(e.target.value)}
+                            rows={8}
+                            placeholder="Add more details about this step..."
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveStepDetails}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

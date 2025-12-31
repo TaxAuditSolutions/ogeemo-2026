@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, DialogDescription } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, DialogDescription, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -41,8 +41,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { parseISO } from 'date-fns';
-import { ProjectManagementHeader } from './ProjectManagementHeader';
-
 
 export default function ProjectStepsView() {
     const [project, setProject] = useState<Project | null>(null);
@@ -52,10 +50,11 @@ export default function ProjectStepsView() {
     const [editingStepText, setEditingStepText] = useState('');
     const [stepToDelete, setStepToDelete] = useState<Partial<ProjectStep> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // State for the "Edit Step Details" dialog
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
-
 
     const searchParams = useSearchParams();
     const projectId = searchParams.get('projectId');
@@ -77,7 +76,6 @@ export default function ProjectStepsView() {
                 return;
             }
             setProject(projectData);
-            // Ensure step.startTime is a Date object if it exists
             const projectSteps = (projectData.steps || []).map(s => ({
                 ...s,
                 startTime: s.startTime ? parseISO(s.startTime as unknown as string) : null,
@@ -111,9 +109,6 @@ export default function ProjectStepsView() {
                 id: `temp_${Date.now()}`,
                 title: newStepTitle.trim(),
                 isCompleted: false,
-                isBillable: true,
-                durationMinutes: 60,
-                connectToCalendar: false,
             };
             const newSteps = [...steps, newStep];
             setSteps(newSteps);
@@ -189,14 +184,22 @@ export default function ProjectStepsView() {
     return (
         <>
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-                 <header className="text-center mb-6 relative w-full max-w-4xl">
-                    <h1 className="text-3xl font-bold font-headline text-primary">
-                        Project Organizer: {project.name}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Break down your project into manageable steps. Drag to reorder.
-                    </p>
-                    <div className="absolute top-0 right-0">
+                <header className="relative text-center mb-6 w-full max-w-4xl">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                        <Button asChild variant="outline">
+                            <Link href="/projects/all">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Project List
+                            </Link>
+                        </Button>
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline text-primary">
+                            Project Organizer
+                        </h1>
+                        <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+                    </div>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
                         <Button asChild variant="ghost" size="icon">
                             <Link href="/projects/all" aria-label="Close and return to project list">
                                 <X className="h-5 w-5" />
@@ -204,12 +207,12 @@ export default function ProjectStepsView() {
                         </Button>
                     </div>
                 </header>
-                <ProjectManagementHeader projectId={projectId} />
                 
-                <div className="w-full max-w-2xl flex-1 mt-4">
+                <div className="w-full max-w-2xl flex-1">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center gap-2">
+                            <CardTitle>Project Steps</CardTitle>
+                             <div className="flex items-center gap-2">
                                 <Input
                                     placeholder="Add a new project step..."
                                     value={newStepTitle}

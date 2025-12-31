@@ -76,7 +76,7 @@ export const DraggableProjectCard = ({ project, clientName, index, status, moveC
                      {(onEdit || onDelete) && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>

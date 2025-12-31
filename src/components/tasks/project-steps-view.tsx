@@ -31,6 +31,12 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '../ui/scroll-area';
@@ -66,7 +72,7 @@ export default function ProjectStepsView() {
             const projectData = await getProjectById(projectId);
             if (!projectData) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Project not found.' });
-                router.push('/projects');
+                router.push('/projects/all');
                 return;
             }
             setProject(projectData);

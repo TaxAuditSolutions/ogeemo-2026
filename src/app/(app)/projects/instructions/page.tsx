@@ -29,7 +29,7 @@ export default function ProjectInstructionsPage() {
                 </div>
                 <div className="flex justify-end">
                     <Button asChild variant="outline">
-                        <Link href="/projects">
+                        <Link href="/projects/all">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Project Manager
                         </Link>
@@ -84,18 +84,14 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Route className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Project Task Board & Organizer</span>
+                                    <span className="font-semibold">Project Organizer</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Each project has its own dedicated workspace for managing the details.
+                                        Each project has its own dedicated workspace for managing the details. This is a Kanban-style board where you can manage individual tasks through "To Do," "In Progress," and "Done" columns.
                                     </p>
-                                    <ul>
-                                        <li><strong>Task Board:</strong> From the Project Manager list, click a project to go to its Task Board. This is a Kanban-style board where you can manage individual tasks through "To Do," "In Progress," and "Done" columns.</li>
-                                        <li><strong>Project Organizer:</strong> Use the Organizer to break down a large project into smaller, manageable steps. You can define each step, estimate time, and then automatically schedule those steps on your calendar.</li>
-                                    </ul>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>

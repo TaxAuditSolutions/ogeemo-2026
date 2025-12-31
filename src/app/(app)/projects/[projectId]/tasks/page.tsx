@@ -225,7 +225,7 @@ export default function ProjectTimelineAndTasksPage() {
                   {project.name}
               </h1>
               <h2 className="text-xl text-muted-foreground border border-black p-2 rounded-md mt-2 inline-block bg-white">
-                Task Board
+                Project Organizer
               </h2>
           </header>
           <ProjectManagementHeader projectId={projectId} />

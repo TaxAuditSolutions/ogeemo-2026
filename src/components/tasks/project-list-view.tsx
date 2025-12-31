@@ -12,7 +12,6 @@ import {
   Briefcase,
   Plus,
   ListChecks,
-  X,
   Route,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -191,6 +189,8 @@ export function ProjectListView() {
         router.push(`/projects/${newProject.id}/tasks`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    } finally {
+      setIsNewItemDialogOpen(false);
     }
   };
 

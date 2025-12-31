@@ -18,6 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, updateProject } from '@/services/project-service';
@@ -178,7 +184,7 @@ export default function ProjectStepsView() {
                         <CardHeader>
                             <CardTitle>Project Steps</CardTitle>
                             <CardDescription>
-                                Outline the major steps or phases of your project. Drag to reorder.
+                                Outline the major steps or phases of your project. Drag to reorder. These steps can be dragged onto your task board to create new tasks.
                             </CardDescription>
                              <div className="flex items-center gap-2 pt-2">
                                 <Input

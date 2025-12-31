@@ -162,20 +162,15 @@ export function ProjectListView() {
 
   const handleProjectSave = async (savedProject: Project, isEditing: boolean) => {
     setIsNewItemDialogOpen(false);
-    if (isEditing) {
-      setProjects(prev => prev.map(p => (p.id === savedProject.id ? savedProject : p)));
-    } else {
-      setProjects(prev => [savedProject, ...prev]);
-    }
-    await loadData();
+    await loadData(); // Refresh the entire list
   };
   
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
     if (!user) return;
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created and placed in 'Planning'.` });
-        loadData();
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        await loadData();
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     } finally {

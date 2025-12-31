@@ -19,7 +19,7 @@ const statusColumns: ProjectStatus[] = ['planning', 'active', 'on-hold', 'comple
 const statusTitles: Record<ProjectStatus, string> = {
     planning: 'In Planning',
     active: 'Active',
-    'on-hold': 'On-Hold',
+    'on-hold': 'On Hold',
     completed: 'Completed',
 };
 

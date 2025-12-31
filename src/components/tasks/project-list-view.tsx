@@ -13,7 +13,7 @@ import {
   Plus,
   ListChecks,
   X,
-  Wrench, // New Icon
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -160,17 +160,27 @@ export function ProjectListView() {
     }
   };
 
-  const handleProjectSave = (savedProject: Project, isEditing: boolean) => {
+  const handleProjectSave = async (savedProject: Project, isEditing: boolean) => {
+    setIsNewItemDialogOpen(false);
     if (isEditing) {
       setProjects(prev => prev.map(p => (p.id === savedProject.id ? savedProject : p)));
     } else {
       setProjects(prev => [savedProject, ...prev]);
     }
+    await loadData();
   };
   
-  const handleProjectCreated = () => {
-    loadData(); // Refresh the data to show the new project
-    setIsNewItemDialogOpen(false); // Close the dialog
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    if (!user) return;
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created and placed in 'Planning'.` });
+        loadData();
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    } finally {
+        setIsNewItemDialogOpen(false);
+    }
   };
   
   const handleOpenNewProjectDialog = () => {
@@ -286,7 +296,7 @@ export function ProjectListView() {
             if (!open) setProjectToEdit(null);
         }}
         onProjectCreate={handleProjectCreated}
-        onProjectUpdate={handleProjectSave}
+        onProjectUpdate={(updatedProject) => handleProjectSave(updatedProject, true)}
         contacts={contacts}
         onContactsChange={setContacts}
         projectToEdit={projectToEdit}

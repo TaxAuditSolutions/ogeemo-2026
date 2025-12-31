@@ -4,17 +4,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDrop } from 'react-dnd';
-import { LoaderCircle, ListChecks, Edit, Trash2 } from 'lucide-react';
+import { LoaderCircle, ListChecks, Edit, Trash2, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, updateProject, deleteProject, getTasksForProject, type Project, type ProjectStatus } from '@/services/project-service';
+import { getProjects, updateProject, deleteProject, getTasksForProject, addProject, type Project, type ProjectStatus } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { DraggableProjectCard, ItemTypes } from './DraggableProjectCard';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { NewTaskDialog } from '../tasks/NewTaskDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { type Event as TaskEvent } from '@/types/calendar';
+import { Button } from '../ui/button';
 
 const statusColumns: ProjectStatus[] = ['planning', 'active', 'on-hold', 'completed'];
 
@@ -177,6 +179,20 @@ export function ProjectStatusView() {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
         }
     };
+    
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+            router.push(`/projects/${newProject.id}/tasks`);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsFormOpen(false);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -199,7 +215,12 @@ export function ProjectStatusView() {
                     </p>
                 </header>
                 
-                <ProjectManagementHeader />
+                <div className="flex items-center gap-4">
+                    <ProjectManagementHeader />
+                    <Button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }}>
+                        <Plus className="mr-2 h-4 w-4" /> New Project
+                    </Button>
+                </div>
 
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl mt-4">
                     {statusColumns.map(status => (
@@ -225,10 +246,11 @@ export function ProjectStatusView() {
                         setProjectToEdit(null);
                     }
                 }}
+                onProjectCreate={handleProjectCreated}
                 onProjectUpdate={handleProjectUpdated}
-                projectToEdit={projectToEdit}
                 contacts={contacts}
                 onContactsChange={setContacts}
+                projectToEdit={projectToEdit}
             />
 
             <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>

@@ -67,6 +67,7 @@ export function ProjectListView() {
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [initialDialogData, setInitialDialogData] = useState({});
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -159,27 +160,19 @@ export function ProjectListView() {
       setProjectToDelete(null);
     }
   };
-
-  const handleProjectSave = async (savedProject: Project, isEditing: boolean) => {
-    setIsNewItemDialogOpen(false);
-    await loadData(); // Refresh the entire list
-  };
   
-  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    if (!user) return;
-    try {
-        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+  const handleProjectSaved = async (savedProject: Project, isEditing: boolean) => {
+    if (isEditing) {
         await loadData();
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-    } finally {
-        setIsNewItemDialogOpen(false);
+    } else {
+        router.push(`/projects/${savedProject.id}/tasks`);
     }
+    setIsNewItemDialogOpen(false);
   };
   
   const handleOpenNewProjectDialog = () => {
       setProjectToEdit(null);
+      setInitialDialogData({});
       setIsNewItemDialogOpen(true);
   };
 
@@ -198,9 +191,11 @@ export function ProjectListView() {
             <h1 className="text-3xl font-bold font-headline text-primary">Project List</h1>
             <p className="text-muted-foreground">A complete list of all your projects.</p>
              <div className="absolute top-0 right-0">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <X className="h-5 w-5" />
-                    <span className="sr-only">Close</span>
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                    </Link>
                 </Button>
             </div>
         </header>
@@ -290,8 +285,8 @@ export function ProjectListView() {
             setIsNewItemDialogOpen(open);
             if (!open) setProjectToEdit(null);
         }}
-        onProjectCreate={handleProjectCreated}
-        onProjectUpdate={(updatedProject) => handleProjectSave(updatedProject, true)}
+        onProjectCreate={(projectData) => handleProjectSaved({ ...projectData, id: '', createdAt: new Date() }, false)}
+        onProjectUpdate={(updatedProject) => handleProjectSaved(updatedProject, true)}
         contacts={contacts}
         onContactsChange={setContacts}
         projectToEdit={projectToEdit}

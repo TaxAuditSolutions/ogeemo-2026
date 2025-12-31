@@ -76,11 +76,11 @@ export const DraggableProjectCard = ({ project, clientName, index, status, moveC
                      {(onEdit || onDelete) && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => e.stopPropagation()}>
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                                 {onEdit && <DropdownMenuItem onSelect={() => onEdit(project)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>}
                                 {onDelete && <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Project</DropdownMenuItem>}
                             </DropdownMenuContent>

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -275,7 +275,12 @@ export function ToDoListView() {
           <div className="flex justify-end gap-2">
             <Button asChild variant="outline">
               <Link href="/projects/all">
-                <ListChecks className="mr-2 h-4 w-4" /> Project List
+                <Briefcase className="mr-2 h-4 w-4"/> Project List
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/idea-board/organize">
+                <ArrowDownUp className="mr-2 h-4 w-4"/> Organize Ideas
               </Link>
             </Button>
             <Button variant="outline" onClick={() => { setInitialDialogData({}); setIsNewProjectDialogOpen(true); }}>

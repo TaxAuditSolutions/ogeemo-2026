@@ -189,13 +189,20 @@ export default function ProjectStepsView() {
     return (
         <>
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-                 <header className="text-center mb-6">
+                 <header className="text-center mb-6 relative w-full max-w-4xl">
                     <h1 className="text-3xl font-bold font-headline text-primary">
                         Project Organizer: {project.name}
                     </h1>
                     <p className="text-muted-foreground">
                         Break down your project into manageable steps. Drag to reorder.
                     </p>
+                    <div className="absolute top-0 right-0">
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href="/projects/all" aria-label="Close and return to project list">
+                                <X className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </div>
                 </header>
                 <ProjectManagementHeader projectId={projectId} />
                 

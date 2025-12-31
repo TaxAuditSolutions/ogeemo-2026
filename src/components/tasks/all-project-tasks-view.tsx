@@ -191,7 +191,8 @@ export default function AllProjectTasksView() {
     
      const handleAddTask = () => {
         setTaskToEdit(null);
-        setInitialDialogData({ projectId: selectedProjectId });
+        const initialProjectId = selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId;
+        setInitialDialogData({ projectId: initialProjectId });
         setIsNewTaskDialogOpen(true);
     };
 
@@ -241,10 +242,16 @@ export default function AllProjectTasksView() {
     };
 
     const filteredTasks = useMemo(() => {
-        const allTasks = tasks.filter(task => !task.ritualType);
-        if (selectedProjectId === 'all') return allTasks;
-        if (selectedProjectId === 'unassigned') return allTasks.filter(t => !t.projectId);
-        return allTasks.filter(t => t.projectId === selectedProjectId);
+        const allNonRitualTasks = tasks.filter(task => !task.ritualType);
+        if (selectedProjectId === 'all') {
+            // Only show tasks that are part of ANY project
+            return allNonRitualTasks.filter(t => t.projectId && t.projectId !== 'inbox');
+        }
+        if (selectedProjectId === 'unassigned') {
+            // Only show tasks that are NOT part of any project
+            return allNonRitualTasks.filter(t => !t.projectId || t.projectId === 'inbox');
+        }
+        return allNonRitualTasks.filter(t => t.projectId === selectedProjectId);
     }, [tasks, selectedProjectId]);
 
     const sortedTasks = useMemo(() => {

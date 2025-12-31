@@ -47,7 +47,7 @@ type TaskFormData = z.infer<typeof taskSchema>;
 interface CreateTaskDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onTaskCreate: (task: TaskEvent) => void;
+  onTaskCreate?: (task: TaskEvent) => void;
   onTaskUpdate?: (task: TaskEvent) => void;
   projects?: Project[];
   initialData?: Partial<any>;
@@ -99,7 +99,7 @@ export function CreateTaskDialog({
                 projectId: taskToEdit.projectId,
             });
         } else {
-            const defaultProjectId = initialData.isTodoItem ? null : (projectId || initialData.projectId || 'unassigned');
+            const defaultProjectId = initialData?.isTodoItem ? null : (projectId || initialData?.projectId || 'unassigned');
             form.reset({ ...defaultTaskFormValues, ...initialData, projectId: defaultProjectId });
         }
     }
@@ -194,7 +194,7 @@ export function CreateTaskDialog({
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Important</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
               </div>
                  <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>

@@ -161,8 +161,18 @@ export function ProjectListView() {
   };
   
   const handleProjectSaved = async (savedProject: Project, isEditing: boolean) => {
-    loadData();
-    setIsNewItemDialogOpen(false);
+      setIsNewItemDialogOpen(false);
+      setProjectToEdit(null);
+      if (isEditing) {
+          try {
+              const { id, userId, createdAt, ...dataToUpdate } = savedProject;
+              await updateProject(id, dataToUpdate);
+              toast({ title: "Project Updated" });
+          } catch (error: any) {
+              toast({ variant: "destructive", title: "Update Failed", description: error.message });
+          }
+      }
+      loadData(); // Refresh the list from the database
   };
   
   const handleOpenNewProjectDialog = () => {

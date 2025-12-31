@@ -56,6 +56,7 @@ export default function ProjectStepsView() {
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
+
     const searchParams = useSearchParams();
     const projectId = searchParams.get('projectId');
     const { user } = useAuth();
@@ -142,7 +143,7 @@ export default function ProjectStepsView() {
         setEditingStepId(null);
         setEditingStepText('');
     };
-
+    
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
         setStepToDetail(step);
         setStepDetailDescription(step.description || '');
@@ -197,7 +198,7 @@ export default function ProjectStepsView() {
                     </p>
                 </header>
                 <ProjectManagementHeader projectId={projectId} />
-
+                
                 <div className="w-full max-w-2xl flex-1 mt-4">
                     <Card>
                         <CardHeader>

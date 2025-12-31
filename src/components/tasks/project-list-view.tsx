@@ -13,8 +13,6 @@ import {
   Plus,
   ListChecks,
   X,
-  Wrench,
-  ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -270,9 +268,6 @@ export function ProjectListView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => router.push('/project-status')}><ListChecks className="mr-2 h-4 w-4"/>View Project Status</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/timeline`)}>
-                                  <Wrench className="mr-2 h-4 w-4" /> Build the Project
-                              </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

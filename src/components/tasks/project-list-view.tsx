@@ -14,6 +14,7 @@ import {
   ListChecks,
   X,
   Wrench,
+  ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -162,11 +163,7 @@ export function ProjectListView() {
   };
   
   const handleProjectSaved = async (savedProject: Project, isEditing: boolean) => {
-    if (isEditing) {
-        await loadData();
-    } else {
-        router.push(`/projects/${savedProject.id}/tasks`);
-    }
+    loadData();
     setIsNewItemDialogOpen(false);
   };
   
@@ -174,6 +171,17 @@ export function ProjectListView() {
       setProjectToEdit(null);
       setInitialDialogData({});
       setIsNewItemDialogOpen(true);
+  };
+
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    if (!user) return;
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        router.push(`/projects/${newProject.id}/tasks`);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    }
   };
 
   if (isLoading) {
@@ -285,11 +293,12 @@ export function ProjectListView() {
             setIsNewItemDialogOpen(open);
             if (!open) setProjectToEdit(null);
         }}
-        onProjectCreate={(projectData) => handleProjectSaved({ ...projectData, id: '', createdAt: new Date() }, false)}
-        onProjectUpdate={(updatedProject) => handleProjectSaved(updatedProject, true)}
+        onProjectCreate={handleProjectCreated}
+        onProjectUpdate={handleProjectSaved}
         contacts={contacts}
         onContactsChange={setContacts}
         projectToEdit={projectToEdit}
+        initialData={initialDialogData}
       />
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>

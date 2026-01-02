@@ -51,7 +51,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resi
 export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 
 
-export default function ProjectStepsView() {
+export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
@@ -68,7 +68,6 @@ export default function ProjectStepsView() {
 
 
     const searchParams = useSearchParams();
-    const projectId = searchParams.get('projectId');
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
@@ -216,7 +215,7 @@ export default function ProjectStepsView() {
             setTasks(originalTasks);
         }
     };
-
+    
     const onDropTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => {
         if (!user || !projectId) return;
 
@@ -292,16 +291,7 @@ export default function ProjectStepsView() {
         );
     }
     
-    if (!project) {
-        return (
-            <div className="text-center p-8">
-                <p>Please select a project to view its plan.</p>
-                <Button asChild variant="link">
-                    <Link href="/projects/all">Go to Project List</Link>
-                </Button>
-            </div>
-        );
-    }
+    if (!project) return null;
     
     return (
         <>
@@ -333,11 +323,6 @@ export default function ProjectStepsView() {
                  <div className="w-full max-w-7xl border-y py-2 mb-4">
                     <div className="flex justify-center items-center">
                         <ProjectManagementHeader />
-                        <div className="flex items-center gap-2">
-                             <Button onClick={() => handleAddTask({ status: 'todo' })} variant="outline">
-                                <Plus className="mr-2 h-4 w-4" /> Add Task
-                            </Button>
-                        </div>
                     </div>
                 </div>
                 
@@ -409,7 +394,7 @@ export default function ProjectStepsView() {
                             </Card>
                         </ResizablePanel>
                         <ResizableHandle withHandle />
-                        <ResizablePanel defaultSize={70}>
+                        <ResizablePanel defaultSize={isActionItemsView ? 100 : 70}>
                             <div className="h-full grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
                                 <TaskColumn 
                                     status="todo" 
@@ -420,25 +405,25 @@ export default function ProjectStepsView() {
                                     onTaskDelete={handleDeleteTask}
                                     onToggleComplete={handleToggleComplete}
                                     onEdit={handleEditTask}
-                                    onMakeProject={() => {}}
                                     onArchive={() => {}}
                                     selectedTaskIds={[]}
                                     onToggleSelect={() => {}}
                                     onToggleSelectAll={() => {}}
+                                    onMakeProject={() => {}}
                                 />
                                 <TaskColumn 
                                     status="inProgress" 
-                                    tasks={tasksByStatus.inProgress}
+                                    tasks={tasksByStatus.inProgress} 
                                     onDropTask={onDropTask} 
                                     onMoveCard={onMoveCard}
                                     onTaskDelete={handleDeleteTask}
                                     onToggleComplete={handleToggleComplete}
                                     onEdit={handleEditTask}
-                                    onMakeProject={() => {}}
                                     onArchive={() => {}}
                                     selectedTaskIds={[]}
                                     onToggleSelect={() => {}}
                                     onToggleSelectAll={() => {}}
+                                    onMakeProject={() => {}}
                                 />
                                 <TaskColumn 
                                     status="done" 
@@ -448,11 +433,11 @@ export default function ProjectStepsView() {
                                     onTaskDelete={handleDeleteTask}
                                     onToggleComplete={handleToggleComplete}
                                     onEdit={handleEditTask}
-                                    onMakeProject={() => {}}
                                     onArchive={() => {}}
                                     selectedTaskIds={[]}
                                     onToggleSelect={() => {}}
                                     onToggleSelectAll={() => {}}
+                                    onMakeProject={() => {}}
                                 />
                             </div>
                         </ResizablePanel>
@@ -513,7 +498,7 @@ export default function ProjectStepsView() {
                 taskToEdit={taskToEdit}
                 projects={projects}
                 initialData={initialTaskData}
-                projectId={projectId || undefined}
+                projectId={projectId}
             />
         </>
     );

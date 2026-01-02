@@ -36,7 +36,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions } from '@/services/project-service';
+import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects } from '@/services/project-service';
 import { type Project, type ProjectStep, type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
@@ -50,6 +50,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resi
 
 export default function ProjectStepsView() {
     const [project, setProject] = useState<Project | null>(null);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [newStepTitle, setNewStepTitle] = useState('');
@@ -80,9 +81,10 @@ export default function ProjectStepsView() {
         }
         setIsLoading(true);
         try {
-            const [projectData, tasksData] = await Promise.all([
+            const [projectData, tasksData, allProjects] = await Promise.all([
                 getProjectById(projectId),
                 getTasksForProject(projectId),
+                getProjects(user.uid),
             ]);
 
             if (!projectData) {
@@ -91,6 +93,7 @@ export default function ProjectStepsView() {
                 return;
             }
             setProject(projectData);
+            setProjects(allProjects);
             setSteps(projectData.steps || []);
             setTasks(tasksData);
         } catch (error: any) {
@@ -501,5 +504,7 @@ export default function ProjectStepsView() {
         </>
     );
 }
+
+    
 
     

@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Briefcase, ListChecks, Info, ListTodo } from 'lucide-react';
+import { Briefcase, ListChecks, Info } from 'lucide-react';
 
 export function ProjectManagementHeader() {
     const pathname = usePathname();

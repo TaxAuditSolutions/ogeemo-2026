@@ -40,8 +40,8 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
     const router = useRouter();
 
     const handleCardClick = (project: Project) => {
-        if (onEdit && status === 'planning') {
-            onEdit(project);
+        if (status === 'planning') {
+            router.push(`/projects/${project.id}/organizer`);
         } else {
             router.push(`/projects/${project.id}/tasks`);
         }

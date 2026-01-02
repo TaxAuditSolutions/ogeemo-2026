@@ -154,7 +154,7 @@ export function NewTaskDialog({
             form.reset(defaults);
         }
     }
-  }, [isOpen, projectToEdit, taskToEdit, isTaskMode, initialData, form, taskForm, projectId, initialDataString]);
+}, [isOpen, projectToEdit, taskToEdit, isTaskMode, initialData, form, taskForm, projectId, initialDataString]);
 
   async function onProjectSubmit(values: ProjectFormData) {
     if (!user) return;
@@ -289,3 +289,5 @@ export function NewTaskDialog({
       </>
   );
 }
+
+    

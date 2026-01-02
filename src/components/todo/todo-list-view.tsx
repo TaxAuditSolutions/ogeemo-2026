@@ -40,6 +40,7 @@ import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/
 import { archiveTaskAsFile } from '@/services/file-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
+import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';

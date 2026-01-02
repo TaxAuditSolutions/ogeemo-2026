@@ -34,8 +34,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTodos, addTodo, updateTodo, deleteTodo as deleteTodoFromDb, updateTodoPositions, deleteTodos, updateTodosStatus } from '@/services/todo-service';
-import { getProjects, addProject, updateProject, getTasksForUser, deleteTask, updateTask } from '@/services/project-service';
+import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
+import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
 import { getContacts, type Contact } from '@/services/contact-service';
@@ -43,6 +43,7 @@ import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
+import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 
 
 export function ToDoListView() {
@@ -197,7 +198,7 @@ export function ToDoListView() {
         setTaskToConvert(null);
     }
   };
-
+  
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {

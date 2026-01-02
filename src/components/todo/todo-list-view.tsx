@@ -56,6 +56,8 @@ export function ToDoListView() {
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
+  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
@@ -94,14 +96,16 @@ export function ToDoListView() {
     loadData();
   }, [loadData]);
   
+  const filteredTasks = tasks;
+
   const tasksByStatus = useMemo(() => {
-    const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
+    const sortedTasks = [...filteredTasks].sort((a, b) => a.position - b.position);
     return {
       todo: sortedTasks.filter(t => t.status === 'todo'),
       inProgress: sortedTasks.filter(t => t.status === 'inProgress'),
       done: sortedTasks.filter(t => t.status === 'done'),
     };
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const onDropTask = useCallback(async (item: TaskEvent, newStatus: TaskStatus) => {
     if (item.status === newStatus) return;
@@ -254,6 +258,8 @@ export function ToDoListView() {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     onDropTask(task, newStatus);
   };
+  
+  const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
   if (isLoading) {
     return (
@@ -282,11 +288,6 @@ export function ToDoListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
                     </Button>
                 )}
-            </div>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true})}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

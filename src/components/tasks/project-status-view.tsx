@@ -40,11 +40,7 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
     const router = useRouter();
 
     const handleCardClick = (project: Project) => {
-        if (status === 'planning') {
-            router.push(`/projects/${project.id}/organizer`);
-        } else {
-            router.push(`/projects/${project.id}/tasks`);
-        }
+        router.push(`/projects/${project.id}/tasks`);
     };
 
     return (
@@ -62,8 +58,8 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
                         status={status}
                         moveCard={() => {}} // Simple drag and drop between columns, no reordering within
                         onClick={() => handleCardClick(project)}
-                        onEdit={onEdit && status === 'planning' ? () => onEdit(project) : undefined}
-                        onDelete={onDelete && status === 'planning' ? () => onDelete(project) : undefined}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
                     />
                 ))}
             </CardContent>

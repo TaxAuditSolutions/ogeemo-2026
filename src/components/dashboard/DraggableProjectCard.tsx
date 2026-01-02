@@ -84,8 +84,8 @@ export const DraggableProjectCard = ({ project, clientName, index, status, moveC
                             <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                                 {onEdit && <DropdownMenuItem onSelect={() => onEdit(project)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>}
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/projects/organizer?projectId=${project.id}`}>
-                                    <Route className="mr-2 h-4 w-4" /> Plan Project
+                                  <Link href={`/project-plan?projectId=${project.id}`}>
+                                    <Route className="mr-2 h-4 w-4" /> Project Planner
                                   </Link>
                                 </DropdownMenuItem>
                                 {onDelete && <DropdownMenuItem onSelect={() => onDelete(project)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Project</DropdownMenuItem>}

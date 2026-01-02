@@ -1,21 +1,13 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Briefcase, ListChecks, Info, ListTodo } from 'lucide-react';
-import { NewTaskDialog } from './NewTaskDialog';
-import { useAuth } from '@/context/auth-context';
-import { addProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { getContacts, type Contact } from '@/services/contact-service';
 
 export function ProjectManagementHeader() {
-    const router = useRouter();
     const pathname = usePathname();
     
     const navLinks = [
@@ -25,7 +17,7 @@ export function ProjectManagementHeader() {
     ];
     
     return (
-        <div className="flex justify-center gap-2 pb-4">
+        <div className="flex justify-center items-center gap-2">
             {navLinks.map(link => (
                 <Button key={link.href} asChild variant={pathname === link.href ? 'default' : 'outline'}>
                     <Link href={link.href}>

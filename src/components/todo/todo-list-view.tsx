@@ -3,9 +3,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp, Check, ChevronsUpDown, Folder, GitMerge } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -57,8 +56,6 @@ export function ToDoListView() {
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
-  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
@@ -97,20 +94,14 @@ export function ToDoListView() {
     loadData();
   }, [loadData]);
   
-  const filteredTasks = useMemo(() => {
-    if (selectedProjectId === 'all') return tasks;
-    if (selectedProjectId === 'unassigned') return tasks.filter(t => !t.projectId || t.projectId === 'inbox');
-    return tasks.filter(t => t.projectId === selectedProjectId);
-  }, [tasks, selectedProjectId]);
-
   const tasksByStatus = useMemo(() => {
-    const sortedTasks = [...filteredTasks].sort((a, b) => a.position - b.position);
+    const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
     return {
       todo: sortedTasks.filter(t => t.status === 'todo'),
       inProgress: sortedTasks.filter(t => t.status === 'inProgress'),
       done: sortedTasks.filter(t => t.status === 'done'),
     };
-  }, [filteredTasks]);
+  }, [tasks]);
 
   const onDropTask = useCallback(async (item: TaskEvent, newStatus: TaskStatus) => {
     if (item.status === newStatus) return;
@@ -263,8 +254,6 @@ export function ToDoListView() {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     onDropTask(task, newStatus);
   };
-  
-  const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
   if (isLoading) {
     return (
@@ -288,17 +277,6 @@ export function ToDoListView() {
         <div className="w-full max-w-7xl flex-1 space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
-                <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-64 justify-between">
-                            {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select a project..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projectOptions.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
-                    </PopoverContent>
-                </Popover>
                  {selectedTaskIds.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
                         <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
@@ -306,7 +284,7 @@ export function ToDoListView() {
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleAddTask({projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId})}>
+                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true})}>
                     <Plus className="mr-2 h-4 w-4" /> Add Task
                 </Button>
             </div>

@@ -190,8 +190,6 @@ export function ProjectListView() {
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-    } finally {
-      setIsNewItemDialogOpen(false);
     }
   };
 

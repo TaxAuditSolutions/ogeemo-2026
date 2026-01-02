@@ -300,7 +300,7 @@ export function OrganizeIdeasView() {
                 <CardHeader className="text-center">
                     <Button
                         onClick={() => {
-                            setShowNewIdeaCard(status === 'Maybe'); // Only open for the "Maybe" column
+                            if (status === 'Maybe') setShowNewIdeaCard(true);
                         }}
                         className="w-1/2 mx-auto h-8 py-1 text-sm bg-gradient-to-r from-[#C3FFF9] to-[#62C1B6] text-black border-b-4 border-black/30 shadow-lg hover:from-[#C3FFF9]/90 hover:to-[#62C1B6]/90 active:mt-1 active:border-b-2"
                     >

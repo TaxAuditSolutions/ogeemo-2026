@@ -4,8 +4,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp, Check, ChevronsUpDown, Folder } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp, Check, ChevronsUpDown, Folder, GitMerge } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -31,7 +31,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
@@ -44,6 +43,7 @@ import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
+
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -279,7 +279,10 @@ export function ToDoListView() {
       <div className="p-4 sm:p-6 flex flex-col h-full items-center">
         <header className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
-          <p className="text-muted-foreground">Your inbox for new ideas and tasks. Drag and drop to change status.</p>
+          <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
+           <div className="mt-4">
+                <ProjectManagementHeader />
+            </div>
         </header>
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
@@ -303,7 +306,7 @@ export function ToDoListView() {
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleAddTask()}>
+                <Button variant="outline" onClick={() => handleAddTask({projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId})}>
                     <Plus className="mr-2 h-4 w-4" /> Add Task
                 </Button>
             </div>

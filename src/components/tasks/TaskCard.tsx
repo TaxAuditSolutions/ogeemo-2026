@@ -4,7 +4,7 @@
 import React, { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon, GitMerge } from 'lucide-react';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import {
@@ -26,6 +26,7 @@ interface TaskCardProps {
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
   onArchive: (task: TaskEvent) => void;
+  onMakeProject: (task: TaskEvent) => void;
   isSelected: boolean;
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   showCheckbox?: boolean;
@@ -38,6 +39,7 @@ export function TaskCard({
     onTaskDelete, 
     onToggleComplete, 
     onArchive,
+    onMakeProject,
     isSelected,
     onToggleSelect,
     showCheckbox = false,
@@ -104,8 +106,14 @@ export function TaskCard({
                     <DropdownMenuItem onSelect={() => onEdit(task)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit / View Details
                     </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onEdit(task)}>
+                        <GitMerge className="mr-2 h-4 w-4" /> Assign to Project
+                    </DropdownMenuItem>
                     <DropdownMenuItem onSelect={handleSchedule}>
                         <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onMakeProject(task)}>
+                        <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onArchive(task)}>
                         <Archive className="mr-2 h-4 w-4" /> Archive

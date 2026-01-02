@@ -187,7 +187,7 @@ export function ProjectListView() {
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
         toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/projects/${newProject.id}/tasks`);
+        router.push(`/projects/${newProject.id}/organizer`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     } finally {
@@ -265,7 +265,7 @@ export function ProjectListView() {
                             />
                         </TableCell>
                         <TableCell className="font-medium">
-                          <Link href={`/projects/${p.id}/tasks`} className="hover:underline">
+                          <Link href={`/projects/${p.id}/organizer`} className="hover:underline">
                             {p.name}
                           </Link>
                         </TableCell>
@@ -280,7 +280,6 @@ export function ProjectListView() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4"/>Task Board</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/organizer`)}><Route className="mr-2 h-4 w-4"/>Plan Project</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>

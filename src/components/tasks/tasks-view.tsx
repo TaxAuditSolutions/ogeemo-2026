@@ -1,17 +1,23 @@
 
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, LoaderCircle, ListTodo, Route, Inbox, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp, Check, ChevronsUpDown, Folder, GitMerge } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Progress } from "@/components/ui/progress";
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForUser, addProject, updateProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type ProjectUrgency, type ProjectImportance } from '@/types/calendar';
-import { getContacts, type Contact } from '@/services/contact-service';
-import { NewTaskDialog } from './NewTaskDialog';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,320 +28,390 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useRouter } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
+import { getProjects } from '@/services/project-service';
+import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
+import { archiveTaskAsFile } from '@/services/file-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
+import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
+import { TaskColumn } from '../tasks/TaskColumn';
+import { cn } from '@/lib/utils';
+import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
 
-const emptyInitialData = {};
-export const ACTION_ITEMS_PROJECT_ID = 'inbox'; // Using 'inbox' to match legacy task data if any exists
 
-const getPrioritySortValue = (p: Project) => {
-    let score = 0;
-    // Time Urgency: Urgent > Important > Optional
-    if (p.urgency === 'urgent') score += 1000;
-    if (p.urgency === 'important') score += 500;
-    if (p.urgency === 'optional') score += 100;
+export function ToDoListView() {
+  const [tasks, setTasks] = useState<TaskEvent[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
+  const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [initialDialogData, setInitialDialogData] = useState({});
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
+  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const loadData = useCallback(async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const [userTasks, userProjects, userContacts] = await Promise.all([
+        getTasksForUser(user.uid),
+        getProjects(user.uid),
+        getContacts(user.uid),
+      ]);
+      setTasks(userTasks.filter(task => !task.ritualType));
+      setProjects(userProjects);
+      setContacts(userContacts);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load items',
+        description: 'Could not retrieve your tasks and projects.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+  
+  const filteredTasks = useMemo(() => {
+    if (selectedProjectId === 'all') return tasks;
+    if (selectedProjectId === 'unassigned') return tasks.filter(t => !t.projectId || t.projectId === 'inbox');
+    return tasks.filter(t => t.projectId === selectedProjectId);
+  }, [tasks, selectedProjectId]);
+
+  const tasksByStatus = useMemo(() => {
+    const sortedTasks = [...filteredTasks].sort((a, b) => a.position - b.position);
+    return {
+      todo: sortedTasks.filter(t => t.status === 'todo'),
+      inProgress: sortedTasks.filter(t => t.status === 'inProgress'),
+      done: sortedTasks.filter(t => t.status === 'done'),
+    };
+  }, [filteredTasks]);
+
+  const onDropTask = useCallback(async (item: TaskEvent, newStatus: TaskStatus) => {
+    if (item.status === newStatus) return;
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.map(t => t.id === item.id ? { ...t, status: newStatus } : t));
+    try {
+        await updateTask(item.id, { status: newStatus });
+    } catch (error) {
+        setTasks(originalTasks);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
+    }
+  }, [tasks, toast]);
+
+  const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
+    const dragTask = tasks.find(t => t.id === dragId);
+    const hoverTask = tasks.find(t => t.id === hoverId);
+    if (!dragTask || !hoverTask || dragTask.status !== hoverTask.status) return;
+
+    const dragIndex = tasks.findIndex(t => t.id === dragId);
+    const hoverIndex = tasks.findIndex(t => t.id === hoverId);
+
+    const newTasks = [...tasks];
+    const [draggedItem] = newTasks.splice(dragIndex, 1);
+    newTasks.splice(hoverIndex, 0, draggedItem);
     
-    // Task Importance: A > B > C
-    if (p.importance === 'A') score += 0.1;
-    if (p.importance === 'B') score += 0.05;
-    if (p.importance === 'C') score += 0.01;
+    const tasksInColumn = newTasks.filter(t => t.status === dragTask.status);
+    const updates = tasksInColumn.map((task, index) => ({
+        id: task.id,
+        position: index,
+        status: task.status,
+    }));
+    
+    setTasks(newTasks);
+    await updateTaskPositions(updates);
+  }, [tasks]);
+  
+  const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
+    setTaskToEdit(null);
+    setInitialDialogData(initialData);
+    setIsNewTaskDialogOpen(true);
+  };
 
-    return score;
-};
+  const handleTaskSaved = () => {
+    loadData();
+    setIsNewTaskDialogOpen(false);
+  };
+  
+  const handleEditTask = (task: TaskEvent) => {
+    setTaskToEdit(task);
+    setIsNewTaskDialogOpen(true);
+  };
 
-const ProjectCard = ({ project, tasks, contacts, onEdit, onDelete, onPriorityChange }: { project: Project, tasks: TaskEvent[], contacts: Contact[], onEdit: (p: Project) => void, onDelete: (p: Project) => void, onPriorityChange: (projectId: string, priority: 'urgency' | 'importance', value: ProjectUrgency | ProjectImportance) => void }) => {
-    const router = useRouter();
-    const isActionItems = project.id === ACTION_ITEMS_PROJECT_ID;
-    const projectTasks = tasks.filter(t => t.projectId === project.id || (isActionItems && !t.projectId));
-    const completedTasks = projectTasks.filter(t => t.status === 'done').length;
-    const totalTasks = projectTasks.length;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    const client = contacts.find(c => c.id === project.contactId);
+  const handleDeleteTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) setTaskToDelete(task);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+    try {
+      await deleteTask(taskToDelete.id);
+      loadData();
+      toast({ title: 'Task Deleted' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+    } finally {
+      setTaskToDelete(null);
+    }
+  };
 
-    return (
-        <Card className="flex flex-col">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    {isActionItems ? <Inbox className="h-5 w-5" /> : <ListTodo className="h-5 w-5" />}
-                    {project.name}
-                </CardTitle>
-                <CardDescription>{isActionItems ? 'Your central place to capture new tasks.' : (client?.name || 'No client assigned')}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-4">
-                <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-medium">Progress</p>
-                        <p className="text-sm text-muted-foreground">{completedTasks} of {totalTasks} tasks complete</p>
-                    </div>
-                    <Progress value={progress} />
-                </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2 items-stretch">
-                <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/tasks`)}><ListTodo className="mr-2 h-4 w-4" /> Task Board</Button>
-                    {!isActionItems ? (
-                      <Button variant="outline" onClick={() => router.push(`/projects/${project.id}/planning`)}><Route className="mr-2 h-4 w-4" /> Planning</Button>
-                    ) : <div />}
-                </div>
-                {!isActionItems && (
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div>
-                        <Select value={project.urgency || 'important'} onValueChange={(v) => onPriorityChange(project.id, 'urgency', v as ProjectUrgency)}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="urgent">Urgent</SelectItem>
-                                <SelectItem value="important">Important</SelectItem>
-                                <SelectItem value="optional">Optional</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                         <Select value={project.importance || 'B'} onValueChange={(v) => onPriorityChange(project.id, 'importance', v as ProjectImportance)}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="A">A - Critical</SelectItem>
-                                <SelectItem value="B">B - Important</SelectItem>
-                                <SelectItem value="C">C - Optional</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                  </div>
-                )}
-                 {!isActionItems && (
-                    <Button variant="secondary" className="w-full" onClick={() => onEdit(project)}>Edit Details</Button>
-                )}
-            </CardFooter>
-        </Card>
+  const handleMakeProject = (task: TaskEvent) => {
+    setInitialDialogData({ name: task.title, description: task.description || '' });
+    setTaskToConvert(task);
+    setIsNewProjectDialogOpen(true);
+  };
+
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    if (!user) return;
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        if (taskToConvert) {
+          await deleteTask(taskToConvert.id);
+        }
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        loadData(); // Refresh both projects and todos
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    } finally {
+        setIsNewProjectDialogOpen(false);
+        setTaskToConvert(null);
+    }
+  };
+  
+  const handleArchive = async (task: TaskEvent) => {
+    if (!user) return;
+    try {
+      await archiveTaskAsFile(user.uid, task);
+      await deleteTask(task.id);
+      loadData();
+      toast({ title: 'Archived', description: 'Task saved to File Manager.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
+    }
+  };
+
+  const handleToggleSelect = (taskId: string, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setSelectedTaskIds(prev =>
+        prev.includes(taskId)
+            ? prev.filter(id => id !== taskId)
+            : [...prev, taskId]
     );
-};
+  };
+  
+  const handleToggleSelectAll = (status: TaskStatus) => {
+    const columnTasks = tasksByStatus[status];
+    const columnTaskIds = columnTasks.map(t => t.id);
+    const selectedInColumn = selectedTaskIds.filter(id => columnTaskIds.includes(id));
+
+    if (selectedInColumn.length === columnTasks.length) {
+      setSelectedTaskIds(prev => prev.filter(id => !columnTaskIds.includes(id)));
+    } else {
+      setSelectedTaskIds(prev => [...new Set([...prev, ...columnTaskIds])]);
+    }
+  };
 
 
-export function ProjectsView() {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [tasks, setTasks] = useState<TaskEvent[]>([]);
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
-    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-    const [initialDialogData, setInitialDialogData] = useState(emptyInitialData);
-    
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
+  const handleDeleteSelected = async () => {
+    if (selectedTaskIds.length > 0) {
+      setIsBulkDeleteAlertOpen(true);
+    }
+  };
+  
+  const handleConfirmBulkDelete = async () => {
+    try {
+      await deleteTodos(selectedTaskIds);
+      toast({ title: `${selectedTaskIds.length} tasks deleted.` });
+      setSelectedTaskIds([]);
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Bulk delete failed.', description: error.message });
+    } finally {
+      setIsBulkDeleteAlertOpen(false);
+    }
+  };
 
-    const inboxProject: Project = useMemo(() => ({
-        id: ACTION_ITEMS_PROJECT_ID,
-        name: "Action Items",
-        description: "A place to capture all your incoming tasks and ideas before organizing them.",
-        userId: user?.uid || '',
-        createdAt: new Date(0), // Puts it at the top when sorting
-    }), [user]);
+  const handleToggleComplete = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newStatus = task.status === 'done' ? 'todo' : 'done';
+    onDropTask(task, newStatus);
+  };
+  
+  const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
-
-    useEffect(() => {
-        async function loadInitialData() {
-            if (!user) {
-                setIsLoading(false);
-                return;
-            }
-            setIsLoading(true);
-            try {
-                const [fetchedProjects, fetchedContacts, fetchedTasks] = await Promise.all([
-                    getProjects(user.uid),
-                    getContacts(user.uid),
-                    getTasksForUser(user.uid),
-                ]);
-                setProjects(fetchedProjects);
-                setContacts(fetchedContacts);
-                setTasks(fetchedTasks);
-
-                const ideaToProjectRaw = sessionStorage.getItem('ogeemo-idea-to-project');
-                if (ideaToProjectRaw) {
-                    const ideaData = JSON.parse(ideaToProjectRaw);
-                    setInitialDialogData({ name: ideaData.title, description: ideaData.description });
-                    setIsNewItemDialogOpen(true);
-                }
-
-            } catch (error: any) {
-                 toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        loadInitialData();
-    }, [user, toast]);
-    
-    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
-        if (!user) return;
-        try {
-            const newProject = await addProject({ ...projectData, userId: user.uid, createdAt: new Date() });
-            setProjects(prev => [newProject, ...prev]);
-            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created and placed in 'Planning'.` });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-        }
-    };
-
-    const handleProjectUpdated = async (updatedProject: Project) => {
-        try {
-            const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
-            await updateProject(id, dataToUpdate);
-            setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-            toast({ title: "Project Updated" });
-        } catch (error: any) {
-             toast({ variant: "destructive", title: "Failed to update project", description: error.message });
-        }
-    };
-    
-    const handlePriorityChange = async (projectId: string, priority: 'urgency' | 'importance', value: ProjectUrgency | ProjectImportance) => {
-        const projectToUpdate = projects.find(p => p.id === projectId);
-        if (!projectToUpdate) return;
-        
-        const updatedProject = { ...projectToUpdate, [priority]: value };
-        
-        // Optimistic UI update
-        setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p));
-        
-        try {
-            await updateProject(projectId, { [priority]: value });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save priority change.'});
-            // Revert on failure
-            setProjects(prev => prev.map(p => p.id === projectId ? projectToUpdate : p));
-        }
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!projectToDelete) return;
-        try {
-            const tasksToDelete = await getTasksForProject(projectToDelete.id);
-            await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
-            
-            const newProjects = projects.filter(p => p.id !== projectToDelete.id);
-            setProjects(newProjects);
-            
-            toast({ title: "Project Deleted" });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
-        } finally {
-            setProjectToDelete(null);
-        }
-    };
-    
-    const handleEditProject = (project: Project) => {
-        setProjectToEdit(project);
-        setIsNewItemDialogOpen(true);
-    };
-
-    const planningProjects = projects.filter(p => p.status === 'planning');
-    const activeProjects = projects.filter(p => p.status !== 'planning' && p.id !== ACTION_ITEMS_PROJECT_ID).sort((a, b) => getPrioritySortValue(b) - getPrioritySortValue(a));
-
+  if (isLoading) {
     return (
-        <>
-            <NewTaskDialog
-                isOpen={isNewItemDialogOpen}
-                onOpenChange={(open) => {
-                    setIsNewItemDialogOpen(open);
-                    if (!open) {
-                        setProjectToEdit(null);
-                        if (sessionStorage.getItem('ogeemo-idea-to-project')) {
-                             sessionStorage.removeItem('ogeemo-idea-to-project');
-                        }
-                    }
-                }}
-                onProjectCreate={handleProjectCreated}
-                onProjectUpdate={handleProjectUpdated}
-                contacts={contacts}
-                onContactsChange={setContacts}
-                projectToEdit={projectToEdit}
-                initialData={initialDialogData}
-            />
-            
-            <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-                <header className="text-center mb-6">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Project Manager</h1>
-                    <p className="text-muted-foreground">Manage your projects, view tasks, or create a new project.</p>
-                </header>
+      <div className="flex h-full w-full items-center justify-center p-4">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-                <div className="w-full max-w-7xl flex-1 space-y-8">
-                    <div className="flex justify-end mb-4">
-                        <Button onClick={() => { setProjectToEdit(null); setInitialDialogData({}); setIsNewItemDialogOpen(true); }}>
-                            <Plus className="mr-2 h-4 w-4" /> New Project
-                        </Button>
-                    </div>
-
-                    {isLoading ? (
-                        <div className="flex items-center justify-center h-full pt-16">
-                            <LoaderCircle className="h-8 w-8 animate-spin" />
-                        </div>
-                    ) : (
-                        <>
-                            {planningProjects.length > 0 && (
-                                <div>
-                                    <h2 className="text-xl font-semibold mb-4 text-center">In Planning</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {planningProjects.map((p) => (
-                                            <ProjectCard
-                                                key={p.id}
-                                                project={p}
-                                                tasks={tasks}
-                                                contacts={contacts}
-                                                onEdit={handleEditProject}
-                                                onDelete={setProjectToDelete}
-                                                onPriorityChange={handlePriorityChange}
-                                            />
-                                        ))}
-                                    </div>
-                                    <hr className="my-8" />
-                                </div>
-                            )}
-
-                            <h2 className="text-xl font-semibold mb-4 text-center">Active Projects & Action Items</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <ProjectCard
-                                    key={inboxProject.id}
-                                    project={inboxProject}
-                                    tasks={tasks}
-                                    contacts={contacts}
-                                    onEdit={handleEditProject}
-                                    onDelete={setProjectToDelete}
-                                    onPriorityChange={handlePriorityChange}
-                                />
-                                {activeProjects.map((p) => (
-                                    <ProjectCard
-                                        key={p.id}
-                                        project={p}
-                                        tasks={tasks}
-                                        contacts={contacts}
-                                        onEdit={handleEditProject}
-                                        onDelete={setProjectToDelete}
-                                        onPriorityChange={handlePriorityChange}
-                                    />
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
+  return (
+    <>
+      <div className="p-4 sm:p-6 flex flex-col h-full items-center">
+        <header className="text-center mb-6">
+          <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
+          <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
+           <div className="mt-4">
+                <ProjectManagementHeader />
             </div>
-            
+        </header>
 
-            <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the project "{projectToDelete?.name}" and all of its tasks. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
-    );
+        <div className="w-full max-w-7xl flex-1 space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+                <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-64 justify-between">
+                            {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select a project..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projectOptions.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                    </PopoverContent>
+                </Popover>
+                 {selectedTaskIds.length > 0 && (
+                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                        <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
+                    </Button>
+                )}
+            </div>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true, projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId})}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TaskColumn 
+              status="todo" 
+              tasks={tasksByStatus.todo}
+              onAddTask={() => handleAddTask({ status: 'todo' })}
+              onDropTask={onDropTask} 
+              onMoveCard={onMoveCard}
+              onTaskDelete={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
+              onEdit={handleEditTask}
+              onArchive={handleArchive}
+              selectedTaskIds={selectedTaskIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
+            />
+             <TaskColumn 
+              status="inProgress" 
+              tasks={tasksByStatus.inProgress}
+              onDropTask={onDropTask} 
+              onMoveCard={onMoveCard}
+              onTaskDelete={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
+              onEdit={handleEditTask}
+              onArchive={handleArchive}
+              selectedTaskIds={selectedTaskIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
+            />
+             <TaskColumn 
+              status="done" 
+              tasks={tasksByStatus.done}
+              onDropTask={onDropTask} 
+              onMoveCard={onMoveCard}
+              onTaskDelete={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
+              onEdit={handleEditTask}
+              onArchive={handleArchive}
+              selectedTaskIds={selectedTaskIds}
+              onToggleSelect={handleToggleSelect}
+              onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
+            />
+          </div>
+        </div>
+      </div>
+      <CreateTaskDialog
+        isOpen={isNewTaskDialogOpen}
+        onOpenChange={(open) => {
+            setIsNewTaskDialogOpen(open);
+            if (!open) {
+                setTaskToEdit(null);
+            }
+        }}
+        onTaskCreate={handleTaskSaved}
+        onTaskUpdate={handleTaskSaved}
+        taskToEdit={taskToEdit}
+        projects={projects}
+        initialData={initialDialogData}
+      />
+      
+      <NewTaskDialog
+        isOpen={isNewProjectDialogOpen}
+        onOpenChange={setIsNewProjectDialogOpen}
+        onProjectCreate={handleProjectCreated}
+        contacts={contacts}
+        onContactsChange={setContacts}
+        projectToEdit={null}
+        initialData={initialDialogData}
+      />
+      
+      <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete {selectedTaskIds.length} task(s). This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }

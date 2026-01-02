@@ -1,4 +1,3 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -19,9 +18,10 @@ const ProjectStepsView = dynamic(
   }
 );
 
-export default function ProjectOrganizerPage({ params }: { params: { projectId: string } }) {
-  // Although useParams can also work, passing params directly from the page props
-  // is a more standard and reliable way to handle dynamic route segments in Next.js.
-  const projectId = params.projectId;
+export default function ProjectOrganizerPage() {
+  // In Client Components, useParams() is the correct hook to get dynamic route segments.
+  const params = useParams();
+  const projectId = params.projectId as string;
+  
   return <ProjectStepsView projectId={projectId} />;
 }

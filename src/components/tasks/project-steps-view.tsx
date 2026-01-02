@@ -76,6 +76,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
     
+    const isActionItemsView = projectId === ACTION_ITEMS_PROJECT_ID;
+
     const loadData = useCallback(async () => {
         if (!user || !projectId) {
             setIsLoading(false);
@@ -328,6 +330,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 
                 <div className="flex-1 w-full max-w-7xl">
                     <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
+                        {!isActionItemsView && (
                         <ResizablePanel defaultSize={30} minSize={25}>
                              <Card className="h-full flex flex-col border-0 rounded-none">
                                 <CardHeader className="flex flex-row items-center justify-between">
@@ -393,7 +396,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                 </CardContent>
                             </Card>
                         </ResizablePanel>
-                        <ResizableHandle withHandle />
+                        )}
+                        {!isActionItemsView && <ResizableHandle withHandle />}
                         <ResizablePanel defaultSize={isActionItemsView ? 100 : 70}>
                             <div className="h-full grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
                                 <TaskColumn 

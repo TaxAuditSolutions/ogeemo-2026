@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X, FolderPlus } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X, FolderPlus, Save } from 'lucide-react';
 import { TaskColumn } from './TaskColumn';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects, addProject } from '@/services/project-service';
+import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects, addProject, getProjectTemplates, addProjectTemplate, type ProjectTemplate } from '@/services/project-service';
 import { type Project, type ProjectStep, type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
@@ -47,6 +47,8 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { addMinutes } from 'date-fns';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resizable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
 
 export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 
@@ -76,6 +78,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
     
+    // New state for templates
+    const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+    const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
+    const [newTemplateName, setNewTemplateName] = useState('');
+    
     const isActionItemsView = projectId === ACTION_ITEMS_PROJECT_ID;
 
     const loadData = useCallback(async () => {
@@ -85,10 +92,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
         setIsLoading(true);
         try {
-            const [projectData, tasksData, allProjects] = await Promise.all([
+            const [projectData, tasksData, allProjects, fetchedTemplates] = await Promise.all([
                 getProjectById(projectId),
                 getTasksForProject(projectId),
                 getProjects(user.uid),
+                getProjectTemplates(user.uid),
             ]);
 
             if (!projectData) {
@@ -100,6 +108,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             setProjects(allProjects);
             setSteps(projectData.steps || []);
             setTasks(tasksData);
+            setTemplates(fetchedTemplates);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
         } finally {
@@ -283,7 +292,40 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         const newStatus = task.status === 'done' ? 'todo' : 'done';
         onDropTask(task, newStatus);
     };
+    
+    const handleSaveTemplate = async () => {
+      if (!user || !newTemplateName.trim()) {
+        toast({ variant: 'destructive', title: 'Template name is required.' });
+        return;
+      }
+      try {
+        const newTemplate = await addProjectTemplate({
+          name: newTemplateName,
+          description: project?.description || '',
+          steps: steps.map(({ id, ...step }) => step), // Remove temporary IDs
+          userId: user.uid,
+        });
+        setTemplates(prev => [...prev, newTemplate]);
+        toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
+        setIsSaveTemplateDialogOpen(false);
+        setNewTemplateName('');
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to save template', description: error.message });
+      }
+    };
 
+    const handleLoadTemplate = (templateId: string) => {
+        const template = templates.find(t => t.id === templateId);
+        if (template) {
+            const newSteps = template.steps.map(step => ({
+                id: `temp_${Date.now()}_${Math.random()}`,
+                ...step
+            }));
+            setSteps(newSteps);
+            handleSaveSteps(newSteps);
+            toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
+        }
+    };
     
     if (isLoading) {
         return (
@@ -334,12 +376,25 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                         <ResizablePanel defaultSize={30} minSize={25}>
                              <Card className="h-full flex flex-col border-0 rounded-none">
                                 <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle>Project Steps</CardTitle>
+                                    <CardTitle>Project Template</CardTitle>
+                                    <div className="flex gap-2">
+                                      <Select onValueChange={handleLoadTemplate}>
+                                        <SelectTrigger className="w-48 h-8 text-xs">
+                                          <SelectValue placeholder="Load Template..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select>
+                                      <Button size="sm" className="h-8 py-1 px-2 text-xs" onClick={() => { setNewTemplateName(project.name); setIsSaveTemplateDialogOpen(true); }}>
+                                        <Save className="mr-2 h-4 w-4"/> Save as Template
+                                      </Button>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="flex-1 space-y-2 overflow-y-auto">
                                     <div className="flex items-center gap-2 pt-2">
                                         <Input
-                                            placeholder="Add a new project step..."
+                                            placeholder="Add a new step..."
                                             value={newStepTitle}
                                             onChange={(e) => setNewStepTitle(e.target.value)}
                                             onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
@@ -377,8 +432,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent>
-                                                                <DropdownMenuItem onSelect={() => handleAddTask({ stepId: step.id })}>
-                                                                <Plus className="mr-2 h-4 w-4" /> Add Task to this Step
+                                                                <DropdownMenuItem onSelect={() => handleAddTask({ stepId: step.id, title: step.title, description: step.description })}>
+                                                                  <Plus className="mr-2 h-4 w-4" /> Create Task from Step
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
                                                                 <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
@@ -504,6 +559,29 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 initialData={initialTaskData}
                 projectId={projectId}
             />
+
+            <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Save as Template</DialogTitle>
+                        <DialogDescription>Save the current list of steps as a reusable template.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="template-name">Template Name</Label>
+                        <Input
+                            id="template-name"
+                            value={newTemplateName}
+                            onChange={(e) => setNewTemplateName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSaveTemplate()}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsSaveTemplateDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveTemplate}>Save Template</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
+

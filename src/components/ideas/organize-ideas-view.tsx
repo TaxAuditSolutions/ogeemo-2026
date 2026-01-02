@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
-import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft } from 'lucide-react';
+import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft, Plus, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,7 @@ import { type Idea, type Project, type Event as TaskEvent } from '@/types/calend
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { addProject } from '@/services/project-service';
+import { Textarea } from '../ui/textarea';
 
 const ItemTypes = {
     IDEA: 'idea',
@@ -38,11 +39,12 @@ interface IdeaCardProps {
     onDelete: (id: string) => void;
     onEdit: (idea: Idea) => void;
     onMakeProject: (idea: Idea) => void;
+    onScheduleItem: (idea: Idea) => void;
     onArchive: (idea: Idea) => void;
     onMoveCard: (id: string, toIndex: number, toStatus: 'Yes' | 'No' | 'Maybe') => void;
 }
 
-const IdeaCard = ({ idea, ideas, onDelete, onEdit, onMakeProject, onArchive, onMoveCard }: IdeaCardProps) => {
+const IdeaCard = ({ idea, ideas, onDelete, onEdit, onMakeProject, onScheduleItem, onArchive, onMoveCard }: IdeaCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
 
     const [{ isDragging }, drag] = useDrag({
@@ -85,6 +87,10 @@ const IdeaCard = ({ idea, ideas, onDelete, onEdit, onMakeProject, onArchive, onM
                                 <Briefcase className="mr-2 h-4 w-4" />
                                 <span>Create New Project</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onScheduleItem(idea)}>
+                                <Calendar className="mr-2 h-4 w-4" />
+                                <span>Schedule Item</span>
+                            </DropdownMenuItem>
                              <DropdownMenuItem onSelect={() => onArchive(idea)}>
                                 <Archive className="mr-2 h-4 w-4" />
                                 <span>Archive as Reference</span>
@@ -115,13 +121,17 @@ export function OrganizeIdeasView() {
     const [ideaToEdit, setIdeaToEdit] = useState<Idea | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
-    const [inputMode, setInputMode] = useState<'Yes' | 'No' | 'Maybe' | null>(null);
+    
+    const [showNewIdeaCard, setShowNewIdeaCard] = useState(false);
     const [newIdeaTitle, setNewIdeaTitle] = useState('');
+    const [newIdeaDescription, setNewIdeaDescription] = useState('');
+
     const [isLoading, setIsLoading] = useState(true);
     
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState({});
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [taskToConvert, setTaskToConvert] = useState<Idea | null>(null);
 
     const router = useRouter();
     const { toast } = useToast();
@@ -153,13 +163,14 @@ export function OrganizeIdeasView() {
 
     const addIdea = async (status: 'Yes' | 'No' | 'Maybe') => {
         if (!newIdeaTitle.trim() || !user) {
-            setInputMode(null);
+            setShowNewIdeaCard(false);
             return;
         }
         const position = ideas.filter(i => i.status === status).length;
         try {
             const newIdeaData: Omit<Idea, 'id'> = {
                 title: newIdeaTitle.trim(),
+                description: newIdeaDescription.trim(),
                 status,
                 position,
                 userId: user.uid,
@@ -171,7 +182,8 @@ export function OrganizeIdeasView() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not save the new idea.' });
         } finally {
             setNewIdeaTitle('');
-            setInputMode(null);
+            setNewIdeaDescription('');
+            setShowNewIdeaCard(false);
         }
     };
 
@@ -206,13 +218,22 @@ export function OrganizeIdeasView() {
     
     const handleMakeProject = (idea: Idea) => {
         setInitialDialogData({ name: idea.title, description: idea.description });
+        setTaskToConvert(idea);
         setIsNewProjectDialogOpen(true);
+    };
+    
+    const handleScheduleItem = (idea: Idea) => {
+      sessionStorage.setItem('ogeemo-preselected-contact-id', '');
+      router.push(`/master-mind?title=${encodeURIComponent(idea.title)}&notes=${encodeURIComponent(idea.description || '')}`);
     };
 
      const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
         if (!user) return;
         try {
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            if (taskToConvert) {
+              await deleteIdeaFromDb(taskToConvert.id);
+            }
             toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
             router.push(`/projects/${newProject.id}/tasks`);
         } catch (error: any) {
@@ -276,36 +297,29 @@ export function OrganizeIdeasView() {
         
         return (
             <Card className="flex flex-col">
-                <CardHeader>
-                    {inputMode === status ? (
-                        <div className="flex items-center gap-2">
-                            <Input
-                                autoFocus
-                                value={newIdeaTitle}
-                                onChange={(e) => setNewIdeaTitle(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') addIdea(status);
-                                    if (e.key === 'Escape') setInputMode(null);
-                                }}
-                                onBlur={() => setInputMode(null)}
-                                placeholder="Enter idea title..."
-                            />
-                            <Button size="sm" onMouseDown={(e) => { e.preventDefault(); addIdea(status); }}>Add</Button>
-                        </div>
-                    ) : (
-                        <div className="w-1/2 mx-auto">
-                            <Button
-                                onClick={() => {
-                                    setInputMode(status);
-                                    setNewIdeaTitle('');
-                                }}
-                                className="w-full h-8 py-1 text-sm bg-gradient-to-r from-[#C3FFF9] to-[#62C1B6] text-black border-b-4 border-black/30 shadow-lg hover:from-[#C3FFF9]/90 hover:to-[#62C1B6]/90 active:mt-1 active:border-b-2">
-                                {status}
-                            </Button>
-                        </div>
-                    )}
+                <CardHeader className="text-center">
+                    <Button
+                        onClick={() => {
+                            setShowNewIdeaCard(status === 'Maybe'); // Only open for the "Maybe" column
+                        }}
+                        className="w-1/2 mx-auto h-8 py-1 text-sm bg-gradient-to-r from-[#C3FFF9] to-[#62C1B6] text-black border-b-4 border-black/30 shadow-lg hover:from-[#C3FFF9]/90 hover:to-[#62C1B6]/90 active:mt-1 active:border-b-2"
+                    >
+                        {status}
+                    </Button>
                 </CardHeader>
                 <CardContent ref={drop} className={cn("flex-1", isOver && canDrop && 'bg-primary/10')}>
+                    {status === 'Maybe' && showNewIdeaCard && (
+                        <Card className="mb-4">
+                            <CardContent className="p-3 space-y-2">
+                                <Input autoFocus placeholder="New idea title..." value={newIdeaTitle} onChange={e => setNewIdeaTitle(e.target.value)} />
+                                <Textarea placeholder="Details (optional)..." value={newIdeaDescription} onChange={e => setNewIdeaDescription(e.target.value)} rows={2} />
+                                <div className="flex justify-end gap-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setShowNewIdeaCard(false)}>Cancel</Button>
+                                    <Button size="sm" onClick={() => addIdea('Maybe')}>Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                     {isLoading ? <LoaderCircle className="mx-auto h-6 w-6 animate-spin" /> : columnIdeas
                         .map((idea) => (
                             <IdeaCard
@@ -315,6 +329,7 @@ export function OrganizeIdeasView() {
                                 onDelete={deleteIdea}
                                 onEdit={handleEdit}
                                 onMakeProject={handleMakeProject}
+                                onScheduleItem={handleScheduleItem}
                                 onArchive={handleArchive}
                                 onMoveCard={moveCard}
                             />
@@ -345,6 +360,11 @@ export function OrganizeIdeasView() {
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Drag and drop your ideas into "Yes", "No", or "Maybe" columns.
                     </p>
+                    <div className="mt-4">
+                        <Button onClick={() => setShowNewIdeaCard(true)}>
+                            <Plus className="mr-2 h-4 w-4"/> Record New Idea
+                        </Button>
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mt-6">
@@ -365,7 +385,10 @@ export function OrganizeIdeasView() {
             />
              <NewTaskDialog
                 isOpen={isNewProjectDialogOpen}
-                onOpenChange={setIsNewProjectDialogOpen}
+                onOpenChange={(open) => {
+                    setIsNewProjectDialogOpen(open);
+                    if (!open) setTaskToConvert(null);
+                }}
                 onProjectCreate={handleProjectCreated}
                 contacts={contacts}
                 onContactsChange={setContacts}

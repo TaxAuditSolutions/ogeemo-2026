@@ -19,8 +19,9 @@ const ProjectStepsView = dynamic(
   }
 );
 
-export default function ProjectOrganizerPage() {
-  const params = useParams();
-  const projectId = params.projectId as string;
+export default function ProjectOrganizerPage({ params }: { params: { projectId: string } }) {
+  // Although useParams can also work, passing params directly from the page props
+  // is a more standard and reliable way to handle dynamic route segments in Next.js.
+  const projectId = params.projectId;
   return <ProjectStepsView projectId={projectId} />;
 }

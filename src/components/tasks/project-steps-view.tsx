@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X } from 'lucide-react';
@@ -213,7 +213,7 @@ export default function ProjectStepsView() {
     const onDropTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => {
         if (!user || !projectId) return;
 
-        if ('isCompleted' in item) { // It's a ProjectStep
+        if ('isCompleted' in item) { // Type guard for ProjectStep
             try {
                 const newTaskData: Omit<TaskEvent, 'id'> = {
                     title: item.title || 'New Task from Plan',
@@ -225,9 +225,9 @@ export default function ProjectStepsView() {
                 };
                 const savedTask = await addTask(newTaskData);
                 setTasks(prev => [...prev, savedTask]);
-                toast({ title: 'Task Created', description: `New task "${savedTask.title}" was created.` });
+                toast({ title: 'Task Created', description: `New task "${savedTask.title}" was created from your plan.` });
             } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Failed to create task', description: error.message });
+                 toast({ variant: 'destructive', title: 'Failed to create task', description: error.message });
             }
             return;
         }
@@ -235,7 +235,9 @@ export default function ProjectStepsView() {
         // It's a TaskEvent
         if (item.status === newStatus) return;
         const originalTasks = [...tasks];
-        setTasks(prev => prev.map(t => t.id === item.id ? { ...t, status: newStatus } : t));
+        const updatedTasks = tasks.map(t => t.id === item.id ? { ...t, status: newStatus } : t);
+        setTasks(updatedTasks);
+        
         try {
             await updateTask(item.id, { status: newStatus });
         } catch (error: any) {

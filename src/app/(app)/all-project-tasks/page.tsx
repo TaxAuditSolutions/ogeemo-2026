@@ -1,23 +1,8 @@
 
-'use client';
+// This page is now obsolete and its functionality has been merged
+// into the enhanced To-Do List page. This file can be safely deleted.
+import { redirect } from 'next/navigation';
 
-import dynamic from 'next/dynamic';
-import { LoaderCircle } from 'lucide-react';
-
-const AllProjectTasksView = dynamic(
-  () => import('@/components/tasks/all-project-tasks-view').then(mod => mod.default),
-  {
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading All Project Tasks...</p>
-        </div>
-      </div>
-    ),
-  }
-);
-
-export default function AllProjectTasksPage() {
-  return <AllProjectTasksView />;
+export default function AllProjectTasksRedirectPage() {
+  redirect('/to-do');
 }

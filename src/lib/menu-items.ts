@@ -92,8 +92,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/email-hub", label: "Email Hub", icon: Mail },
   { href: "/contacts", label: "Contacts", icon: Contact },
   { href: "/projects/all", label: "Projects", icon: Briefcase },
-  { href: "/all-project-tasks", label: "All Project Tasks", icon: ListTodo },
-  { href: "/to-do", label: "A To Do List", icon: ListChecks },
+  { href: "/to-do", label: "To-Do List", icon: ListChecks },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/document-manager", label: "Document Manager", icon: Folder },
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
@@ -101,5 +100,3 @@ export const allMenuItems: MenuItem[] = [
   { href: "/sandbox", label: "Sandbox", icon: Beaker },
   ...accountingMenuItems,
 ];
-
-

@@ -13,7 +13,6 @@ export function ProjectManagementHeader() {
     const navLinks = [
         { href: "/projects/all", label: "Project List", icon: Briefcase },
         { href: "/project-status", label: "Project Status", icon: ListChecks },
-        { href: "/all-project-tasks", label: "All Tasks", icon: ListTodo },
     ];
     
     return (
@@ -34,4 +33,3 @@ export function ProjectManagementHeader() {
         </div>
     );
 }
-

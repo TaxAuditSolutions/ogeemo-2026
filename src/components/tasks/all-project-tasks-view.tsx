@@ -393,9 +393,6 @@ export default function AllProjectTasksView() {
                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button onClick={handleAddTask}>
-                                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                                </Button>
                                 <Button variant="outline" onClick={handleNewProject}>
                                     <FolderPlus className="mr-2 h-4 w-4" /> New Project
                                 </Button>
@@ -521,4 +518,3 @@ export default function AllProjectTasksView() {
         </>
     );
 }
-

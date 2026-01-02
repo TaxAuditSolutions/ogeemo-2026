@@ -179,14 +179,13 @@ export function ProjectStatusView() {
     
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
         if (!user) return;
+        setIsFormOpen(false);
         try {
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-            router.push(`/projects/${newProject.id}/tasks`);
+            router.push(`/project-plan?projectId=${newProject.id}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-        } finally {
-            setIsFormOpen(false);
         }
     };
 
@@ -261,7 +260,7 @@ export function ProjectStatusView() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all associated tasks. This cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all associated tasks. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -272,3 +271,5 @@ export function ProjectStatusView() {
         </>
     );
 }
+
+    

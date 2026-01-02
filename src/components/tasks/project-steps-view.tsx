@@ -39,13 +39,14 @@ import { useToast } from '@/hooks/use-toast';
 import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions } from '@/services/project-service';
 import { type Project, type ProjectStep, type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
-import { ProjectManagementHeader } from './ProjectManagementHeader';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { useDrop } from 'react-dnd';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { TaskColumn } from './TaskColumn';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { addMinutes } from 'date-fns';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 
 export default function ProjectStepsView() {
     const [project, setProject] = useState<Project | null>(null);
@@ -220,7 +221,7 @@ export default function ProjectStepsView() {
                     description: item.description || '',
                     status: newStatus,
                     position: tasks.filter(t => t.status === newStatus).length,
-                    projectId: projectId,
+                    projectId: projectId === 'inbox' ? null : projectId,
                     userId: user.uid,
                 };
                 const savedTask = await addTask(newTaskData);
@@ -495,8 +496,10 @@ export default function ProjectStepsView() {
                 taskToEdit={taskToEdit}
                 projects={projects}
                 initialData={initialTaskData}
-                projectId={projectId}
+                projectId={projectId || undefined}
             />
         </>
     );
 }
+
+    

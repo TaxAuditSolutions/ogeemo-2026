@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +29,7 @@ import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrg
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
-import { LoaderCircle, Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { LoaderCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -66,7 +65,7 @@ interface NewTaskDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onProjectCreate?: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => void;
-  onProjectUpdate?: (project: Project, tasks: []) => void;
+  onProjectUpdate?: (project: Project) => void;
   onTaskCreate?: (task: TaskEvent) => void;
   onTaskUpdate?: (task: TaskEvent) => void;
   contacts?: Contact[];
@@ -116,7 +115,6 @@ export function NewTaskDialog({
 }: NewTaskDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const router = useRouter();
   
   const isTaskMode = !!projectId || !!taskToEdit || initialData?.isTodoItem;
   const isEditingProject = !!projectToEdit;
@@ -135,7 +133,6 @@ export function NewTaskDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isManagerPopoverOpen, setIsManagerPopoverOpen] = useState(false);
-  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   
   const initialDataString = JSON.stringify(initialData);
 
@@ -165,7 +162,7 @@ export function NewTaskDialog({
 
     if (isEditingProject && projectToEdit) {
         if (onProjectUpdate) {
-            onProjectUpdate({ ...projectToEdit, ...values }, []);
+            onProjectUpdate({ ...projectToEdit, ...values });
         }
     } else {
         if (onProjectCreate) {
@@ -232,8 +229,8 @@ export function NewTaskDialog({
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Project Name</FormLabel> <FormControl><Input placeholder="e.g., Q4 Marketing Campaign" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Describe the main goal of this project" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Contact (Optional)</FormLabel> <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a contact...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..."/><CommandList><CommandEmpty>No contact found. <Button variant="link" size="sm" onClick={() => { setIsContactPopoverOpen(false); setIsContactFormOpen(true);}}>Create one?</Button></CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('contactId', c.id); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
-                  <FormField control={form.control} name="projectManagerId" render={({ field }) => ( <FormItem> <FormLabel>Project Manager (Optional)</FormLabel> <Popover open={isManagerPopoverOpen} onOpenChange={setIsManagerPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a manager...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..."/><CommandList><CommandEmpty>No contact found. <Button variant="link" size="sm" onClick={() => { setIsManagerPopoverOpen(false); setIsContactFormOpen(true);}}>Create one?</Button></CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('projectManagerId', c.id); setIsManagerPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem> <FormLabel>Contact (Optional)</FormLabel> <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a contact...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..."/><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('contactId', c.id); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="projectManagerId" render={({ field }) => ( <FormItem> <FormLabel>Project Manager (Optional)</FormLabel> <Popover open={isManagerPopoverOpen} onOpenChange={setIsManagerPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-between">{field.value ? contacts.find(c => c.id === field.value)?.name : 'Select a manager...'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..."/><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => <CommandItem key={c.id} value={c.name} onSelect={() => { form.setValue('projectManagerId', c.id); setIsManagerPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", field.value === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>)}</CommandGroup></CommandList></Command></PopoverContent></Popover><FormMessage /> </FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem> <FormLabel>Status</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="planning">In Planning</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On-Hold</SelectItem><SelectItem value="completed">Completed</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />

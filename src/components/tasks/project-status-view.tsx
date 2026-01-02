@@ -74,6 +74,7 @@ export function ProjectStatusView() {
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [initialDialogData, setInitialDialogData] = useState({});
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -189,6 +190,12 @@ export function ProjectStatusView() {
         }
     };
 
+    const handleNewProjectClick = () => {
+        setProjectToEdit(null);
+        setInitialDialogData({});
+        setIsFormOpen(true);
+    };
+
 
     if (isLoading) {
         return (
@@ -213,7 +220,7 @@ export function ProjectStatusView() {
                 
                 <div className="flex items-center gap-4">
                     <ProjectManagementHeader />
-                    <Button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }}>
+                    <Button onClick={handleNewProjectClick}>
                         <Plus className="mr-2 h-4 w-4" /> New Project
                     </Button>
                 </div>
@@ -247,6 +254,7 @@ export function ProjectStatusView() {
                 contacts={contacts}
                 onContactsChange={setContacts}
                 projectToEdit={projectToEdit}
+                initialData={initialDialogData}
             />
 
             <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>

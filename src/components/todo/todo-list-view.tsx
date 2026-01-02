@@ -39,12 +39,10 @@ import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
+import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
-import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
-
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -147,6 +145,12 @@ export function ToDoListView() {
     setTasks(newTasks);
     await updateTaskPositions(updates);
   }, [tasks]);
+  
+  const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
+    setTaskToEdit(null);
+    setInitialDialogData(initialData);
+    setIsNewTaskDialogOpen(true);
+  };
 
   const handleTaskSaved = () => {
     loadData();
@@ -313,11 +317,11 @@ export function ToDoListView() {
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
               onEdit={handleEditTask}
-              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
             />
              <TaskColumn 
               status="inProgress" 
@@ -327,11 +331,11 @@ export function ToDoListView() {
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
               onEdit={handleEditTask}
-              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
             />
              <TaskColumn 
               status="done" 
@@ -341,11 +345,11 @@ export function ToDoListView() {
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
               onEdit={handleEditTask}
-              onMakeProject={handleMakeProject}
               onArchive={handleArchive}
               selectedTaskIds={selectedTaskIds}
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
+              onMakeProject={handleMakeProject}
             />
           </div>
         </div>

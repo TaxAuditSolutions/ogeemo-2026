@@ -355,6 +355,28 @@
             "userId": { "type": "string" }
         },
         "required": ["title", "status", "position", "leadName", "userId"]
+    },
+    "ProjectTemplate": {
+      "title": "Project Template",
+      "description": "A reusable template of steps for a project.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "description": { "type": "string" }
+            },
+            "required": ["title"]
+          }
+        },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "userId"]
     }
   },
   "auth": {
@@ -433,10 +455,6 @@
       "schema": { "$ref": "#/entities/Industry" },
       "description": "Stores user-defined custom industries."
     },
-    "/loans/{loanId}": {
-        "schema": { "$ref": "#/entities/Loan" },
-        "description": "Collection of all business loans, both payable and receivable."
-    },
     "/leaveRequests/{leaveRequestId}": {
         "schema": { "$ref": "#/entities/LeaveRequest" },
         "description": "Stores worker time off and leave requests."
@@ -456,6 +474,10 @@
     "/crmActions/{actionId}": {
         "schema": { "$ref": "#/entities/CrmAction" },
         "description": "Collection of all CRM action items."
+    },
+    "/projectTemplates/{templateId}": {
+      "schema": { "$ref": "#/entities/ProjectTemplate" },
+      "description": "Stores reusable project templates."
     }
   }
 }

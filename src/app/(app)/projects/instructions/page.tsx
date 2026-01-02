@@ -44,7 +44,7 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Briefcase className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Project Manager (Main View)</span>
+                                    <span className="font-semibold">Project List (Main View)</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
@@ -64,7 +64,7 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <ListChecks className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Status Board</span>
+                                    <span className="font-semibold">Project Status Board</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
@@ -84,14 +84,19 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Route className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Project Organizer</span>
+                                    <span className="font-semibold">Project Planner & Task Board</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Each project has its own dedicated workspace for managing the details. This is a Kanban-style board where you can manage individual tasks through "To Do," "In Progress," and "Done" columns.
+                                        Each project has its own dedicated workspace. This view combines a reusable <strong>Project Template</strong> on the left with a <strong>Task Board</strong> on the right.
                                     </p>
+                                     <ul>
+                                        <li><strong>Build Templates:</strong> Use the "Project Template" panel to list out the common, repeatable steps for this type of project. You can save this list as a template to reuse on future projects.</li>
+                                        <li><strong>Create Tasks:</strong> Drag steps from your template to the "To Do" column to instantly create actionable tasks for the current project.</li>
+                                        <li><strong>Manage Workflow:</strong> Move tasks from "To Do" to "In Progress" and finally to "Done" as you complete your work.</li>
+                                    </ul>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -105,7 +110,7 @@ export default function ProjectInstructionsPage() {
                             <AccordionContent>
                                <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                    <p>
-                                      The "Action Items" page is your universal inbox for tasks that haven't been assigned to a specific project yet. It's the perfect place to quickly capture a to-do item without breaking your flow. You can later move these tasks to the appropriate project board when you're ready to organize them.
+                                      The "Action Items" project board is your universal inbox for tasks that haven't been assigned to a specific project yet. It's the perfect place to quickly capture a to-do item without breaking your flow. You can later move these tasks to the appropriate project board when you're ready to organize them.
                                    </p>
                                </div>
                             </AccordionContent>

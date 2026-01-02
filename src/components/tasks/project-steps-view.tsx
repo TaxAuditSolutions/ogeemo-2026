@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,8 @@ import { ScrollArea } from '../ui/scroll-area';
 import { TaskColumn } from './TaskColumn';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { addMinutes } from 'date-fns';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resizable';
+
 
 export default function ProjectStepsView() {
     const [project, setProject] = useState<Project | null>(null);
@@ -280,6 +281,7 @@ export default function ProjectStepsView() {
         onDropTask(task, newStatus);
     };
 
+    
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -301,9 +303,9 @@ export default function ProjectStepsView() {
     
     return (
         <>
-            <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-                 <header className="relative text-center mb-6 w-full max-w-7xl">
-                     <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <div className="p-4 sm:p-6 h-full flex flex-col items-center">
+                <header className="relative text-center mb-4 w-full max-w-7xl">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2">
                         <Button asChild variant="outline">
                             <Link href="/projects/all">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -318,7 +320,6 @@ export default function ProjectStepsView() {
                         <h2 className="text-xl text-muted-foreground">{project.name}</h2>
                     </div>
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <ProjectManagementHeader />
                          <Button asChild variant="ghost" size="icon">
                             <Link href="/projects/all" aria-label="Close and return to project list">
                                 <X className="h-5 w-5" />
@@ -326,6 +327,17 @@ export default function ProjectStepsView() {
                         </Button>
                     </div>
                 </header>
+                
+                <div className="w-full max-w-7xl border-y py-2 mb-4">
+                    <div className="flex justify-between items-center">
+                        <ProjectManagementHeader />
+                        <div className="flex items-center gap-2">
+                             <Button onClick={() => handleAddTask({ status: 'todo' })} variant="outline">
+                                <Plus className="mr-2 h-4 w-4" /> Add Task
+                            </Button>
+                        </div>
+                    </div>
+                </div>
                 
                 <div className="flex-1 w-full max-w-7xl">
                     <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">

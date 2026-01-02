@@ -20,7 +20,7 @@ const ProjectStepsView = dynamic(
 );
 
 export default function ProjectOrganizerPage() {
-  // In Client Components, useParams() is the correct hook to get dynamic route segments.
+  // Use the `useParams` hook to correctly access route parameters in a Client Component.
   const params = useParams();
   const projectId = params.projectId as string;
   

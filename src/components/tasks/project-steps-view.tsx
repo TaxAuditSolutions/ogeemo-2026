@@ -1,10 +1,12 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, MoreVertical, X, FolderPlus } from 'lucide-react';
+import { TaskColumn } from './TaskColumn';
+import { CreateTaskDialog } from './CreateTaskDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,27 +28,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
+  DialogFooter,
+  DialogContent,
   DialogTitle,
-} from "@/components/ui/dialog";
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects } from '@/services/project-service';
+import { getProjectById, updateProject, getTasksForProject, addTask, updateTask, deleteTask, updateTaskPositions, getProjects, addProject } from '@/services/project-service';
 import { type Project, type ProjectStep, type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { useDrop } from 'react-dnd';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
-import { TaskColumn } from './TaskColumn';
-import { CreateTaskDialog } from './CreateTaskDialog';
 import { addMinutes } from 'date-fns';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resizable';
+
+export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 
 
 export default function ProjectStepsView() {
@@ -328,8 +330,8 @@ export default function ProjectStepsView() {
                     </div>
                 </header>
                 
-                <div className="w-full max-w-7xl border-y py-2 mb-4">
-                    <div className="flex justify-between items-center">
+                 <div className="w-full max-w-7xl border-y py-2 mb-4">
+                    <div className="flex justify-center items-center">
                         <ProjectManagementHeader />
                         <div className="flex items-center gap-2">
                              <Button onClick={() => handleAddTask({ status: 'todo' })} variant="outline">
@@ -516,7 +518,3 @@ export default function ProjectStepsView() {
         </>
     );
 }
-
-    
-
-    

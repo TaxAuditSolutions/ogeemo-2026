@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ArrowDownUp, Check, ChevronsUpDown, Folder, GitMerge } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -275,13 +276,16 @@ export function ToDoListView() {
         <header className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
           <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
-           <div className="mt-4">
+           <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
+                <Button onClick={() => router.push('/idea-board/organize')}>
+                    <ArrowDownUp className="mr-2 h-4 w-4"/> Organize Ideas
+                </Button>
             </div>
         </header>
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-end items-center">
             <div className="flex gap-2">
                  {selectedTaskIds.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
@@ -394,3 +398,4 @@ export function ToDoListView() {
     </>
   );
 }
+

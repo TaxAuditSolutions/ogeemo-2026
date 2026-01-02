@@ -281,7 +281,7 @@ export function ProjectListView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/tasks`)}><ListChecks className="mr-2 h-4 w-4"/>Task Board</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => router.push(`/projects/organizer?projectId=${p.id}`)}><Route className="mr-2 h-4 w-4"/>Plan Project</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => router.push(`/projects/${p.id}/organizer`)}><Route className="mr-2 h-4 w-4"/>Plan Project</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

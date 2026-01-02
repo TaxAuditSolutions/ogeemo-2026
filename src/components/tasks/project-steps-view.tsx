@@ -8,8 +8,8 @@ import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, ListChecks, Edit, 
 import { TaskColumn } from './TaskColumn';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Input } from '../ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -211,7 +211,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     };
 
     const handleTaskSaved = () => {
-        loadData();
+        loadData(); // Refresh data after save/update
         setIsNewTaskDialogOpen(false);
     };
     
@@ -326,6 +326,12 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
         }
     };
+
+     const handleCopyStepToTodo = (step: Partial<ProjectStep>) => {
+        if (step.id) {
+            onDropTask(step as ProjectStep, 'todo');
+        }
+    };
     
     if (isLoading) {
         return (
@@ -432,8 +438,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent>
-                                                                <DropdownMenuItem onSelect={() => handleAddTask({ stepId: step.id, title: step.title, description: step.description })}>
-                                                                  <Plus className="mr-2 h-4 w-4" /> Create Task from Step
+                                                                <DropdownMenuItem onSelect={() => handleCopyStepToTodo(step)}>
+                                                                    <Plus className="mr-2 h-4 w-4" /> Copy to To Do
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
                                                                 <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
@@ -584,4 +590,3 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

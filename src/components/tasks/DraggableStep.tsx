@@ -41,7 +41,6 @@ export function DraggableStep({ step, index, moveStep, children }: DraggableStep
 
       const dragIndex = item.index;
       const hoverIndex = index;
-
       if (dragIndex === hoverIndex) return;
 
       const hoverBoundingRect = ref.current.getBoundingClientRect();

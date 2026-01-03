@@ -13,6 +13,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import EditIdeaDialog from './edit-idea-dialog';
 import IdeaBoardInstructionsDialog from './idea-board-instructions-dialog';
@@ -244,7 +245,7 @@ export function OrganizeIdeasView() {
             setIdeas(prev => prev.filter(i => i.id !== idea.id));
             toast({
                 title: "Idea Scheduled",
-                description: `A new task for "${idea.title}" has been created. Redirecting to calendar...`,
+                description: `A new task for "${idea.title}" has been created.`,
             });
             router.push('/calendar');
         } catch (error: any) {
@@ -267,6 +268,9 @@ export function OrganizeIdeasView() {
             router.push(`/project-plan?projectId=${newProject.id}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsNewProjectDialogOpen(false);
+            setTaskToConvert(null);
         }
     };
     
@@ -420,5 +424,7 @@ export function OrganizeIdeasView() {
         </>
     );
 }
+
+    
 
     

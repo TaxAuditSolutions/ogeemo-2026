@@ -308,7 +308,7 @@ export function ToDoListView() {
            <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
                 <Button asChild>
-                  <Link href="/idea-board/organize">
+                  <Link href="/idea-board">
                       Idea Board
                   </Link>
               </Button>

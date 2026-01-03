@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -33,6 +34,7 @@ import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { type Event as TaskEvent } from '@/types/calendar';
 
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);

@@ -21,7 +21,7 @@ import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -44,7 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
@@ -378,6 +378,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
             
+            // Set a default date if one isn't passed from URL
+            if (!searchParams.get('start') && !searchParams.get('eventId')) {
+                setStartDate(new Date());
+            }
+
             const sourceParam = searchParams.get('source');
             if (sourceParam === 'log-email') {
                 setIsReviewMode(true);
@@ -386,15 +391,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             }
 
             const eventIdParam = searchParams.get('eventId');
-            const startParam = searchParams.get('start');
-            const endParam = searchParams.get('end');
-            const titleParam = searchParams.get('title');
-            const isAllDayParam = searchParams.get('isAllDay');
-            
-            if (isAllDayParam === 'true') {
-                setIsAllDay(true);
-            }
-
             if (eventIdParam) {
                 const eventData = await getTaskById(eventIdParam);
                 if (eventData) {
@@ -406,13 +402,13 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     setIsBillable(eventData.isBillable || false);
                     setBillableRate(eventData.billableRate || 0);
                     setSessions(eventData.sessions || []);
-                    if (eventData.start) {
+                    if (eventData.start && isValid(new Date(eventData.start))) {
                         const eventStartDate = new Date(eventData.start);
                         setStartDate(eventStartDate);
                         setStartHour(String(eventStartDate.getHours()));
                         setStartMinute(String(eventStartDate.getMinutes()));
                     }
-                    if (eventData.end) {
+                    if (eventData.end && isValid(new Date(eventData.end))) {
                         const eventEndDate = new Date(eventData.end);
                         setEndDate(eventEndDate);
                         setEndHour(String(eventEndDate.getHours()));
@@ -421,26 +417,39 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                 } else {
                     toast({ variant: 'destructive', title: 'Error', description: 'Could not load event data.' });
                 }
-            } else if (startParam) {
-                const eventStartDate = parseISO(startParam);
-                setStartDate(eventStartDate);
-                setStartHour(String(eventStartDate.getHours()));
-                setStartMinute(String(eventStartDate.getMinutes()));
+            } else {
+                // Pre-fill from URL params only if not editing an existing event
+                const startParam = searchParams.get('start');
+                const endParam = searchParams.get('end');
+                const titleParam = searchParams.get('title');
+                const notesParam = searchParams.get('notes');
+                const contactIdParam = searchParams.get('contactId');
+                const projectIdParam = searchParams.get('projectId');
+                const isAllDayParam = searchParams.get('isAllDay');
+
+                if (isAllDayParam === 'true') setIsAllDay(true);
+                if (titleParam) setSubject(titleParam);
+                if (notesParam) setNotes(notesParam);
+                if (contactIdParam) setSelectedContactId(contactIdParam);
+                if (projectIdParam) setSelectedProjectId(projectIdParam);
+                
+                if (startParam) {
+                    const eventStartDate = parseISO(startParam);
+                    if (isValid(eventStartDate)) {
+                        setStartDate(eventStartDate);
+                        setStartHour(String(eventStartDate.getHours()));
+                        setStartMinute(String(eventStartDate.getMinutes()));
+                    }
+                }
                  if (endParam) {
                     const eventEndDate = parseISO(endParam);
-                    setEndDate(eventEndDate);
-                    setEndHour(String(eventEndDate.getHours()));
-                    setEndMinute(String(eventEndDate.getMinutes()));
+                    if (isValid(eventEndDate)) {
+                        setEndDate(eventEndDate);
+                        setEndHour(String(eventEndDate.getHours()));
+                        setEndMinute(String(eventEndDate.getMinutes()));
+                    }
                 }
             }
-             
-             const notesParam = searchParams.get('notes');
-             const contactId = searchParams.get('contactId');
-             const projectId = searchParams.get('projectId');
-             if (titleParam) setSubject(titleParam);
-             if (notesParam) setNotes(notesParam);
-             if (contactId) setSelectedContactId(contactId);
-             if (projectId) setSelectedProjectId(projectId);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -503,7 +512,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setContacts(prev => [...prev, contact]);
         }
         setSelectedContactId(contact.id);
-        setClientAction('select');
+        setContactAction('select');
     };
 
     const handleCreateProject = async () => {
@@ -697,7 +706,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                 <div className="space-y-2">
                                     <Label>Start Time</Label>
                                     <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, 'PPP') : <span>Pick a start date</span>}</Button></PopoverTrigger>
+                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, "PPP") : <span>Pick a start date</span>}</Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
@@ -708,7 +717,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                 <div className="space-y-2">
                                     <Label>End Time</Label>
                                     <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, 'PPP') : <span>Pick an end date</span>}</Button></PopoverTrigger>
+                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, "PPP") : <span>Pick an end date</span>}</Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2">
@@ -842,6 +851,3 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         </>
     );
 }
-
-
-    

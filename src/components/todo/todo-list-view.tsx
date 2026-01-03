@@ -261,7 +261,12 @@ export function ToDoListView() {
   };
   
   const handleScheduleTask = (task: TaskEvent) => {
-    router.push(`/master-mind?eventId=${task.id}`);
+    const query = new URLSearchParams({
+        eventId: task.id,
+        title: task.title,
+        description: task.description || '',
+    }).toString();
+    router.push(`/master-mind?${query}`);
   };
   
   const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
@@ -283,8 +288,8 @@ export function ToDoListView() {
            <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
                 <Button asChild>
-                  <Link href="/idea-board/organize">
-                      Organize Ideas
+                  <Link href="/idea-board">
+                      Idea Board
                   </Link>
               </Button>
             </div>

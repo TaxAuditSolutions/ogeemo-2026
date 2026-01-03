@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
@@ -9,7 +9,7 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
+import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
 import {
   AlertDialog,
@@ -46,8 +46,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { getContacts, type Contact } from '@/services/contact-service';
-import { NewTaskDialog } from './NewTaskDialog';
 
 
 export const ACTION_ITEMS_PROJECT_ID = 'inbox';
@@ -55,6 +53,7 @@ export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]); // Re-added this state
     const [isLoading, setIsLoading] = useState(true);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
@@ -68,11 +67,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
-    
-    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-    const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
-    const [contacts, setContacts] = useState<Contact[]>([]);
-
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -88,6 +82,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         try {
             let projectData: Project | null;
             let tasksData: TaskEvent[];
+            const allProjects = await getProjects(user.uid);
+            setProjects(allProjects);
             
             if (isActionItemsView) {
                 projectData = {
@@ -97,8 +93,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     userId: user.uid,
                     createdAt: new Date(0),
                 };
-                const allUserTasks = await getTasksForUser(user.uid);
-                tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === ACTION_ITEMS_PROJECT_ID) && !task.ritualType);
+                const allUserTasks = await getTasksForProject(projectId);
+                tasksData = allUserTasks.filter(task => !task.ritualType);
             } else {
                 [projectData, tasksData] = await Promise.all([
                     getProjectById(projectId),
@@ -407,4 +403,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

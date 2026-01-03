@@ -228,26 +228,28 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     return (
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col items-center">
-                <header className="relative text-center mb-6 w-full max-w-4xl">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <header className="mb-6 w-full max-w-4xl grid grid-cols-3 items-center">
+                    <div className="flex justify-start">
                         <Button asChild variant="outline">
                             <Link href="/projects/all">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Project List
                             </Link>
                         </Button>
-                         <Button asChild variant="outline">
-                            <Link href={`/projects/${projectId}/tasks`}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Task Board
-                            </Link>
-                        </Button>
                     </div>
-                    <div>
+                    <div className="text-center">
                         <h1 className="text-3xl font-bold font-headline text-primary">
                             Project Planner
                         </h1>
                         <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button asChild variant="outline">
+                            <Link href={`/projects/${projectId}/tasks`}>
+                                Back to Task Board
+                                <ArrowLeft className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
                     </div>
                 </header>
 

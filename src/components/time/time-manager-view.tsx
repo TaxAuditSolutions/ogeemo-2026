@@ -256,6 +256,9 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                 }
             }
             isScheduled = true;
+        } else {
+            toast({ variant: 'destructive', title: 'Date Required', description: 'A start date and time are required to save an event.' });
+            return;
         }
 
         const eventData: Partial<Omit<TaskEvent, 'id' | 'userId'>> = {
@@ -407,6 +410,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                         setStartDate(eventStartDate);
                         setStartHour(String(eventStartDate.getHours()));
                         setStartMinute(String(eventStartDate.getMinutes()));
+                    } else {
+                        // If there is no valid start date, default to now
+                        setStartDate(new Date());
+                        setStartHour(String(new Date().getHours()));
+                        setStartMinute(String(new Date().getMinutes()));
                     }
                     if (eventData.end && isValid(new Date(eventData.end))) {
                         const eventEndDate = new Date(eventData.end);

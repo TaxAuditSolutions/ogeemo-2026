@@ -85,7 +85,7 @@ const IdeaCard = ({ idea, ideas, onDelete, onEdit, onMakeProject, onScheduleItem
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => onMakeProject(idea)}>
                                 <Briefcase className="mr-2 h-4 w-4" />
-                                <span>Create New Project</span>
+                                <span>Convert to a Project</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onScheduleItem(idea)}>
                                 <Calendar className="mr-2 h-4 w-4" />
@@ -235,7 +235,7 @@ export function OrganizeIdeasView() {
               await deleteIdeaFromDb(taskToConvert.id);
             }
             toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-            router.push(`/projects/${newProject.id}/tasks`);
+            router.push(`/project-plan?projectId=${newProject.id}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
         }

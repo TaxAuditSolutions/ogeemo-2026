@@ -231,9 +231,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 <header className="relative text-center mb-6 w-full max-w-4xl">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <Button asChild variant="outline">
-                            <Link href="/to-do">
+                            <Link href="/projects/all">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Task List
+                                Back to Project List
                             </Link>
                         </Button>
                          <Button asChild variant="outline">

@@ -12,7 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import EditIdeaDialog from './edit-idea-dialog';
 import IdeaBoardInstructionsDialog from './idea-board-instructions-dialog';
@@ -420,3 +420,5 @@ export function OrganizeIdeasView() {
         </>
     );
 }
+
+    

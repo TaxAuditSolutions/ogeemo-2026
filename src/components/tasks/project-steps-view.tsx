@@ -229,11 +229,17 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         <>
             <div className="p-4 sm:p-6 h-full flex flex-col items-center">
                 <header className="relative text-center mb-6 w-full max-w-4xl">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <Button asChild variant="outline">
                             <Link href="/to-do">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Task List
+                            </Link>
+                        </Button>
+                         <Button asChild variant="outline">
+                            <Link href={`/projects/${projectId}/tasks`}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Task Board
                             </Link>
                         </Button>
                     </div>
@@ -331,7 +337,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Step Details: {stepToDetail?.title}</DialogTitle>
+                        <DialogTitle>Edit Step Details</DialogTitle>
+                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="step-description">Description</Label>

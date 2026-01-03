@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, DialogDescription } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
 import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -21,12 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ProjectManagementHeader } from './ProjectManagementHeader';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
-import { DraggableStep, ItemTypes as StepItemTypes } from './DraggableStep';
+import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { addMinutes } from 'date-fns';
@@ -45,6 +45,8 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { NewTaskDialog } from './NewTaskDialog';
 
 
 export const ACTION_ITEMS_PROJECT_ID = 'inbox';
@@ -68,6 +70,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+    const [contacts, setContacts] = useState<Contact[]>([]);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -84,6 +89,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             let projectData: Project | null;
             let tasksData: TaskEvent[];
             let allProjects: Project[] = [];
+            let allContacts: Contact[] = [];
             
             if (isActionItemsView) {
                 projectData = {
@@ -97,17 +103,18 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === ACTION_ITEMS_PROJECT_ID) && !task.ritualType);
                 allProjects = await getProjects(user.uid);
             } else {
-                [projectData, tasksData, allProjects] = await Promise.all([
+                [projectData, tasksData, allProjects, allContacts] = await Promise.all([
                     getProjectById(projectId),
                     getTasksForProject(projectId),
                     getProjects(user.uid),
+                    getContacts(user.uid),
                 ]);
                 tasksData = tasksData.filter(task => !task.ritualType);
             }
             
             if (!projectData) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Project not found.' });
-                router.push('/projects');
+                router.push('/projects/all');
                 return;
             }
 
@@ -115,6 +122,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             setProjects(allProjects);
             setSteps(projectData.steps || []);
             setTasks(tasksData);
+            setContacts(allContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
         } finally {
@@ -163,10 +171,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         }
     };
     
-    const onDropTask = useCallback(async (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => {
-        if (!user) return;
+    const onDropTask = useCallback(async (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => {
+        if (!user || !project) return;
         
-        if ('isCompleted' in item) { // Type guard for ProjectStep
+        if (!('status' in item)) { // Type guard for ProjectStep
             try {
                 const newTaskData: Omit<TaskEvent, 'id'> = {
                     title: item.title || 'New Task from Plan',
@@ -174,6 +182,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     status: newStatus,
                     position: tasks.filter(t => t.status === newStatus).length,
                     projectId: projectId === 'inbox' ? null : projectId,
+                    stepId: item.id,
                     userId: user.uid,
                 };
                 const savedTask = await addTask(newTaskData);
@@ -197,7 +206,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             setTasks(originalTasks);
             toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
         }
-    }, [user, projectId, toast, tasks]);
+    }, [user, project, projectId, toast, tasks]);
 
     const onMoveCard = useCallback(async (dragId: string, hoverId: string) => {
         const dragTask = tasks.find(t => t.id === dragId);
@@ -295,7 +304,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     return (
         <>
-            <div className="p-4 sm:p-6 h-full flex flex-col">
+            <div className="p-4 sm:p-6 h-full flex flex-col items-center">
                  <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary">
                         {project.name}
@@ -306,106 +315,51 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 </header>
                 <ProjectManagementHeader projectId={projectId} />
                 
-                <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
-                    {!isActionItemsView && (
-                    <ResizablePanel defaultSize={30} minSize={25}>
-                        <Card className="h-full flex flex-col border-0 rounded-none">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>Project Steps</CardTitle>
-                                <Button size="sm" onClick={() => handleAddTask()} variant="outline">
-                                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                                </Button>
-                            </CardHeader>
-                            <CardContent className="flex-1 space-y-2 overflow-y-auto">
-                                {steps.map((step, index) => (
-                                    <DraggableStep key={step.id || index} step={step} index={index} moveStep={moveStep}>
-                                        <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
-                                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                                            {editingStepId === step.id ? (
-                                                <Input
-                                                    autoFocus
-                                                    value={editingStepText}
-                                                    onChange={(e) => setEditingStepText(e.target.value)}
-                                                    onBlur={handleUpdateStepTitle}
-                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateStepTitle(); if (e.key === 'Escape') setEditingStepId(null); }}
-                                                    className="h-8 border-0 shadow-none focus-visible:ring-1 flex-1"
-                                                    onClick={e => e.stopPropagation()}
-                                                />
-                                            ) : (
-                                                <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">
-                                                    {step.title}
-                                                </button>
-                                            )}
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent>
-                                                    <DropdownMenuItem onSelect={() => handleAddTask({ stepId: step.id })}>
-                                                      <Plus className="mr-2 h-4 w-4" /> Add Task
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </DraggableStep>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </ResizablePanel>
-                    )}
-                    {!isActionItemsView && <ResizableHandle withHandle />}
-                    <ResizablePanel defaultSize={isActionItemsView ? 100 : 70}>
-                        <div className="h-full grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-                            <TaskColumn 
-                                status="todo" 
-                                tasks={tasksByStatus.todo}
-                                onAddTask={() => handleAddTask({ status: 'todo' })}
-                                onDropTask={onDropTask} 
-                                onMoveCard={onMoveCard}
-                                onTaskDelete={handleDeleteTask}
-                                onToggleComplete={handleToggleComplete}
-                                onEdit={handleEditTask}
-                                onArchive={() => {}}
-                                selectedTaskIds={[]}
-                                onToggleSelect={() => {}}
-                                onToggleSelectAll={() => {}}
-                                onMakeProject={() => {}}
-                            />
-                            <TaskColumn 
-                                status="inProgress" 
-                                tasks={tasksByStatus.inProgress} 
-                                onDropTask={onDropTask} 
-                                onMoveCard={onMoveCard}
-                                onTaskDelete={handleDeleteTask}
-                                onToggleComplete={handleToggleComplete}
-                                onEdit={handleEditTask}
-                                onArchive={() => {}}
-                                selectedTaskIds={[]}
-                                onToggleSelect={() => {}}
-                                onToggleSelectAll={() => {}}
-                                onMakeProject={() => {}}
-                            />
-                            <TaskColumn 
-                                status="done" 
-                                tasks={tasksByStatus.done}
-                                onDropTask={onDropTask} 
-                                onMoveCard={onMoveCard}
-                                onTaskDelete={handleDeleteTask}
-                                onToggleComplete={handleToggleComplete}
-                                onEdit={handleEditTask}
-                                onArchive={() => {}}
-                                selectedTaskIds={[]}
-                                onToggleSelect={() => {}}
-                                onToggleSelectAll={() => {}}
-                                onMakeProject={() => {}}
-                            />
-                        </div>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+                <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                    <TaskColumn 
+                        status="todo" 
+                        tasks={tasksByStatus.todo}
+                        onAddTask={() => handleAddTask({ status: 'todo' })}
+                        onDropTask={onDropTask} 
+                        onMoveCard={onMoveCard}
+                        onTaskDelete={handleDeleteTask}
+                        onToggleComplete={handleToggleComplete}
+                        onEdit={handleEditTask}
+                        onArchive={() => {}}
+                        selectedTaskIds={[]}
+                        onToggleSelect={() => {}}
+                        onToggleSelectAll={() => {}}
+                        onMakeProject={() => {}}
+                    />
+                    <TaskColumn 
+                        status="inProgress" 
+                        tasks={tasksByStatus.inProgress} 
+                        onDropTask={onDropTask} 
+                        onMoveCard={onMoveCard}
+                        onTaskDelete={handleDeleteTask}
+                        onToggleComplete={handleToggleComplete}
+                        onEdit={handleEditTask}
+                        onArchive={() => {}}
+                        selectedTaskIds={[]}
+                        onToggleSelect={() => {}}
+                        onToggleSelectAll={() => {}}
+                        onMakeProject={() => {}}
+                    />
+                    <TaskColumn 
+                        status="done" 
+                        tasks={tasksByStatus.done}
+                        onDropTask={onDropTask} 
+                        onMoveCard={onMoveCard}
+                        onTaskDelete={handleDeleteTask}
+                        onToggleComplete={handleToggleComplete}
+                        onEdit={handleEditTask}
+                        onArchive={() => {}}
+                        selectedTaskIds={[]}
+                        onToggleSelect={() => {}}
+                        onToggleSelectAll={() => {}}
+                        onMakeProject={() => {}}
+                    />
+                </div>
             </div>
             
             <CreateTaskDialog
@@ -449,13 +403,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="step-description">Description</Label>
-                        <Textarea
-                            id="step-description"
-                            value={stepDetailDescription}
-                            onChange={(e) => setStepDetailDescription(e.target.value)}
-                            rows={8}
-                            placeholder="Add more details about this step..."
-                        />
+                        <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>

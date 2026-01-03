@@ -5,15 +5,23 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Briefcase, ListChecks, Info } from 'lucide-react';
+import { Briefcase, ListChecks, Info, Route } from 'lucide-react';
 
-export function ProjectManagementHeader() {
+interface ProjectManagementHeaderProps {
+  projectId?: string;
+}
+
+export function ProjectManagementHeader({ projectId }: ProjectManagementHeaderProps) {
     const pathname = usePathname();
     
     const navLinks = [
         { href: "/projects/all", label: "Project List", icon: Briefcase },
         { href: "/project-status", label: "Project Status", icon: ListChecks },
     ];
+    
+    if (projectId) {
+        navLinks.push({ href: `/project-plan?projectId=${projectId}`, label: "Project Planner", icon: Route });
+    }
     
     return (
         <div className="flex justify-center items-center gap-2">

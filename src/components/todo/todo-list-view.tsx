@@ -43,7 +43,7 @@ import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
-import { addMinutes } from 'date-fns';
+import { addMinutes, isValid } from 'date-fns';
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -268,8 +268,8 @@ export function ToDoListView() {
     
     try {
         const now = new Date();
-        const start = task.start || now;
-        const end = task.end || addMinutes(start, 30);
+        const start = task.start && isValid(new Date(task.start)) ? new Date(task.start) : now;
+        const end = task.end && isValid(new Date(task.end)) && new Date(task.end) > start ? new Date(task.end) : addMinutes(start, 30);
         
         await updateTask(task.id, { start, end, isScheduled: true });
         
@@ -308,8 +308,8 @@ export function ToDoListView() {
            <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
                 <Button asChild>
-                  <Link href="/idea-board">
-                      Idea Board
+                  <Link href="/idea-board/organize">
+                      Organize Ideas
                   </Link>
               </Button>
             </div>
@@ -432,3 +432,5 @@ export function ToDoListView() {
     </>
   );
 }
+
+    

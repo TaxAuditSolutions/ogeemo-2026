@@ -166,7 +166,7 @@ export function IdeaListView() {
         setIdeas(prev => prev.filter(i => i.id !== idea.id));
         toast({
             title: "Idea Scheduled",
-            description: `A new task for "${idea.title}" has been created. Redirecting to calendar...`,
+            description: `A new task for "${idea.title}" has been created.`,
         });
         router.push('/calendar');
     } catch (error: any) {
@@ -212,7 +212,7 @@ export function IdeaListView() {
           <div className="mt-4 flex justify-center gap-2">
               <Button asChild>
                   <Link href="/idea-board/organize">
-                      Idea Board
+                      Organize Ideas
                   </Link>
               </Button>
               <Button asChild variant="outline">

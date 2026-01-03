@@ -260,33 +260,8 @@ export function ToDoListView() {
     onDropTask(task, newStatus);
   };
   
-  const handleScheduleTask = async (task: TaskEvent) => {
-    if (!user) {
-        toast({ variant: "destructive", title: "You must be logged in." });
-        return;
-    }
-    
-    try {
-        const now = new Date();
-        const start = task.start && isValid(new Date(task.start)) ? new Date(task.start) : now;
-        const end = task.end && isValid(new Date(task.end)) && new Date(task.end) > start ? new Date(task.end) : addMinutes(start, 30);
-        
-        await updateTask(task.id, { start, end, isScheduled: true });
-        
-        toast({
-            title: "Task Scheduled",
-            description: `"${task.title}" has been added to your calendar. Redirecting...`,
-        });
-        
-        router.push('/calendar');
-
-    } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Scheduling Failed",
-            description: "Could not add this task to the calendar.",
-        });
-    }
+  const handleScheduleTask = (task: TaskEvent) => {
+    router.push(`/master-mind?eventId=${task.id}`);
   };
   
   const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
@@ -432,5 +407,3 @@ export function ToDoListView() {
     </>
   );
 }
-
-    

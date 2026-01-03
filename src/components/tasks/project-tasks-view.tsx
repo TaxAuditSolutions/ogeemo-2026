@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
@@ -42,6 +42,7 @@ import {
   DialogFooter,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -58,7 +59,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
-    const [initialTaskData, setInitialTaskData] = useState<Partial<TaskEvent>>({});
+    const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
 
     const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
         setTaskToEdit(null);
-        setInitialTaskData(initialData);
+        setInitialDialogData(initialData);
         setIsNewTaskDialogOpen(true);
     };
     
@@ -333,7 +334,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     />
                     <TaskColumn 
                         status="inProgress" 
-                        tasks={tasksByStatus.inProgress} 
+                        tasks={tasksByStatus.inProgress}
                         onDropTask={onDropTask} 
                         onMoveCard={onMoveCard}
                         onTaskDelete={handleDeleteTask}
@@ -374,7 +375,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 onTaskUpdate={handleTaskSaved}
                 taskToEdit={taskToEdit}
                 projects={projects}
-                initialData={initialTaskData}
+                initialData={initialDialogData}
                 projectId={projectId}
             />
 

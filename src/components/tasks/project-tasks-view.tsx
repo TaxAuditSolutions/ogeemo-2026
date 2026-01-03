@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
@@ -9,7 +9,7 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, getProjects } from '@/services/project-service';
+import { getProjectById, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
 import {
   AlertDialog,
@@ -54,26 +54,25 @@ export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 
 export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
-
+    
+    // States from former ProjectStepsView
+    const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
     const [editingStepId, setEditingStepId] = useState<string | null>(null);
     const [editingStepText, setEditingStepText] = useState('');
     const [stepToDelete, setStepToDelete] = useState<Partial<ProjectStep> | null>(null);
-    
-    // State for the new "Edit Step Details" dialog
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
-
+    
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
     const [contacts, setContacts] = useState<Contact[]>([]);
+
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -89,8 +88,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         try {
             let projectData: Project | null;
             let tasksData: TaskEvent[];
-            let allProjects: Project[] = [];
-            let allContacts: Contact[] = [];
             
             if (isActionItemsView) {
                 projectData = {
@@ -102,13 +99,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 };
                 const allUserTasks = await getTasksForUser(user.uid);
                 tasksData = allUserTasks.filter(task => (!task.projectId || task.projectId === ACTION_ITEMS_PROJECT_ID) && !task.ritualType);
-                allProjects = await getProjects(user.uid);
             } else {
-                [projectData, tasksData, allProjects, allContacts] = await Promise.all([
+                [projectData, tasksData] = await Promise.all([
                     getProjectById(projectId),
                     getTasksForProject(projectId),
-                    getProjects(user.uid),
-                    getContacts(user.uid),
                 ]);
                 tasksData = tasksData.filter(task => !task.ritualType);
             }
@@ -120,10 +114,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             }
 
             setProject(projectData);
-            setProjects(allProjects);
             setSteps(projectData.steps || []);
             setTasks(tasksData);
-            setContacts(allContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
         } finally {
@@ -175,7 +167,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const onDropTask = useCallback(async (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => {
         if (!user || !project) return;
         
-        if (!('status' in item)) { // Type guard for ProjectStep
+        // Handle dropping a step from the planner
+        if (!('status' in item)) { 
             try {
                 const newTaskData: Omit<TaskEvent, 'id'> = {
                     title: item.title || 'New Task from Plan',
@@ -195,6 +188,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             return;
         }
 
+        // Handle dropping an existing task
         if (item.status === newStatus) return;
 
         const originalTasks = [...tasks];
@@ -383,9 +377,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                    This will permanently delete the step "{stepToDelete?.title}". This action cannot be undone.
-                    </AlertDialogDescription>
+                    <AlertDialogDescription>This will permanently delete the step "{stepToDelete?.title}". This action cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -415,3 +407,4 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
+

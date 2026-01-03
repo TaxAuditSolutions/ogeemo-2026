@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,6 +141,15 @@ export function IdeaListView() {
     setTaskToConvert(idea);
     setIsNewProjectDialogOpen(true);
   };
+  
+  const handleScheduleTask = (idea: Idea) => {
+    const query = new URLSearchParams();
+    query.append('title', idea.title);
+    if (idea.description) {
+      query.append('notes', idea.description);
+    }
+    router.push(`/master-mind?${query.toString()}`);
+  };
 
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
     if (!user) return;
@@ -174,8 +183,10 @@ export function IdeaListView() {
           <h1 className="text-3xl font-bold font-headline text-primary">Idea Board</h1>
           <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
           <div className="mt-4 flex justify-center gap-2">
-              <Button onClick={() => router.push('/idea-board/organize')}>
-                  Organize Ideas
+              <Button asChild>
+                  <Link href="/idea-board/organize">
+                      Organize Ideas
+                  </Link>
               </Button>
           </div>
         </header>
@@ -233,6 +244,9 @@ export function IdeaListView() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
                           <Pencil className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
+                            <Calendar className="mr-2 h-4 w-4" /> Schedule a Task
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
                           <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project

@@ -43,7 +43,7 @@ import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
-
+import { addMinutes } from 'date-fns';
 
 export function ToDoListView() {
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
@@ -257,6 +257,35 @@ export function ToDoListView() {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     onDropTask(task, newStatus);
   };
+
+  const handleScheduleTask = async (task: TaskEvent) => {
+    if (!user) {
+        toast({ variant: "destructive", title: "You must be logged in." });
+        return;
+    }
+    
+    try {
+        const now = new Date();
+        const start = task.start || now;
+        const end = task.end || addMinutes(start, 30);
+        
+        await updateTask(task.id, { start, end, isScheduled: true });
+        
+        toast({
+            title: "Task Scheduled",
+            description: `"${task.title}" has been added to your calendar.`,
+        });
+        
+        router.push('/calendar');
+
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Scheduling Failed",
+            description: "Could not add this task to the calendar.",
+        });
+    }
+  };
   
   const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
@@ -276,9 +305,11 @@ export function ToDoListView() {
           <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
            <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
-                <Button onClick={() => router.push('/idea-board')}>
-                    Idea Board
-                </Button>
+                <Button asChild>
+                  <Link href="/idea-board/organize">
+                      Idea Board
+                  </Link>
+              </Button>
             </div>
         </header>
 
@@ -312,6 +343,7 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onSchedule={handleScheduleTask}
             />
              <TaskColumn 
               status="inProgress" 
@@ -326,6 +358,7 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onSchedule={handleScheduleTask}
             />
              <TaskColumn 
               status="done" 
@@ -340,6 +373,7 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onSchedule={handleScheduleTask}
             />
           </div>
         </div>

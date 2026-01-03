@@ -12,7 +12,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +26,7 @@ interface TaskCardProps {
   onToggleComplete: (taskId: string) => void;
   onArchive: (task: TaskEvent) => void;
   onMakeProject: (task: TaskEvent) => void;
+  onSchedule?: (task: TaskEvent) => void;
   isSelected: boolean;
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   showCheckbox?: boolean;
@@ -40,6 +40,7 @@ export function TaskCard({
     onToggleComplete, 
     onArchive,
     onMakeProject,
+    onSchedule,
     isSelected,
     onToggleSelect,
     showCheckbox = false,
@@ -70,8 +71,12 @@ export function TaskCard({
     onEdit(task);
   };
   
-  const handleSchedule = () => {
-    router.push(`/master-mind?eventId=${task.id}`);
+  const handleScheduleClick = () => {
+    if (onSchedule) {
+      onSchedule(task);
+    } else {
+      router.push(`/master-mind?eventId=${task.id}`);
+    }
   };
 
   const isCompleted = task.status === 'done';
@@ -106,10 +111,7 @@ export function TaskCard({
                     <DropdownMenuItem onSelect={() => onEdit(task)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit / View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onEdit(task)}>
-                        <GitMerge className="mr-2 h-4 w-4" /> Assign to Project
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={handleSchedule}>
+                    <DropdownMenuItem onSelect={handleScheduleClick}>
                         <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onMakeProject(task)}>

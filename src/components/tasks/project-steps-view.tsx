@@ -357,13 +357,13 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold font-headline text-primary">
-                            Project Organizer
+                            Project Planner
                         </h1>
                         <h2 className="text-xl text-muted-foreground">{project.name}</h2>
                     </div>
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                          <Button asChild variant="ghost" size="icon">
-                            <Link href="/projects/all" aria-label="Close and return to project list">
+                            <Link href="/action-manager" aria-label="Close and return to project list">
                                 <X className="h-5 w-5" />
                             </Link>
                         </Button>

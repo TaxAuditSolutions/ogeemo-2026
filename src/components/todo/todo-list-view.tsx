@@ -33,7 +33,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus, updateTaskPositions } from '@/services/project-service';
+import { getTasksForUser, addProject, updateTask, deleteTask, deleteTasks, updateTaskPositions } from '@/services/project-service';
 import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
@@ -242,7 +242,7 @@ export function ToDoListView() {
   
   const handleConfirmBulkDelete = async () => {
     try {
-      await deleteTodos(selectedTaskIds);
+      await deleteTasks(selectedTaskIds);
       toast({ title: `${selectedTaskIds.length} tasks deleted.` });
       setSelectedTaskIds([]);
       loadData();
@@ -275,7 +275,7 @@ export function ToDoListView() {
         
         toast({
             title: "Task Scheduled",
-            description: `"${task.title}" has been added to your calendar.`,
+            description: `"${task.title}" has been added to your calendar. Redirecting...`,
         });
         
         router.push('/calendar');

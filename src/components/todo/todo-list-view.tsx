@@ -57,8 +57,6 @@ export function ToDoListView() {
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
-  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
@@ -278,20 +276,25 @@ export function ToDoListView() {
           <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
            <div className="mt-4 flex justify-center gap-2">
                 <ProjectManagementHeader />
-                <Button onClick={() => router.push('/idea-board/organize')}>
-                    <ArrowDownUp className="mr-2 h-4 w-4"/> Organize Ideas
+                <Button onClick={() => router.push('/idea-board')}>
+                    Idea Board
                 </Button>
             </div>
         </header>
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
-          <div className="flex justify-end items-center">
-            <div className="flex gap-2">
-                 {selectedTaskIds.length > 0 && (
-                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                        <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
-                    </Button>
-                )}
+          <div className="flex justify-between items-center">
+            {selectedTaskIds.length > 0 ? (
+                <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                    <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
+                </Button>
+            ) : (
+                <div /> // Placeholder to keep layout consistent
+            )}
+            <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true})}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -398,4 +401,3 @@ export function ToDoListView() {
     </>
   );
 }
-

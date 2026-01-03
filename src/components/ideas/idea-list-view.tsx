@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -235,7 +235,7 @@ export function IdeaListView() {
                           <Pencil className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                          <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
+                          <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleArchive(idea)}>
                           <Archive className="mr-2 h-4 w-4" /> Archive

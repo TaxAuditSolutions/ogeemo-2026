@@ -22,17 +22,22 @@ import { archiveIdeaAsFile } from '@/services/file-service';
 import { addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
+import { Textarea } from '../ui/textarea';
 
 export function IdeaListView() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [newIdeaText, setNewIdeaText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   
+  const [showNewIdeaCard, setShowNewIdeaCard] = useState(false);
+  const [newIdeaTitle, setNewIdeaTitle] = useState('');
+  const [newIdeaDescription, setNewIdeaDescription] = useState('');
+
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [initialDialogData, setInitialDialogData] = useState({});
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [taskToConvert, setTaskToConvert] = useState<Idea | null>(null);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -68,18 +73,24 @@ export function IdeaListView() {
   }, [loadData]);
 
   const handleAddIdea = async () => {
-    if (!newIdeaText.trim() || !user) return;
+    if (!newIdeaTitle.trim() || !user) {
+        setShowNewIdeaCard(false);
+        return;
+    }
 
     try {
       const savedIdea = await addIdea({
-        title: newIdeaText.trim(),
+        title: newIdeaTitle.trim(),
+        description: newIdeaDescription.trim(),
         status: 'Maybe', // Default status for new ideas
         position: ideas.length,
         userId: user.uid,
         createdAt: new Date(),
       });
       setIdeas(prev => [savedIdea, ...prev]);
-      setNewIdeaText('');
+      setNewIdeaTitle('');
+      setNewIdeaDescription('');
+      setShowNewIdeaCard(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not save new idea.' });
     }
@@ -118,7 +129,7 @@ export function IdeaListView() {
     try {
       await updateIdea(editingId, { title: editingText.trim() });
     } catch (error) {
-      setIdeas(prev => prev.map(t => t.id === editingId ? todoToUpdate : t));
+      setIdeas(prev => prev.map(t => t.id === editingId ? ideaToUpdate : t));
       toast({ variant: 'destructive', title: 'Error', description: 'Could not update item.' });
     } finally {
       setEditingId(null);
@@ -127,6 +138,7 @@ export function IdeaListView() {
   
   const handleMakeProject = (idea: Idea) => {
     setInitialDialogData({ name: idea.title, description: idea.description });
+    setTaskToConvert(idea);
     setIsNewProjectDialogOpen(true);
   };
 
@@ -134,8 +146,11 @@ export function IdeaListView() {
     if (!user) return;
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        if (taskToConvert) {
+          await deleteIdea(taskToConvert.id);
+        }
         toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/projects/${newProject.id}/tasks`);
+        router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     }
@@ -160,7 +175,7 @@ export function IdeaListView() {
           <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
           <div className="mt-4 flex justify-center gap-2">
               <Button onClick={() => router.push('/idea-board/organize')}>
-                  <ArrowDownUp className="mr-2 h-4 w-4"/> Organize Ideas
+                  Organize Ideas
               </Button>
           </div>
         </header>
@@ -168,28 +183,35 @@ export function IdeaListView() {
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>My Ideas</CardTitle>
-            <div className="flex w-full items-center space-x-2 pt-2">
-              <Input
-                type="text"
-                placeholder="e.g., A new marketing campaign..."
-                value={newIdeaText}
-                onChange={(e) => setNewIdeaText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddIdea(); }}
-              />
-              <Button onClick={handleAddIdea}>
-                <Plus className="mr-2 h-4 w-4" /> Add Idea
-              </Button>
-            </div>
+            {!showNewIdeaCard && (
+                <div className="pt-2">
+                    <Button onClick={() => setShowNewIdeaCard(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Record New Idea
+                    </Button>
+                </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
+                {showNewIdeaCard && (
+                    <Card className="mb-4 bg-muted/50">
+                        <CardContent className="p-3 space-y-2">
+                            <Input autoFocus placeholder="New idea title..." value={newIdeaTitle} onChange={e => setNewIdeaTitle(e.target.value)} />
+                            <Textarea placeholder="Details (optional)..." value={newIdeaDescription} onChange={e => setNewIdeaDescription(e.target.value)} rows={2} />
+                            <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => setShowNewIdeaCard(false)}>Cancel</Button>
+                                <Button size="sm" onClick={handleAddIdea}>Save</Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
               {isLoading ? (
                   <div className="flex items-center justify-center p-8">
                       <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                   </div>
               ) : ideas.length > 0 ? (
                 ideas.map(idea => (
-                  <div key={idea.id} className="flex items-center gap-2 p-2 rounded-md border bg-muted/50">
+                  <div key={idea.id} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50">
                     {editingId === idea.id ? (
                         <Input
                             autoFocus
@@ -213,10 +235,10 @@ export function IdeaListView() {
                           <Pencil className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                          <Briefcase className="mr-2 h-4 w-4" /> Make a Project
+                          <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleArchive(idea)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Archive
+                          <Archive className="mr-2 h-4 w-4" /> Archive
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
@@ -225,11 +247,11 @@ export function IdeaListView() {
                     </DropdownMenu>
                   </div>
                 ))
-              ) : (
+              ) : !showNewIdeaCard ? (
                 <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                  <p>Your idea board is empty. Add an idea above to get started!</p>
+                  <p>Your idea board is empty. Add an idea to get started!</p>
                 </div>
-              )}
+              ) : null}
             </div>
           </CardContent>
         </Card>

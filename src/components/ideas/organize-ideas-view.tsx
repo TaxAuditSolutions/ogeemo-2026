@@ -12,7 +12,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import EditIdeaDialog from './edit-idea-dialog';
@@ -26,8 +25,9 @@ import { getIdeas, addIdea as saveIdea, updateIdea as updateIdeaInDb, deleteIdea
 import { type Idea, type Project, type Event as TaskEvent } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { addProject } from '@/services/project-service';
+import { addProject, addTask } from '@/services/project-service';
 import { Textarea } from '../ui/textarea';
+import { addMinutes } from 'date-fns';
 
 const ItemTypes = {
     IDEA: 'idea',
@@ -89,7 +89,7 @@ const IdeaCard = ({ idea, ideas, onDelete, onEdit, onMakeProject, onScheduleItem
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onScheduleItem(idea)}>
                                 <Calendar className="mr-2 h-4 w-4" />
-                                <span>Schedule Item</span>
+                                <span>Schedule a Task</span>
                             </DropdownMenuItem>
                              <DropdownMenuItem onSelect={() => onArchive(idea)}>
                                 <Archive className="mr-2 h-4 w-4" />
@@ -222,9 +222,41 @@ export function OrganizeIdeasView() {
         setIsNewProjectDialogOpen(true);
     };
     
-    const handleScheduleItem = (idea: Idea) => {
-      sessionStorage.setItem('ogeemo-preselected-contact-id', '');
-      router.push(`/master-mind?title=${encodeURIComponent(idea.title)}&notes=${encodeURIComponent(idea.description || '')}`);
+    const handleScheduleItem = async (idea: Idea) => {
+        if (!user) {
+            toast({ variant: "destructive", title: "You must be logged in." });
+            return;
+        }
+        try {
+            const now = new Date();
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: `From Idea: ${idea.title}`,
+                description: idea.description || "",
+                start: now,
+                end: addMinutes(now, 30), // Default 30-min duration
+                status: 'todo',
+                position: 0,
+                userId: user.uid,
+                isScheduled: true,
+            };
+            await addTask(newTaskData);
+            // Optionally delete the idea after scheduling
+            await deleteIdeaFromDb(idea.id);
+            setIdeas(prev => prev.filter(i => i.id !== idea.id));
+            toast({
+                title: "Idea Scheduled",
+                description: `A new task for "${idea.title}" has been created for today.`,
+                action: (
+                    <Button variant="link" asChild><Link href="/calendar">View Calendar</Link></Button>
+                )
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Scheduling Failed",
+                description: "Could not create a task from this idea.",
+            });
+        }
     };
 
      const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
@@ -248,13 +280,9 @@ export function OrganizeIdeasView() {
         }
         try {
             await archiveIdeaAsFile(user.uid, idea.title, idea.description || '');
-            toast({
-                title: "Idea Archived",
-                description: `"${idea.title}" has been saved to your Document Manager.`,
-            });
             await deleteIdea(idea.id);
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Archive Failed", description: error.message });
+            toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
         }
     };
 
@@ -385,10 +413,7 @@ export function OrganizeIdeasView() {
             />
              <NewTaskDialog
                 isOpen={isNewProjectDialogOpen}
-                onOpenChange={(open) => {
-                    setIsNewProjectDialogOpen(open);
-                    if (!open) setTaskToConvert(null);
-                }}
+                onOpenChange={setIsNewProjectDialogOpen}
                 onProjectCreate={handleProjectCreated}
                 contacts={contacts}
                 onContactsChange={setContacts}

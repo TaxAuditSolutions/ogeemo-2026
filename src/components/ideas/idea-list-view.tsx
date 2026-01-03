@@ -19,10 +19,11 @@ import { useToast } from '@/hooks/use-toast';
 import { getIdeas, addIdea, deleteIdea, updateIdea } from '@/services/ideas-service';
 import { type Idea, type Project, type Event as TaskEvent } from '@/types/calendar-types';
 import { archiveIdeaAsFile } from '@/services/file-service';
-import { addProject } from '@/services/project-service';
+import { addProject, addTask } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { Textarea } from '../ui/textarea';
+import { addMinutes } from 'date-fns';
 
 export function IdeaListView() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -142,13 +143,40 @@ export function IdeaListView() {
     setIsNewProjectDialogOpen(true);
   };
   
-  const handleScheduleTask = (idea: Idea) => {
-    const query = new URLSearchParams();
-    query.append('title', idea.title);
-    if (idea.description) {
-      query.append('notes', idea.description);
+  const handleScheduleTask = async (idea: Idea) => {
+    if (!user) {
+        toast({ variant: "destructive", title: "You must be logged in." });
+        return;
     }
-    router.push(`/master-mind?${query.toString()}`);
+    try {
+        const now = new Date();
+        const newTaskData: Omit<TaskEvent, 'id'> = {
+            title: `From Idea: ${idea.title}`,
+            description: idea.description || "",
+            start: now,
+            end: addMinutes(now, 30),
+            status: 'todo',
+            position: 0,
+            userId: user.uid,
+            isScheduled: true,
+        };
+        await addTask(newTaskData);
+        await deleteIdea(idea.id);
+        setIdeas(prev => prev.filter(i => i.id !== idea.id));
+        toast({
+            title: "Idea Scheduled",
+            description: `A new task for "${idea.title}" has been created and scheduled for today.`,
+            action: (
+                <Button variant="link" asChild><Link href="/calendar">View Calendar</Link></Button>
+            )
+        });
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Scheduling Failed",
+            description: "Could not create a task from this idea.",
+        });
+    }
   };
 
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {

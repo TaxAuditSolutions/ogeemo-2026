@@ -324,17 +324,12 @@ export function ToDoListView() {
             ) : (
                 <div /> // Placeholder to keep layout consistent
             )}
-            <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true})}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                </Button>
-            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <TaskColumn 
               status="todo" 
               tasks={tasksByStatus.todo}
-              onAddTask={() => handleAddTask({ status: 'todo' })}
+              onAddTask={() => handleAddTask({ status: 'todo', isTodoItem: true })}
               onDropTask={onDropTask} 
               onMoveCard={onMoveCard}
               onTaskDelete={handleDeleteTask}

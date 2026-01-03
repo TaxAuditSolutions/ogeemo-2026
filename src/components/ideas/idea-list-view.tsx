@@ -165,11 +165,9 @@ export function IdeaListView() {
         setIdeas(prev => prev.filter(i => i.id !== idea.id));
         toast({
             title: "Idea Scheduled",
-            description: `A new task for "${idea.title}" has been created and scheduled for today.`,
-            action: (
-                <Button variant="link" asChild><Link href="/calendar">View Calendar</Link></Button>
-            )
+            description: `A new task for "${idea.title}" has been created. Redirecting to calendar...`,
         });
+        router.push('/calendar');
     } catch (error: any) {
         toast({
             variant: "destructive",
@@ -213,7 +211,7 @@ export function IdeaListView() {
           <div className="mt-4 flex justify-center gap-2">
               <Button asChild>
                   <Link href="/idea-board/organize">
-                      Organize Ideas
+                      Idea Board
                   </Link>
               </Button>
           </div>

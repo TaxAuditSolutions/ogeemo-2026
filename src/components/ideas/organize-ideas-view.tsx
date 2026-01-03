@@ -233,23 +233,20 @@ export function OrganizeIdeasView() {
                 title: `From Idea: ${idea.title}`,
                 description: idea.description || "",
                 start: now,
-                end: addMinutes(now, 30), // Default 30-min duration
+                end: addMinutes(now, 30),
                 status: 'todo',
                 position: 0,
                 userId: user.uid,
                 isScheduled: true,
             };
             await addTask(newTaskData);
-            // Optionally delete the idea after scheduling
             await deleteIdeaFromDb(idea.id);
             setIdeas(prev => prev.filter(i => i.id !== idea.id));
             toast({
                 title: "Idea Scheduled",
-                description: `A new task for "${idea.title}" has been created for today.`,
-                action: (
-                    <Button variant="link" asChild><Link href="/calendar">View Calendar</Link></Button>
-                )
+                description: `A new task for "${idea.title}" has been created. Redirecting to calendar...`,
             });
+            router.push('/calendar');
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -270,9 +267,6 @@ export function OrganizeIdeasView() {
             router.push(`/project-plan?projectId=${newProject.id}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-        } finally {
-            setIsNewProjectDialogOpen(false);
-            setTaskToConvert(null);
         }
     };
     

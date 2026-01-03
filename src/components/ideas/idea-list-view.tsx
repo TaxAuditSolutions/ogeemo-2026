@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar, ArrowLeft } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -214,6 +214,11 @@ export function IdeaListView() {
                       Idea Board
                   </Link>
               </Button>
+              <Button asChild variant="outline">
+                  <Link href="/to-do">
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to To-Do List
+                  </Link>
+              </Button>
           </div>
         </header>
 
@@ -268,17 +273,18 @@ export function IdeaListView() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
+                        <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
+                          <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
                             <Calendar className="mr-2 h-4 w-4" /> Schedule a Task
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                          <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
-                        </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleArchive(idea)}>
                           <Archive className="mr-2 h-4 w-4" /> Archive
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
+                          <Pencil className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently

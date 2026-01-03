@@ -33,7 +33,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
+import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus, updateTaskPositions } from '@/services/project-service';
 import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
@@ -57,6 +57,8 @@ export function ToDoListView() {
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
+  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
@@ -257,7 +259,7 @@ export function ToDoListView() {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     onDropTask(task, newStatus);
   };
-
+  
   const handleScheduleTask = async (task: TaskEvent) => {
     if (!user) {
         toast({ variant: "destructive", title: "You must be logged in." });

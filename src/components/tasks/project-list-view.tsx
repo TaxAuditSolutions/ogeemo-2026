@@ -187,7 +187,7 @@ export function ProjectListView() {
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
         toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/project-plan?projectId=${newProject.id}`);
+        router.push(`/projects/${newProject.id}/tasks`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     }
@@ -263,7 +263,7 @@ export function ProjectListView() {
                             />
                         </TableCell>
                         <TableCell className="font-medium">
-                          <Link href={`/project-plan?projectId=${p.id}`} className="hover:underline">
+                          <Link href={`/projects/${p.id}/tasks`} className="hover:underline">
                             {p.name}
                           </Link>
                         </TableCell>

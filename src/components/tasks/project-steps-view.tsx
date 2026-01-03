@@ -1,7 +1,9 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -228,9 +230,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             <div className="p-4 sm:p-6 h-full flex flex-col items-center">
                 <header className="relative text-center mb-6 w-full max-w-4xl">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2">
-                        <Button variant="outline" onClick={() => router.back()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Task Board
+                        <Button asChild variant="outline">
+                            <Link href={`/projects/${projectId}/tasks`}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Task Board
+                            </Link>
                         </Button>
                     </div>
                     <div>

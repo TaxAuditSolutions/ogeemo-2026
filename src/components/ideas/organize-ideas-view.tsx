@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
 import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft, Plus, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -270,6 +270,9 @@ export function OrganizeIdeasView() {
             router.push(`/project-plan?projectId=${newProject.id}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsNewProjectDialogOpen(false);
+            setTaskToConvert(null);
         }
     };
     

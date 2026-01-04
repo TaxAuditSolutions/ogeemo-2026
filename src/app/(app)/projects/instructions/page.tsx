@@ -104,13 +104,13 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Inbox className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Action Items (Inbox)</span>
+                                    <span className="font-semibold">To-Do List (Inbox)</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                    <p>
-                                      The "Action Items" project board is your universal inbox for tasks that haven't been assigned to a specific project yet. It's the perfect place to quickly capture a to-do item without breaking your flow. You can later move these tasks to the appropriate project board when you're ready to organize them.
+                                      The <Link href="/to-do">To-Do List</Link> serves as your universal inbox for any tasks that haven't been assigned to a specific project yet. It's the perfect place to quickly capture a single to-do item without breaking your flow. You can later assign these tasks to the appropriate project when you're ready to organize them.
                                    </p>
                                </div>
                             </AccordionContent>

@@ -4,7 +4,7 @@
 import { useParams } from 'next/navigation';
 import { ProjectTasksView } from '@/components/tasks/project-tasks-view';
 import { Suspense } from 'react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -46,8 +46,13 @@ export default function ProjectTaskBoardPage() {
                 <div className="text-center">
                     <h1 className="text-4xl font-bold font-headline text-primary">Project Board</h1>
                 </div>
-                {/* This empty div acts as a spacer to keep the title centered */}
-                <div className="w-48"></div>
+                <div className="w-48 flex justify-end">
+                    <Button asChild variant="outline">
+                        <Link href={`/project-plan?projectId=${projectId}`}>
+                            Back to Planner <Route className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </div>
             </header>
             
             <Suspense fallback={
@@ -60,4 +65,3 @@ export default function ProjectTaskBoardPage() {
         </div>
     );
 }
-

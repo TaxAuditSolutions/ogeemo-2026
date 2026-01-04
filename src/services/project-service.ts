@@ -448,6 +448,19 @@ export async function addProjectTemplate(templateData: Omit<ProjectTemplate, 'id
     return { id: docRef.id, ...templateData };
 }
 
+export async function updateProjectTemplate(templateId: string, templateData: Partial<Omit<ProjectTemplate, 'id' | 'userId'>>): Promise<void> {
+    const db = await getDb();
+    const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
+    await updateDoc(templateRef, templateData);
+}
+
+export async function deleteProjectTemplate(templateId: string): Promise<void> {
+    const db = await getDb();
+    const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
+    await deleteDoc(templateRef);
+}
+
+
 // --- Action Chip Functions ---
 
 const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [

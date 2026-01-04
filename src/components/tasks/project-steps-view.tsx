@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
@@ -29,12 +29,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { type Event as TaskEvent } from '@/types/calendar';
+import { type Event as TaskEvent } from '@/types/calendar-types';
 
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
@@ -50,8 +50,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
     const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+    const [templateToEdit, setTemplateToEdit] = useState<ProjectTemplate | null>(null);
+    const [isManageTemplatesOpen, setIsManageTemplatesOpen] = useState(false);
     const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
+    const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -174,32 +177,48 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             toast({
                 title: "Task Created",
                 description: `A task for "${step.title}" has been added to the project board.`,
-                action: <Button asChild variant="link"><a onClick={() => router.push(`/projects/${project.id}/tasks`)}>View Board</a></Button>
+                action: <Button asChild variant="link"><a onClick={() => router.push(`/projects/${projectId}/tasks`)}>View Board</a></Button>
             });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Task Creation Failed', description: error.message });
         }
     };
 
-    const handleSaveTemplate = async () => {
-      if (!user || !newTemplateName.trim() || !project) {
-        toast({ variant: 'destructive', title: 'Template name is required.' });
-        return;
-      }
-      try {
-        const newTemplate = await addProjectTemplate({
-          name: newTemplateName,
-          description: project.description || '',
-          steps: steps.map(({ id, ...step }) => step), // Remove temporary IDs
-          userId: user.uid,
-        });
-        setTemplates(prev => [...prev, newTemplate]);
-        toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
-        setIsSaveTemplateDialogOpen(false);
-        setNewTemplateName('');
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to save template', description: error.message });
-      }
+    const handleOpenSaveTemplateDialog = () => {
+      setNewTemplateName(templateToEdit ? templateToEdit.name : project?.name || '');
+      setIsSaveTemplateDialogOpen(true);
+    };
+
+    const handleSaveOrUpdateTemplate = async () => {
+        if (!user || !newTemplateName.trim()) {
+            toast({ variant: 'destructive', title: 'Template name is required.' });
+            return;
+        }
+
+        const templateData = {
+            name: newTemplateName,
+            description: project?.description || '',
+            steps: steps.map(({ id, ...step }) => step),
+        };
+
+        try {
+            if (templateToEdit) {
+                // Update existing template
+                await updateProjectTemplate(templateToEdit.id, templateData);
+                setTemplates(prev => prev.map(t => t.id === templateToEdit.id ? { ...t, ...templateData } : t));
+                toast({ title: 'Template Updated', description: `"${newTemplateName}" has been updated.` });
+            } else {
+                // Save new template
+                const newTemplate = await addProjectTemplate({ ...templateData, userId: user.uid });
+                setTemplates(prev => [...prev, newTemplate]);
+                setTemplateToEdit(newTemplate); // Set the new template as the one being "edited"
+                toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
+            }
+            setIsSaveTemplateDialogOpen(false);
+            setNewTemplateName('');
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to save template', description: error.message });
+        }
     };
 
     const handleLoadTemplate = (templateId: string) => {
@@ -211,10 +230,25 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             }));
             setSteps(newSteps);
             handleSaveSteps(newSteps);
+            setTemplateToEdit(template); // Track that we are now working on an existing template
             toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
+            setIsManageTemplatesOpen(false); // Close dialog after loading
         }
     };
-    
+
+    const handleConfirmDeleteTemplate = async () => {
+        if (!templateToDelete) return;
+        try {
+            await deleteProjectTemplate(templateToDelete.id);
+            setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
+            toast({ title: 'Template Deleted' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        } finally {
+            setTemplateToDelete(null);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -222,7 +256,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             </div>
         );
     }
-
+    
     if (!project) return null;
 
     return (
@@ -238,11 +272,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                         </Button>
                     </div>
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold font-headline text-primary">
+                        <h1 className="text-xl font-bold font-headline text-primary">
                             Project Planner
                         </h1>
                         <div className="mt-2 inline-block rounded-md border border-black bg-white p-2">
-                            <h2 className="text-xl text-foreground font-semibold">{project.name}</h2>
+                            <h2 className="text-2xl text-foreground font-semibold">{project.name}</h2>
                         </div>
                     </div>
                     <div className="flex justify-end">
@@ -263,16 +297,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                 <CardDescription>Define all the steps required to complete this project.</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Select onValueChange={handleLoadTemplate}>
-                                <SelectTrigger className="w-48 h-9 text-xs">
-                                    <SelectValue placeholder="Load Template..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <Button size="sm" className="h-9" onClick={() => { setNewTemplateName(project.name); setIsSaveTemplateDialogOpen(true); }}>
-                                <Save className="mr-2 h-4 w-4"/> Save as Template
+                                <Button size="sm" className="h-9" variant="outline" onClick={() => setIsManageTemplatesOpen(true)}>Manage Templates</Button>
+                                <Button size="sm" className="h-9" onClick={handleOpenSaveTemplateDialog}>
+                                    <Save className="mr-2 h-4 w-4"/> {templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}
                                 </Button>
                             </div>
                         </div>
@@ -358,19 +385,63 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Save as Template</DialogTitle>
-                        <DialogDescription>Save the current list of steps as a reusable template for future projects.</DialogDescription>
+                        <DialogTitle>{templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}</DialogTitle>
+                        <DialogDescription>
+                          {templateToEdit ? `This will overwrite the "${templateToEdit.name}" template.` : 'Save the current list of steps as a reusable template for future projects.'}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Label htmlFor="template-name">Template Name</Label>
-                        <Input id="template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSaveTemplate()}/>
+                        <Input id="template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSaveOrUpdateTemplate()}/>
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsSaveTemplateDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveTemplate}>Save Template</Button>
+                        <Button onClick={handleSaveOrUpdateTemplate}>{templateToEdit ? 'Save Changes' : 'Save Template'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={isManageTemplatesOpen} onOpenChange={setIsManageTemplatesOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Manage Project Templates</DialogTitle>
+                  <DialogDescription>Load, edit, or delete your saved project templates.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <ScrollArea className="h-64 border rounded-md">
+                    <div className="p-2 space-y-1">
+                      {templates.map(template => (
+                        <div key={template.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent group">
+                          <span className="font-medium text-sm truncate">{template.name}</span>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="ghost" onClick={() => handleLoadTemplate(template.id)}>Load</Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setTemplateToEdit(template); handleOpenSaveTemplateDialog(); }}><Pencil className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setTemplateToDelete(template)}><Trash2 className="h-4 w-4"/></Button>
+                          </div>
+                        </div>
+                      ))}
+                      {templates.length === 0 && <p className="text-sm text-muted-foreground text-center p-4">No templates saved yet.</p>}
+                    </div>
+                  </ScrollArea>
+                </div>
+                 <DialogFooter>
+                    <Button onClick={() => setIsManageTemplatesOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={!!templateToDelete} onOpenChange={setTemplateToDelete}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete the template "{templateToDelete?.name}". This action cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

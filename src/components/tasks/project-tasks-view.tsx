@@ -23,8 +23,9 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate } from '@/types/calendar';
+import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, type Project, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { CreateTaskDialog } from './CreateTaskDialog';
+import { NewTaskDialog } from './NewTaskDialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
@@ -82,6 +84,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
+
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+    const [contacts, setContacts] = useState<Contact[]>([]);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -225,8 +231,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setIsNewTaskDialogOpen(true);
     };
 
-    const handleDeleteTask = async (taskId: string) => {
-        setTaskToDelete({ id: taskId } as TaskEvent);
+    const handleDeleteTask = (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) setTaskToDelete(task);
     };
     
     const handleConfirmDelete = async () => {
@@ -252,12 +259,20 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
         if (project && !isActionItemsView) {
             try {
-                await updateProject(project.id, { steps: updatedSteps });
+                const stepsToSave = updatedSteps.map(step => ({
+                    ...step,
+                    id: step.id && !step.id.startsWith('temp_') ? step.id : `step_${Date.now()}_${Math.random()}`
+                }));
+                setSteps(stepsToSave);
+                await updateProject(project.id, { steps: stepsToSave });
+                return stepsToSave;
             } catch (error) {
                 console.error("Failed to save steps:", error);
                 toast({ variant: "destructive", title: "Save failed", description: "Could not save the project plan." });
+                return null;
             }
         }
+        return null;
     }, [project, isActionItemsView, toast]);
     
     const handleStartEditStep = (step: Partial<ProjectStep>) => {
@@ -280,21 +295,63 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setIsStepDetailDialogOpen(true);
     };
     
-    const handleSaveStepDetails = () => {
-        if (!stepToDetail) return;
-        const updatedSteps = steps.map(s => s.id === stepToDetail.id ? { ...s, description: stepDetailDescription } : s);
+    const handleSaveStepDetails = async () => {
+        if (!stepToDetail || !stepToDetail.title) {
+            toast({ variant: "destructive", title: "Title is required." });
+            return;
+        }
+        const updatedSteps = steps.map(s => 
+            s.id === stepToDetail.id 
+            ? { ...s, title: stepToDetail.title, description: stepDetailDescription } 
+            : s
+        );
         setSteps(updatedSteps);
-        handleSaveSteps(updatedSteps);
+        await handleSaveSteps(updatedSteps);
+
+        // Also update the corresponding task
+        const correspondingTask = tasks.find(t => t.stepId === stepToDetail.id);
+        if (correspondingTask) {
+            try {
+                await updateTask(correspondingTask.id, { title: stepToDetail.title, description: stepDetailDescription });
+                setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: stepToDetail.title!, description: stepDetailDescription} : t));
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
+            }
+        }
+
         setIsStepDetailDialogOpen(false);
     };
 
     const handleDeleteStep = async () => {
-        if (!stepToDelete) return;
-        const updatedSteps = steps.filter(s => s.id !== stepToDelete.id);
-        setSteps(updatedSteps);
-        handleSaveSteps(updatedSteps);
-        setStepToDelete(null);
-        toast({ title: 'Step Deleted' });
+        if (!stepToDelete || !user) return;
+        
+        const stepIdToDelete = stepToDelete.id;
+
+        const originalSteps = [...steps];
+        const updatedSteps = steps.filter(s => s.id !== stepIdToDelete);
+        
+        
+        try {
+            // First, delete the corresponding task if it exists
+            const taskToDelete = tasks.find(t => t.stepId === stepIdToDelete);
+            if (taskToDelete) {
+                await deleteTask(taskToDelete.id);
+            }
+            
+            // Then, save the updated steps array for the project
+            setSteps(updatedSteps);
+            await handleSaveSteps(updatedSteps);
+            // Refresh tasks from DB after deleting one
+            setTasks(prev => prev.filter(t => t.stepId !== stepIdToDelete));
+
+            toast({ title: 'Step Deleted' });
+        } catch (error: any) {
+            // Revert UI on failure
+            toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
+            setSteps(originalSteps);
+        } finally {
+            setStepToDelete(null);
+        }
     };
 
 
@@ -358,7 +415,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
         }
     };
-
     
     if (isLoading) {
         return (
@@ -392,9 +448,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
                     onArchive={handleArchive}
-                    selectedTaskIds={[]}
-                    onToggleSelect={() => {}}
-                    onToggleSelectAll={() => {}}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
                     onMakeProject={handleMakeProject}
                     onAddToTodoList={handleAddToTodoList}
                 />
@@ -407,9 +463,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
                     onArchive={handleArchive}
-                    selectedTaskIds={[]}
-                    onToggleSelect={() => {}}
-                    onToggleSelectAll={() => {}}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
                     onMakeProject={handleMakeProject}
                     onAddToTodoList={handleAddToTodoList}
                 />
@@ -422,9 +478,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
                     onArchive={handleArchive}
-                    selectedTaskIds={[]}
-                    onToggleSelect={() => {}}
-                    onToggleSelectAll={() => {}}
+                    selectedTaskIds={selectedTaskIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
                     onMakeProject={handleMakeProject}
                     onAddToTodoList={handleAddToTodoList}
                 />
@@ -460,7 +516,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>This will permanently delete the step "{stepToDelete?.title}". This action cannot be undone.</AlertDialogDescription>
+                    <AlertDialogDescription>This will permanently delete the step "{stepToDelete?.title}" and its associated task from the board. This action cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>

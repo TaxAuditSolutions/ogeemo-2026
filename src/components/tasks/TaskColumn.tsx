@@ -18,6 +18,7 @@ import { Input } from '../ui/input';
 interface TaskColumnProps {
   status: TaskStatus;
   tasks: TaskEvent[];
+  projectName?: string;
   onAddTask?: () => void; // Changed to not take arguments, it will just trigger the dialog
   onDropTask: (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => void;
   onMoveCard: (dragId: string, hoverId: string) => void;
@@ -30,6 +31,7 @@ interface TaskColumnProps {
   selectedTaskIds: string[];
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   onToggleSelectAll: (status: TaskStatus) => void;
+  onAddToTodoList: (task: TaskEvent) => void;
 }
 
 const columnTitles: Record<TaskStatus, string> = {
@@ -53,6 +55,7 @@ export function TaskColumn({
   selectedTaskIds,
   onToggleSelect,
   onToggleSelectAll,
+  onAddToTodoList,
 }: TaskColumnProps) {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ['task', StepItemTypes.STEP],
@@ -97,6 +100,7 @@ export function TaskColumn({
                 onMakeProject={onMakeProject}
                 onArchive={onArchive}
                 onSchedule={onSchedule}
+                onAddToTodoList={onAddToTodoList}
             />
           ))}
         </CardContent>

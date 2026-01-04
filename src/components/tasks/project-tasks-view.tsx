@@ -17,6 +17,7 @@ import {
   FilePlus,
   Pencil,
   Route,
+  ListTodo,
 } from 'lucide-react';
 import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -224,17 +226,22 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     };
 
     const handleDeleteTask = async (taskId: string) => {
-        const originalTasks = [...tasks];
-        setTasks(prev => prev.filter(t => t.id !== taskId));
-        try {
-            await deleteTask(taskId);
-            toast({ title: "Task Deleted" });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
-            setTasks(originalTasks);
-        }
+        setTaskToDelete({ id: taskId } as TaskEvent);
     };
     
+    const handleConfirmDelete = async () => {
+        if (!taskToDelete) return;
+        try {
+          await deleteTask(taskToDelete.id);
+          loadData();
+          toast({ title: 'Task Deleted' });
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+        } finally {
+          setTaskToDelete(null);
+        }
+    };
+
     const handleToggleComplete = async (taskId: string) => {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -299,6 +306,59 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         await handleSaveSteps(newSteps);
     }, [steps, handleSaveSteps]);
 
+    const handleMakeProject = (task: TaskEvent) => {
+        setInitialDialogData({ name: task.title, description: task.description || '' });
+        setTaskToConvert(task);
+        setIsNewProjectDialogOpen(true);
+    };
+
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            if (taskToConvert) {
+              await deleteTask(taskToConvert.id);
+            }
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+            loadData(); // Refresh both projects and todos
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsNewProjectDialogOpen(false);
+            setTaskToConvert(null);
+        }
+    };
+    
+    const handleArchive = async (task: TaskEvent) => {
+        if (!user) return;
+        try {
+          await archiveTaskAsFile(user.uid, task);
+          await deleteTask(task.id);
+          loadData();
+          toast({ title: 'Archived', description: 'Task saved to File Manager.' });
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
+        }
+    };
+    
+    const handleAddToTodoList = async (task: TaskEvent) => {
+        if (!user || !project) return;
+        try {
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: `[${project.name}]: ${task.title}`,
+                status: 'todo',
+                position: 0,
+                userId: user.uid,
+                isTodoItem: true,
+                projectId: null,
+            };
+            await addTask(newTaskData);
+            toast({ title: "Added to To-Do List", description: `A new entry for "${task.title}" has been created.`});
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
+        }
+    };
+
     
     if (isLoading) {
         return (
@@ -331,11 +391,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onTaskDelete={handleDeleteTask}
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
-                    onArchive={() => {}}
+                    onArchive={handleArchive}
                     selectedTaskIds={[]}
                     onToggleSelect={() => {}}
                     onToggleSelectAll={() => {}}
-                    onMakeProject={() => {}}
+                    onMakeProject={handleMakeProject}
+                    onAddToTodoList={handleAddToTodoList}
                 />
                  <TaskColumn 
                     status="inProgress" 
@@ -345,11 +406,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onTaskDelete={handleDeleteTask}
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
-                    onArchive={() => {}}
+                    onArchive={handleArchive}
                     selectedTaskIds={[]}
                     onToggleSelect={() => {}}
                     onToggleSelectAll={() => {}}
-                    onMakeProject={() => {}}
+                    onMakeProject={handleMakeProject}
+                    onAddToTodoList={handleAddToTodoList}
                 />
                  <TaskColumn 
                     status="done" 
@@ -359,11 +421,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onTaskDelete={handleDeleteTask}
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
-                    onArchive={() => {}}
+                    onArchive={handleArchive}
                     selectedTaskIds={[]}
                     onToggleSelect={() => {}}
                     onToggleSelectAll={() => {}}
-                    onMakeProject={() => {}}
+                    onMakeProject={handleMakeProject}
+                    onAddToTodoList={handleAddToTodoList}
                 />
             </div>
             
@@ -383,6 +446,16 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 projectId={projectId}
             />
             
+            <NewTaskDialog
+                isOpen={isNewProjectDialogOpen}
+                onOpenChange={setIsNewProjectDialogOpen}
+                onProjectCreate={handleProjectCreated}
+                contacts={contacts}
+                onContactsChange={setContacts}
+                projectToEdit={null}
+                initialData={initialDialogData}
+            />
+            
             <AlertDialog open={!!stepToDelete} onOpenChange={() => setStepToDelete(null)}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
@@ -397,20 +470,43 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+              <AlertDialogContent>
+                  <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             
             <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Step Details</DialogTitle>
-                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="step-description">Description</Label>
-                        <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
+                     <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="step-title">Step Title</Label>
+                            <Input id="step-title" value={stepToDetail?.title || ''} onChange={(e) => setStepToDetail(p => p ? {...p, title: e.target.value} : null)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="step-description">Description</Label>
+                            <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
+                        </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveStepDetails}>Save</Button>
+                    <DialogFooter className="justify-between">
+                        <Button variant="destructive" onClick={() => { setStepToDelete(stepToDetail); setIsStepDetailDialogOpen(false); }}>
+                            <Trash2 className="mr-2 h-4 w-4"/> Delete Step
+                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={handleSaveStepDetails}>Save</Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

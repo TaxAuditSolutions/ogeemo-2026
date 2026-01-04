@@ -1,10 +1,10 @@
 
-"use client";
+'use client';
 
 import React, { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon, GitMerge, CheckCircle } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon, GitMerge, CheckCircle, ListTodo } from 'lucide-react';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import {
@@ -28,6 +28,7 @@ interface TaskCardProps {
   onArchive: (task: TaskEvent) => void;
   onMakeProject: (task: TaskEvent) => void;
   onSchedule?: (task: TaskEvent) => void;
+  onAddToTodoList: (task: TaskEvent) => void;
 }
 
 export function TaskCard({ 
@@ -39,6 +40,7 @@ export function TaskCard({
     onArchive,
     onMakeProject,
     onSchedule,
+    onAddToTodoList,
 }: TaskCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -97,6 +99,9 @@ export function TaskCard({
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={handleScheduleClick}>
                         <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onAddToTodoList(task)}>
+                        <ListTodo className="mr-2 h-4 w-4" /> Add to To-Do List
                     </DropdownMenuItem>
                     {task.status !== 'done' && (
                         <DropdownMenuItem onSelect={() => onToggleComplete(task.id)}>

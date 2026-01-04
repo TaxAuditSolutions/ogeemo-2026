@@ -90,13 +90,10 @@ export function TaskCard({
              {(showCheckbox) && (
                 <Checkbox
                     checked={isCompleted}
-                    onClick={(e) => {
-                        e.stopPropagation();
+                    onCheckedChange={() => {
                         onToggleComplete(task.id);
                     }}
-                    onCheckedChange={(checked) => {
-                        onToggleComplete(task.id)
-                    }}
+                    onClick={(e) => e.stopPropagation()} // Prevent card's onClick from firing
                     className="mt-1"
                     aria-label={`Mark task ${task.title} as ${isCompleted ? 'not completed' : 'completed'}`}
                 />

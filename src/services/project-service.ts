@@ -333,7 +333,6 @@ export async function getTasksForUser(userId: string): Promise<TaskEvent[]> {
 
 export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
     const db = await getDb();
-
     const dataToSave = {
         ...taskData,
         start: taskData.start || null,
@@ -342,8 +341,26 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
     };
 
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
+    const newTaskId = docRef.id;
 
-    return { ...taskData, id: docRef.id };
+    // If the task belongs to a project, add a corresponding step to the project plan.
+    if (dataToSave.projectId && dataToSave.projectId !== 'inbox') {
+        const projectRef = doc(db, PROJECTS_COLLECTION, dataToSave.projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+            const projectData = docToProject(projectSnap);
+            const newStep: Partial<ProjectStep> = {
+                id: `step_${newTaskId}`, // Link step to task
+                title: dataToSave.title,
+                description: dataToSave.description || '',
+                isCompleted: dataToSave.status === 'done',
+            };
+            const updatedSteps = [...(projectData.steps || []), newStep];
+            await updateDoc(projectRef, { steps: updatedSteps });
+        }
+    }
+
+    return { ...dataToSave, id: newTaskId };
 }
 
 
@@ -388,13 +405,14 @@ export async function deleteTasks(taskIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-export async function updateTasksStatus(taskIds: string[], status: TaskStatus): Promise<void> {
-    if (taskIds.length === 0) return;
+export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {
     const db = await getDb();
+    if (todoIds.length === 0) return;
     const batch = writeBatch(db);
-    taskIds.forEach(id => {
-        const taskRef = doc(db, TASKS_COLLECTION, id);
-        batch.update(taskRef, { status: status });
+    const status = completed ? 'done' : 'todo';
+    todoIds.forEach(id => {
+        const docRef = doc(db, TASKS_COLLECTION, id);
+        batch.update(docRef, { completed, status });
     });
     await batch.commit();
 }

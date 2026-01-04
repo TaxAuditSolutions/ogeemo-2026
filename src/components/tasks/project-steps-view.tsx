@@ -62,6 +62,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
 
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
+    const [stepDetailTitle, setStepDetailTitle] = useState("");
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
     const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
@@ -162,13 +163,21 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
         setStepToDetail(step);
+        setStepDetailTitle(step.title || '');
         setStepDetailDescription(step.description || '');
         setIsStepDetailDialogOpen(true);
     };
     
     const handleSaveStepDetails = () => {
-        if (!stepToDetail) return;
-        const updatedSteps = steps.map(s => s.id === stepToDetail.id ? { ...s, description: stepDetailDescription } : s);
+        if (!stepToDetail || !stepDetailTitle.trim()) {
+            toast({ variant: "destructive", title: "Title is required." });
+            return;
+        }
+        const updatedSteps = steps.map(s => 
+            s.id === stepToDetail.id 
+            ? { ...s, title: stepDetailTitle, description: stepDetailDescription } 
+            : s
+        );
         setSteps(updatedSteps);
         handleSaveSteps(updatedSteps);
         setIsStepDetailDialogOpen(false);
@@ -369,11 +378,16 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Step Details</DialogTitle>
-                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="step-description">Description</Label>
-                        <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="step-title">Step Title</Label>
+                            <Input id="step-title" value={stepDetailTitle} onChange={(e) => setStepDetailTitle(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="step-description">Description</Label>
+                            <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
+                        </div>
                     </div>
                     <DialogFooter className="justify-between">
                         <Button variant="destructive" onClick={() => { setStepToDelete(stepToDetail); setIsStepDetailDialogOpen(false); }}>

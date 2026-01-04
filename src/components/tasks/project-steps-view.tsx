@@ -160,20 +160,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
     };
     
-    const handleStartEditStep = (step: Partial<ProjectStep>) => {
-        setEditingStepId(step.id || null);
-        setEditingStepText(step.title || '');
-    };
-
-    const handleUpdateStepTitle = () => {
-        if (!editingStepId) return;
-        const updatedSteps = steps.map(s => s.id === editingStepId ? { ...s, title: editingStepText } : s);
-        setSteps(updatedSteps);
-        handleSaveSteps(updatedSteps);
-        setEditingStepId(null);
-        setEditingStepText('');
-    };
-    
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
         setStepToDetail(step);
         setStepDetailDescription(step.description || '');
@@ -333,22 +319,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                         <DraggableStep key={step.id || index} step={step} index={index} moveStep={moveStep}>
                                             <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
                                                 <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                                                {editingStepId === step.id ? (
-                                                    <Input autoFocus value={editingStepText} onChange={(e) => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateStepTitle(); if (e.key === 'Escape') setEditingStepId(null); }} className="h-7 border-0 shadow-none focus-visible:ring-1 flex-1" onClick={e => e.stopPropagation()} />
-                                                ) : (
-                                                    <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
-                                                )}
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
                                             </div>
                                         </DraggableStep>
                                     ))
@@ -394,6 +365,28 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 </div>
             </div>
             
+            <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Step Details</DialogTitle>
+                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="step-description">Description</Label>
+                        <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
+                    </div>
+                    <DialogFooter className="justify-between">
+                        <Button variant="destructive" onClick={() => { setStepToDelete(stepToDetail); setIsStepDetailDialogOpen(false); }}>
+                            <Trash2 className="mr-2 h-4 w-4"/> Delete Step
+                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={handleSaveStepDetails}>Save</Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
              <AlertDialog open={!!stepToDelete} onOpenChange={() => setStepToDelete(null)}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
@@ -407,23 +400,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 </AlertDialogContent>
             </AlertDialog>
             
-            <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Step Details</DialogTitle>
-                        <DialogDescription>{stepToDetail?.title}</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="step-description">Description</Label>
-                        <Textarea id="step-description" value={stepDetailDescription} onChange={(e) => setStepDetailDescription(e.target.value)} rows={8} placeholder="Add more details about this step..."/>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsStepDetailDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveStepDetails}>Save</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
                 <DialogContent>
                     <DialogHeader>

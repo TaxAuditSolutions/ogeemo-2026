@@ -16,7 +16,7 @@ export function ProjectManagementHeader({ projectId }: ProjectManagementHeaderPr
     
     const navLinks = [
         { href: "/projects/all", label: "Project List", icon: Briefcase },
-        { href: "/project-status", label: "Project Status", icon: ListChecks },
+        { href: "/project-status", label: "Status Board", icon: ListChecks },
     ];
     
     if (projectId) {

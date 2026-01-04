@@ -5,27 +5,21 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Archive,
   LoaderCircle,
   Plus,
-  GripVertical,
-  Trash2,
-  ArrowLeft,
-  Edit,
-  MoreVertical,
-  BookOpen,
-  Save,
-  FilePlus,
-  Pencil,
-  Route,
+  Briefcase,
+  Calendar as CalendarIcon,
+  ListChecks,
   ListTodo,
+  Route,
+  ArrowLeft,
 } from 'lucide-react';
-import { TaskColumn } from './TaskColumn';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, type Project, type ProjectStep, type ProjectTemplate, addProject as addProjectService } from '@/services/project-service';
-import { getContacts, type Contact } from '@/services/contact-service';
-import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,11 +30,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
-import { CreateTaskDialog } from './CreateTaskDialog';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getProjects, getTasksForProject, addProject, updateTask, updateTaskPositions, deleteTask, getProjectById, type Project, type ProjectStep, type TaskStatus } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { type Event as TaskEvent } from '@/types/calendar-types';
+import { archiveTaskAsFile } from '@/services/file-service';
+import { TaskColumn } from './TaskColumn';
 import { NewTaskDialog } from './NewTaskDialog';
+import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
@@ -50,8 +49,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -70,11 +69,12 @@ export const ACTION_ITEMS_PROJECT_ID = 'inbox';
 export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<TaskEvent[]>([]);
-    const [projects, setProjects] = useState<Project[]>([]); // Re-added this state
+    const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
     const [initialDialogData, setInitialDialogData] = useState<Partial<TaskEvent>>({});
     const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
     
     // States from former ProjectStepsView
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
@@ -89,7 +89,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-    const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
+    const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -315,7 +315,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         const correspondingTask = tasks.find(t => t.stepId === stepToDetail.id);
         if (correspondingTask) {
             try {
-                await updateTask(correspondingTask.id, { title: stepToDetail.title!, description: stepDetailDescription });
+                await updateTask(correspondingTask.id, { title: stepToDetail.title, description: stepDetailDescription });
                 setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: stepToDetail.title!, description: stepDetailDescription} : t));
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
@@ -356,7 +356,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
         if (!user) return;
         try {
-            const newProject = await addProjectService({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             if (taskToConvert) {
               await deleteTask(taskToConvert.id);
             }
@@ -371,8 +371,15 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     };
     
     const handleArchive = async (task: TaskEvent) => {
-        // Placeholder for archive logic
-        toast({ title: 'Archiving...' });
+        if (!user) return;
+        try {
+            await archiveTaskAsFile(user.uid, task);
+            await deleteTask(task.id);
+            loadData();
+            toast({ title: 'Archived', description: 'Task saved to File Manager.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
+        }
     };
     
     const handleAddToTodoList = async (task: TaskEvent) => {
@@ -392,15 +399,16 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
         }
     };
-
-    const handleToggleSelect = (taskId: string) => {
+    
+    const handleToggleSelect = (taskId: string, event?: React.MouseEvent) => {
+      event?.stopPropagation();
       setSelectedTaskIds(prev =>
-        prev.includes(taskId)
-          ? prev.filter(id => id !== taskId)
-          : [...prev, id]
+          prev.includes(taskId)
+              ? prev.filter(id => id !== taskId)
+              : [...prev, taskId]
       );
     };
-
+  
     const handleToggleSelectAll = (status: TaskStatus) => {
         const columnTasks = tasksByStatus[status];
         const columnTaskIds = columnTasks.map(t => t.id);
@@ -413,7 +421,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         }
     };
 
-    
+
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -437,11 +445,11 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     onToggleComplete={handleToggleComplete}
                     onEdit={handleEditTask}
                     onArchive={handleArchive}
+                    onMakeProject={handleMakeProject}
+                    onAddToTodoList={handleAddToTodoList}
                     selectedTaskIds={selectedTaskIds}
                     onToggleSelect={handleToggleSelect}
                     onToggleSelectAll={handleToggleSelectAll}
-                    onMakeProject={handleMakeProject}
-                    onAddToTodoList={handleAddToTodoList}
                 />
                  <TaskColumn 
                     status="inProgress" 
@@ -559,4 +567,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     );
 }
 
-```

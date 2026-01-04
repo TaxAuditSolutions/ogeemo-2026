@@ -193,7 +193,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         
         const stepIdToDelete = stepToDelete.id;
 
-        // Optimistically update UI
+        const originalSteps = [...steps];
         const updatedSteps = steps.filter(s => s.id !== stepIdToDelete);
         setSteps(updatedSteps);
         
@@ -211,7 +211,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         } catch (error: any) {
             // Revert UI on failure
             toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
-            setSteps(steps); // Revert to original state
+            setSteps(originalSteps);
         } finally {
             setStepToDelete(null);
         }
@@ -357,7 +357,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                 <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7">
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>

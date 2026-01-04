@@ -333,7 +333,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                             <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
                                                 <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                                                 {editingStepId === step.id ? (
-                                                    <Input autoFocus value={editingStepText} onChange={(e) => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateStepTitle(); if (e.key === 'Escape') setEditingStepId(null); }} className="h-8 border-0 shadow-none focus-visible:ring-1 flex-1" onClick={e => e.stopPropagation()} />
+                                                    <Input autoFocus value={editingStepText} onChange={(e) => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateStepTitle(); if (e.key === 'Escape') setEditingStepId(null); }} className="h-7 border-0 shadow-none focus-visible:ring-1 flex-1" onClick={e => e.stopPropagation()} />
                                                 ) : (
                                                     <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
                                                 )}
@@ -342,7 +342,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                         <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent>
-                                                        <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename Step</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

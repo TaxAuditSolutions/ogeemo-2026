@@ -152,7 +152,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         if (!('status' in item)) { 
             try {
                 const newTaskData: Omit<TaskEvent, 'id'> = {
-                    title: item.title || 'New Task from Plan',
+                    title: item.title || "New Task from Plan",
                     description: item.description || '',
                     status: newStatus,
                     position: tasks.filter(t => t.status === newStatus).length,
@@ -314,7 +314,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         <>
             <div className="text-center mb-4">
                 <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2 text-foreground">
-                     <h2 className="text-2xl font-semibold">{project.name}</h2>
+                     <h2 className="text-lg text-foreground font-semibold">{project.name}</h2>
                 </div>
                 <p className="text-muted-foreground">
                     {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}

@@ -277,7 +277,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                             Project Planner
                         </h1>
                         <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2">
-                            <h2 className="text-2xl text-foreground font-semibold">{project.name}</h2>
+                             <h2 className="text-2xl text-foreground font-semibold">{project.name}</h2>
                         </div>
                     </div>
                     <div className="flex justify-end">
@@ -436,7 +436,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                       {templates.map(template => (
                         <div key={template.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent group">
                           <span className="font-medium text-sm truncate">{template.name}</span>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 transition-opacity">
                             <Button size="sm" variant="ghost" onClick={() => handleLoadTemplate(template.id)}>Load</Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setTemplateToEdit(template); handleOpenSaveTemplateDialog(); }}><Pencil className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setTemplateToDelete(template)}><Trash2 className="h-4 w-4"/></Button>

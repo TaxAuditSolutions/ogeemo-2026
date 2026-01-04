@@ -23,7 +23,7 @@ import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, type Project, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
+import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject, type Project, type ProjectStep, type ProjectTemplate, addProject as addProjectService } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Event as TaskEvent, type TaskStatus } from '@/types/calendar-types';
 import {
@@ -88,6 +88,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+    const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -239,15 +241,17 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleConfirmDelete = async () => {
         if (!taskToDelete) return;
         try {
-          await deleteTask(taskToDelete.id);
-          loadData();
-          toast({ title: 'Task Deleted' });
+            await deleteTask(taskToDelete.id);
+            // The task's step is now deleted via the service
+            toast({ title: 'Task Deleted' });
+            loadData();
         } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
         } finally {
-          setTaskToDelete(null);
+            setTaskToDelete(null);
         }
     };
+
 
     const handleToggleComplete = async (taskId: string) => {
         const task = tasks.find(t => t.id === taskId);
@@ -286,7 +290,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setSteps(updatedSteps);
         handleSaveSteps(updatedSteps);
         setEditingStepId(null);
-        setEditingStepText('');
     };
     
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
@@ -312,7 +315,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         const correspondingTask = tasks.find(t => t.stepId === stepToDetail.id);
         if (correspondingTask) {
             try {
-                await updateTask(correspondingTask.id, { title: stepToDetail.title, description: stepDetailDescription });
+                await updateTask(correspondingTask.id, { title: stepToDetail.title!, description: stepDetailDescription });
                 setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: stepToDetail.title!, description: stepDetailDescription} : t));
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
@@ -324,31 +327,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     const handleDeleteStep = async () => {
         if (!stepToDelete || !user) return;
-        
-        const stepIdToDelete = stepToDelete.id;
-
-        const originalSteps = [...steps];
-        const updatedSteps = steps.filter(s => s.id !== stepIdToDelete);
-        
-        
         try {
-            // First, delete the corresponding task if it exists
-            const taskToDelete = tasks.find(t => t.stepId === stepIdToDelete);
-            if (taskToDelete) {
-                await deleteTask(taskToDelete.id);
-            }
-            
-            // Then, save the updated steps array for the project
-            setSteps(updatedSteps);
-            await handleSaveSteps(updatedSteps);
-            // Refresh tasks from DB after deleting one
-            setTasks(prev => prev.filter(t => t.stepId !== stepIdToDelete));
-
+            await deleteTask(stepToDelete.id); // This now handles the step deletion too
             toast({ title: 'Step Deleted' });
+            loadData(); // Reload all data for consistency
         } catch (error: any) {
-            // Revert UI on failure
             toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
-            setSteps(originalSteps);
         } finally {
             setStepToDelete(null);
         }
@@ -372,7 +356,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
         if (!user) return;
         try {
-            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            const newProject = await addProjectService({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             if (taskToConvert) {
               await deleteTask(taskToConvert.id);
             }
@@ -387,15 +371,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     };
     
     const handleArchive = async (task: TaskEvent) => {
-        if (!user) return;
-        try {
-          await archiveTaskAsFile(user.uid, task);
-          await deleteTask(task.id);
-          loadData();
-          toast({ title: 'Archived', description: 'Task saved to File Manager.' });
-        } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
-        }
+        // Placeholder for archive logic
+        toast({ title: 'Archiving...' });
     };
     
     const handleAddToTodoList = async (task: TaskEvent) => {
@@ -415,6 +392,27 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
         }
     };
+
+    const handleToggleSelect = (taskId: string) => {
+      setSelectedTaskIds(prev =>
+        prev.includes(taskId)
+          ? prev.filter(id => id !== taskId)
+          : [...prev, id]
+      );
+    };
+
+    const handleToggleSelectAll = (status: TaskStatus) => {
+        const columnTasks = tasksByStatus[status];
+        const columnTaskIds = columnTasks.map(t => t.id);
+        const selectedInColumn = selectedTaskIds.filter(id => columnTaskIds.includes(id));
+
+        if (selectedInColumn.length === columnTasks.length) {
+          setSelectedTaskIds(prev => prev.filter(id => !columnTaskIds.includes(id)));
+        } else {
+          setSelectedTaskIds(prev => [...new Set([...prev, ...columnTaskIds])]);
+        }
+    };
+
     
     if (isLoading) {
         return (
@@ -428,15 +426,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     return (
         <>
-            <div className="text-center mb-4">
-                <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2 text-foreground">
-                     <h2 className="text-lg text-foreground font-semibold">{project.name}</h2>
-                </div>
-                <p className="text-muted-foreground">
-                    {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}
-                </p>
-            </div>
-            
             <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                 <TaskColumn 
                     status="todo" 
@@ -569,3 +558,5 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
+
+```

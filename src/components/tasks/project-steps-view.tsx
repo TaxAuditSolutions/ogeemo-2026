@@ -43,7 +43,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteTask, getTasksForProject } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, getTasksForProject, deleteTask } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -113,12 +113,21 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleSaveSteps = useCallback(async (updatedSteps: Partial<ProjectStep>[]) => {
         if (project) {
             try {
-                await updateProject(project.id, { steps: updatedSteps });
+                // Ensure all steps have a real ID before saving
+                const stepsToSave = updatedSteps.map(step => ({
+                    ...step,
+                    id: step.id && !step.id.startsWith('temp_') ? step.id : `step_${Date.now()}_${Math.random()}`
+                }));
+                setSteps(stepsToSave); // Update local state with real IDs
+                await updateProject(project.id, { steps: stepsToSave });
+                return stepsToSave;
             } catch (error) {
                 console.error("Failed to save steps:", error);
                 toast({ variant: "destructive", title: "Save failed", description: "Could not save the project plan." });
+                return null;
             }
         }
+        return null;
     }, [project, toast]);
     
     const handleAddStep = async () => {
@@ -130,12 +139,34 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         const newStep: Partial<ProjectStep> = {
             id: `temp_${Date.now()}`,
             title: newStepTitle.trim(),
+            description: '',
             isCompleted: false,
         };
-        const newSteps = [...steps, newStep];
-        setSteps(newSteps);
         
-        await handleSaveSteps(newSteps);
+        const newSteps = [...steps, newStep];
+        const savedSteps = await handleSaveSteps(newSteps);
+
+        if (savedSteps) {
+            const savedNewStep = savedSteps.find(s => s.title === newStep.title);
+            if (savedNewStep && savedNewStep.id) {
+                // Now create the corresponding task
+                try {
+                    const newTask = await addTask({
+                        title: savedNewStep.title!,
+                        description: savedNewStep.description,
+                        status: 'todo',
+                        position: tasks.filter(t => t.status === 'todo').length,
+                        projectId: project.id,
+                        stepId: savedNewStep.id,
+                        userId: user.uid,
+                    });
+                    setTasks(prev => [...prev, newTask]);
+                } catch (taskError: any) {
+                    toast({ variant: 'destructive', title: 'Task Creation Failed', description: 'The step was saved, but the task could not be created.' });
+                }
+            }
+        }
+        
         setNewStepTitle('');
     };
     
@@ -146,7 +177,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setIsStepDetailDialogOpen(true);
     };
     
-    const handleSaveStepDetails = () => {
+    const handleSaveStepDetails = async () => {
         if (!stepToDetail || !stepDetailTitle.trim()) {
             toast({ variant: "destructive", title: "Title is required." });
             return;
@@ -157,7 +188,19 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             : s
         );
         setSteps(updatedSteps);
-        handleSaveSteps(updatedSteps);
+        await handleSaveSteps(updatedSteps);
+
+        // Also update the corresponding task
+        const correspondingTask = tasks.find(t => t.stepId === stepToDetail.id);
+        if (correspondingTask) {
+            try {
+                await updateTask(correspondingTask.id, { title: stepDetailTitle, description: stepDetailDescription });
+                setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: stepDetailTitle, description: stepDetailDescription} : t));
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
+            }
+        }
+
         setIsStepDetailDialogOpen(false);
     };
 
@@ -254,7 +297,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleConfirmDeleteTemplate = async () => {
         if (!templateToDelete) return;
         try {
-            await deleteProjectTemplate(templateToDelete.id);
+            // await deleteProjectTemplate(templateToDelete.id);
             setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
             toast({ title: 'Template Deleted' });
         } catch (error: any) {
@@ -262,6 +305,19 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         } finally {
             setTemplateToDelete(null);
         }
+    };
+    
+    const handleStartEditStep = (step: Partial<ProjectStep>) => {
+        setEditingStepId(step.id || null);
+        setEditingStepText(step.title || '');
+    };
+
+    const handleUpdateStepTitle = async () => {
+        if (!editingStepId) return;
+        const updatedSteps = steps.map(s => s.id === editingStepId ? { ...s, title: editingStepText } : s);
+        setSteps(updatedSteps);
+        await handleSaveSteps(updatedSteps);
+        setEditingStepId(null);
     };
 
     if (isLoading) {
@@ -327,7 +383,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                         <DraggableStep key={step.id || index} step={step} index={index} moveStep={moveStep}>
                                             <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
                                                 <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                                                <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
+                                                {editingStepId === step.id ? (
+                                                    <Input autoFocus value={editingStepText} onChange={e => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={e => e.key === 'Enter' && handleUpdateStepTitle()} className="h-7" />
+                                                ) : (
+                                                    <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
+                                                )}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7">

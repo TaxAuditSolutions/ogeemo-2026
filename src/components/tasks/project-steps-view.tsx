@@ -116,17 +116,46 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
     }, [project, toast]);
     
-    const handleAddStep = () => {
-        if (newStepTitle.trim()) {
-            const newStep: Partial<ProjectStep> = {
-                id: `temp_${Date.now()}`,
-                title: newStepTitle.trim(),
-                isCompleted: false,
-            };
-            const newSteps = [...steps, newStep];
-            setSteps(newSteps);
+    const handleAddStep = async () => {
+        if (!newStepTitle.trim() || !user || !project) {
             setNewStepTitle('');
-            handleSaveSteps(newSteps);
+            return;
+        }
+
+        const newStep: Partial<ProjectStep> = {
+            id: `temp_${Date.now()}`,
+            title: newStepTitle.trim(),
+            isCompleted: false,
+        };
+        const newSteps = [...steps, newStep];
+        setSteps(newSteps);
+        setNewStepTitle('');
+        
+        await handleSaveSteps(newSteps);
+        
+        // Automatically create the corresponding task
+        try {
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: newStep.title || "New Task from Plan",
+                description: newStep.description || '',
+                status: 'todo',
+                position: 0, // It will be placed at the top of the 'To Do' column
+                projectId: project.id,
+                stepId: newStep.id,
+                userId: user.uid,
+            };
+            await addTask(newTaskData);
+            toast({
+                title: "Step & Task Created",
+                description: `A task for "${newStep.title}" has been added to the project board.`,
+                action: <Button asChild variant="link"><a onClick={() => router.push(`/projects/${projectId}/tasks`)}>View Board</a></Button>
+            });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Task Creation Failed', description: error.message });
+            // Optionally revert step creation
+            const revertedSteps = steps.filter(s => s.id !== newStep.id);
+            setSteps(revertedSteps);
+            await handleSaveSteps(revertedSteps);
         }
     };
     
@@ -174,29 +203,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setSteps(newSteps);
         await handleSaveSteps(newSteps);
     }, [steps, handleSaveSteps]);
-
-    const handleCreateTaskFromStep = async (step: Partial<ProjectStep>) => {
-        if (!user || !project) return;
-        try {
-            const newTaskData: Omit<TaskEvent, 'id'> = {
-                title: step.title || "New Task from Plan",
-                description: step.description || '',
-                status: 'todo',
-                position: 0,
-                projectId: project.id,
-                stepId: step.id,
-                userId: user.uid,
-            };
-            await addTask(newTaskData);
-            toast({
-                title: "Task Created",
-                description: `A task for "${step.title}" has been added to the project board.`,
-                action: <Button asChild variant="link"><a onClick={() => router.push(`/projects/${projectId}/tasks`)}>View Board</a></Button>
-            });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Task Creation Failed', description: error.message });
-        }
-    };
 
     const handleOpenSaveTemplateDialog = () => {
       setNewTemplateName(templateToEdit ? templateToEdit.name : project?.name || '');
@@ -308,7 +314,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                     <Card className="flex flex-col h-full">
                          <CardHeader>
                             <CardTitle>Project Plan</CardTitle>
-                            <CardDescription>Define all the steps required to complete this project.</CardDescription>
+                            <CardDescription>Add steps to your plan. A task will be automatically created on your board for each step.</CardDescription>
                              <div className="flex items-center gap-2 pt-2">
                                 <Input
                                     placeholder="Add a new step to the plan..."
@@ -331,9 +337,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                 ) : (
                                                     <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
                                                 )}
-                                                <Button variant="secondary" size="sm" className="h-7 px-2" onClick={() => handleCreateTaskFromStep(step)}>
-                                                    <Plus className="mr-1 h-4 w-4"/> Task
-                                                </Button>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
@@ -481,5 +484,3 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         </>
     );
 }
-
-    

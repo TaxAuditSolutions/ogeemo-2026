@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -343,8 +344,9 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     const newTaskId = docRef.id;
 
-    // If the task belongs to a project, add a corresponding step to the project plan.
-    if (dataToSave.projectId && dataToSave.projectId !== 'inbox') {
+    // If the task belongs to a project AND doesn't already have a stepId,
+    // create a corresponding step. This prevents duplication.
+    if (dataToSave.projectId && dataToSave.projectId !== 'inbox' && !dataToSave.stepId) {
         const projectRef = doc(db, PROJECTS_COLLECTION, dataToSave.projectId);
         const projectSnap = await getDoc(projectRef);
         if (projectSnap.exists()) {

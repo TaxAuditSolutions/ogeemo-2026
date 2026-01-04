@@ -27,12 +27,17 @@ function ProjectTaskBoardPageContent() {
 
 export default function ProjectTaskBoardPage() {
     return (
-        <Suspense fallback={
-            <div className="flex h-full w-full items-center justify-center p-4">
-                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-            </div>
-        }>
-            <ProjectTaskBoardPageContent />
-        </Suspense>
+        <div className="p-4 sm:p-6 space-y-6">
+            <header className="text-center">
+                <h1 className="text-3xl font-bold font-headline text-primary">Project Board</h1>
+            </header>
+            <Suspense fallback={
+                <div className="flex h-full w-full items-center justify-center p-4">
+                    <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+                </div>
+            }>
+                <ProjectTaskBoardPageContent />
+            </Suspense>
+        </div>
     );
 }

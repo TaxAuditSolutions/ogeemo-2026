@@ -3,18 +3,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  MoreVertical,
-  Pencil,
-  Trash2,
-  Archive,
-  LoaderCircle,
-  Plus,
-  Briefcase,
-  Calendar as CalendarIcon,
-  ListChecks,
-  ListTodo,
-} from 'lucide-react';
+import Link from 'next/link';
+import { MoreVertical, Pencil, Trash2, Archive, LoaderCircle, Plus, Briefcase, Calendar as CalendarIcon, ListChecks, ListTodo } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getTodos, deleteTodo, deleteTodos, archiveTodos, type TaskEvent } from '@/services/todo-service';
@@ -90,15 +87,16 @@ export function ToDoListView() {
     loadData();
   }, [loadData]);
   
-  const handleDelete = async (taskId: string) => {
-    const originalTodos = [...todos];
-    setTodos(prev => prev.filter(t => t.id !== taskId));
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
     try {
-      await deleteTodo(taskId);
+      await deleteTodo(taskToDelete.id);
+      setTodos(prev => prev.filter(t => t.id !== taskToDelete.id));
       toast({ title: "Task Deleted" });
     } catch (error: any) {
-      setTodos(originalTodos);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete task.' });
+    } finally {
+      setTaskToDelete(null);
     }
   };
 
@@ -208,7 +206,7 @@ export function ToDoListView() {
                             <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete Selected</Button>
                         </>
                     )}
-                    <Button onClick={() => handleAddTask({ isTodoItem: true })}>
+                    <Button onClick={() => setIsNewTaskDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" /> Add To-Do
                     </Button>
                  </div>

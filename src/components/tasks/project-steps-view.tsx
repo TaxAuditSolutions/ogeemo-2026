@@ -241,7 +241,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                         <h1 className="text-3xl font-bold font-headline text-primary">
                             Project Planner
                         </h1>
-                        <h2 className="text-xl text-muted-foreground">{project.name}</h2>
+                        <div className="mt-2 inline-block rounded-md border border-black bg-white p-2">
+                            <h2 className="text-xl text-foreground font-semibold">{project.name}</h2>
+                        </div>
                     </div>
                     <div className="flex justify-end">
                         <Button asChild variant="outline">

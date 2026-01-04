@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ProjectTasksView } from '@/components/tasks/project-tasks-view';
 import { Suspense } from 'react';
 import { LoaderCircle } from 'lucide-react';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
 function ProjectTaskBoardPageContent() {
   const params = useParams();

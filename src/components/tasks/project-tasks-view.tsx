@@ -312,62 +312,59 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     return (
         <>
-            <div className="p-4 sm:p-6 h-full flex flex-col items-center">
-                 <header className="text-center mb-6">
-                    <h1 className="text-3xl font-bold font-headline text-primary">
-                        {project.name}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}
-                    </p>
-                </header>
-                <ProjectManagementHeader projectId={isActionItemsView ? undefined : projectId} />
-                
-                <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                    <TaskColumn 
-                        status="todo" 
-                        tasks={tasksByStatus.todo}
-                        onAddTask={() => handleAddTask({ status: 'todo' })}
-                        onDropTask={onDropTask} 
-                        onMoveCard={onMoveCard}
-                        onTaskDelete={handleDeleteTask}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onArchive={() => {}}
-                        selectedTaskIds={[]}
-                        onToggleSelect={() => {}}
-                        onToggleSelectAll={() => {}}
-                        onMakeProject={() => {}}
-                    />
-                    <TaskColumn 
-                        status="inProgress" 
-                        tasks={tasksByStatus.inProgress}
-                        onDropTask={onDropTask} 
-                        onMoveCard={onMoveCard}
-                        onTaskDelete={handleDeleteTask}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onArchive={() => {}}
-                        selectedTaskIds={[]}
-                        onToggleSelect={() => {}}
-                        onToggleSelectAll={() => {}}
-                        onMakeProject={() => {}}
-                    />
-                    <TaskColumn 
-                        status="done" 
-                        tasks={tasksByStatus.done}
-                        onDropTask={onDropTask} 
-                        onMoveCard={onMoveCard}
-                        onTaskDelete={handleDeleteTask}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onArchive={() => {}}
-                        selectedTaskIds={[]}
-                        onToggleSelect={() => {}}
-                        onToggleSelectAll={() => {}}
-                        onMakeProject={() => {}}
-                    />
+            <div className="text-center mb-4">
+                <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2 text-foreground">
+                     <h2 className="text-2xl font-semibold">{project.name}</h2>
                 </div>
+                <p className="text-muted-foreground">
+                    {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}
+                </p>
+            </div>
+            
+            <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                <TaskColumn 
+                    status="todo" 
+                    tasks={tasksByStatus.todo}
+                    onAddTask={() => handleAddTask({ status: 'todo' })}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
+                    onEdit={handleEditTask}
+                    onArchive={() => {}}
+                    selectedTaskIds={[]}
+                    onToggleSelect={() => {}}
+                    onToggleSelectAll={() => {}}
+                    onMakeProject={() => {}}
+                />
+                 <TaskColumn 
+                    status="inProgress" 
+                    tasks={tasksByStatus.inProgress}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
+                    onEdit={handleEditTask}
+                    onArchive={() => {}}
+                    selectedTaskIds={[]}
+                    onToggleSelect={() => {}}
+                    onToggleSelectAll={() => {}}
+                    onMakeProject={() => {}}
+                />
+                 <TaskColumn 
+                    status="done" 
+                    tasks={tasksByStatus.done}
+                    onDropTask={onDropTask} 
+                    onMoveCard={onMoveCard}
+                    onTaskDelete={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
+                    onEdit={handleEditTask}
+                    onArchive={() => {}}
+                    selectedTaskIds={[]}
+                    onToggleSelect={() => {}}
+                    onToggleSelectAll={() => {}}
+                    onMakeProject={() => {}}
+                />
             </div>
             
             <CreateTaskDialog
@@ -385,7 +382,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 initialData={initialDialogData}
                 projectId={projectId}
             />
-
+            
             <AlertDialog open={!!stepToDelete} onOpenChange={() => setStepToDelete(null)}>
                 <AlertDialogContent>
                 <AlertDialogHeader>

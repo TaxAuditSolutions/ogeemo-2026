@@ -161,19 +161,17 @@ export function ProjectListView() {
     }
   };
   
-  const handleProjectSaved = async (savedProject: Project, isEditing: boolean) => {
-      setIsNewItemDialogOpen(false);
-      setProjectToEdit(null);
-      if (isEditing) {
-          try {
-              const { id, userId, createdAt, ...dataToUpdate } = savedProject;
-              await updateProject(id, dataToUpdate);
-              toast({ title: "Project Updated" });
-          } catch (error: any) {
-              toast({ variant: "destructive", title: "Update Failed", description: error.message });
-          }
-      }
-      loadData(); // Refresh the list from the database
+  const handleProjectUpdated = async (updatedProject: Project) => {
+    setIsNewItemDialogOpen(false);
+    setProjectToEdit(null);
+    try {
+        const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
+        await updateProject(id, dataToUpdate);
+        toast({ title: "Project Updated" });
+        loadData(); // Refresh data from the database
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Update Failed", description: error.message });
+    }
   };
   
   const handleOpenNewProjectDialog = () => {
@@ -309,7 +307,7 @@ export function ProjectListView() {
             if (!open) setProjectToEdit(null);
         }}
         onProjectCreate={handleProjectCreated}
-        onProjectUpdate={handleProjectSaved}
+        onProjectUpdate={handleProjectUpdated}
         contacts={contacts}
         onContactsChange={setContacts}
         projectToEdit={projectToEdit}

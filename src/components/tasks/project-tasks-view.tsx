@@ -30,6 +30,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjects, getTasksForProject, addProject, updateTask, updateTaskPositions, deleteTask, getProjectById, type Project, type ProjectStep, type TaskStatus } from '@/services/project-service';
@@ -39,29 +50,10 @@ import { archiveTaskAsFile } from '@/services/file-service';
 import { TaskColumn } from './TaskColumn';
 import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { Input } from '../ui/input';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { addMinutes } from 'date-fns';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogHeader,
-  DialogFooter,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
 
 
 export const ACTION_ITEMS_PROJECT_ID = 'inbox';
@@ -436,6 +428,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     return (
         <>
+            <div className="w-full max-w-7xl text-center my-4">
+                <h2 className="text-2xl font-bold">{project.name}</h2>
+            </div>
             <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                 <TaskColumn 
                     status="todo" 
@@ -568,4 +563,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

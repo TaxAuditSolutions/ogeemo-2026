@@ -17,6 +17,10 @@ import {
   FilePlus,
   Pencil,
   Route,
+  Briefcase,
+  Archive,
+  Calendar as CalendarIcon,
+  ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -50,6 +54,9 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { addMinutes } from 'date-fns';
+import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { archiveTaskAsFile } from '@/services/file-service';
 
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
@@ -63,7 +70,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
 
     const [isStepDetailDialogOpen, setIsStepDetailDialogOpen] = useState(false);
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
-    const [stepDetailTitle, setStepDetailTitle] = useState("");
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
     const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
@@ -72,6 +78,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
+
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
+    const [initialDialogData, setInitialDialogData] = useState({});
+    const [contacts, setContacts] = useState<Contact[]>([]);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -84,10 +95,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
         setIsLoading(true);
         try {
-            const [projectData, fetchedTemplates, tasksData] = await Promise.all([
+            const [projectData, fetchedTemplates, tasksData, fetchedContacts] = await Promise.all([
                 getProjectById(projectId),
                 getProjectTemplates(user.uid),
                 getTasksForProject(projectId),
+                getContacts(user.uid),
             ]);
 
             if (!projectData) {
@@ -99,6 +111,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             setSteps(projectData.steps || []);
             setTemplates(fetchedTemplates);
             setTasks(tasksData);
+            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
         } finally {
@@ -147,9 +160,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         const savedSteps = await handleSaveSteps(newSteps);
 
         if (savedSteps) {
-            const savedNewStep = savedSteps.find(s => s.title === newStep.title);
+            const savedNewStep = savedSteps.find(s => s.title === newStep.title && s.id?.startsWith('step_'));
             if (savedNewStep && savedNewStep.id) {
-                // Now create the corresponding task
                 try {
                     const newTask = await addTask({
                         title: savedNewStep.title!,
@@ -172,35 +184,35 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
         setStepToDetail(step);
-        setStepDetailTitle(step.title || '');
         setStepDetailDescription(step.description || '');
         setIsStepDetailDialogOpen(true);
     };
     
     const handleSaveStepDetails = async () => {
-        if (!stepToDetail || !stepDetailTitle.trim()) {
+        if (!stepToDetail || !stepToDetail.title) {
             toast({ variant: "destructive", title: "Title is required." });
             return;
         }
         const updatedSteps = steps.map(s => 
             s.id === stepToDetail.id 
-            ? { ...s, title: stepDetailTitle, description: stepDetailDescription } 
+            ? { ...s, title: stepToDetail.title, description: stepDetailDescription } 
             : s
         );
         setSteps(updatedSteps);
-        await handleSaveSteps(updatedSteps);
-
-        // Also update the corresponding task
+        const savedSteps = await handleSaveSteps(updatedSteps);
+        
         const correspondingTask = tasks.find(t => t.stepId === stepToDetail.id);
-        if (correspondingTask) {
-            try {
-                await updateTask(correspondingTask.id, { title: stepDetailTitle, description: stepDetailDescription });
-                setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: stepDetailTitle, description: stepDetailDescription} : t));
-            } catch (error) {
-                toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
+        if (correspondingTask && savedSteps) {
+            const updatedStepInSaved = savedSteps.find(s => s.id === stepToDetail.id);
+            if (updatedStepInSaved) {
+                try {
+                    await updateTask(correspondingTask.id, { title: updatedStepInSaved.title, description: updatedStepInSaved.description });
+                    setTasks(prev => prev.map(t => t.id === correspondingTask.id ? {...t, title: updatedStepInSaved.title!, description: updatedStepInSaved.description} : t));
+                } catch (error) {
+                    toast({ variant: 'destructive', title: 'Task Sync Failed', description: 'Could not update the associated task.' });
+                }
             }
         }
-
         setIsStepDetailDialogOpen(false);
     };
 
@@ -214,18 +226,15 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setSteps(updatedSteps);
         
         try {
-            // First, delete the corresponding task if it exists
             const taskToDelete = tasks.find(t => t.stepId === stepIdToDelete);
             if (taskToDelete) {
                 await deleteTask(taskToDelete.id);
                 setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
             }
             
-            // Then, save the updated steps array for the project
             await handleSaveSteps(updatedSteps);
             toast({ title: 'Step Deleted' });
         } catch (error: any) {
-            // Revert UI on failure
             toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
             setSteps(originalSteps);
         } finally {
@@ -261,15 +270,13 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
 
         try {
             if (templateToEdit) {
-                // Update existing template
                 await updateProjectTemplate(templateToEdit.id, templateData);
                 setTemplates(prev => prev.map(t => t.id === templateToEdit.id ? { ...t, ...templateData } : t));
                 toast({ title: 'Template Updated', description: `"${newTemplateName}" has been updated.` });
             } else {
-                // Save new template
                 const newTemplate = await addProjectTemplate({ ...templateData, userId: user.uid });
                 setTemplates(prev => [...prev, newTemplate]);
-                setTemplateToEdit(newTemplate); // Track that we are now working on an existing template
+                setTemplateToEdit(newTemplate);
                 toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
             }
             setIsSaveTemplateDialogOpen(false);
@@ -279,25 +286,27 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
     };
 
-    const handleLoadTemplate = (templateId: string) => {
+    const handleLoadTemplate = async (templateId: string) => {
         const template = templates.find(t => t.id === templateId);
         if (template) {
             const newSteps = template.steps.map(step => ({
                 id: `temp_${Date.now()}_${Math.random()}`,
                 ...step
             }));
-            setSteps(newSteps);
-            handleSaveSteps(newSteps);
-            setTemplateToEdit(template); // Track that we are now working on an existing template
-            toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
-            setIsManageTemplatesOpen(false); // Close dialog after loading
+            const savedSteps = await handleSaveSteps(newSteps);
+            if(savedSteps) {
+                setTemplateToEdit(template);
+                toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
+                setIsManageTemplatesOpen(false); // Close dialog after loading
+                await loadData(); // Reload tasks associated with new steps
+            }
         }
     };
 
     const handleConfirmDeleteTemplate = async () => {
         if (!templateToDelete) return;
         try {
-            // await deleteProjectTemplate(templateToDelete.id);
+            await deleteProjectTemplate(templateToDelete.id);
             setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
             toast({ title: 'Template Deleted' });
         } catch (error: any) {
@@ -315,9 +324,78 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleUpdateStepTitle = async () => {
         if (!editingStepId) return;
         const updatedSteps = steps.map(s => s.id === editingStepId ? { ...s, title: editingStepText } : s);
-        setSteps(updatedSteps);
         await handleSaveSteps(updatedSteps);
+        
+        const taskToUpdate = tasks.find(t => t.stepId === editingStepId);
+        if(taskToUpdate) {
+            await updateTask(taskToUpdate.id, { title: editingStepText });
+            setTasks(prev => prev.map(t => t.id === taskToUpdate.id ? {...t, title: editingStepText} : t));
+        }
+
         setEditingStepId(null);
+    };
+
+    const handleMakeProject = (step: Partial<ProjectStep>) => {
+      const task = tasks.find(t => t.stepId === step.id) || { title: step.title, description: step.description };
+      setInitialDialogData({ name: task.title, description: task.description || '' });
+      setTaskToConvert(task as TaskEvent);
+      setIsNewProjectDialogOpen(true);
+    };
+
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+      if (!user || !taskToConvert) return;
+      try {
+          const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+          await deleteTask(taskToConvert.id); // Delete the original task after converting
+          toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+          loadData(); // Refresh data
+      } catch (error: any) {
+          toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+      } finally {
+          setIsNewProjectDialogOpen(false);
+          setTaskToConvert(null);
+      }
+    };
+
+    const handleScheduleStep = (step: Partial<ProjectStep>) => {
+      const task = tasks.find(t => t.stepId === step.id);
+      if (task) {
+        router.push(`/master-mind?eventId=${task.id}`);
+      } else {
+        const startTime = new Date();
+        const endTime = addMinutes(startTime, 30);
+        router.push(`/master-mind?title=${encodeURIComponent(step.title || '')}&description=${encodeURIComponent(step.description || '')}&projectId=${projectId}&stepId=${step.id}&start=${startTime.toISOString()}&end=${endTime.toISOString()}`);
+      }
+    };
+    
+    const handleArchiveStep = async (step: Partial<ProjectStep>) => {
+        const task = tasks.find(t => t.stepId === step.id);
+        if (!user || !task) return;
+        try {
+            await archiveTaskAsFile(user.uid, task);
+            await handleDeleteStep();
+            toast({ title: 'Step Archived', description: 'Step content saved to File Manager.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
+        }
+    };
+    
+    const handleAddToTodoList = async (step: Partial<ProjectStep>) => {
+        if (!user || !project) return;
+        try {
+            const newTaskData: Omit<TaskEvent, 'id'> = {
+                title: `[${project.name}]: ${step.title}`,
+                status: 'todo',
+                position: 0,
+                userId: user.uid,
+                isTodoItem: true,
+                projectId: null,
+            };
+            await addTask(newTaskData);
+            toast({ title: "Added to To-Do List", description: `A new entry for "${step.title}" has been created.`});
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
+        }
     };
 
     if (isLoading) {
@@ -353,8 +431,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                     <div className="flex justify-end">
                         <Button asChild variant="outline">
                             <Link href={`/projects/${projectId}/tasks`}>
-                                Back to Task Board
-                                <ArrowLeft className="ml-2 h-4 w-4" />
+                                Task Board <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
                             </Link>
                         </Button>
                     </div>
@@ -397,6 +474,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => handleScheduleStep(step)}><CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleAddToTodoList(step)}><ListTodo className="mr-2 h-4 w-4" /> Add to To-Do List</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleMakeProject(step)}><Briefcase className="mr-2 h-4 w-4" /> Convert to Project</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleArchiveStep(step)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -454,7 +536,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                      <div className="py-4 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="step-title">Step Title</Label>
-                            <Input id="step-title" value={stepDetailTitle} onChange={(e) => setStepDetailTitle(e.target.value)} />
+                            <Input id="step-title" value={stepToDetail?.title || ''} onChange={(e) => setStepToDetail(p => p ? {...p, title: e.target.value} : null)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="step-description">Description</Label>
@@ -546,6 +628,16 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <NewTaskDialog
+                isOpen={isNewProjectDialogOpen}
+                onOpenChange={setIsNewProjectDialogOpen}
+                onProjectCreate={handleProjectCreated}
+                contacts={contacts}
+                projectToEdit={null}
+                initialData={initialDialogData}
+            />
         </>
     );
 }
+

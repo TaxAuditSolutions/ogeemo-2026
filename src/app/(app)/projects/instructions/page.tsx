@@ -64,13 +64,13 @@ export default function ProjectInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <ListChecks className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Project Status Board</span>
+                                    <span className="font-semibold">Project Board</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        The Status Board gives you a birds-eye view of where every project stands.
+                                        The Project Board gives you a birds-eye view of where every project stands.
                                     </p>
                                     <ul>
                                         <li><strong>Visualize Workflow:</strong> Projects are organized into columns like "In Planning," "Active," "On-Hold," and "Completed."</li>

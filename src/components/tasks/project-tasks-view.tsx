@@ -4,7 +4,20 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, X, Edit, MoreVertical, BookOpen, Save } from 'lucide-react';
+import {
+  LoaderCircle,
+  Plus,
+  GripVertical,
+  Trash2,
+  ArrowLeft,
+  Edit,
+  MoreVertical,
+  BookOpen,
+  Save,
+  FilePlus,
+  Pencil,
+  Route,
+} from 'lucide-react';
 import { TaskColumn } from './TaskColumn';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -132,34 +145,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         };
     }, [tasks]);
 
-    const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
-        setTaskToEdit(null);
-        setInitialDialogData(initialData);
-        setIsNewTaskDialogOpen(true);
-    };
-    
-    const handleEditTask = (task: TaskEvent) => {
-        setTaskToEdit(task);
-        setIsNewTaskDialogOpen(true);
-    };
-
-    const handleTaskSaved = () => {
-        loadData(); // Refresh data after save/update
-        setIsNewTaskDialogOpen(false);
-    };
-    
-    const handleDeleteTask = async (taskId: string) => {
-        const originalTasks = [...tasks];
-        setTasks(prev => prev.filter(t => t.id !== taskId));
-        try {
-            await deleteTask(taskId);
-            toast({ title: "Task Deleted" });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
-            setTasks(originalTasks);
-        }
-    };
-    
     const onDropTask = useCallback(async (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => {
         if (!user || !project) return;
         
@@ -221,7 +206,35 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setTasks(newTasks);
         await updateTaskPositions(updates);
     }, [tasks]);
+    
+    const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
+        setTaskToEdit(null);
+        setInitialDialogData(initialData);
+        setIsNewTaskDialogOpen(true);
+    };
 
+    const handleTaskSaved = () => {
+        loadData(); // Refresh data after save/update
+        setIsNewTaskDialogOpen(false);
+    };
+    
+    const handleEditTask = (task: TaskEvent) => {
+        setTaskToEdit(task);
+        setIsNewTaskDialogOpen(true);
+    };
+
+    const handleDeleteTask = async (taskId: string) => {
+        const originalTasks = [...tasks];
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        try {
+            await deleteTask(taskId);
+            toast({ title: "Task Deleted" });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+            setTasks(originalTasks);
+        }
+    };
+    
     const handleToggleComplete = async (taskId: string) => {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -288,7 +301,11 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     
     if (isLoading) {
-        return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
+        return (
+            <div className="flex h-full w-full items-center justify-center p-4">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
     }
     
     if (!project) return null;
@@ -304,7 +321,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                         {project.description || (isActionItemsView ? "A place for all your unscheduled tasks and ideas." : "Drag and drop tasks to change their status.")}
                     </p>
                 </header>
-                <ProjectManagementHeader projectId={projectId} />
+                <ProjectManagementHeader projectId={isActionItemsView ? undefined : projectId} />
                 
                 <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                     <TaskColumn 
@@ -403,3 +420,4 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
+

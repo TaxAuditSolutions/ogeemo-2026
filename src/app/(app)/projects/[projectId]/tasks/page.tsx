@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { ProjectTasksView } from '@/components/tasks/project-tasks-view';
 import { Suspense } from 'react';
 import { LoaderCircle } from 'lucide-react';
-import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
 function ProjectTaskBoardPageContent() {
   const params = useParams();
@@ -28,7 +27,7 @@ function ProjectTaskBoardPageContent() {
 
 export default function ProjectTaskBoardPage() {
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4">
             <header className="text-center">
                 <h1 className="text-3xl font-bold font-headline text-primary">Project Board</h1>
             </header>

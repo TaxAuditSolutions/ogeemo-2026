@@ -33,6 +33,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 export function ToDoListView() {

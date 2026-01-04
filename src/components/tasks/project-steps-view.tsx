@@ -472,7 +472,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
               </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!templateToDelete} onOpenChange={setTemplateToDelete}>
+            <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>

@@ -210,7 +210,7 @@ export function ProjectStatusView() {
                 <header className="text-center mb-6">
                     <h1 className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
                         <ListChecks className="h-8 w-8"/>
-                        Project Status
+                        Project Board
                     </h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Drag and drop projects to update their status.

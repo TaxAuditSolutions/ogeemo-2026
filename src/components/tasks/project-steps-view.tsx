@@ -4,7 +4,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save, FilePlus, Pencil } from 'lucide-react';
+import {
+  LoaderCircle,
+  Plus,
+  GripVertical,
+  Trash2,
+  ArrowLeft,
+  Edit,
+  MoreVertical,
+  BookOpen,
+  Save,
+  FilePlus,
+  Pencil,
+  Route,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
@@ -303,7 +316,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                     onChange={(e) => setNewStepTitle(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
                                 />
-                                <Button onClick={handleAddStep}><Plus className="mr-2 h-4 w-4" /> Add</Button>
+                                <Button onClick={handleAddStep}><Save className="mr-2 h-4 w-4" /> Save</Button>
                             </div>
                         </CardHeader>
                         <ScrollArea className="flex-1">
@@ -436,7 +449,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                       {templates.map(template => (
                         <div key={template.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent group">
                           <span className="font-medium text-sm truncate">{template.name}</span>
-                          <div className="flex items-center gap-1 transition-opacity">
+                          <div className="flex items-center gap-1">
                             <Button size="sm" variant="ghost" onClick={() => handleLoadTemplate(template.id)}>Load</Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setTemplateToEdit(template); handleOpenSaveTemplateDialog(); }}><Pencil className="h-4 w-4"/></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setTemplateToDelete(template)}><Trash2 className="h-4 w-4"/></Button>
@@ -468,3 +481,5 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         </>
     );
 }
+
+    

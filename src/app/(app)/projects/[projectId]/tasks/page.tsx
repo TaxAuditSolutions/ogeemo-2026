@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ProjectTasksView } from '@/components/tasks/project-tasks-view';
 import { Suspense } from 'react';
 import { LoaderCircle } from 'lucide-react';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
 function ProjectTaskBoardPageContent() {
   const params = useParams();
@@ -21,7 +22,16 @@ function ProjectTaskBoardPageContent() {
      );
   }
 
-  return <ProjectTasksView projectId={projectId} />;
+  return (
+    <div className="p-4 sm:p-6 h-full flex flex-col items-center">
+      <div className="w-full max-w-7xl">
+        <ProjectManagementHeader projectId={projectId} />
+      </div>
+      <div className="w-full max-w-7xl flex-1 mt-4">
+        <ProjectTasksView projectId={projectId} />
+      </div>
+    </div>
+  );
 }
 
 

@@ -183,7 +183,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         if (item.status === newStatus) return;
 
         const originalTasks = [...tasks];
-        const updatedTasks = tasks.map(t => t.id === item.id ? { ...t, status: newStatus } : t);
+        const updatedTasks = tasks.map(t => 
+            t.id === item.id ? { ...t, status: newStatus } : t
+        );
         setTasks(updatedTasks);
         
         try {
@@ -224,7 +226,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     };
 
     const handleTaskSaved = () => {
-        loadData(); // Refresh data after save/update
+        loadData();
         setIsNewTaskDialogOpen(false);
     };
     
@@ -328,7 +330,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleDeleteStep = async () => {
         if (!stepToDelete || !user) return;
         try {
-            await deleteTask(stepToDelete.id); // This now handles the step deletion too
+            await deleteTask(stepToDelete.id); // This now handles the step deletion
             toast({ title: 'Step Deleted' });
             loadData(); // Reload all data for consistency
         } catch (error: any) {
@@ -483,7 +485,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 />
             </div>
             
-            <CreateTaskDialog
+            <NewTaskDialog
                 isOpen={isNewTaskDialogOpen}
                 onOpenChange={(open) => {
                     setIsNewTaskDialogOpen(open);

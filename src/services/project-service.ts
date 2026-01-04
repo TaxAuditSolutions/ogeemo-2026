@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -344,21 +343,29 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     const newTaskId = docRef.id;
 
-    // If the task belongs to a project AND doesn't already have a stepId,
-    // create a corresponding step. This prevents duplication.
     if (dataToSave.projectId && dataToSave.projectId !== 'inbox' && !dataToSave.stepId) {
         const projectRef = doc(db, PROJECTS_COLLECTION, dataToSave.projectId);
         const projectSnap = await getDoc(projectRef);
         if (projectSnap.exists()) {
             const projectData = docToProject(projectSnap);
-            const newStep: Partial<ProjectStep> = {
-                id: `step_${newTaskId}`, // Link step to task
-                title: dataToSave.title,
-                description: dataToSave.description || '',
-                isCompleted: dataToSave.status === 'done',
-            };
-            const updatedSteps = [...(projectData.steps || []), newStep];
-            await updateDoc(projectRef, { steps: updatedSteps });
+            const stepId = `step_${newTaskId}`;
+            
+            // Check if a step for this task already exists to prevent duplication
+            const existingStep = (projectData.steps || []).find(step => step?.id === stepId);
+
+            if (!existingStep) {
+                const newStep: Partial<ProjectStep> = {
+                    id: stepId,
+                    title: dataToSave.title,
+                    description: dataToSave.description || '',
+                    isCompleted: dataToSave.status === 'done',
+                };
+                const updatedSteps = [...(projectData.steps || []), newStep];
+                await updateDoc(projectRef, { steps: updatedSteps });
+                // Update the task with the newly created stepId
+                await updateDoc(docRef, { stepId: stepId });
+                return { ...dataToSave, id: newTaskId, stepId: stepId };
+            }
         }
     }
 
@@ -393,7 +400,24 @@ export async function updateTaskPositions(tasksToUpdate: { id: string; position:
 
 export async function deleteTask(taskId: string): Promise<void> {
     const db = await getDb();
-    await deleteDoc(doc(db, TASKS_COLLECTION, taskId));
+    const taskRef = doc(db, TASKS_COLLECTION, taskId);
+    const taskSnap = await getDoc(taskRef);
+
+    if (taskSnap.exists()) {
+        const taskData = docToTask(taskSnap);
+        // If the task is linked to a project and has a step ID, remove the step
+        if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
+            const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
+            const projectSnap = await getDoc(projectRef);
+            if (projectSnap.exists()) {
+                const projectData = docToProject(projectSnap);
+                const updatedSteps = (projectData.steps || []).filter(step => step.id !== taskData.stepId);
+                await updateDoc(projectRef, { steps: updatedSteps });
+            }
+        }
+    }
+    
+    await deleteDoc(taskRef);
 }
 
 export async function deleteTasks(taskIds: string[]): Promise<void> {

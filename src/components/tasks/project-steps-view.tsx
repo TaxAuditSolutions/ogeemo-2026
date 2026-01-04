@@ -43,7 +43,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, getTasksForProject, deleteTask } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -54,6 +54,7 @@ import { addMinutes } from 'date-fns';
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
     const [steps, setSteps] = useState<Partial<ProjectStep>[]>([]);
+    const [tasks, setTasks] = useState<TaskEvent[]>([]);
     const [newStepTitle, setNewStepTitle] = useState('');
     const [editingStepId, setEditingStepId] = useState<string | null>(null);
     const [editingStepText, setEditingStepText] = useState('');
@@ -83,9 +84,10 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
         setIsLoading(true);
         try {
-            const [projectData, fetchedTemplates] = await Promise.all([
+            const [projectData, fetchedTemplates, tasksData] = await Promise.all([
                 getProjectById(projectId),
                 getProjectTemplates(user.uid),
+                getTasksForProject(projectId),
             ]);
 
             if (!projectData) {
@@ -96,6 +98,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             setProject(projectData);
             setSteps(projectData.steps || []);
             setTemplates(fetchedTemplates);
+            setTasks(tasksData);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load project data', description: error.message });
         } finally {
@@ -131,7 +134,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         };
         const newSteps = [...steps, newStep];
         setSteps(newSteps);
-        setNewStepTitle('');
         
         await handleSaveSteps(newSteps);
         
@@ -146,7 +148,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 stepId: newStep.id,
                 userId: user.uid,
             };
-            await addTask(newTaskData);
+            const createdTask = await addTask(newTaskData);
+            setTasks(prev => [...prev, createdTask]);
             toast({
                 title: "Step & Task Created",
                 description: `A task for "${newStep.title}" has been added to the project board.`,
@@ -158,6 +161,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             const revertedSteps = steps.filter(s => s.id !== newStep.id);
             setSteps(revertedSteps);
             await handleSaveSteps(revertedSteps);
+        } finally {
+            setNewStepTitle('');
         }
     };
     
@@ -184,13 +189,34 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     };
 
     const handleDeleteStep = async () => {
-        if (!stepToDelete) return;
-        const updatedSteps = steps.filter(s => s.id !== stepToDelete.id);
+        if (!stepToDelete || !user) return;
+        
+        const stepIdToDelete = stepToDelete.id;
+
+        // Optimistically update UI
+        const updatedSteps = steps.filter(s => s.id !== stepIdToDelete);
         setSteps(updatedSteps);
-        handleSaveSteps(updatedSteps);
-        setStepToDelete(null);
-        toast({ title: 'Step Deleted' });
+        
+        try {
+            // First, delete the corresponding task if it exists
+            const taskToDelete = tasks.find(t => t.stepId === stepIdToDelete);
+            if (taskToDelete) {
+                await deleteTask(taskToDelete.id);
+                setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
+            }
+            
+            // Then, save the updated steps array for the project
+            await handleSaveSteps(updatedSteps);
+            toast({ title: 'Step Deleted' });
+        } catch (error: any) {
+            // Revert UI on failure
+            toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
+            setSteps(steps); // Revert to original state
+        } finally {
+            setStepToDelete(null);
+        }
     };
+
 
     const moveStep = useCallback(async (dragIndex: number, hoverIndex: number) => {
         const newSteps = [...steps];
@@ -329,6 +355,18 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                             <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
                                                 <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                                                 <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </DraggableStep>
                                     ))
@@ -379,7 +417,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                     <DialogHeader>
                         <DialogTitle>Edit Step Details</DialogTitle>
                     </DialogHeader>
-                    <div className="py-4 space-y-4">
+                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="step-title">Step Title</Label>
                             <Input id="step-title" value={stepDetailTitle} onChange={(e) => setStepDetailTitle(e.target.value)} />
@@ -405,7 +443,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>This will permanently delete the step "{stepToDelete?.title}". This action cannot be undone.</AlertDialogDescription>
+                    <AlertDialogDescription>This will permanently delete the step "{stepToDelete?.title}" and its associated task from the board. This action cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -85,17 +85,20 @@ export function TaskCard({
   return (
     <>
       <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-        <Card className={cn("group", isSelected && "bg-primary/20 border-primary", isCompleted && "bg-muted/70")}>
+        <Card className={cn("group hover:bg-muted/50 cursor-grab active:cursor-grabbing", isSelected && "bg-primary/20 border-primary", isCompleted && "bg-muted/70")}>
           <CardContent className="p-3 flex items-start gap-2">
              {(showCheckbox) && (
                 <Checkbox
-                    checked={isSelected}
+                    checked={isCompleted}
                     onClick={(e) => {
                         e.stopPropagation();
-                        onToggleSelect(task.id, e);
+                        onToggleComplete(task.id);
+                    }}
+                    onCheckedChange={(checked) => {
+                        onToggleComplete(task.id)
                     }}
                     className="mt-1"
-                    aria-label={`Select task ${task.title}`}
+                    aria-label={`Mark task ${task.title} as ${isCompleted ? 'not completed' : 'completed'}`}
                 />
             )}
             <div className="flex-1 cursor-pointer" onClick={handleEditClick}>

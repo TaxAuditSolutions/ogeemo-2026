@@ -19,13 +19,14 @@ interface TaskColumnProps {
   status: TaskStatus;
   tasks: TaskEvent[];
   onAddTask?: () => void; // Changed to not take arguments, it will just trigger the dialog
-  onDropTask: (item: TaskEvent | ProjectStep, newStatus: TaskStatus) => void;
+  onDropTask: (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => void;
   onMoveCard: (dragId: string, hoverId: string) => void;
   onTaskDelete: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: TaskEvent) => void;
   onMakeProject: (task: TaskEvent) => void;
   onArchive: (task: TaskEvent) => void;
+  onSchedule?: (task: TaskEvent) => void;
   selectedTaskIds: string[];
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   onToggleSelectAll: (status: TaskStatus) => void;
@@ -48,13 +49,14 @@ export function TaskColumn({
   onEdit,
   onMakeProject,
   onArchive,
+  onSchedule,
   selectedTaskIds,
   onToggleSelect,
   onToggleSelectAll,
 }: TaskColumnProps) {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ['task', StepItemTypes.STEP],
-    drop: (item: TaskEvent | ProjectStep) => {
+    drop: (item: TaskEvent | Partial<ProjectStep>) => {
       onDropTask(item, status);
     },
     collect: (monitor) => ({
@@ -98,9 +100,10 @@ export function TaskColumn({
                 onMoveCard={onMoveCard}
                 onEdit={onEdit}
                 onTaskDelete={() => onTaskDelete(task.id)}
-                onToggleComplete={() => onToggleComplete(task.id)}
+                onToggleComplete={onToggleComplete}
                 onMakeProject={onMakeProject}
                 onArchive={onArchive}
+                onSchedule={onSchedule}
                 isSelected={selectedTaskIds.includes(task.id)}
                 onToggleSelect={onToggleSelect}
                 showCheckbox={status === 'done' || status === 'todo'}

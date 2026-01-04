@@ -4,7 +4,7 @@
 import React, { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon, GitMerge } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Briefcase, Archive, Calendar as CalendarIcon, GitMerge, CheckCircle } from 'lucide-react';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
 import {
@@ -28,9 +28,6 @@ interface TaskCardProps {
   onArchive: (task: TaskEvent) => void;
   onMakeProject: (task: TaskEvent) => void;
   onSchedule?: (task: TaskEvent) => void;
-  isSelected: boolean;
-  onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
-  showCheckbox?: boolean;
 }
 
 export function TaskCard({ 
@@ -42,9 +39,6 @@ export function TaskCard({
     onArchive,
     onMakeProject,
     onSchedule,
-    isSelected,
-    onToggleSelect,
-    showCheckbox = false,
 }: TaskCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -85,19 +79,8 @@ export function TaskCard({
   return (
     <>
       <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-        <Card className={cn("group hover:bg-muted/50 cursor-grab active:cursor-grabbing", isSelected && "bg-primary/20 border-primary", isCompleted && "bg-muted/70")}>
+        <Card className={cn("group hover:bg-muted/50 cursor-grab active:cursor-grabbing", isCompleted && "bg-muted/70")}>
           <CardContent className="p-3 flex items-start gap-2">
-             {(showCheckbox) && (
-                <Checkbox
-                    checked={isCompleted}
-                    onCheckedChange={() => {
-                        onToggleComplete(task.id);
-                    }}
-                    onClick={(e) => e.stopPropagation()} // Prevent card's onClick from firing
-                    className="mt-1"
-                    aria-label={`Mark task ${task.title} as ${isCompleted ? 'not completed' : 'completed'}`}
-                />
-            )}
             <div className="flex-1 cursor-pointer" onClick={handleEditClick}>
               <p className={cn("font-semibold text-sm", isCompleted && "line-through text-muted-foreground")}>{task.title}</p>
               <p className={cn("text-xs text-muted-foreground line-clamp-2", isCompleted && "line-through")}>{task.description}</p>
@@ -115,6 +98,12 @@ export function TaskCard({
                     <DropdownMenuItem onSelect={handleScheduleClick}>
                         <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
                     </DropdownMenuItem>
+                    {task.status !== 'done' && (
+                        <DropdownMenuItem onSelect={() => onToggleComplete(task.id)}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Mark as Done
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onSelect={() => onMakeProject(task)}>
                         <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
                     </DropdownMenuItem>

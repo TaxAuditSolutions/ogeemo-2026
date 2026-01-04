@@ -279,6 +279,11 @@ export function ProjectListView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => handleEdit(p)}><Edit className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                               <DropdownMenuItem asChild>
+                                <Link href={`/projects/${p.id}/tasks`}>
+                                  <ListChecks className="mr-2 h-4 w-4" /> Task Board
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
                                 <Link href={`/project-plan?projectId=${p.id}`}>
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
                                 </Link>

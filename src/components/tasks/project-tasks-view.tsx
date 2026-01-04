@@ -48,7 +48,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/services/file-service';
 import { TaskColumn } from './TaskColumn';
-import { NewTaskDialog } from './NewTaskDialog';
+import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
@@ -429,7 +429,9 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     return (
         <>
             <div className="w-full max-w-7xl text-center my-4">
-                <h2 className="text-2xl font-bold">{project.name}</h2>
+                <div className="inline-block bg-white p-2 border-2 border-black rounded-md">
+                    <h2 className="text-2xl font-bold">{project.name}</h2>
+                </div>
             </div>
             <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                 <TaskColumn 

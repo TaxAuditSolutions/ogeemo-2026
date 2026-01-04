@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, getProjects, getTasksForProject, addTask, updateTask, updateTaskPositions, deleteTask, updateProject } from '@/services/project-service';
-import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep } from '@/types/calendar';
+import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate } from '@/types/calendar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -420,4 +420,3 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

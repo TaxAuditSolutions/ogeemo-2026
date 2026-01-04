@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { type Event as TaskEvent } from '@/types/calendar-types';
+import { addMinutes } from 'date-fns';
 
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);
@@ -165,7 +166,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         if (!user || !project) return;
         try {
             const newTaskData: Omit<TaskEvent, 'id'> = {
-                title: step.title || "New Task",
+                title: step.title || "New Task from Plan",
                 description: step.description || '',
                 status: 'todo',
                 position: 0,
@@ -364,13 +365,10 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                     <Button variant="outline" onClick={() => setIsManageTemplatesOpen(true)}>Manage</Button>
                                 </div>
                             </div>
-                             <div>
-                                <Label>Save Current Plan</Label>
-                                <div className="mt-2">
-                                     <Button className="w-full" onClick={handleOpenSaveTemplateDialog}>
-                                        <Save className="mr-2 h-4 w-4"/> {templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}
-                                    </Button>
-                                </div>
+                             <div className="space-y-2">
+                                <Button className="w-full" onClick={handleOpenSaveTemplateDialog}>
+                                    <Save className="mr-2 h-4 w-4"/> {templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -445,7 +443,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                           </div>
                         </div>
                       ))}
-                      {templates.length === 0 && <p className="text-sm text-muted-foreground text-center p-4">No templates saved yet.</p>}
+                      {templates.length === 0 && <p className="text-sm text-center p-4 text-muted-foreground">No templates saved yet.</p>}
                     </div>
                   </ScrollArea>
                 </div>

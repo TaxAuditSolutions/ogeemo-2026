@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save, FilePlus } from 'lucide-react';
+import { LoaderCircle, Plus, GripVertical, Trash2, ArrowLeft, Edit, MoreVertical, BookOpen, Save, FilePlus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Input } from '../ui/input';
@@ -211,7 +211,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 // Save new template
                 const newTemplate = await addProjectTemplate({ ...templateData, userId: user.uid });
                 setTemplates(prev => [...prev, newTemplate]);
-                setTemplateToEdit(newTemplate); // Set the new template as the one being "edited"
+                setTemplateToEdit(newTemplate); // Track that we are now working on an existing template
                 toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
             }
             setIsSaveTemplateDialogOpen(false);

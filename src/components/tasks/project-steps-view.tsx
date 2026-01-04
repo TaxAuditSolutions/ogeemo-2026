@@ -43,7 +43,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, getTasksForProject, deleteTask } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteTask, getTasksForProject } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -136,34 +136,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setSteps(newSteps);
         
         await handleSaveSteps(newSteps);
-        
-        // Automatically create the corresponding task
-        try {
-            const newTaskData: Omit<TaskEvent, 'id'> = {
-                title: newStep.title || "New Task from Plan",
-                description: newStep.description || '',
-                status: 'todo',
-                position: 0, // It will be placed at the top of the 'To Do' column
-                projectId: project.id,
-                stepId: newStep.id,
-                userId: user.uid,
-            };
-            const createdTask = await addTask(newTaskData);
-            setTasks(prev => [...prev, createdTask]);
-            toast({
-                title: "Step & Task Created",
-                description: `A task for "${newStep.title}" has been added to the project board.`,
-                action: <Button asChild variant="link"><a onClick={() => router.push(`/projects/${projectId}/tasks`)}>View Board</a></Button>
-            });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Task Creation Failed', description: error.message });
-            // Optionally revert step creation
-            const revertedSteps = steps.filter(s => s.id !== newStep.id);
-            setSteps(revertedSteps);
-            await handleSaveSteps(revertedSteps);
-        } finally {
-            setNewStepTitle('');
-        }
+        setNewStepTitle('');
     };
     
     const handleOpenStepDetails = (step: Partial<ProjectStep>) => {
@@ -363,6 +336,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
                                                     </DropdownMenuContent>

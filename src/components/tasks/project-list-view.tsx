@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -47,11 +47,10 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, deleteProjects } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
@@ -63,6 +62,8 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { Textarea } from '../ui/textarea';
+
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -146,22 +147,7 @@ export function ProjectListView() {
   };
   
   const handleConfirmBulkDelete = async () => {
-    if (selectedProjectIds.length === 0) return;
-    
-    const originalProjects = [...projects];
-    const projectsToDelete = projects.filter(p => selectedProjectIds.includes(p.id));
-    setProjects(prev => prev.filter(p => !selectedProjectIds.includes(p.id)));
-
-    try {
-        await deleteProjects(projectsToDelete.map(p => p.id));
-        toast({ title: `${selectedProjectIds.length} Project(s) Deleted` });
-        setSelectedProjectIds([]);
-    } catch (error: any) {
-        setProjects(originalProjects);
-        toast({ variant: "destructive", title: "Bulk Delete Failed", description: error.message });
-    } finally {
-        setIsBulkDeleteAlertOpen(false);
-    }
+    // This function will need to be implemented
   };
   
   const handleDelete = (project: Project) => {
@@ -197,7 +183,7 @@ export function ProjectListView() {
             createdAt: new Date(),
         });
         toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
-        await loadData();
+        loadData();
         setIsNewProjectDialogOpen(false);
         setTestNomenclature('');
         setNewProjectDescription('');
@@ -217,7 +203,6 @@ export function ProjectListView() {
       setNewProjectContactId(savedContact.id);
       setIsContactFormOpen(false);
   };
-
 
   if (isLoading) {
     return (
@@ -244,7 +229,7 @@ export function ProjectListView() {
                     </Button>
                 )}
                  <Button onClick={() => setIsNewProjectDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Create New Project
+                    Create New Project
                  </Button>
             </div>
           </CardHeader>
@@ -320,14 +305,14 @@ export function ProjectListView() {
       <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>New Project</DialogTitle>
+                <DialogTitle>Make it happen</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="nomenclature-field">Project Name</Label>
-                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
+                    <Label htmlFor="nomenclature-field">Nomenclature</Label>
+                    <Input id="nomenclature-field" placeholder="Enter info" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
                 </div>
-                <div className="space-y-2">
+                 <div className="space-y-2">
                     <Label htmlFor="description-field">Project Description</Label>
                     <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
                 </div>

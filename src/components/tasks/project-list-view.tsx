@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -12,12 +12,9 @@ import {
   LoaderCircle,
   Plus,
   Briefcase,
-  Calendar as CalendarIcon,
   ListChecks,
-  ListTodo,
   Route,
-  ArrowLeft,
-  X,
+  GitMerge,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -45,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +52,9 @@ import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/typ
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { NewProjectDialog } from './NewProjectDialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -70,6 +71,7 @@ export function ProjectListView() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -175,18 +177,6 @@ export function ProjectListView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <header className="text-center mb-6 relative">
-            <h1 className="text-3xl font-bold font-headline text-primary">Project List</h1>
-            <p className="text-muted-foreground">A complete list of all your projects.</p>
-             <div className="absolute top-0 right-0">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/action-manager">
-                        <X className="h-5 w-5" />
-                        <span className="sr-only">Close</span>
-                    </Link>
-                </Button>
-            </div>
-        </header>
         <ProjectManagementHeader />
         
         <Card>
@@ -201,7 +191,7 @@ export function ProjectListView() {
                  <Button onClick={() => setIsNewProjectDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> New Project
                  </Button>
-                 <Button>test</Button>
+                 <Button onClick={() => setIsTestDialogOpen(true)}>test</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -309,6 +299,26 @@ export function ProjectListView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+        <DialogContent>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Make it happen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Label htmlFor="nomenclature-field">Nomenclature</Label>
+                        <Input id="nomenclature-field" placeholder="Enter info..." />
+                    </div>
+                </CardContent>
+                <CardFooter className="gap-2 justify-end">
+                    <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
+                    <Button>Save</Button>
+                </CardFooter>
+            </Card>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

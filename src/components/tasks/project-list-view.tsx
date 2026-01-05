@@ -8,7 +8,6 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
-  Archive,
   LoaderCircle,
   Plus,
   Briefcase,
@@ -62,6 +61,7 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { NewProjectDialog } from './NewProjectDialog';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -81,18 +81,12 @@ export function ProjectListView() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDescription, setNewProjectDescription] = useState('');
-  const [newProjectContactId, setNewProjectContactId] = useState<string | null>(null);
-  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
-
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
-
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -133,29 +127,11 @@ export function ProjectListView() {
     const title = searchParams.get('title');
     const description = searchParams.get('description');
     if (title) {
-      setProjectToEdit(null); // Ensure we're in "create" mode
-      setNewProjectName(title);
-      setNewProjectDescription(description || '');
-      setNewProjectContactId(null);
-      setIsNewProjectDialogOpen(true);
-      // Clean up URL to prevent re-opening dialog on refresh
-      router.replace('/projects/all');
+        setProjectToEdit(null);
+        setIsNewProjectDialogOpen(true);
+        // The dialog will now pick up these values from `searchParams` directly
     }
   }, [searchParams, router]);
-  
-  useEffect(() => {
-    if (isNewProjectDialogOpen) {
-      if (projectToEdit) {
-        setNewProjectName(projectToEdit.name);
-        setNewProjectDescription(projectToEdit.description || '');
-        setNewProjectContactId(projectToEdit.contactId || null);
-      } else if (!searchParams.get('title')) {
-        setNewProjectName('');
-        setNewProjectDescription('');
-        setNewProjectContactId(null);
-      }
-    }
-  }, [isNewProjectDialogOpen, projectToEdit, searchParams]);
 
   const clientMap = useMemo(() => {
     return new Map(contacts.map(c => [c.id, c.name]));
@@ -203,33 +179,15 @@ export function ProjectListView() {
       setProjectToDelete(null);
     }
   };
-
-  const handleSaveProject = async () => {
-    if (!user || !newProjectName.trim()) {
-        toast({ variant: 'destructive', title: 'Project Name is required' });
-        return;
-    }
-
-    const projectData = {
-        name: newProjectName.trim(),
-        description: newProjectDescription.trim(),
-        contactId: newProjectContactId,
-    };
-
-    try {
-        if (projectToEdit) {
-            await updateProject(projectToEdit.id, projectData);
-            toast({ title: "Project Updated" });
-        } else {
-            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-            toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
-            router.push(`/project-plan?projectId=${newProject.id}`);
-        }
-        loadData();
-        setIsNewProjectDialogOpen(false);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to save project', description: error.message });
-    }
+  
+  const handleProjectSaved = () => {
+      loadData();
+      setIsNewProjectDialogOpen(false);
+      setProjectToEdit(null);
+      // Clean up URL params after successful creation from a todo
+      if (searchParams.get('title')) {
+          router.replace('/projects/all');
+      }
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -238,16 +196,50 @@ export function ProjectListView() {
       } else {
           setContacts(prev => [...prev, savedContact]);
       }
-      setNewProjectContactId(savedContact.id);
       setIsContactFormOpen(false);
   };
   
-  const selectedContact = contacts.find(c => c.id === newProjectContactId);
+  const handleMergeClick = (contact: Contact) => {
+    setContactToMerge(contact);
+    setIsMergeDialogOpen(true);
+  };
+
+  const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
+    try {
+        await mergeContacts(sourceContactId, masterContactId);
+        setContacts(prev => prev.filter(c => c.id !== sourceContactId));
+        toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+    }
+  };
+
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <ProjectManagementHeader />
+        <header className="text-center mb-6">
+          <div className="flex justify-center items-center gap-4 mb-2">
+              <Briefcase className="h-10 w-10 text-primary" />
+              <h1 className="text-4xl font-bold font-headline text-primary">
+                Project List
+              </h1>
+          </div>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            A complete list of all your projects. Click a project to view its task board.
+          </p>
+           <div className="mt-4">
+               <ProjectManagementHeader />
+           </div>
+        </header>
         
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">
@@ -270,7 +262,7 @@ export function ProjectListView() {
                   <TableRow>
                     <TableHead className="w-12">
                         <Checkbox 
-                            onCheckedChange={handleToggleSelectAll}
+                            onCheckedChange={() => handleToggleSelectAll()}
                             checked={projects.length > 0 && selectedProjectIds.length === projects.length}
                             aria-label="Select all projects"
                         />
@@ -349,57 +341,19 @@ export function ProjectListView() {
         </Card>
       </div>
 
-      <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="project-name-field">Project Name</Label>
-                    <Input id="project-name-field" placeholder="Enter the project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="project-description-field">Project Description</Label>
-                    <Textarea id="project-description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
-                </div>
-                 <div className="space-y-2">
-                    <Label>Project Leader</Label>
-                    <div className="flex items-center gap-2">
-                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    <span className="truncate">{selectedContact ? selectedContact.name : "Select a contact..."}</span>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search contacts..." />
-                                    <CommandList>
-                                        <CommandEmpty>No contact found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {contacts.map((c) => (
-                                                <CommandItem key={c.id} value={c.name} onSelect={() => { setNewProjectContactId(c.id); setIsContactPopoverOpen(false); }}>
-                                                    <Check className={cn("mr-2 h-4 w-4", newProjectContactId === c.id ? "opacity-100" : "opacity-0")} />
-                                                    {c.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/>New</Button>
-                    </div>
-                </div>
-            </div>
-            <DialogFooter className="gap-2 justify-end">
-                <Button variant="ghost" onClick={() => setIsNewProjectDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSaveProject}>Save</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NewProjectDialog
+        isOpen={isNewProjectDialogOpen}
+        onOpenChange={(open) => {
+            setIsNewProjectDialogOpen(open);
+            if (!open) {
+                setProjectToEdit(null);
+                if (searchParams.get('title')) router.replace('/projects/all');
+            }
+        }}
+        onProjectSaved={handleProjectSaved}
+        contacts={contacts}
+        projectToEdit={projectToEdit}
+      />
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>

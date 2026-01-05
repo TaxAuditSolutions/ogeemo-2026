@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSearchParams } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -25,13 +26,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
+import { type Project } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
+import { useAuth } from '@/context/auth-context';
+import { addProject, updateProject } from '@/services/project-service';
 import { LoaderCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-
-// A simplified schema for CREATING a project.
 const projectSchema = z.object({
   name: z.string().min(1, "Project Name is required."),
   description: z.string().optional(),
@@ -43,18 +44,22 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
+  onProjectSaved: () => void;
   contacts: Contact[];
+  projectToEdit: Project | null;
 }
 
 export function NewProjectDialog({ 
     isOpen, 
     onOpenChange, 
-    onProjectCreate, 
+    onProjectSaved, 
     contacts,
+    projectToEdit,
 }: NewProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -67,25 +72,43 @@ export function NewProjectDialog({
 
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        name: "",
-        description: "",
-        contactId: null,
-      });
+      if (projectToEdit) {
+        form.reset({
+          name: projectToEdit.name,
+          description: projectToEdit.description || "",
+          contactId: projectToEdit.contactId,
+        });
+      } else {
+        const titleFromUrl = searchParams.get('title');
+        const descriptionFromUrl = searchParams.get('description');
+        form.reset({
+          name: titleFromUrl || "",
+          description: descriptionFromUrl || "",
+          contactId: null,
+        });
+      }
     }
-  }, [isOpen, form]);
+  }, [isOpen, projectToEdit, searchParams, form]);
 
   async function onSubmit(values: ProjectFormData) {
+    if (!user) return;
     setIsLoading(true);
     try {
-        // We are only creating, so we directly call onProjectCreate.
-        onProjectCreate({
+        const projectData = {
             name: values.name,
             description: values.description,
             contactId: values.contactId === 'unassigned' ? null : values.contactId,
-        }, []);
+        };
+        if (projectToEdit) {
+            await updateProject(projectToEdit.id, projectData);
+            toast({ title: 'Project Updated' });
+        } else {
+            await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            toast({ title: 'Project Created' });
+        }
+        onProjectSaved();
     } catch (error: any) {
-        toast({ variant: 'destructive', title: "Failed to create project", description: error.message });
+        toast({ variant: 'destructive', title: "Failed to save project", description: error.message });
     } finally {
         setIsLoading(false);
     }
@@ -97,10 +120,9 @@ export function NewProjectDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
+              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              
               <FormField
                 control={form.control}
                 name="name"
@@ -108,14 +130,12 @@ export function NewProjectDialog({
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
                     <FormControl>
-                      {/* THIS IS NOW A SIMPLE TEXT INPUT */}
                       <Input placeholder="Enter the new project name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={form.control}
                 name="description"
@@ -137,7 +157,7 @@ export function NewProjectDialog({
                 name="contactId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact</FormLabel>
+                    <FormLabel>Project Leader / Client</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
@@ -162,7 +182,7 @@ export function NewProjectDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                Create Project
+                {projectToEdit ? 'Save Changes' : 'Create Project'}
               </Button>
             </DialogFooter>
           </form>

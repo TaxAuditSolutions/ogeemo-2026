@@ -34,10 +34,10 @@ import {
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
-import type { Project } from '@/types/calendar-types';
+import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
+import { addProject } from '@/services/project-service';
 
-// Updated schema to use a simple 'name' field
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
   description: z.string().optional(),
@@ -87,7 +87,6 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
     };
     
     try {
-        // The onProjectCreate function (defined in the parent) will handle the actual creation
         onProjectCreate(newProjectData, []);
     } catch (error: any) {
         toast({
@@ -117,14 +116,26 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter the new project name..." {...field} />
-                    </FormControl>
+                    <FormLabel>Project Name</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an existing project..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="project1">Project 1</SelectItem>
+                        <SelectItem value="project2">Project 2</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <div className="space-y-2">
+                <Label>New Name</Label>
+                <Input placeholder="Enter new project name" />
+              </div>
               <FormField
                 control={form.control}
                 name="description"
@@ -148,14 +159,14 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="unassigned">No Contact</SelectItem>
+                        <SelectItem value="">No Contact</SelectItem>
                         {contacts.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}

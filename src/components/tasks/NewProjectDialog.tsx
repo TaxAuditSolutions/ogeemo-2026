@@ -34,10 +34,7 @@ import {
 } from "@/components/ui/select";
 import { LoaderCircle } from 'lucide-react';
 import type { Contact } from '@/data/contacts';
-import type { Project, Event as TaskEvent } from '@/types/calendar-types';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
+import type { Project } from '@/types/calendar-types';
 
 const projectSchema = z.object({
   name: z.string().min(1, { message: "Project name is required." }),
@@ -50,7 +47,7 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: []) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>) => void;
   contacts: Contact[];
 }
 
@@ -62,8 +59,6 @@ const defaultFormValues: ProjectFormData = {
 
 export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -85,18 +80,10 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
     
-    try {
-        // The onProjectCreate function handles adding to Firestore and navigation
-        onProjectCreate(newProjectData, []);
-    } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Failed to create project",
-            description: error.message,
-        });
-    } finally {
-        setIsLoading(false);
-    }
+    // The onProjectCreate function handles adding to Firestore and navigation
+    onProjectCreate(newProjectData);
+    
+    // No need to set loading to false if we are navigating away
   }
 
   return (
@@ -113,7 +100,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Name</FormLabel>
+                    <FormLabel>Test</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter the new project name" {...field} />
                     </FormControl>

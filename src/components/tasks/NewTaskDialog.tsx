@@ -28,15 +28,11 @@ import { useToast } from '@/hooks/use-toast';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
-import { addTask, updateTask, addProject as createProjectInDb } from '@/services/project-service';
-import { LoaderCircle, ChevronsUpDown, Check, Plus } from 'lucide-react';
+import { addTask, updateTask } from '@/services/project-service';
+import { LoaderCircle, ChevronsUpDown, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
-import { cn } from '@/lib/utils';
-
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters." }),
@@ -111,8 +107,6 @@ export function NewTaskDialog({
   const isEditingProject = !!projectToEdit;
   const isEditingTask = !!taskToEdit;
   
-  const [newProjectName, setNewProjectName] = useState('');
-
   const projectForm = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: defaultProjectFormValues,
@@ -143,7 +137,6 @@ export function NewTaskDialog({
                   }
                 : { ...defaultProjectFormValues, ...parsedInitialData };
             projectForm.reset(defaults);
-            setNewProjectName(projectToEdit ? projectToEdit.name : parsedInitialData.name || '');
         }
     }
   }, [isOpen, projectToEdit, taskToEdit, isTaskMode, initialData, projectForm, taskForm, projectId, initialDataString]);
@@ -152,26 +145,23 @@ export function NewTaskDialog({
     if (!user) return;
     setIsLoading(true);
 
-    const dataToSend = { ...values, name: newProjectName };
-
-    if (!dataToSend.name) {
-        toast({ variant: 'destructive', title: 'Project name is required' });
+    try {
+        if (isEditingProject && projectToEdit) {
+            if (onProjectUpdate) {
+                onProjectUpdate({ ...projectToEdit, ...values });
+            }
+        } else {
+            if (onProjectCreate) {
+                // Call the creation handler and let it manage database interaction
+                await onProjectCreate({ ...values, status: 'planning', urgency: 'important', importance: 'B' }, []);
+            }
+        }
+        onOpenChange(false);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to save project', description: error.message });
+    } finally {
         setIsLoading(false);
-        return;
     }
-    
-    if (isEditingProject && projectToEdit) {
-        if (onProjectUpdate) {
-            onProjectUpdate({ ...projectToEdit, ...dataToSend });
-        }
-    } else {
-        if (onProjectCreate) {
-            onProjectCreate({ ...dataToSend, status: 'planning', urgency: 'important', importance: 'B' }, []);
-        }
-    }
-    
-    setIsLoading(false);
-    onOpenChange(false);
   }
 
   async function onTaskSubmit(values: TaskFormData) {
@@ -233,7 +223,7 @@ export function NewTaskDialog({
                     <FormItem>
                         <FormLabel>Project Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g., Q4 Marketing Campaign" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
+                            <Input placeholder="e.g., Q4 Marketing Campaign" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

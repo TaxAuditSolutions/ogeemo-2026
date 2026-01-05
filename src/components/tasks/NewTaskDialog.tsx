@@ -111,8 +111,6 @@ export function NewTaskDialog({
   const isEditingProject = !!projectToEdit;
   const isEditingTask = !!taskToEdit;
   
-  const [projectAction, setProjectAction] = useState<'select' | 'create'>('create');
-  const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
   const projectForm = useForm<ProjectFormData>({
@@ -145,7 +143,6 @@ export function NewTaskDialog({
                   }
                 : { ...defaultProjectFormValues, ...parsedInitialData };
             projectForm.reset(defaults);
-            setProjectAction(projectToEdit ? 'select' : 'create');
             setNewProjectName(projectToEdit ? projectToEdit.name : parsedInitialData.name || '');
         }
     }
@@ -155,10 +152,7 @@ export function NewTaskDialog({
     if (!user) return;
     setIsLoading(true);
 
-    const dataToSend = { ...values };
-    if (projectAction === 'create') {
-        dataToSend.name = newProjectName;
-    }
+    const dataToSend = { ...values, name: newProjectName };
 
     if (!dataToSend.name) {
         toast({ variant: 'destructive', title: 'Project name is required' });

@@ -225,7 +225,7 @@ export function NewTaskDialog({
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="">No Client</SelectItem>
+                            <SelectItem value="unassigned">No Client</SelectItem>
                             {contacts.map(c => (
                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                             ))}

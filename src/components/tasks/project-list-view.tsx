@@ -45,6 +45,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +73,7 @@ export function ProjectListView() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testNomenclature, setTestNomenclature] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -174,6 +176,7 @@ export function ProjectListView() {
     try {
         const newProject = await addProject({
             name: testNomenclature.trim(),
+            description: newProjectDescription.trim(),
             userId: user.uid,
             status: 'planning',
             createdAt: new Date(),
@@ -182,6 +185,7 @@ export function ProjectListView() {
         await loadData();
         setIsTestDialogOpen(false);
         setTestNomenclature('');
+        setNewProjectDescription('');
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to create project', description: error.message });
@@ -327,10 +331,14 @@ export function ProjectListView() {
             <DialogHeader>
                 <DialogTitle>New Project</DialogTitle>
             </DialogHeader>
-            <div className="py-4">
+            <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="nomenclature-field">Project Name</Label>
                     <Input id="nomenclature-field" placeholder="Enter the new project name" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description-field">Project Description</Label>
+                    <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
                 </div>
             </div>
             <DialogFooter className="gap-2 justify-end">

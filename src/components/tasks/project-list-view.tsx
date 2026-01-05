@@ -214,10 +214,9 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 <Button onClick={() => setIsNewProjectDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> New Project
+                 <Button onClick={() => setIsTestDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Create New Project
                  </Button>
-                 <Button onClick={() => setIsTestDialogOpen(true)}>test</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -289,12 +288,27 @@ export function ProjectListView() {
         </Card>
       </div>
 
-      <NewProjectDialog
-        isOpen={isNewProjectDialogOpen}
-        onOpenChange={setIsNewProjectDialogOpen}
-        onProjectCreate={handleProjectCreated}
-        contacts={contacts}
-      />
+      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>New Project</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="nomenclature-field">Project Name</Label>
+                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description-field">Project Description</Label>
+                    <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
+                </div>
+            </div>
+            <DialogFooter className="gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleCreateProjectFromTestDialog}>Save</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>
@@ -325,28 +339,6 @@ export function ProjectListView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>New Project</DialogTitle>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="nomenclature-field">Project Name</Label>
-                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="description-field">Project Description</Label>
-                    <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
-                </div>
-            </div>
-            <DialogFooter className="gap-2 justify-end">
-                <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateProjectFromTestDialog}>Save</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

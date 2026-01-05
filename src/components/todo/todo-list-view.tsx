@@ -128,7 +128,7 @@ export function ToDoListView() {
           await deleteTodo(taskToConvert.id);
         }
         toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        loadData(); // Refresh both projects and todos
+        router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     } finally {
@@ -140,7 +140,7 @@ export function ToDoListView() {
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {
-      await archiveTodoAsFile(user.uid, task);
+      await archiveTaskAsFile(user.uid, task);
       await deleteTodo(task.id);
       loadData();
       toast({ title: 'Archived', description: 'Task saved to File Manager.' });
@@ -260,10 +260,10 @@ export function ToDoListView() {
         onTaskUpdate={handleTaskSaved}
         taskToEdit={taskToEdit}
         projects={projects}
-        initialData={initialDialogData}
+        initialData={{ ...initialDialogData, isTodoItem: true }}
       />
       
-       <NewTaskDialog
+      <NewTaskDialog
         isOpen={isNewProjectDialogOpen}
         onOpenChange={setIsNewProjectDialogOpen}
         onProjectCreate={handleProjectCreated}

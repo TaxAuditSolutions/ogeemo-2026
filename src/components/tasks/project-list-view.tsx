@@ -43,6 +43,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -52,9 +54,6 @@ import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/typ
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { NewProjectDialog } from './NewProjectDialog';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
-
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -169,7 +168,7 @@ export function ProjectListView() {
 
   const handleCreateProjectFromTestDialog = async () => {
     if (!user || !testNomenclature.trim()) {
-        toast({ variant: 'destructive', title: 'Nomenclature is required' });
+        toast({ variant: 'destructive', title: 'Project Name is required' });
         return;
     }
     try {
@@ -326,12 +325,12 @@ export function ProjectListView() {
       <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Make it happen</DialogTitle>
+                <DialogTitle>New Project</DialogTitle>
             </DialogHeader>
             <div className="py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="nomenclature-field">Nomenclature</Label>
-                    <Input id="nomenclature-field" placeholder="Enter info..." value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
+                    <Label htmlFor="nomenclature-field">Project Name</Label>
+                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
                 </div>
             </div>
             <DialogFooter className="gap-2 justify-end">
@@ -343,5 +342,3 @@ export function ProjectListView() {
     </>
   );
 }
-
-    

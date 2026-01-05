@@ -29,10 +29,9 @@ import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrg
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
-import { LoaderCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters." }),
@@ -152,7 +151,6 @@ export function NewTaskDialog({
             }
         } else {
             if (onProjectCreate) {
-                // Call the creation handler and let it manage database interaction
                 await onProjectCreate({ ...values, status: 'planning', urgency: 'important', importance: 'B' }, []);
             }
         }
@@ -236,7 +234,7 @@ export function NewTaskDialog({
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Client</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || 'unassigned'}>
                         <FormControl>
                             <SelectTrigger>
                             <SelectValue placeholder="Assign to a client..." />

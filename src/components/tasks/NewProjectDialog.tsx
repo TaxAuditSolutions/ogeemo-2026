@@ -34,7 +34,7 @@ import {
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
-import type { Project } from '@/types/calendar-types';
+import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
 
 const projectSchema = z.object({
@@ -48,7 +48,7 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
   contacts: Contact[];
 }
 
@@ -83,8 +83,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
     };
     
     try {
-        onProjectCreate(newProjectData);
-        // The parent component will handle closing the dialog
+        onProjectCreate(newProjectData, []);
     } catch (error: any) {
         toast({
             variant: "destructive",

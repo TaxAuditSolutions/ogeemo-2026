@@ -6,13 +6,17 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   MoreVertical,
-  Edit,
+  Pencil,
   Trash2,
+  Archive,
   LoaderCircle,
-  Briefcase,
   Plus,
+  Briefcase,
+  Calendar as CalendarIcon,
   ListChecks,
+  ListTodo,
   Route,
+  ArrowLeft,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -24,18 +24,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
+import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
+import { type Contact } from '@/data/contacts';
 import { LoaderCircle } from 'lucide-react';
-import type { Contact } from '@/data/contacts';
-import type { Project, Event as TaskEvent } from '@/types/calendar-types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
+
+// A simplified schema for CREATING a project.
 const projectSchema = z.object({
   name: z.string().min(1, "Project Name is required."),
   description: z.string().optional(),
@@ -48,71 +44,51 @@ interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
-  onProjectUpdate?: (project: Project) => void; // Keep for potential future use
   contacts: Contact[];
-  projectToEdit?: Project | null;
-  initialData?: Partial<any>;
 }
-
-const defaultFormValues: ProjectFormData = {
-  name: "",
-  description: "",
-  contactId: null,
-};
 
 export function NewProjectDialog({ 
     isOpen, 
     onOpenChange, 
     onProjectCreate, 
-    onProjectUpdate, 
-    contacts, 
-    projectToEdit,
-    initialData 
+    contacts,
 }: NewProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
-    defaultValues: defaultFormValues,
+    defaultValues: {
+      name: "",
+      description: "",
+      contactId: null,
+    },
   });
-  
-  const contactToEditString = JSON.stringify(projectToEdit);
-  const initialDataString = JSON.stringify(initialData);
-
 
   useEffect(() => {
     if (isOpen) {
-        if (projectToEdit) {
-            form.reset({
-                name: projectToEdit.name,
-                description: projectToEdit.description || '',
-                contactId: projectToEdit.contactId || null,
-            });
-        } else {
-             form.reset({
-                ...defaultFormValues,
-                ...initialData
-            });
-        }
+      form.reset({
+        name: "",
+        description: "",
+        contactId: null,
+      });
     }
-  }, [isOpen, contactToEditString, initialDataString, form, projectToEdit]);
+  }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
     setIsLoading(true);
-    
-    const projectData = {
-        name: values.name,
-        description: values.description,
-        contactId: values.contactId === 'unassigned' ? null : values.contactId,
-    };
-
-    if (projectToEdit && onProjectUpdate) {
-        onProjectUpdate({ ...projectToEdit, ...projectData });
-    } else {
-        onProjectCreate(projectData, []);
+    try {
+        // We are only creating, so we directly call onProjectCreate.
+        onProjectCreate({
+            name: values.name,
+            description: values.description,
+            contactId: values.contactId === 'unassigned' ? null : values.contactId,
+        }, []);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: "Failed to create project", description: error.message });
+    } finally {
+        setIsLoading(false);
     }
-    // The parent component will handle closing and toast messages
-    setIsLoading(false);
   }
 
   return (
@@ -121,7 +97,7 @@ export function NewProjectDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
+              <DialogTitle>Create New Project</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
               
@@ -132,6 +108,7 @@ export function NewProjectDialog({
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
                     <FormControl>
+                      {/* THIS IS NOW A SIMPLE TEXT INPUT */}
                       <Input placeholder="Enter the new project name" {...field} />
                     </FormControl>
                     <FormMessage />
@@ -185,7 +162,7 @@ export function NewProjectDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {projectToEdit ? 'Save Changes' : 'Create Project'}
+                Create Project
               </Button>
             </DialogFooter>
           </form>

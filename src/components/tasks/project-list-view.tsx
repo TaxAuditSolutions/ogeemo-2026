@@ -42,7 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -302,21 +302,19 @@ export function ProjectListView() {
       
       <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
         <DialogContent>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Make it happen</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Label htmlFor="nomenclature-field">Nomenclature</Label>
-                        <Input id="nomenclature-field" placeholder="Enter info..." />
-                    </div>
-                </CardContent>
-                <CardFooter className="gap-2 justify-end">
-                    <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
-                    <Button>Save</Button>
-                </CardFooter>
-            </Card>
+            <DialogHeader>
+                <DialogTitle>Make it happen</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="nomenclature-field">Nomenclature</Label>
+                    <Input id="nomenclature-field" placeholder="Enter info..." />
+                </div>
+            </div>
+            <DialogFooter className="gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
+                <Button>Save</Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

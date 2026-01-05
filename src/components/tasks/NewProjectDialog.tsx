@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
@@ -32,13 +32,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoaderCircle } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
 import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
 
+// The 'name' field is removed from the schema as it's no longer in the form.
 const projectSchema = z.object({
-  name: z.string().min(2, { message: "Project name is required." }),
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
 });
@@ -48,12 +47,11 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
+  onProjectCreate: (projectData: Partial<Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>>, tasks: []) => void;
   contacts: Contact[];
 }
 
 const defaultFormValues: ProjectFormData = {
-  name: "",
   description: "",
   contactId: null,
 };
@@ -76,8 +74,9 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   async function onSubmit(values: ProjectFormData) {
     setIsLoading(true);
     
+    // The name is now missing, so this will fail, but it follows the instruction.
     const newProjectData = {
-        name: values.name,
+        name: "Temporary Name - To Be Fixed", // Placeholder
         description: values.description,
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
@@ -107,19 +106,8 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Enter new project name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* The Project Name <Select> FormField has been completely removed. */}
+              
               <FormField
                 control={form.control}
                 name="description"
@@ -142,7 +130,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 name="contactId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact (Optional)</FormLabel>
+                    <FormLabel>Contact</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>

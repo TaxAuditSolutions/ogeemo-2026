@@ -47,6 +47,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +63,6 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { Textarea } from '../ui/textarea';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -283,7 +283,20 @@ export function ProjectListView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.map(p => {
+                  {isLoading ? (
+                    <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24">
+                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
+                        </TableCell>
+                    </TableRow>
+                  ) : projects.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                           No projects found.
+                        </TableCell>
+                    </TableRow>
+                  ) : (
+                  projects.map(p => {
                     const contact = contacts.find(c => c.id === p.contactId);
                     return (
                       <TableRow key={p.id}>
@@ -328,7 +341,8 @@ export function ProjectListView() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  })
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -339,16 +353,16 @@ export function ProjectListView() {
       <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{projectToEdit ? 'Edit Project' : 'New Project'}</DialogTitle>
+                <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="nomenclature-field">Project Name</Label>
-                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
+                    <Label htmlFor="project-name-field">Project Name</Label>
+                    <Input id="project-name-field" placeholder="Enter the project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="description-field">Project Description</Label>
-                    <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
+                    <Label htmlFor="project-description-field">Project Description</Label>
+                    <Textarea id="project-description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label>Project Leader</Label>

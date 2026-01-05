@@ -47,10 +47,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, deleteProjects } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
-// The NewTaskDialog is temporarily removed as part of the feature reset.
-// import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
+import { NewProjectDialog } from './NewProjectDialog';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -140,9 +139,8 @@ export function ProjectListView() {
   };
 
   const handleEdit = (project: Project) => {
-    // This will be re-enabled in a later step
-    // setProjectToEdit(project);
-    // setIsNewItemDialogOpen(true);
+    setProjectToEdit(project);
+    setIsNewItemDialogOpen(true);
   };
   
   const handleDelete = (project: Project) => {
@@ -155,7 +153,7 @@ export function ProjectListView() {
       const tasksToDelete = await getTasksForProject(projectToDelete.id);
       await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
       setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
-      toast({ title: "Project Deleted" });
+      toast({ title: 'Project Deleted' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
     } finally {
@@ -163,20 +161,23 @@ export function ProjectListView() {
     }
   };
   
-  const handleProjectUpdated = (updatedProject: Project) => {
-    // Logic will be added back in a later step
-  };
-  
   const handleOpenNewProjectDialog = () => {
-      // Temporarily disabled
-      toast({ title: "Feature under construction", description: "The New Project dialog is being rebuilt."});
-      // setProjectToEdit(null);
-      // setInitialDialogData({});
-      // setIsNewItemDialogOpen(true);
+      setProjectToEdit(null);
+      setInitialDialogData({});
+      setIsNewItemDialogOpen(true);
   };
 
-  const handleProjectCreated = (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    // Logic will be added back in a later step
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>) => {
+    if (!user) return;
+    setIsNewItemDialogOpen(false);
+    try {
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        loadData();
+        router.push(`/project-plan?projectId=${newProject.id}`);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    }
   };
 
   if (isLoading) {
@@ -213,7 +214,6 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 {/* The "New Project" button is temporarily disabled */}
                  <Button variant="outline" onClick={handleOpenNewProjectDialog}>
                     <Plus className="mr-2 h-4 w-4" /> New Project
                 </Button>
@@ -289,7 +289,19 @@ export function ProjectListView() {
         </Card>
       </div>
 
-      {/* The NewTaskDialog component is temporarily removed */}
+       <NewProjectDialog
+        isOpen={isNewItemDialogOpen}
+        onOpenChange={(open) => {
+            setIsNewItemDialogOpen(open);
+            if (!open) {
+                setProjectToEdit(null);
+            }
+        }}
+        onProjectCreate={handleProjectCreated}
+        contacts={contacts}
+        projectToEdit={projectToEdit}
+        initialData={initialDialogData}
+      />
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>

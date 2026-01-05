@@ -37,6 +37,7 @@ import type { Contact } from '@/data/contacts';
 import type { Project } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
 
+// Updated schema to use a simple 'name' field
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
   description: z.string().optional(),
@@ -48,7 +49,7 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (newProject: Project) => void;
+  onProjectCreate: (newProject: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => void;
   contacts: Contact[];
 }
 
@@ -75,10 +76,28 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
-    // This is a placeholder for the actual submission logic.
-    console.log("Form values:", values);
-    toast({ title: "Form Submitted (Placeholder)"});
-    onOpenChange(false);
+    if (!user) return;
+    setIsLoading(true);
+    
+    const newProjectData = {
+        name: values.name,
+        description: values.description,
+        contactId: values.contactId,
+        status: 'planning' as const,
+    };
+    
+    try {
+        // The onProjectCreate function (defined in the parent) will handle the actual creation
+        onProjectCreate(newProjectData, []);
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Failed to create project",
+            description: error.message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -98,20 +117,14 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Name</FormLabel>
+                    <FormLabel>New Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Q4 Marketing Campaign" {...field} />
+                      <Input placeholder="Enter the new project name..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormItem>
-                <FormLabel>New Name</FormLabel>
-                <FormControl>
-                    <Input placeholder="Enter the new name..." />
-                </FormControl>
-              </FormItem>
               <FormField
                 control={form.control}
                 name="description"

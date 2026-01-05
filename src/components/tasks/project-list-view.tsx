@@ -148,11 +148,17 @@ export function ProjectListView() {
     }
   };
   
-  const handleProjectCreated = (newProject: Project) => {
-    setProjects(prev => [newProject, ...prev]);
-    setIsNewProjectDialogOpen(false);
-    toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-    router.push(`/project-plan?projectId=${newProject.id}`);
+  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>) => {
+    if (!user) return;
+    try {
+        const newProject = await addProject({ ...projectData, userId: user.uid, createdAt: new Date() });
+        setProjects(prev => [newProject, ...prev].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()));
+        setIsNewProjectDialogOpen(false);
+        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+        router.push(`/project-plan?projectId=${newProject.id}`);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    }
   };
 
   if (isLoading) {
@@ -266,7 +272,7 @@ export function ProjectListView() {
       <NewProjectDialog
         isOpen={isNewProjectDialogOpen}
         onOpenChange={setIsNewProjectDialogOpen}
-        onProjectCreate={handleProjectCreated}
+        onProjectCreate={(projectData) => handleProjectCreated(projectData as Omit<Project, 'id'>, [])}
         contacts={contacts}
       />
       

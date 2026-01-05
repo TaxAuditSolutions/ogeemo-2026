@@ -115,26 +115,11 @@ export function ToDoListView() {
   };
 
   const handleMakeProject = (task: TaskEvent) => {
-    setInitialDialogData({ name: task.title, description: task.description || '' });
-    setTaskToConvert(task);
-    setIsNewProjectDialogOpen(true);
-  };
-  
-  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    if (!user) return;
-    try {
-        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        if (taskToConvert) {
-          await deleteTodo(taskToConvert.id);
-        }
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/project-plan?projectId=${newProject.id}`);
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-    } finally {
-        setIsNewProjectDialogOpen(false);
-        setTaskToConvert(null);
-    }
+    const query = new URLSearchParams({
+        title: task.title,
+        description: task.description || '',
+    }).toString();
+    router.push(`/projects/all?${query}`);
   };
   
   const handleArchive = async (task: TaskEvent) => {
@@ -189,7 +174,7 @@ export function ToDoListView() {
           </div>
         </header>
 
-        <Card className="w-full max-w-4xl">
+        <Card className="w-full max-w-2xl">
           <CardHeader>
              <div className="flex justify-between items-center">
                 <div>
@@ -218,6 +203,13 @@ export function ToDoListView() {
               </div>
             ) : todos.length > 0 ? (
                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-2 border-b">
+                        <Checkbox 
+                            onCheckedChange={(checked) => setSelectedTaskIds(checked ? todos.map(t => t.id) : [])}
+                            checked={todos.length > 0 && selectedTaskIds.length === todos.length}
+                        />
+                        <span className="text-sm font-medium">Select All</span>
+                    </div>
                     {todos.map(task => (
                         <div key={task.id} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50">
                             <Checkbox 
@@ -261,16 +253,6 @@ export function ToDoListView() {
         taskToEdit={taskToEdit}
         projects={projects}
         initialData={{ ...initialDialogData, isTodoItem: true }}
-      />
-      
-      <NewTaskDialog
-        isOpen={isNewProjectDialogOpen}
-        onOpenChange={setIsNewProjectDialogOpen}
-        onProjectCreate={handleProjectCreated}
-        contacts={contacts}
-        onContactsChange={setContacts}
-        projectToEdit={null}
-        initialData={initialDialogData}
       />
       
       <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>

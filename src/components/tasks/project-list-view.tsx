@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   MoreVertical,
@@ -99,6 +99,7 @@ export function ProjectListView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -131,18 +132,32 @@ export function ProjectListView() {
   }, [loadData]);
   
   useEffect(() => {
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    if (title) {
+      setProjectToEdit(null);
+      setNewProjectName(title);
+      setNewProjectDescription(description || '');
+      setNewProjectContactId(null);
+      setIsNewProjectDialogOpen(true);
+      // Clean up URL to prevent re-opening dialog on refresh
+      router.replace('/projects/all');
+    }
+  }, [searchParams, router]);
+  
+  useEffect(() => {
     if (isNewProjectDialogOpen) {
       if (projectToEdit) {
         setNewProjectName(projectToEdit.name);
         setNewProjectDescription(projectToEdit.description || '');
         setNewProjectContactId(projectToEdit.contactId || null);
-      } else {
+      } else if (!searchParams.get('title')) {
         setNewProjectName('');
         setNewProjectDescription('');
         setNewProjectContactId(null);
       }
     }
-  }, [isNewProjectDialogOpen, projectToEdit]);
+  }, [isNewProjectDialogOpen, projectToEdit, searchParams]);
 
   const clientMap = useMemo(() => {
     return new Map(contacts.map(c => [c.id, c.name]));

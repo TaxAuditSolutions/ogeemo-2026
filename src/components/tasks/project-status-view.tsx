@@ -13,7 +13,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { DraggableProjectCard, ItemTypes } from '@/components/dashboard/DraggableProjectCard';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
-import { NewTaskDialog } from '../tasks/NewTaskDialog';
+import { NewProjectDialog } from './NewProjectDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { type Event as TaskEvent } from '@/types/calendar';
 import { Button } from '../ui/button';
@@ -74,7 +74,6 @@ export function ProjectStatusView() {
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [initialDialogData, setInitialDialogData] = useState({});
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -164,34 +163,14 @@ export function ProjectStatusView() {
         }
     };
     
-    const handleProjectUpdated = async (updatedProject: Project) => {
+    const handleProjectSaved = () => {
         setIsFormOpen(false);
         setProjectToEdit(null);
-        try {
-            const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
-            await updateProject(id, dataToUpdate);
-            toast({ title: 'Project Updated' });
-            loadData(); // Refresh data from the database
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
-    };
-    
-    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-        if (!user) return;
-        setIsFormOpen(false);
-        try {
-            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-            router.push(`/project-plan?projectId=${newProject.id}`);
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-        }
+        loadData();
     };
 
     const handleNewProjectClick = () => {
         setProjectToEdit(null);
-        setInitialDialogData({});
         setIsFormOpen(true);
     };
 
@@ -240,7 +219,7 @@ export function ProjectStatusView() {
                 </div>
             </div>
 
-            <NewTaskDialog
+            <NewProjectDialog
                 isOpen={isFormOpen}
                 onOpenChange={(open) => {
                     setIsFormOpen(open);
@@ -248,12 +227,9 @@ export function ProjectStatusView() {
                         setProjectToEdit(null);
                     }
                 }}
-                onProjectCreate={handleProjectCreated}
-                onProjectUpdate={handleProjectUpdated}
+                onProjectSaved={handleProjectSaved}
                 contacts={contacts}
-                onContactsChange={setContacts}
                 projectToEdit={projectToEdit}
-                initialData={initialDialogData}
             />
 
             <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>

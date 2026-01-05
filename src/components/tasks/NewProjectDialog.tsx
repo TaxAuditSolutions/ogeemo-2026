@@ -34,9 +34,8 @@ import {
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
-import type { Project, Event as TaskEvent } from '@/types/calendar-types';
+import type { Project } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
-import { addProject } from '@/services/project-service';
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
@@ -76,34 +75,10 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Authentication Error' });
-        return;
-    };
-    setIsLoading(true);
-
-    const newProjectData: Omit<Project, 'id'> = {
-        ...values,
-        contactId: values.contactId === 'unassigned' ? null : values.contactId,
-        userId: user.uid,
-        createdAt: new Date(),
-        status: 'planning',
-        steps: [],
-    };
-    
-    try {
-        const newProject = await addProject(newProjectData);
-        onProjectCreate(newProject);
-        // Parent component will show toast and close dialog
-    } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Failed to create project",
-            description: error.message
-        });
-    } finally {
-        setIsLoading(false);
-    }
+    // This is a placeholder for the actual submission logic.
+    console.log("Form values:", values);
+    toast({ title: "Form Submitted (Placeholder)"});
+    onOpenChange(false);
   }
 
   return (
@@ -131,6 +106,12 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                   </FormItem>
                 )}
               />
+              <FormItem>
+                <FormLabel>New Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="Enter the new name..." />
+                </FormControl>
+              </FormItem>
               <FormField
                 control={form.control}
                 name="description"
@@ -154,7 +135,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || 'unassigned'}>
+                    <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />

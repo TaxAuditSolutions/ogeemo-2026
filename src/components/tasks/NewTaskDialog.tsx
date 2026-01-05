@@ -36,6 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters." }),
   description: z.string().optional(),
+  contactId: z.string().optional().nullable(),
 });
 
 const taskSchema = z.object({
@@ -70,6 +71,7 @@ interface NewTaskDialogProps {
 const defaultProjectFormValues: ProjectFormData = {
   name: "",
   description: "",
+  contactId: null,
 };
 
 const defaultTaskFormValues: TaskFormData = {
@@ -148,7 +150,7 @@ export function NewTaskDialog({
         }
     } else {
         if (onProjectCreate) {
-            onProjectCreate({ ...values, contactId: null, status: 'planning', urgency: 'important', importance: 'B' }, []);
+            onProjectCreate({ ...values, status: 'planning', urgency: 'important', importance: 'B' }, []);
         }
     }
     
@@ -177,7 +179,7 @@ export function NewTaskDialog({
                 description: values.description || '',
                 status: 'todo',
                 position: 0, 
-                projectId: values.projectId === 'inbox' ? null : values.projectId,
+                projectId: values.projectId === 'inbox' || values.projectId === 'unassigned' ? null : values.projectId,
                 stepId: values.stepId || null,
                 userId: user.uid,
                 isTodoItem: !!values.isTodoItem,
@@ -210,6 +212,29 @@ export function NewTaskDialog({
             <div className="py-4 space-y-4">
                 <FormField control={projectForm.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Project Name</FormLabel> <FormControl><Input placeholder="e.g., Q4 Marketing Campaign" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={projectForm.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Describe the main goal of this project" {...field} value={field.value || ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                <FormField
+                    control={projectForm.control}
+                    name="contactId"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Client</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Assign to a client..." />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="">No Client</SelectItem>
+                            {contacts.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
             </div>
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>

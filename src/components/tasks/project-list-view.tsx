@@ -49,7 +49,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
-// The NewTaskDialog import is removed as we are deleting its usage for now.
+import { NewProjectDialog } from './NewProjectDialog';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -65,6 +65,7 @@ export function ProjectListView() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -109,12 +110,6 @@ export function ProjectListView() {
         setSelectedProjectIds(projects.map(p => p.id));
     }
   };
-
-  const handleDeleteSelected = async () => {
-    if (selectedProjectIds.length > 0) {
-      setIsBulkDeleteAlertOpen(true);
-    }
-  };
   
   const handleConfirmBulkDelete = async () => {
     if (selectedProjectIds.length === 0) return;
@@ -153,6 +148,13 @@ export function ProjectListView() {
     }
   };
   
+  const handleProjectCreated = (newProject: Project) => {
+    setProjects(prev => [newProject, ...prev]);
+    setIsNewProjectDialogOpen(false);
+    toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+    router.push(`/project-plan?projectId=${newProject.id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -187,7 +189,9 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 {/* "New Project" button is temporarily removed */}
+                 <Button onClick={() => setIsNewProjectDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> New Project
+                 </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -235,7 +239,6 @@ export function ProjectListView() {
                               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              {/* Edit functionality will be restored with the new dialog */}
                               <DropdownMenuItem asChild>
                                 <Link href={`/projects/${p.id}/tasks`}>
                                   <ListChecks className="mr-2 h-4 w-4" /> Task Board
@@ -259,6 +262,13 @@ export function ProjectListView() {
           </CardContent>
         </Card>
       </div>
+
+      <NewProjectDialog
+        isOpen={isNewProjectDialogOpen}
+        onOpenChange={setIsNewProjectDialogOpen}
+        onProjectCreate={handleProjectCreated}
+        contacts={contacts}
+      />
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>

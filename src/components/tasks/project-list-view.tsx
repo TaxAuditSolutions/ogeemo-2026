@@ -19,7 +19,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -51,10 +51,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
-import { ProjectManagementHeader } from './ProjectManagementHeader';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';

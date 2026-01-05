@@ -64,7 +64,6 @@ import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { Textarea } from '../ui/textarea';
 
-
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
   active: 'Active',
@@ -135,7 +134,7 @@ export function ProjectListView() {
     const title = searchParams.get('title');
     const description = searchParams.get('description');
     if (title) {
-      setProjectToEdit(null);
+      setProjectToEdit(null); // Ensure we're in "create" mode
       setNewProjectName(title);
       setNewProjectDescription(description || '');
       setNewProjectContactId(null);
@@ -243,17 +242,9 @@ export function ProjectListView() {
       setNewProjectContactId(savedContact.id);
       setIsContactFormOpen(false);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
-  }
   
   const selectedContact = contacts.find(c => c.id === newProjectContactId);
-  
+
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
@@ -426,21 +417,19 @@ export function ProjectListView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {isContactFormOpen && (
-          <ContactFormDialog
-            isOpen={isContactFormOpen}
-            onOpenChange={setIsContactFormOpen}
-            contactToEdit={null}
-            folders={contactFolders}
-            onFoldersChange={setContactFolders}
-            onSave={handleContactSave}
-            companies={companies}
-            onCompaniesChange={setCompanies}
-            customIndustries={customIndustries}
-            onCustomIndustriesChange={setCustomIndustries}
-          />
-      )}
+      
+      <ContactFormDialog
+        isOpen={isContactFormOpen}
+        onOpenChange={setIsContactFormOpen}
+        contactToEdit={null}
+        folders={contactFolders}
+        onFoldersChange={setContactFolders}
+        onSave={handleContactSave}
+        companies={companies}
+        onCompaniesChange={setCompanies}
+        customIndustries={customIndustries}
+        onCustomIndustriesChange={setCustomIndustries}
+      />
     </>
   );
 }

@@ -54,7 +54,7 @@ interface NewProjectDialogProps {
 const defaultFormValues: ProjectFormData = {
   name: "",
   description: "",
-  contactId: null,
+  contactId: "unassigned",
 };
 
 export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
@@ -80,10 +80,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
     
-    // The onProjectCreate function handles adding to Firestore and navigation
     onProjectCreate(newProjectData);
-    
-    // No need to set loading to false if we are navigating away
   }
 
   return (
@@ -95,19 +92,11 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               <DialogTitle>Create New Project</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
-               <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Test</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter the new project name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
+              <div className="space-y-2">
+                <Label htmlFor="test-field">Test</Label>
+                <Input id="test-field" placeholder="This is a test field" {...form.register('name')} />
+              </div>
               
               <FormField
                 control={form.control}
@@ -119,7 +108,6 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                       <Textarea
                         placeholder="Describe the main goal of this project"
                         {...field}
-                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -132,7 +120,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />

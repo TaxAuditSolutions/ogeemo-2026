@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -47,7 +48,9 @@ interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onProjectCreate: (projectData: Partial<Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>>, tasks: []) => void;
+  onProjectUpdate?: (project: Project) => void;
   contacts: Contact[];
+  projectToEdit?: Project | null;
 }
 
 const defaultFormValues: ProjectFormData = {
@@ -55,7 +58,7 @@ const defaultFormValues: ProjectFormData = {
   contactId: null,
 };
 
-export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
+export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts, projectToEdit }: NewProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -66,9 +69,12 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   
   useEffect(() => {
     if (isOpen) {
-        form.reset(defaultFormValues);
+        form.reset({
+            description: projectToEdit?.description || "",
+            contactId: projectToEdit?.contactId || null,
+        });
     }
-  }, [isOpen, form]);
+  }, [isOpen, projectToEdit, form]);
 
   async function onSubmit(values: ProjectFormData) {
     setIsLoading(true);
@@ -99,10 +105,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
-              <DialogDescription>
-                Start by giving your new project a name and description.
-              </DialogDescription>
+              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div className="space-y-2">
@@ -157,7 +160,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                Create Project
+                {projectToEdit ? 'Save Changes' : 'Create Project'}
               </Button>
             </DialogFooter>
           </form>

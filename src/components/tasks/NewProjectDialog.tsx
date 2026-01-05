@@ -36,8 +36,11 @@ import { LoaderCircle } from 'lucide-react';
 import type { Contact } from '@/data/contacts';
 import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 
 const projectSchema = z.object({
+  name: z.string().min(1, { message: "Project name is required." }),
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
 });
@@ -47,46 +50,43 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Partial<Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>>, tasks: []) => void;
-  onProjectUpdate?: (project: Project) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: []) => void;
   contacts: Contact[];
-  projectToEdit?: Project | null;
 }
 
 const defaultFormValues: ProjectFormData = {
+  name: "",
   description: "",
   contactId: null,
 };
 
-export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts, projectToEdit }: NewProjectDialogProps) {
+export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: defaultFormValues,
   });
-  
+
   useEffect(() => {
     if (isOpen) {
-        form.reset({
-            description: projectToEdit?.description || "",
-            contactId: projectToEdit?.contactId || null,
-        });
+        form.reset(defaultFormValues);
     }
-  }, [isOpen, projectToEdit, form]);
+  }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
     setIsLoading(true);
     
-    // The name is now missing, so this will fail, but it follows the instruction.
     const newProjectData = {
-        name: "Temporary Name - To Be Fixed", // Placeholder
+        name: values.name,
         description: values.description,
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
     
     try {
+        // The onProjectCreate function handles adding to Firestore and navigation
         onProjectCreate(newProjectData, []);
     } catch (error: any) {
         toast({
@@ -105,13 +105,22 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
+              <DialogTitle>Create New Project</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="test-field">Test</Label>
-                <Input id="test-field" placeholder="This is a test field" />
-              </div>
+               <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter the new project name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}
@@ -160,7 +169,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {projectToEdit ? 'Save Changes' : 'Create Project'}
+                Create Project
               </Button>
             </DialogFooter>
           </form>

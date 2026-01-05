@@ -150,10 +150,9 @@ export function ProjectListView() {
   
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>) => {
     if (!user) return;
+    setIsNewProjectDialogOpen(false);
     try {
-        const newProject = await addProject({ ...projectData, userId: user.uid, createdAt: new Date() });
-        setProjects(prev => [newProject, ...prev].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()));
-        setIsNewProjectDialogOpen(false);
+        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
         toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {

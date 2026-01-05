@@ -36,7 +36,6 @@ import type { Contact } from '@/data/contacts';
 import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
 
-// The 'name' field is removed from the schema as it's no longer in the form.
 const projectSchema = z.object({
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
@@ -106,7 +105,10 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              {/* The Project Name <Select> FormField has been completely removed. */}
+              <div className="space-y-2">
+                <Label htmlFor="test-field">Test</Label>
+                <Input id="test-field" placeholder="This is a test field" />
+              </div>
               
               <FormField
                 control={form.control}

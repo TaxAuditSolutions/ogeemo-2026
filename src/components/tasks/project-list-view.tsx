@@ -47,7 +47,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, deleteProjects } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
-import { NewTaskDialog } from './NewTaskDialog';
+// The NewTaskDialog is temporarily removed as part of the feature reset.
+// import { NewTaskDialog } from './NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 
@@ -139,8 +140,9 @@ export function ProjectListView() {
   };
 
   const handleEdit = (project: Project) => {
-    setProjectToEdit(project);
-    setIsNewItemDialogOpen(true);
+    // This will be re-enabled in a later step
+    // setProjectToEdit(project);
+    // setIsNewItemDialogOpen(true);
   };
   
   const handleDelete = (project: Project) => {
@@ -161,34 +163,20 @@ export function ProjectListView() {
     }
   };
   
-  const handleProjectUpdated = async (updatedProject: Project) => {
-    setIsNewItemDialogOpen(false);
-    setProjectToEdit(null);
-    try {
-        const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
-        await updateProject(id, dataToUpdate);
-        toast({ title: "Project Updated" });
-        loadData(); // Refresh data from the database
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Update Failed", description: error.message });
-    }
+  const handleProjectUpdated = (updatedProject: Project) => {
+    // Logic will be added back in a later step
   };
   
   const handleOpenNewProjectDialog = () => {
-      setProjectToEdit(null);
-      setInitialDialogData({});
-      setIsNewItemDialogOpen(true);
+      // Temporarily disabled
+      toast({ title: "Feature under construction", description: "The New Project dialog is being rebuilt."});
+      // setProjectToEdit(null);
+      // setInitialDialogData({});
+      // setIsNewItemDialogOpen(true);
   };
 
-  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    if (!user) return;
-    try {
-        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/projects/${newProject.id}/tasks`);
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-    }
+  const handleProjectCreated = (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    // Logic will be added back in a later step
   };
 
   if (isLoading) {
@@ -225,6 +213,7 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
+                 {/* The "New Project" button is temporarily disabled */}
                  <Button variant="outline" onClick={handleOpenNewProjectDialog}>
                     <Plus className="mr-2 h-4 w-4" /> New Project
                 </Button>
@@ -300,19 +289,7 @@ export function ProjectListView() {
         </Card>
       </div>
 
-      <NewTaskDialog
-        isOpen={isNewItemDialogOpen}
-        onOpenChange={(open) => {
-            setIsNewItemDialogOpen(open);
-            if (!open) setProjectToEdit(null);
-        }}
-        onProjectCreate={handleProjectCreated}
-        onProjectUpdate={handleProjectUpdated}
-        contacts={contacts}
-        onContactsChange={setContacts}
-        projectToEdit={projectToEdit}
-        initialData={initialDialogData}
-      />
+      {/* The NewTaskDialog component is temporarily removed */}
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>

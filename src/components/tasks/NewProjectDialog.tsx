@@ -34,10 +34,10 @@ import {
 } from "@/components/ui/select";
 import { LoaderCircle } from 'lucide-react';
 import type { Contact } from '@/data/contacts';
-import type { Project } from '@/types/calendar-types';
+import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 
 const projectSchema = z.object({
-  name: z.string().min(1, { message: "Project name is required." }),
+  name: z.string(), // Keep in schema to prevent errors, but no field will be rendered
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
 });
@@ -47,14 +47,14 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
   contacts: Contact[];
 }
 
 const defaultFormValues: ProjectFormData = {
   name: "",
   description: "",
-  contactId: "unassigned",
+  contactId: null,
 };
 
 export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
@@ -72,15 +72,15 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
+    // Logic is kept but will not be triggered without a submit button for the form.
+    // This will be addressed in the next steps as instructed.
     setIsLoading(true);
-    
-    const newProjectData = {
+    const projectData = {
         name: values.name,
         description: values.description,
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
-    
-    onProjectCreate(newProjectData);
+    onProjectCreate(projectData, []);
   }
 
   return (
@@ -92,11 +92,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               <DialogTitle>Create New Project</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              
-              <div className="space-y-2">
-                <Label htmlFor="test-field">Test</Label>
-                <Input id="test-field" placeholder="This is a test field" {...form.register('name')} />
-              </div>
+              {/* The "Test" field has been removed as per your instruction. */}
               
               <FormField
                 control={form.control}
@@ -120,7 +116,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value || "unassigned"}>
+                    <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />

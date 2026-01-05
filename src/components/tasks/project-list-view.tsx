@@ -344,7 +344,7 @@ export function ProjectListView() {
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="nomenclature-field">Project Name</Label>
-                    <Input id="nomenclature-field" placeholder="Enter info" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
+                    <Input id="nomenclature-field" placeholder="Enter the new project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="description-field">Project Description</Label>

@@ -34,9 +34,8 @@ import {
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
-import type { Project, Event as TaskEvent } from '@/types/calendar-types';
+import type { Project } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
-import { addProject } from '@/services/project-service';
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
@@ -49,7 +48,7 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (newProject: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId' | 'status'>) => void;
   contacts: Contact[];
 }
 
@@ -60,7 +59,6 @@ const defaultFormValues: ProjectFormData = {
 };
 
 export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
-  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -76,18 +74,17 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
   }, [isOpen, form]);
 
   async function onSubmit(values: ProjectFormData) {
-    if (!user) return;
     setIsLoading(true);
     
     const newProjectData = {
         name: values.name,
         description: values.description,
-        contactId: values.contactId,
-        status: 'planning' as const,
+        contactId: values.contactId === 'unassigned' ? null : values.contactId,
     };
     
     try {
-        onProjectCreate(newProjectData, []);
+        onProjectCreate(newProjectData);
+        // The parent component will handle closing the dialog
     } catch (error: any) {
         toast({
             variant: "destructive",
@@ -117,25 +114,13 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an existing project..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="project1">Project 1</SelectItem>
-                        <SelectItem value="project2">Project 2</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                        <Input placeholder="Enter new project name" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="space-y-2">
-                <Label>New Name</Label>
-                <Input placeholder="Enter new project name" />
-              </div>
               <FormField
                 control={form.control}
                 name="description"
@@ -159,14 +144,14 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <Select onValueChange={field.onChange} value={field.value || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Contact</SelectItem>
+                        <SelectItem value="unassigned">No Contact</SelectItem>
                         {contacts.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}

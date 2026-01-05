@@ -272,7 +272,7 @@ export function ProjectListView() {
       <NewProjectDialog
         isOpen={isNewProjectDialogOpen}
         onOpenChange={setIsNewProjectDialogOpen}
-        onProjectCreate={(projectData) => handleProjectCreated(projectData as Omit<Project, 'id'>, [])}
+        onProjectCreate={handleProjectCreated}
         contacts={contacts}
       />
       

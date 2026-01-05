@@ -36,6 +36,7 @@ import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
 import type { Project, Event as TaskEvent } from '@/types/calendar-types';
 import { useToast } from '@/hooks/use-toast';
+import { addProject } from '@/services/project-service';
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
@@ -48,7 +49,7 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
+  onProjectCreate: (newProject: Project) => void;
   contacts: Contact[];
 }
 
@@ -81,18 +82,19 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
     };
     setIsLoading(true);
 
-    const newProjectData: Omit<Project, 'id' | 'createdAt' | 'userId'> = {
+    const newProjectData: Omit<Project, 'id'> = {
         ...values,
         contactId: values.contactId === 'unassigned' ? null : values.contactId,
+        userId: user.uid,
+        createdAt: new Date(),
         status: 'planning',
-        urgency: 'important',
-        importance: 'B',
         steps: [],
     };
     
     try {
-        onProjectCreate(newProjectData, []);
-        // The parent component now handles closing and success toast
+        const newProject = await addProject(newProjectData);
+        onProjectCreate(newProject);
+        // Parent component will show toast and close dialog
     } catch (error: any) {
         toast({
             variant: "destructive",

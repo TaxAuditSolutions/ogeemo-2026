@@ -44,7 +44,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, deleteProjects } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, deleteProjects } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
@@ -207,14 +207,14 @@ export function ProjectListView() {
                         />
                     </TableHead>
                     <TableHead>Project Name</TableHead>
-                    <TableHead>Client</TableHead>
+                    <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {projects.map(p => {
-                    const client = contacts.find(c => c.id === p.contactId);
+                    const contact = contacts.find(c => c.id === p.contactId);
                     return (
                       <TableRow key={p.id}>
                         <TableCell>
@@ -229,7 +229,7 @@ export function ProjectListView() {
                             {p.name}
                           </Link>
                         </TableCell>
-                        <TableCell>{client?.name || 'N/A'}</TableCell>
+                        <TableCell>{contact?.name || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{statusDisplayMap[p.status || 'planning']}</Badge>
                         </TableCell>

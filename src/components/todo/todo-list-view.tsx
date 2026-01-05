@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getTodos, deleteTodo, deleteTodos, archiveTodos, type TaskEvent } from '@/services/todo-service';
@@ -33,11 +34,10 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
-import { Checkbox } from '@/components/ui/checkbox';
-
 
 export function ToDoListView() {
   const [todos, setTodos] = useState<TaskEvent[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [taskToEdit, setTaskToEdit] = useState<TaskEvent | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<TaskEvent | null>(null);
@@ -51,8 +51,6 @@ export function ToDoListView() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [isBulkArchiveAlertOpen, setIsBulkArchiveAlertOpen] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-
 
   const router = useRouter();
   const { user } = useAuth();
@@ -142,7 +140,7 @@ export function ToDoListView() {
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {
-      await archiveTaskAsFile(user.uid, task);
+      await archiveTodoAsFile(user.uid, task);
       await deleteTodo(task.id);
       loadData();
       toast({ title: 'Archived', description: 'Task saved to File Manager.' });
@@ -231,7 +229,7 @@ export function ToDoListView() {
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onSelect={() => handleEdit(task)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleSchedule(task)}><CalendarIcon className="mr-2 h-4 w-4"/>Schedule to Calendar</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleSchedule(task)}><Calendar className="mr-2 h-4 w-4"/>Schedule to Calendar</DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleMakeProject(task)}><Briefcase className="mr-2 h-4 w-4"/>Convert to Project</DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleArchive(task)}><Archive className="mr-2 h-4 w-4"/>Archive as Note</DropdownMenuItem>
                                     <DropdownMenuSeparator />

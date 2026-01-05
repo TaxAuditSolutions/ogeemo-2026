@@ -201,6 +201,7 @@ export function ProjectListView() {
                  <Button onClick={() => setIsNewProjectDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> New Project
                  </Button>
+                 <Button>test</Button>
             </div>
           </CardHeader>
           <CardContent>

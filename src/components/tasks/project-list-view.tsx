@@ -72,6 +72,7 @@ export function ProjectListView() {
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [testNomenclature, setTestNomenclature] = useState('');
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -163,6 +164,28 @@ export function ProjectListView() {
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    }
+  };
+
+  const handleCreateProjectFromTestDialog = async () => {
+    if (!user || !testNomenclature.trim()) {
+        toast({ variant: 'destructive', title: 'Nomenclature is required' });
+        return;
+    }
+    try {
+        const newProject = await addProject({
+            name: testNomenclature.trim(),
+            userId: user.uid,
+            status: 'planning',
+            createdAt: new Date(),
+        });
+        toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
+        await loadData();
+        setIsTestDialogOpen(false);
+        setTestNomenclature('');
+        router.push(`/project-plan?projectId=${newProject.id}`);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create project', description: error.message });
     }
   };
 
@@ -308,15 +331,17 @@ export function ProjectListView() {
             <div className="py-4">
                 <div className="space-y-2">
                     <Label htmlFor="nomenclature-field">Nomenclature</Label>
-                    <Input id="nomenclature-field" placeholder="Enter info..." />
+                    <Input id="nomenclature-field" placeholder="Enter info..." value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
                 </div>
             </div>
             <DialogFooter className="gap-2 justify-end">
                 <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
-                <Button>Save</Button>
+                <Button onClick={handleCreateProjectFromTestDialog}>Save</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
+    

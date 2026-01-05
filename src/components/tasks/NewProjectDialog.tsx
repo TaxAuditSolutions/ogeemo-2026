@@ -34,7 +34,8 @@ import {
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { Contact } from '@/data/contacts';
-import type { Project } from '@/types/calendar-types';
+import type { Project, Event as TaskEvent } from '@/types/calendar-types';
+import { useToast } from '@/hooks/use-toast';
 
 const projectSchema = z.object({
   name: z.string().min(2, { message: "Project name is required." }),
@@ -47,44 +48,60 @@ type ProjectFormData = z.infer<typeof projectSchema>;
 interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>) => void;
+  onProjectCreate: (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => void;
   contacts: Contact[];
 }
+
+const defaultFormValues: ProjectFormData = {
+  name: "",
+  description: "",
+  contactId: null,
+};
 
 export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contacts }: NewProjectDialogProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      contactId: null,
-    },
+    defaultValues: defaultFormValues,
   });
   
   useEffect(() => {
     if (isOpen) {
-        form.reset();
+        form.reset(defaultFormValues);
     }
   }, [isOpen, form]);
 
-  function onSubmit(values: ProjectFormData) {
-    if (!user) return;
+  async function onSubmit(values: ProjectFormData) {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Authentication Error' });
+        return;
+    };
     setIsLoading(true);
 
     const newProjectData: Omit<Project, 'id' | 'createdAt' | 'userId'> = {
         ...values,
+        contactId: values.contactId === 'unassigned' ? null : values.contactId,
         status: 'planning',
         urgency: 'important',
         importance: 'B',
         steps: [],
     };
     
-    onProjectCreate(newProjectData);
-    // The parent component will handle closing the dialog on success
-    setIsLoading(false);
+    try {
+        onProjectCreate(newProjectData, []);
+        // The parent component now handles closing and success toast
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Failed to create project",
+            description: error.message
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -135,14 +152,14 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select onValueChange={field.onChange} value={field.value || 'unassigned'}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Assign to a contact..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Contact</SelectItem>
+                        <SelectItem value="unassigned">No Contact</SelectItem>
                         {contacts.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
@@ -159,7 +176,7 @@ export function NewProjectDialog({ isOpen, onOpenChange, onProjectCreate, contac
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                Save Project
+                Create Project
               </Button>
             </DialogFooter>
           </form>

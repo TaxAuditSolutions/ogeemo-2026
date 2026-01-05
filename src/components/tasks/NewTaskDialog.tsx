@@ -29,7 +29,7 @@ import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrg
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask, addProject as createProjectInDb } from '@/services/project-service';
-import { LoaderCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle, ChevronsUpDown, Check, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
@@ -238,26 +238,8 @@ export function NewTaskDialog({
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Project Name</FormLabel>
-                        <RadioGroup onValueChange={(value) => setProjectAction(value as 'select' | 'create')} value={projectAction} className="flex space-x-4">
-                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="create" /></FormControl><FormLabel className="font-normal">Create New</FormLabel></FormItem>
-                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" /></FormControl><FormLabel className="font-normal">Select Existing</FormLabel></FormItem>
-                        </RadioGroup>
                         <FormControl>
-                            {projectAction === 'create' ? (
-                                <Input placeholder="e.g., Q4 Marketing Campaign" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
-                            ) : (
-                                <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                                            {field.value ? projects.find(p => p.name === field.value)?.name : "Select a project..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { field.onChange(p.name); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", field.value === p.name ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
-                                    </PopoverContent>
-                                </Popover>
-                            )}
+                            <Input placeholder="e.g., Q4 Marketing Campaign" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -364,4 +346,3 @@ export function NewTaskDialog({
     </Dialog>
   );
 }
-

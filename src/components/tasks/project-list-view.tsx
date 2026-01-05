@@ -15,6 +15,8 @@ import {
   ListChecks,
   Route,
   GitMerge,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -54,7 +56,13 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
-import { NewProjectDialog } from './NewProjectDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { cn } from '@/lib/utils';
+import ContactFormDialog from '../contacts/contact-form-dialog';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -71,10 +79,18 @@ export function ProjectListView() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  
   const [testNomenclature, setTestNomenclature] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
-  
+  const [newProjectContactId, setNewProjectContactId] = useState<string | null>(null);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+
+
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -86,12 +102,18 @@ export function ProjectListView() {
     }
     setIsLoading(true);
     try {
-        const [fetchedProjects, fetchedContacts] = await Promise.all([
+        const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
             getProjects(user.uid),
             getContacts(user.uid),
+            getContactFolders(user.uid),
+            getCompanies(user.uid),
+            getIndustries(user.uid),
         ]);
         setProjects(fetchedProjects);
         setContacts(fetchedContacts);
+        setContactFolders(fetchedFolders);
+        setCompanies(fetchedCompanies);
+        setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
     } finally {
@@ -102,6 +124,10 @@ export function ProjectListView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+  
+  const clientMap = useMemo(() => {
+    return new Map(contacts.map(c => [c.id, c.name]));
+  }, [contacts]);
   
   const handleToggleSelect = (projectId: string) => {
     setSelectedProjectIds(prev => 
@@ -155,18 +181,6 @@ export function ProjectListView() {
       setProjectToDelete(null);
     }
   };
-  
-  const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>) => {
-    if (!user) return;
-    setIsNewProjectDialogOpen(false);
-    try {
-        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        router.push(`/project-plan?projectId=${newProject.id}`);
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
-    }
-  };
 
   const handleCreateProjectFromTestDialog = async () => {
     if (!user || !testNomenclature.trim()) {
@@ -177,20 +191,33 @@ export function ProjectListView() {
         const newProject = await addProject({
             name: testNomenclature.trim(),
             description: newProjectDescription.trim(),
+            contactId: newProjectContactId,
             userId: user.uid,
             status: 'planning',
             createdAt: new Date(),
         });
         toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
         await loadData();
-        setIsTestDialogOpen(false);
+        setIsNewProjectDialogOpen(false);
         setTestNomenclature('');
         setNewProjectDescription('');
+        setNewProjectContactId(null);
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to create project', description: error.message });
     }
   };
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+      } else {
+          setContacts(prev => [...prev, savedContact]);
+      }
+      setNewProjectContactId(savedContact.id);
+      setIsContactFormOpen(false);
+  };
+
 
   if (isLoading) {
     return (
@@ -199,6 +226,8 @@ export function ProjectListView() {
       </div>
     );
   }
+  
+  const selectedContact = contacts.find(c => c.id === newProjectContactId);
   
   return (
     <>
@@ -214,7 +243,7 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 <Button onClick={() => setIsTestDialogOpen(true)}>
+                 <Button onClick={() => setIsNewProjectDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> Create New Project
                  </Button>
             </div>
@@ -274,7 +303,7 @@ export function ProjectListView() {
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -288,7 +317,7 @@ export function ProjectListView() {
         </Card>
       </div>
 
-      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+      <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>New Project</DialogTitle>
@@ -302,9 +331,39 @@ export function ProjectListView() {
                     <Label htmlFor="description-field">Project Description</Label>
                     <Textarea id="description-field" placeholder="Enter a brief description..." value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} />
                 </div>
+                 <div className="space-y-2">
+                    <Label>Project Leader</Label>
+                    <div className="flex items-center gap-2">
+                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                    <span className="truncate">{selectedContact ? selectedContact.name : "Select a contact..."}</span>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search contacts..." />
+                                    <CommandList>
+                                        <CommandEmpty>No contact found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {contacts.map((c) => (
+                                                <CommandItem key={c.id} value={c.name} onSelect={() => { setNewProjectContactId(c.id); setIsContactPopoverOpen(false); }}>
+                                                    <Check className={cn("mr-2 h-4 w-4", newProjectContactId === c.id ? "opacity-100" : "opacity-0")} />
+                                                    {c.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                        <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/>New</Button>
+                    </div>
+                </div>
             </div>
             <DialogFooter className="gap-2 justify-end">
-                <Button variant="ghost" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsNewProjectDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleCreateProjectFromTestDialog}>Save</Button>
             </DialogFooter>
         </DialogContent>
@@ -339,6 +398,23 @@ export function ProjectListView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {isContactFormOpen && (
+          <ContactFormDialog
+            isOpen={isContactFormOpen}
+            onOpenChange={setIsContactFormOpen}
+            contactToEdit={null}
+            folders={contactFolders}
+            onFoldersChange={setContactFolders}
+            onSave={handleContactSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+          />
+      )}
     </>
   );
 }
+
+    

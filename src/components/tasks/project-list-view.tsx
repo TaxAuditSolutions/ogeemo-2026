@@ -50,7 +50,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Project, type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
@@ -79,9 +79,11 @@ export function ProjectListView() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
-  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   
-  const [testNomenclature, setTestNomenclature] = useState('');
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  
+  const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
   const [newProjectContactId, setNewProjectContactId] = useState<string | null>(null);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
@@ -90,6 +92,8 @@ export function ProjectListView() {
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
 
 
   const { user } = useAuth();
@@ -126,6 +130,20 @@ export function ProjectListView() {
     loadData();
   }, [loadData]);
   
+  useEffect(() => {
+    if (isNewProjectDialogOpen) {
+      if (projectToEdit) {
+        setNewProjectName(projectToEdit.name);
+        setNewProjectDescription(projectToEdit.description || '');
+        setNewProjectContactId(projectToEdit.contactId || null);
+      } else {
+        setNewProjectName('');
+        setNewProjectDescription('');
+        setNewProjectContactId(null);
+      }
+    }
+  }, [isNewProjectDialogOpen, projectToEdit]);
+
   const clientMap = useMemo(() => {
     return new Map(contacts.map(c => [c.id, c.name]));
   }, [contacts]);
@@ -153,6 +171,11 @@ export function ProjectListView() {
   const handleDelete = (project: Project) => {
     setProjectToDelete(project);
   };
+  
+  const handleEdit = (project: Project) => {
+    setProjectToEdit(project);
+    setIsNewProjectDialogOpen(true);
+  };
 
   const handleConfirmDelete = async () => {
     if (!projectToDelete) return;
@@ -168,29 +191,31 @@ export function ProjectListView() {
     }
   };
 
-  const handleCreateProjectFromTestDialog = async () => {
-    if (!user || !testNomenclature.trim()) {
+  const handleSaveProject = async () => {
+    if (!user || !newProjectName.trim()) {
         toast({ variant: 'destructive', title: 'Project Name is required' });
         return;
     }
+
+    const projectData = {
+        name: newProjectName.trim(),
+        description: newProjectDescription.trim(),
+        contactId: newProjectContactId,
+    };
+
     try {
-        const newProject = await addProject({
-            name: testNomenclature.trim(),
-            description: newProjectDescription.trim(),
-            contactId: newProjectContactId,
-            userId: user.uid,
-            status: 'planning',
-            createdAt: new Date(),
-        });
-        toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
+        if (projectToEdit) {
+            await updateProject(projectToEdit.id, projectData);
+            toast({ title: "Project Updated" });
+        } else {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            toast({ title: "Project Created", description: `Project "${newProject.name}" has been created.` });
+            router.push(`/project-plan?projectId=${newProject.id}`);
+        }
         loadData();
         setIsNewProjectDialogOpen(false);
-        setTestNomenclature('');
-        setNewProjectDescription('');
-        setNewProjectContactId(null);
-        router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to create project', description: error.message });
+        toast({ variant: 'destructive', title: 'Failed to save project', description: error.message });
     }
   };
 
@@ -228,8 +253,8 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 <Button onClick={() => setIsNewProjectDialogOpen(true)}>
-                    Create New Project
+                 <Button onClick={() => { setProjectToEdit(null); setIsNewProjectDialogOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" /> Create New Project
                  </Button>
             </div>
           </CardHeader>
@@ -278,6 +303,9 @@ export function ProjectListView() {
                               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => handleEdit(p)}>
+                                <Pencil className="mr-2 h-4 w-4" /> View / Edit
+                              </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link href={`/projects/${p.id}/tasks`}>
                                   <ListChecks className="mr-2 h-4 w-4" /> Task Board
@@ -305,12 +333,12 @@ export function ProjectListView() {
       <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Make it happen</DialogTitle>
+                <DialogTitle>{projectToEdit ? 'Edit Project' : 'New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="nomenclature-field">Nomenclature</Label>
-                    <Input id="nomenclature-field" placeholder="Enter info" value={testNomenclature} onChange={(e) => setTestNomenclature(e.target.value)} />
+                    <Label htmlFor="nomenclature-field">Project Name</Label>
+                    <Input id="nomenclature-field" placeholder="Enter info" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="description-field">Project Description</Label>
@@ -349,7 +377,7 @@ export function ProjectListView() {
             </div>
             <DialogFooter className="gap-2 justify-end">
                 <Button variant="ghost" onClick={() => setIsNewProjectDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateProjectFromTestDialog}>Save</Button>
+                <Button onClick={handleSaveProject}>Save</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -377,7 +405,7 @@ export function ProjectListView() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
                     Delete
                 </AlertDialogAction>
             </AlertDialogFooter>
@@ -401,5 +429,3 @@ export function ProjectListView() {
     </>
   );
 }
-
-    

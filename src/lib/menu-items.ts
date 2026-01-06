@@ -73,7 +73,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
   { href: "/master-mind", label: "Task & Event Mngr", icon: BrainCircuit },
   { href: "/command-centre", label: "Command Centre", icon: BrainCircuit },
-  { href: "/action-manager/manage", label: "Manage Dashboard", icon: LayoutDashboard },
+  { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },
   { href: "/hr-manager", label: "HR Hub", icon: Users2 },

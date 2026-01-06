@@ -39,7 +39,6 @@ export function HrPageHeader({ pageTitle, hubPath = '/hr-manager', hubLabel = "H
     if (user) {
       setIsLoading(true);
       try {
-        // This will need a new collection type in the service
         const items = await getActionChips(user.uid, 'hrQuickNavItems');
         setNavItems(items);
       } catch (error) {
@@ -54,7 +53,6 @@ export function HrPageHeader({ pageTitle, hubPath = '/hr-manager', hubLabel = "H
 
   useEffect(() => {
     loadNavItems();
-    // Assuming a similar event for HR nav changes
     window.addEventListener('hrChipsUpdated', loadNavItems);
     return () => window.removeEventListener('hrChipsUpdated', loadNavItems);
   }, [loadNavItems]);

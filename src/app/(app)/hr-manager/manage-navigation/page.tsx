@@ -15,11 +15,10 @@ import {
   updateActionChips,
   updateAvailableActionChips,
   trashActionChips,
-  updateActionChip,
   type ActionChipData,
   addActionChip,
 } from '@/services/project-service';
-import { ActionChip } from '@/components/dashboard/ActionChip';
+import { ActionChip, DraggableItemTypes } from '@/components/dashboard/ActionChip';
 import { ChipDropZone } from '@/components/dashboard/ChipDropZone';
 import AddActionDialog from '@/components/dashboard/AddActionDialog';
 import { cn } from '@/lib/utils';
@@ -30,7 +29,7 @@ const TrashDropZone = () => {
   const { toast } = useToast();
 
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
-    accept: 'actionChip',
+    accept: DraggableItemTypes.ACTION_CHIP,
     drop: async (item: ActionChipData & { index: number }) => {
       if (!user) return;
       try {
@@ -265,7 +264,7 @@ export default function ManageHrNavigationPage() {
             <Card>
                 <CardHeader className="text-center">
                     <CardTitle className="text-lg">Available Items</CardTitle>
-                    <CardDescription>Drag items from here to your "Selected Items" to add them to the dropdown.</CardDescription>
+                    <CardDescription>Drag items from here to "Selected Items" to add them to the dropdown.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
                     {chipsState.availableChips.filter(Boolean).map((chip, index) => (

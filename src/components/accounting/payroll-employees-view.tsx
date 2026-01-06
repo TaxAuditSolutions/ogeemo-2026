@@ -24,11 +24,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink } from "lucide-react";
-import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge } from "lucide-react";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
 import { WorkerFormDialog } from './WorkerFormDialog';
 import { Badge } from '../ui/badge';
 import {
@@ -50,6 +49,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import Link from 'next/link';
+import MergeWorkerDialog from './MergeWorkerDialog';
+import { Checkbox } from '../ui/checkbox';
 
 export function PayrollEmployeesView() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -58,6 +59,10 @@ export function PayrollEmployeesView() {
     const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
     const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+    const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
+    const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+    const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+    const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -87,26 +92,10 @@ export function PayrollEmployeesView() {
         setIsFormOpen(true);
     };
 
-    const handleSaveWorker = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
-        if (!user) return;
-        try {
-            await addWorker({ ...workerData, userId: user.uid });
-            toast({ title: 'Worker Added' });
-            loadWorkers();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
-    };
-    
-    const handleUpdateWorker = async (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => {
-        if (!user) return;
-        try {
-            await updateWorker(workerId, workerData);
-            toast({ title: 'Worker Updated' });
-            loadWorkers();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
+    const handleWorkerSaved = async () => {
+        setIsFormOpen(false);
+        setWorkerToEdit(null);
+        await loadWorkers(); // Refresh the list
     };
 
     const handleConfirmDelete = async () => {
@@ -121,10 +110,52 @@ export function PayrollEmployeesView() {
         }
     };
 
+    const handleToggleSelect = (workerId: string) => {
+        setSelectedWorkerIds(prev => prev.includes(workerId) ? prev.filter(id => id !== workerId) : [...prev, workerId]);
+    };
+
+    const handleToggleSelectAll = (checked: boolean) => {
+        setSelectedWorkerIds(checked ? workers.map(w => w.id) : []);
+    };
+    
+    const handleDeleteSelected = () => {
+        if (selectedWorkerIds.length > 0) {
+            setIsBulkDeleteAlertOpen(true);
+        }
+    };
+    
+    const handleConfirmBulkDelete = async () => {
+        if (!user) return;
+        try {
+            await deleteWorkers(selectedWorkerIds);
+            toast({ title: `${selectedWorkerIds.length} worker(s) deleted.`});
+            setSelectedWorkerIds([]);
+            loadWorkers();
+        } catch(error: any) {
+            toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
+        } finally {
+            setIsBulkDeleteAlertOpen(false);
+        }
+    };
+
+    const handleMergeClick = (worker: Worker) => {
+        setWorkerToMerge(worker);
+        setIsMergeDialogOpen(true);
+    };
+    
+    const handleMergeConfirm = async (sourceWorkerId: string, masterWorkerId: string) => {
+        try {
+            await mergeWorkers(sourceWorkerId, masterWorkerId);
+            toast({ title: "Workers Merged", description: "All records have been reassigned." });
+            loadWorkers(); // Refresh data
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+        }
+    };
+
+
     return (
         <>
-        <div className="p-4 sm:p-6 space-y-6">
-            <AccountingPageHeader pageTitle="Manage Workers" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
             <header className="text-center">
                 <div className="flex items-center justify-center gap-2">
                     <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
@@ -141,9 +172,16 @@ export function PayrollEmployeesView() {
                         <CardTitle>Worker List</CardTitle>
                         <CardDescription>All employees and contractors in your organization.</CardDescription>
                     </div>
-                    <Button variant="outline" onClick={() => handleOpenForm()}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
-                    </Button>
+                     <div className="flex items-center gap-2">
+                        {selectedWorkerIds.length > 0 && (
+                            <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedWorkerIds.length})
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={() => handleOpenForm()}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Worker
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
@@ -152,6 +190,12 @@ export function PayrollEmployeesView() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-12">
+                                    <Checkbox
+                                        checked={workers.length > 0 && selectedWorkerIds.length === workers.length}
+                                        onCheckedChange={handleToggleSelectAll}
+                                    />
+                                </TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Pay Type</TableHead>
@@ -162,6 +206,12 @@ export function PayrollEmployeesView() {
                         <TableBody>
                             {workers.map(emp => (
                             <TableRow key={emp.id}>
+                                <TableCell>
+                                    <Checkbox
+                                        checked={selectedWorkerIds.includes(emp.id)}
+                                        onCheckedChange={() => handleToggleSelect(emp.id)}
+                                    />
+                                </TableCell>
                                 <TableCell className="font-medium">
                                     <button className="text-left hover:underline" onClick={() => handleOpenForm(emp)}>
                                         {emp.name}
@@ -180,6 +230,7 @@ export function PayrollEmployeesView() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onSelect={() => handleOpenForm(emp)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                             <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -191,7 +242,6 @@ export function PayrollEmployeesView() {
                     )}
                 </CardContent>
             </Card>
-        </div>
 
         <WorkerFormDialog 
             isOpen={isFormOpen} 
@@ -202,14 +252,21 @@ export function PayrollEmployeesView() {
                 }
             }}
             workerToEdit={workerToEdit}
-            onWorkerSave={handleSaveWorker}
-            onWorkerUpdate={handleUpdateWorker}
+            onWorkerSave={handleWorkerSaved}
+            onWorkerUpdate={handleWorkerSaved}
         />
     
         <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{workerToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+         <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete {selectedWorkerIds.length} worker(s). This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
@@ -247,6 +304,15 @@ export function PayrollEmployeesView() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        {workerToMerge && (
+            <MergeWorkerDialog 
+                isOpen={isMergeDialogOpen}
+                onOpenChange={setIsMergeDialogOpen}
+                sourceWorker={workerToMerge}
+                allWorkers={workers}
+                onMergeConfirm={handleMergeConfirm}
+            />
+        )}
         </>
     );
 }

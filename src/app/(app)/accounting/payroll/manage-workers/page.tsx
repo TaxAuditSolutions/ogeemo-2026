@@ -1,6 +1,7 @@
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
+import { HrPageHeader } from '@/components/hr/page-header';
 
 const PayrollWorkersView = dynamic(
   () => import('@/components/accounting/payroll-employees-view').then((mod) => mod.PayrollEmployeesView),
@@ -17,5 +18,10 @@ const PayrollWorkersView = dynamic(
 );
 
 export default function ManageWorkersPage() {
-  return <PayrollWorkersView />;
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+        <HrPageHeader pageTitle="Manage Workers" />
+        <PayrollWorkersView />
+    </div>
+  );
 }

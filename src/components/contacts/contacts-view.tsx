@@ -231,7 +231,7 @@ export function ContactsView() {
     setSelectedContactIds(allVisibleSelected ? [] : displayedContacts.map(c => c.id));
   };
   
-  const handleSaveContact = (savedContact: Contact, isEditing: boolean) => {
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
       } else {
@@ -493,7 +493,7 @@ export function ContactsView() {
             </div>
         </div>
         {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
-          <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
+            <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
         ))}
       </div>
     );
@@ -601,9 +601,8 @@ export function ContactsView() {
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><BookOpen className="mr-2 h-4 w-4" />Open</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => handleMergeClick(contact)}><GitMerge className="mr-2 h-4 w-4"/>Merge</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => handleMergeClick(contact)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.preventDefault(); setContactToDelete(contact); }}> <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                               </DropdownMenuContent>
@@ -696,3 +695,5 @@ export function ContactsView() {
     </>
   );
 }
+
+    

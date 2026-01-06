@@ -100,10 +100,11 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
         <Button
           onClick={handleClick}
           className={cn(
-            "w-full h-6 text-xs justify-center border-b-2 border-black bg-tan text-black",
-            "hover:bg-tan/90",
-            "active:mt-0.5 active:border-b-0 active:border-black",
-            !href && "cursor-default active:mt-0 active:border-b-2",
+            "w-full h-6 text-xs justify-center border-b-4 border-black/30 shadow-lg text-black",
+            "bg-gradient-to-r from-glass-start to-glass-end",
+            "hover:from-glass-start/90 hover:to-glass-end/90",
+            "active:mt-1 active:border-b-2",
+            !href && "cursor-default active:mt-0 active:border-b-4",
             (onDelete || onEdit) && "pr-8" // Add padding if menu is present
           )}
         >

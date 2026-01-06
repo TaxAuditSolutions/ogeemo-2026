@@ -75,7 +75,8 @@ export function AccountingToolsView() {
     "/accounting/invoicing-report",
     "/accounting/bks-instructions",
     "/accounting/financial-snapshot",
-    "/accounting/reports/income-statement"
+    "/accounting/reports/income-statement",
+    "/accounting/bank-statements",
 ];
 
   const hubFeatures = accountingMenuItems

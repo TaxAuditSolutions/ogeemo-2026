@@ -101,7 +101,7 @@ export function AccountingToolsView() {
             Your central command for managing finances. Use the cards below to navigate to key areas. You can edit this list of available actions by selecting "Manage Quick Nav" from the Quick Navigation drop down list.
           </p>
           <div className="mt-4">
-              <Button asChild variant="secondary">
+              <Button asChild variant="outline" className="bg-white text-black border-2 border-black hover:bg-gray-100">
                   <Link href="/accounting/manage-navigation">
                     <Settings className="mr-2 h-4 w-4"/>
                     Manage Quick Navigation

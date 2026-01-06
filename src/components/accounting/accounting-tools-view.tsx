@@ -51,7 +51,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     </CardHeader>
     <CardContent className="flex-1" />
     <CardFooter>
-      <Button asChild className="w-full bg-[#483D8B] hover:bg-[#483D8B]/90">
+      <Button asChild className="w-full bg-[#3B2F4A] hover:bg-[#3B2F4A]/90">
         <Link href={href}>
           {cta}
           <ArrowRight className="ml-2 h-4 w-4" />

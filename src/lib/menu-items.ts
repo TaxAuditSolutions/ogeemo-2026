@@ -75,7 +75,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/action-manager/manage", label: "Manage Dashboard", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },
-  { href: "/hr-manager", label: "HR Manager", icon: Contact2 },
+  { href: "/hr-manager", label: "HR Hub", icon: Contact2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
   { href: "/inventory-manager", label: "Inventory", icon: PackageSearch },
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },

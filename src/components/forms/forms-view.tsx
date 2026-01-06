@@ -5,7 +5,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { PersonStanding, ListTodo, WandSparkles, LoaderCircle, Lightbulb, Calendar as CalendarIcon } from "lucide-react";
+import { PersonStanding, ListTodo, WandSparkles, LoaderCircle, Lightbulb, Calendar as CalendarIcon, Rocket } from "lucide-react";
 import { format, set } from "date-fns";
 
 import { generateFormFlow } from "@/ai/flows/generate-form-flow";
@@ -52,6 +52,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import { addTask } from "@/services/project-service";
 import { type Event } from "@/types/calendar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 // Define the type for the generated form output
 export type GenerateFormOutput = {
@@ -561,6 +563,14 @@ export function FormsView() {
             Use dynamically generated forms to add data to your collections.
           </p>
         </header>
+
+        <Alert className="max-w-2xl mx-auto border-primary/50 text-primary">
+            <Rocket className="h-4 w-4" />
+            <AlertTitle>Future Project</AlertTitle>
+            <AlertDescription>
+                This Form Generation Manager is a feature planned for future development. The current interface is a placeholder to demonstrate the concept.
+            </AlertDescription>
+        </Alert>
         
         <div className="max-w-2xl mx-auto space-y-8">
            <Card>

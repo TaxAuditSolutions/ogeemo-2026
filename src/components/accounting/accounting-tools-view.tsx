@@ -51,7 +51,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     </CardHeader>
     <CardContent className="flex-1" />
     <CardFooter>
-      <Button asChild className="w-full">
+      <Button asChild className="w-full bg-[#483D8B] hover:bg-[#483D8B]/90">
         <Link href={href}>
           {cta}
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -101,7 +101,7 @@ export function AccountingToolsView() {
             Your central command for managing finances. Use the cards below to navigate to key areas. You can edit this list of available actions by selecting "Manage Quick Nav" from the Quick Navigation drop down list.
           </p>
           <div className="mt-4">
-              <Button asChild>
+              <Button asChild variant="secondary">
                   <Link href="/accounting/manage-navigation">
                     <Settings className="mr-2 h-4 w-4"/>
                     Manage Quick Navigation

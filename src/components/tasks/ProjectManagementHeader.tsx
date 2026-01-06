@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Briefcase, ListChecks, Info, Route } from 'lucide-react';
+import { Briefcase, ListChecks, Info, Route, Lightbulb } from 'lucide-react';
 
 interface ProjectManagementHeaderProps {
   projectId?: string;
@@ -17,6 +17,7 @@ export function ProjectManagementHeader({ projectId }: ProjectManagementHeaderPr
     const navLinks = [
         { href: "/projects/all", label: "Project List", icon: Briefcase },
         { href: "/project-status", label: "Status Board", icon: ListChecks },
+        { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
     ];
     
     if (projectId) {

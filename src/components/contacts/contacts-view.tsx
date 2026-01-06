@@ -25,22 +25,25 @@ import {
   Users,
   Plus,
   GitMerge,
+  Edit,
+  ArrowDownAZ,
+  ArrowUpZA,
+  ArrowDownUp,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { type Contact } from '@/data/contacts';
+import { type FolderData } from '@/services/contact-folder-service';
+import { useToast } from '@/hooks/use-toast';
+// Import from the NEW isolated folder service
+import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
+import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/contact-folder-service';
+import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import { useAuth } from '@/context/auth-context';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -51,26 +54,8 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { type Contact } from '@/data/contacts';
-import { type FolderData } from '@/services/contact-folder-service';
-import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
-import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
-import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/contact-folder-service';
-import { getIndustries, type Industry } from '@/services/industry-service';
-import { useAuth } from '@/context/auth-context';
-import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,8 +66,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import Link from 'next/link';
+import { Checkbox } from '../ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AddUserDialog } from '../data/add-user-dialog';
 import MergeContactsDialog from './MergeContactsDialog';
 
 
@@ -224,7 +226,7 @@ export function ContactsView() {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
       } else {
-          setContacts(prev => [savedContact, ...prev]);
+          setContacts(prev => [...prev, savedContact]);
       }
       setIsContactFormOpen(false);
   };
@@ -496,7 +498,7 @@ export function ContactsView() {
       <div className="flex flex-col h-full">
         <header className="text-center py-4 sm:py-6 px-4 sm:px-6">
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Ogeemo Contact Manager
+            Contact Hub
           </h1>
           <p className="text-muted-foreground">
             Manage your contacts and client relationships
@@ -616,7 +618,7 @@ export function ContactsView() {
         </div>
       </div>
       
-      {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleSaveContact} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
+      {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
 
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md">

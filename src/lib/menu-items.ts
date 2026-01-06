@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
+import hrMenuItems from '@/data/hr-menu-items';
 
 export interface MenuItem {
   href: string;
@@ -75,7 +76,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/action-manager/manage", label: "Manage Dashboard", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },
-  { href: "/hr-manager", label: "HR Hub", icon: Contact2 },
+  { href: "/hr-manager", label: "HR Hub", icon: Users2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
   { href: "/inventory-manager", label: "Inventory", icon: PackageSearch },
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },
@@ -90,7 +91,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
-  { href: "/contacts", label: "Contacts", icon: Contact },
+  { href: "/contacts", label: "Contacts Hub", icon: Contact },
   { href: "/projects/all", label: "Projects", icon: Briefcase },
   { href: "/to-do", label: "To-Do List", icon: ListChecks },
   { href: "/calendar", label: "Calendar", icon: Calendar },
@@ -99,4 +100,5 @@ export const allMenuItems: MenuItem[] = [
   { href: "/research", label: "Research", icon: Beaker },
   { href: "/sandbox", label: "Sandbox", icon: Beaker },
   ...accountingMenuItems,
+  ...hrMenuItems,
 ];

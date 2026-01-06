@@ -86,6 +86,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddUserDialog } from '../data/add-user-dialog';
 import MergeContactsDialog from './MergeContactsDialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
@@ -128,6 +136,7 @@ export function ContactsView() {
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
+  const [newFolderDriveLink, setNewFolderDriveLink] = useState('');
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
@@ -336,6 +345,11 @@ export function ContactsView() {
     }
   };
   
+  const handleStartFileRename = (file: Contact) => {
+    // This is a placeholder for file renaming logic, if needed in the future
+    console.log("Renaming file:", file.name);
+  };
+
   const handleContactDrop = async (contact: Contact, newFolderId: string) => {
     if (contact.folderId === newFolderId) return;
 
@@ -475,7 +489,7 @@ export function ContactsView() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu>
+                </DropdownMenu>
             </div>
         </div>
         {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
@@ -537,26 +551,14 @@ export function ContactsView() {
                           <p className="text-sm text-muted-foreground">{displayedContacts.length} contact(s)</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {selectedContactIds.length > 0 ? (
-                           <Button variant="destructive" onClick={() => setIsBulkDeleteAlertOpen(true)}>
-                               <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedContactIds.length})
+                        {selectedContactIds.length > 0 && (
+                           <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                               <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedContactIds.length})
                            </Button>
-                        ) : (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button onClick={handleNewContactClick} disabled={selectedFolderId === 'all'}>
-                                  <Plus className="mr-2 h-4 w-4" /> Add Contact
-                                </Button>
-                              </TooltipTrigger>
-                              {selectedFolderId === 'all' && (
-                                <TooltipContent>
-                                  <p>Please select a specific folder to add a contact.</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          </TooltipProvider>
                         )}
+                        <Button onClick={handleNewContactClick} disabled={selectedFolderId === 'all'}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Contact
+                        </Button>
                       </div>
                   </div>
                    <div className="flex-1 overflow-y-auto">
@@ -565,8 +567,9 @@ export function ContactsView() {
                               <TableRow>
                                   <TableHead className="w-[50px]">
                                     <Checkbox
-                                      checked={allVisibleSelected ? true : (someSelected ? 'indeterminate' : false)}
-                                      onCheckedChange={() => handleToggleSelectAll()}
+                                      onCheckedChange={handleToggleSelectAll}
+                                      checked={displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length}
+                                      aria-label="Select all contacts"
                                     />
                                   </TableHead>
                                   <TableHead>Name</TableHead>

@@ -69,7 +69,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getLeaveRequests, addLeaveRequest, updateLeaveRequest, type LeaveRequest } from '@/services/leave-service';
 import { addTask } from '@/services/project-service';
-import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { HrPageHeader } from '@/components/hr/page-header';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -256,7 +256,7 @@ export default function TimeOffPage() {
     return (
         <>
         <div className="p-4 sm:p-6 space-y-6">
-            <AccountingPageHeader pageTitle="Time Off &amp; Leave" hubPath="/hr-manager" hubLabel="HR Hub" />
+            <HrPageHeader pageTitle="Time Off & Leave" />
             <header className="text-center">
                 <h1 className="text-3xl font-bold font-headline text-primary">Time Off &amp; Leave Management</h1>
                 <p className="text-muted-foreground">Review, approve, and manage all worker time off requests.</p>

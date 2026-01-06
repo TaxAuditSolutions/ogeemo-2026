@@ -18,10 +18,9 @@ import {
   Clock,
   CalendarOff,
   Smartphone,
-  FileText,
-  X,
-  Users2,
+  Settings,
 } from 'lucide-react';
+import { HrPageHeader } from '@/components/hr/page-header';
 
 interface FeatureCardProps {
   icon: React.ElementType;
@@ -46,7 +45,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     </CardHeader>
     <CardContent className="flex-1" />
     <CardFooter>
-      <Button asChild className="w-full">
+      <Button asChild className="w-full bg-[#62C1B6] hover:bg-[#62C1B6]/90">
         <Link href={href}>
           {cta}
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -60,28 +59,21 @@ export default function HrHubPage() {
   const features: FeatureCardProps[] = [
     {
       icon: Users,
-      title: "Worker Directory & Records",
+      title: "Worker Directory",
       description: "Manage worker profiles, contact info, and employment details.",
       href: "/accounting/payroll/manage-workers",
       cta: "Manage Workers",
     },
     {
-        icon: Users2,
-        title: "Manage Workers List",
-        description: "A simple list to quickly view, edit, and manage all workers.",
-        href: "/hr-manager/manage-workers-list",
-        cta: "Go to List"
-    },
-    {
         icon: Clock,
-        title: "Time Log Report & Entry",
+        title: "Time Log Report",
         description: "Review, manually enter, or adjust hours for all workers before payroll.",
         href: "/reports/time-log",
         cta: "View Time Logs"
     },
     {
       icon: CalendarOff,
-      title: "Time Off & Leave Management",
+      title: "Time Off & Leave",
       description: "Manage worker vacation, sick leave, and other time off requests.",
       href: "/hr-manager/time-off",
       cta: "Manage Leave",
@@ -89,7 +81,7 @@ export default function HrHubPage() {
     {
         icon: Smartphone,
         title: "Ogeemo Field App",
-        description: "A standalone app for workers to track time and location. (Demo)",
+        description: "A standalone app for workers to track time and location.",
         href: "/field-app",
         cta: "Open Field App",
     },
@@ -97,7 +89,8 @@ export default function HrHubPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <header className="text-center mb-6 relative">
+      <HrPageHeader pageTitle="HR Hub" />
+      <header className="text-center mb-6">
         <div className="flex justify-center items-center gap-4 mb-2">
             <Users className="h-10 w-10 text-primary" />
             <h1 className="text-4xl font-bold font-headline text-primary">
@@ -107,13 +100,14 @@ export default function HrHubPage() {
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Your central command for managing your most valuable asset: your people.
         </p>
-        <div className="absolute top-0 right-0">
-          <Button asChild variant="ghost" size="icon">
-            <Link href="/action-manager" aria-label="Close and return to Action Manager">
-              <X className="h-5 w-5" />
-            </Link>
-          </Button>
-        </div>
+         <div className="mt-4">
+              <Button asChild variant="outline" className="bg-white text-black border-2 border-black hover:bg-gray-100">
+                  <Link href="/hr-manager/manage-navigation">
+                    <Settings className="mr-2 h-4 w-4"/>
+                    Manage Quick Navigation
+                  </Link>
+              </Button>
+          </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

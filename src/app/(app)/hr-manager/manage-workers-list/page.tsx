@@ -1,21 +1,10 @@
 
-import dynamic from 'next/dynamic';
-import { LoaderCircle } from 'lucide-react';
+'use client';
 
-const PayrollWorkersView = dynamic(
-  () => import('@/components/accounting/payroll-employees-view').then((mod) => mod.PayrollEmployeesView),
-  {
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Worker Manager...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+import { PayrollEmployeesView } from '@/components/accounting/payroll-employees-view';
 
+// This component is now deprecated, its functionality is served by /accounting/payroll/manage-workers.
+// It will now render the same component for consistency.
 export default function ManageWorkersListPage() {
-  return <PayrollWorkersView />;
+  return <PayrollEmployeesView />;
 }

@@ -22,6 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import {
@@ -119,12 +120,14 @@ export default function CreateProjectPage() {
   }, [user, toast]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!isAuthLoading) {
+      loadData();
+    }
+  }, [isAuthLoading, loadData]);
   
     useEffect(() => {
-    // Wait until authentication is resolved
-    if (isAuthLoading) {
+    // Wait until authentication is resolved and initial data is loaded
+    if (isAuthLoading || isLoadingData) {
       return;
     }
 
@@ -133,7 +136,6 @@ export default function CreateProjectPage() {
       setProjectToEditId(projectId);
       setCreationStep('form');
       const loadProject = async () => {
-        setIsLoadingData(true);
         try {
           const projectData = await getProjectById(projectId);
           if (projectData) {
@@ -145,8 +147,6 @@ export default function CreateProjectPage() {
           }
         } catch (error) {
           toast({ variant: 'destructive', title: 'Error', description: 'Failed to load project data.' });
-        } finally {
-          setIsLoadingData(false);
         }
       };
       loadProject();
@@ -159,7 +159,7 @@ export default function CreateProjectPage() {
         setCreationStep('form');
       }
     }
-  }, [searchParams, toast, user, isAuthLoading]);
+  }, [searchParams, toast, user, isAuthLoading, isLoadingData]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {

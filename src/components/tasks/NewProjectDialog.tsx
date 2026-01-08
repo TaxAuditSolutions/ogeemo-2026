@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addProject, updateProject } from '@/services/project-service';

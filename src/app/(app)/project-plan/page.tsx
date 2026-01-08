@@ -36,7 +36,7 @@ function ProjectPlanPageContent() {
   }
 
   return (
-    <div className="h-full w-full max-w-4xl mx-auto py-6">
+    <div className="h-full w-full px-12 mx-auto py-6">
         <ProjectStepsView projectId={projectId} />
     </div>
   );

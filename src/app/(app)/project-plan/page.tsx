@@ -2,13 +2,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { LoaderCircle, Route } from 'lucide-react';
+import { LoaderCircle, Route, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
+import { type Project, getProjectById } from '@/services/project-service';
 
 
 const ProjectStepsView = dynamic(
@@ -28,6 +27,19 @@ const ProjectStepsView = dynamic(
 function ProjectPlanPageContent() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId');
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (projectId) {
+      getProjectById(projectId).then(data => {
+        setProject(data);
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
+    }
+  }, [projectId]);
   
   if (!projectId) {
      return (
@@ -35,6 +47,12 @@ function ProjectPlanPageContent() {
          <div className="text-center">
             <h2 className="text-xl font-semibold">No Project Selected</h2>
             <p className="text-muted-foreground">Please return to the project list and select a project to plan.</p>
+             <Button asChild variant="outline" className="mt-4">
+                <Link href="/projects/all">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Project List
+                </Link>
+            </Button>
          </div>
        </div>
      );
@@ -51,6 +69,11 @@ function ProjectPlanPageContent() {
         </Button>
         <div className="text-center">
             <h1 className="text-4xl font-bold font-headline text-primary">Project Planner</h1>
+            {isLoading ? (
+              <div className="h-6 w-48 bg-gray-200 animate-pulse rounded-md mx-auto mt-1" />
+            ) : (
+              <p className="text-muted-foreground">{project?.name}</p>
+            )}
         </div>
         <div className="w-48 flex justify-end">
           {projectId && (

@@ -48,7 +48,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil, Route, Briefcase } from 'lucide-react';
+import { ArrowLeft, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil, Route, Briefcase, BookOpen } from 'lucide-react';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent, getProjectById, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -123,32 +123,39 @@ export default function CreateProjectPage() {
     loadData();
   }, [loadData]);
   
-    useEffect(() => {
-        const projectId = searchParams.get('projectId');
-        if (projectId) {
-            setProjectToEditId(projectId);
-            setCreationStep('form');
-            const loadProject = async () => {
-                const projectData = await getProjectById(projectId);
-                if (projectData) {
-                    setProjectName(projectData.name);
-                    setDescription(projectData.description || '');
-                    setSelectedContactId(projectData.contactId || null);
-                } else {
-                    toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.'});
-                }
-            };
-            loadProject();
-        } else {
-            const title = searchParams.get('title');
-            const desc = searchParams.get('description');
-            if (title) {
-                setProjectName(title);
-                setDescription(desc || '');
-                setCreationStep('form');
+  useEffect(() => {
+    const projectId = searchParams.get('projectId');
+    if (projectId) {
+      setProjectToEditId(projectId);
+      setCreationStep('form');
+      const loadProject = async () => {
+        setIsLoadingData(true);
+        try {
+            const projectData = await getProjectById(projectId);
+            if (projectData) {
+                setProjectName(projectData.name);
+                setDescription(projectData.description || '');
+                setSelectedContactId(projectData.contactId || null);
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.'});
             }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load project data.' });
+        } finally {
+            setIsLoadingData(false);
         }
-    }, [searchParams, toast]);
+      };
+      loadProject();
+    } else {
+        const title = searchParams.get('title');
+        const desc = searchParams.get('description');
+        if (title) {
+            setProjectName(title);
+            setDescription(desc || '');
+            setCreationStep('form');
+        }
+    }
+  }, [searchParams, toast]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {

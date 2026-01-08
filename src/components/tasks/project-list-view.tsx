@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Archive,
   LoaderCircle,
   Plus,
   Briefcase,

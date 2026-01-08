@@ -17,6 +17,7 @@ import {
   GitMerge,
   ChevronsUpDown,
   Check,
+  FilePlus2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -47,7 +48,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus, deleteProjects } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus, deleteProjects, addProjectTemplate } from '@/services/project-service';
 import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
@@ -200,6 +201,25 @@ export function ProjectListView() {
     }
   };
 
+  const handleCreateTemplate = async (project: Project) => {
+    if (!user) return;
+    try {
+      const templateData = {
+        name: `${project.name} Template`,
+        description: project.description || `Template based on project: ${project.name}`,
+        steps: project.steps || [],
+        userId: user.uid,
+      };
+      await addProjectTemplate(templateData);
+      toast({
+        title: 'Template Created',
+        description: `A new template based on "${project.name}" has been saved.`,
+      });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to create template', description: error.message });
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -312,6 +332,9 @@ export function ProjectListView() {
                                 <Link href={`/project-plan?projectId=${p.id}`}>
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
                                 </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleCreateTemplate(p)}>
+                                <FilePlus2 className="mr-2 h-4 w-4" /> Create Template from Project
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
                             </DropdownMenuContent>

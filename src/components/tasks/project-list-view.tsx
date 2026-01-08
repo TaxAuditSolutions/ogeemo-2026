@@ -35,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,7 +150,7 @@ export function ProjectListView() {
     if (!user || selectedProjectIds.length === 0) return;
     try {
         await deleteProjects(selectedProjectIds);
-        toast({ title: `${'${selectedProjectIds.length}'} project(s) deleted.`});
+        toast({ title: `${selectedProjectIds.length} project(s) deleted.`});
         setSelectedProjectIds([]);
         loadData();
     } catch (error: any) {
@@ -206,15 +206,15 @@ export function ProjectListView() {
     if (!user) return;
     try {
       const templateData = {
-        name: `${'${project.name}'} Template`,
-        description: project.description || `Template based on project: ${'${project.name}'}`,
+        name: `${project.name} Template`,
+        description: project.description || `Template based on project: ${project.name}`,
         steps: project.steps || [],
         userId: user.uid,
       };
       await addProjectTemplate(templateData);
       toast({
         title: 'Template Created',
-        description: `A new template based on "${'${project.name}'}" has been saved.`,
+        description: `A new template based on "${project.name}" has been saved.`,
       });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to create template', description: error.message });
@@ -258,7 +258,7 @@ export function ProjectListView() {
                     </Button>
                 )}
                  <Button asChild>
-                    <Link href="/projects/test-102">
+                    <Link href="/projects/create">
                         <Plus className="mr-2 h-4 w-4" /> Create New Project
                     </Link>
                  </Button>
@@ -305,11 +305,11 @@ export function ProjectListView() {
                             <Checkbox 
                                 onCheckedChange={() => handleToggleSelect(p.id)}
                                 checked={selectedProjectIds.includes(p.id)}
-                                aria-label={`Select project ${'${p.name}'}`}
+                                aria-label={`Select project ${p.name}`}
                             />
                         </TableCell>
                         <TableCell className="font-medium">
-                          <Link href={`/projects/${'${p.id}'}/tasks`} className="hover:underline">
+                          <Link href={`/projects/${p.id}/tasks`} className="hover:underline">
                             {p.name}
                           </Link>
                         </TableCell>
@@ -325,17 +325,17 @@ export function ProjectListView() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/projects/${'${p.id}'}/tasks`}>
+                                <Link href={`/projects/${p.id}/tasks`}>
                                   <ListChecks className="mr-2 h-4 w-4" /> Task Board
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/project-plan?projectId=${'${p.id}'}`}>
+                                <Link href={`/project-plan?projectId=${p.id}`}>
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/projects/test-102?projectId=${'${p.id}'}`}>
+                                <Link href={`/projects/create?projectId=${p.id}`}>
                                   <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                 </Link>
                               </DropdownMenuItem>

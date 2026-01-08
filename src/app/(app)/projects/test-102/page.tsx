@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
@@ -34,7 +34,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -71,12 +71,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 export default function CreateProjectPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -132,17 +131,6 @@ export default function CreateProjectPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-  
-  // This effect handles pre-filling the form from URL parameters
-  useEffect(() => {
-    const titleFromUrl = searchParams.get('title');
-    const descriptionFromUrl = searchParams.get('description');
-    if (titleFromUrl) {
-      setProjectName(titleFromUrl);
-      setDescription(descriptionFromUrl || '');
-      setCreationStep('form');
-    }
-  }, [searchParams]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
@@ -325,7 +313,7 @@ export default function CreateProjectPage() {
                                       </Button>
                                       <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-9 w-9 opacity-50 group-hover:opacity-100">
+                                              <Button variant="ghost" size="icon" className="h-9 w-9 opacity-0 group-hover:opacity-100">
                                                   <MoreVertical className="h-4 w-4" />
                                               </Button>
                                           </DropdownMenuTrigger>

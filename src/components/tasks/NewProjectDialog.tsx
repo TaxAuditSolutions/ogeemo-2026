@@ -34,7 +34,6 @@ import { LoaderCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const projectSchema = z.object({
-  name: z.string().min(1, "Project Name is required."),
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
 });
@@ -64,7 +63,6 @@ export function NewProjectDialog({
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      name: "",
       description: "",
       contactId: null,
     },
@@ -74,15 +72,12 @@ export function NewProjectDialog({
     if (isOpen) {
       if (projectToEdit) {
         form.reset({
-          name: projectToEdit.name,
           description: projectToEdit.description || "",
           contactId: projectToEdit.contactId,
         });
       } else {
-        const titleFromUrl = searchParams.get('title');
         const descriptionFromUrl = searchParams.get('description');
         form.reset({
-          name: titleFromUrl || "",
           description: descriptionFromUrl || "",
           contactId: null,
         });
@@ -94,8 +89,9 @@ export function NewProjectDialog({
     if (!user) return;
     setIsLoading(true);
     try {
+        const projectName = projectToEdit?.name || searchParams.get('title') || 'New Project';
         const projectData = {
-            name: values.name,
+            name: projectName,
             description: values.description,
             contactId: values.contactId === 'unassigned' ? null : values.contactId,
         };
@@ -123,19 +119,6 @@ export function NewProjectDialog({
               <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter the new project name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="description"

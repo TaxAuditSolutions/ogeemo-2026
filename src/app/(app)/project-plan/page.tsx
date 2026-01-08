@@ -1,10 +1,16 @@
 
+
 'use client';
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 
 const ProjectStepsView = dynamic(
   () => import('@/components/tasks/project-steps-view').then(mod => mod.default),
@@ -35,7 +41,13 @@ function ProjectPlanPageContent() {
      );
   }
 
-  return <ProjectStepsView projectId={projectId} />;
+  return (
+      <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
+        <ResizablePanel defaultSize={50} minSize={30}>
+            <ProjectStepsView projectId={projectId} />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+  );
 }
 
 
@@ -50,3 +62,4 @@ export default function ProjectPlanPage() {
         </Suspense>
     );
 }
+

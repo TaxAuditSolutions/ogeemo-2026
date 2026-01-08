@@ -15,21 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  LoaderCircle,
-  Plus,
-  ArrowLeft,
-  X,
-  Info,
-  FilePlus2,
-  FileText,
-  ChevronsUpDown,
-  Check,
-  MoreVertical,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import {
@@ -50,10 +36,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Accordion,
@@ -61,8 +47,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save } from 'lucide-react';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -72,6 +58,8 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
 
 export default function CreateProjectPage() {
@@ -438,5 +426,3 @@ export default function CreateProjectPage() {
     </>
   );
 }
-
-    

@@ -46,8 +46,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus } from '@/services/project-service';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus, deleteProjects } from '@/services/project-service';
+import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -55,9 +55,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from "@/services/accounting-service";
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { NewProjectDialog } from './NewProjectDialog';
+import { type Event as TaskEvent } from '@/types/calendar-types';
+import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
   planning: 'Planning',
@@ -125,7 +127,6 @@ export function ProjectListView() {
     if (title) {
         setProjectToEdit(null);
         setIsNewProjectDialogOpen(true);
-        // The dialog will now pick up these values from `searchParams` directly
     }
   }, [searchParams, router]);
 
@@ -149,8 +150,24 @@ export function ProjectListView() {
     }
   };
   
+  const handleDeleteSelected = () => {
+    if (selectedProjectIds.length > 0) {
+      setIsBulkDeleteAlertOpen(true);
+    }
+  };
+  
   const handleConfirmBulkDelete = async () => {
-    // This function will need to be implemented
+    if (!user || selectedProjectIds.length === 0) return;
+    try {
+        await deleteProjects(selectedProjectIds);
+        toast({ title: `${selectedProjectIds.length} project(s) deleted.`});
+        setSelectedProjectIds([]);
+        loadData();
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
+    } finally {
+        setIsBulkDeleteAlertOpen(false);
+    }
   };
   
   const handleDelete = (project: Project) => {
@@ -180,7 +197,6 @@ export function ProjectListView() {
       loadData();
       setIsNewProjectDialogOpen(false);
       setProjectToEdit(null);
-      // Clean up URL params after successful creation from a todo
       if (searchParams.get('title')) {
           router.replace('/projects/all');
       }
@@ -242,7 +258,7 @@ export function ProjectListView() {
             <CardTitle>Projects ({projects.length})</CardTitle>
             <div className="flex items-center gap-2">
                 {selectedProjectIds.length > 0 && (
-                    <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
@@ -258,7 +274,7 @@ export function ProjectListView() {
                   <TableRow>
                     <TableHead className="w-12">
                         <Checkbox 
-                            onCheckedChange={() => handleToggleSelectAll()}
+                            onCheckedChange={handleToggleSelectAll}
                             checked={projects.length > 0 && selectedProjectIds.length === projects.length}
                             aria-label="Select all projects"
                         />
@@ -376,7 +392,7 @@ export function ProjectListView() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
                     Delete
                 </AlertDialogAction>
             </AlertDialogFooter>
@@ -395,6 +411,15 @@ export function ProjectListView() {
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
       />
+      {contactToMerge && (
+        <MergeContactsDialog
+          isOpen={isMergeDialogOpen}
+          onOpenChange={setIsMergeDialogOpen}
+          sourceContact={contactToMerge}
+          allContacts={contacts}
+          onMergeConfirm={handleMergeConfirm}
+        />
+      )}
     </>
   );
 }

@@ -1,10 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -12,33 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  ArrowLeft,
-  LoaderCircle,
-  Save,
-  Plus,
-  ChevronsUpDown,
-  Check,
-  Info,
-  Briefcase,
-  ListTodo,
-  Route,
-  ListChecks,
-  X,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import { addProject, getProjectTemplates, type ProjectTemplate, type ProjectStep } from '@/services/project-service';
-import { getContacts, addContact, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
-import { getIndustries, type Industry } from '@/services/industry-service';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -46,12 +22,46 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { LoaderCircle, ArrowLeft, X, Briefcase, ListTodo, Route, Info, Check, ChevronsUpDown, Plus, Save } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import { addProject, getProjectTemplates, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
+import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { cn } from '@/lib/utils';
+
 
 export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
@@ -67,7 +77,7 @@ export default function CreateProjectPage() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
-
+  
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
@@ -152,6 +162,23 @@ export default function CreateProjectPage() {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
         setIsSaving(false);
+    }
+  };
+
+  const handleCreateCompany = async (companyName: string) => {
+    if (!user || !companyName.trim()) return;
+    try {
+        const newCompany = await addCompany({ name: companyName.trim(), userId: user.uid });
+        onCompaniesChange([...companies, newCompany]);
+        // Also update contact's company name if needed
+        const contact = contacts.find(c => c.id === selectedContactId);
+        if(contact) {
+            updateContact(contact.id, { businessName: newCompany.name });
+            setContacts(prev => prev.map(c => c.id === contact.id ? {...c, businessName: newCompany.name} : c));
+        }
+        toast({ title: 'Company Created', description: `"${companyName.trim()}" has been added.` });
+    } catch (error: any) {
+         toast({ variant: 'destructive', title: 'Failed to create company', description: error.message });
     }
   };
   
@@ -271,12 +298,17 @@ export default function CreateProjectPage() {
               </div>
                <div className="space-y-2">
                   <Label>Start from a Template (Optional)</Label>
-                  <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={(value) => {
+                      setSelectedTemplateId(value === 'no-template' ? '' : value);
+                    }}
+                  >
                     <SelectTrigger>
                         <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="no-template">None</SelectItem>
                         {templates.map(t => (
                             <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
@@ -308,3 +340,4 @@ export default function CreateProjectPage() {
     </>
   );
 }
+

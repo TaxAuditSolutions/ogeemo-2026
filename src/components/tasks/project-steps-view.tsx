@@ -47,11 +47,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProjectTemplate, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, getTasksForProject, deleteTask } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { addMinutes } from 'date-fns';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
@@ -72,13 +71,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [stepToDetail, setStepToDetail] = useState<Partial<ProjectStep> | null>(null);
     const [stepDetailDescription, setStepDetailDescription] = useState("");
 
-    const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
-    const [templateToEdit, setTemplateToEdit] = useState<ProjectTemplate | null>(null);
-    const [isManageTemplatesOpen, setIsManageTemplatesOpen] = useState(false);
-    const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
-    const [newTemplateName, setNewTemplateName] = useState('');
-    const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
-
     const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
     const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
     const [initialDialogData, setInitialDialogData] = useState({});
@@ -95,9 +87,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
         setIsLoading(true);
         try {
-            const [projectData, fetchedTemplates, tasksData, fetchedContacts] = await Promise.all([
+            const [projectData, tasksData, fetchedContacts] = await Promise.all([
                 getProjectById(projectId),
-                getProjectTemplates(user.uid),
                 getTasksForProject(projectId),
                 getContacts(user.uid),
             ]);
@@ -109,7 +100,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             }
             setProject(projectData);
             setSteps(projectData.steps || []);
-            setTemplates(fetchedTemplates);
             setTasks(tasksData);
             setContacts(fetchedContacts);
         } catch (error: any) {
@@ -250,71 +240,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setSteps(newSteps);
         await handleSaveSteps(newSteps);
     }, [steps, handleSaveSteps]);
-
-    const handleOpenSaveTemplateDialog = () => {
-      setNewTemplateName(templateToEdit ? templateToEdit.name : project?.name || '');
-      setIsSaveTemplateDialogOpen(true);
-    };
-
-    const handleSaveOrUpdateTemplate = async () => {
-        if (!user || !newTemplateName.trim()) {
-            toast({ variant: 'destructive', title: 'Template name is required.' });
-            return;
-        }
-
-        const templateData = {
-            name: newTemplateName,
-            description: project?.description || '',
-            steps: steps.map(({ id, ...step }) => step),
-        };
-
-        try {
-            if (templateToEdit) {
-                await updateProjectTemplate(templateToEdit.id, templateData);
-                setTemplates(prev => prev.map(t => t.id === templateToEdit.id ? { ...t, ...templateData } : t));
-                toast({ title: 'Template Updated', description: `"${newTemplateName}" has been updated.` });
-            } else {
-                const newTemplate = await addProjectTemplate({ ...templateData, userId: user.uid });
-                setTemplates(prev => [...prev, newTemplate]);
-                setTemplateToEdit(newTemplate);
-                toast({ title: 'Template Saved', description: `"${newTemplateName}" is now available for future projects.` });
-            }
-            setIsSaveTemplateDialogOpen(false);
-            setNewTemplateName('');
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to save template', description: error.message });
-        }
-    };
-
-    const handleLoadTemplate = async (templateId: string) => {
-        const template = templates.find(t => t.id === templateId);
-        if (template) {
-            const newSteps = template.steps.map(step => ({
-                id: `temp_${Date.now()}_${Math.random()}`,
-                ...step
-            }));
-            const savedSteps = await handleSaveSteps(newSteps);
-            if(savedSteps) {
-                setTemplateToEdit(template);
-                toast({ title: 'Template Loaded', description: `Steps from "${template.name}" have been applied.` });
-                setIsManageTemplatesOpen(false); // Close dialog after loading
-                await loadData(); // Reload tasks associated with new steps
-            }
-        }
-    };
-
-    const handleConfirmDeleteTemplate = async () => {
-        if (!templateToDelete) return;
-        try {
-            await deleteProjectTemplate(templateToDelete.id);
-            setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
-            toast({ title: 'Template Deleted' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
-        } finally {
-            setTemplateToDelete(null);
-        }
-    };
     
     const handleStartEditStep = (step: Partial<ProjectStep>) => {
         setEditingStepId(step.id || null);
@@ -346,9 +271,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
       if (!user || !taskToConvert) return;
       try {
           const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-          await deleteTask(taskToConvert.id); // Delete the original task after converting
+          await deleteTask(taskToConvert.id);
           toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-          loadData(); // Refresh data
+          loadData();
       } catch (error: any) {
           toast({ variant: "destructive", title: "Failed to create project", description: error.message });
       } finally {
@@ -424,21 +349,20 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                         <h1 className="text-xl font-bold font-headline text-primary">
                             Project Planner
                         </h1>
-                        <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2">
+                         <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2">
                              <h2 className="text-2xl text-foreground font-semibold">{project.name}</h2>
                         </div>
                     </div>
                     <div className="flex justify-end">
                         <Button asChild variant="outline">
                             <Link href={`/projects/${projectId}/tasks`}>
-                                Task Board <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                                Task Board <Route className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </div>
                 </header>
 
-                <div className="w-full max-w-4xl flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                    {/* Project Plan Card */}
+                <div className="w-full max-w-lg flex-1">
                     <Card className="flex flex-col h-full">
                          <CardHeader>
                             <CardTitle>Project Plan</CardTitle>
@@ -494,37 +418,6 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                             </CardContent>
                         </ScrollArea>
                     </Card>
-
-                    {/* Templates Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Project Templates</CardTitle>
-                            <CardDescription>Load a template to quickly populate your project plan, or save this plan for future use.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label>Load a Template</Label>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Select onValueChange={handleLoadTemplate}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a template..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {templates.map(t => (
-                                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button variant="outline" onClick={() => setIsManageTemplatesOpen(true)}>Manage</Button>
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <Button className="w-full" onClick={handleOpenSaveTemplateDialog}>
-                                    <Save className="mr-2 h-4 w-4"/> {templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
             
@@ -568,76 +461,15 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 </AlertDialogContent>
             </AlertDialog>
             
-            <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{templateToEdit ? 'Save Changes to Template' : 'Save as New Template'}</DialogTitle>
-                        <DialogDescription>
-                          {templateToEdit ? `This will overwrite the "${templateToEdit.name}" template.` : 'Save the current list of steps as a reusable template for future projects.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="template-name">Template Name</Label>
-                        <Input id="template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSaveOrUpdateTemplate()}/>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsSaveTemplateDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveOrUpdateTemplate}>{templateToEdit ? 'Save Changes' : 'Save Template'}</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isManageTemplatesOpen} onOpenChange={setIsManageTemplatesOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Manage Project Templates</DialogTitle>
-                  <DialogDescription>Load, edit, or delete your saved project templates.</DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <ScrollArea className="h-64 border rounded-md">
-                    <div className="p-2 space-y-1">
-                      {templates.map(template => (
-                        <div key={template.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent group">
-                          <span className="font-medium text-sm truncate">{template.name}</span>
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => handleLoadTemplate(template.id)}>Load</Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setTemplateToEdit(template); handleOpenSaveTemplateDialog(); }}><Pencil className="h-4 w-4"/></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setTemplateToDelete(template)}><Trash2 className="h-4 w-4"/></Button>
-                          </div>
-                        </div>
-                      ))}
-                      {templates.length === 0 && <p className="text-sm text-center p-4 text-muted-foreground">No templates saved yet.</p>}
-                    </div>
-                  </ScrollArea>
-                </div>
-                 <DialogFooter>
-                    <Button onClick={() => setIsManageTemplatesOpen(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the template "{templateToDelete?.name}". This action cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
             <NewTaskDialog
                 isOpen={isNewProjectDialogOpen}
                 onOpenChange={setIsNewProjectDialogOpen}
                 onProjectCreate={handleProjectCreated}
                 contacts={contacts}
+                onContactsChange={setContacts}
                 projectToEdit={null}
                 initialData={initialDialogData}
             />
         </>
     );
 }
-

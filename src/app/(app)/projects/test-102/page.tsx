@@ -9,9 +9,9 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addProject } from '@/services/project-service';
+import { addProject, getProjectTemplates, type ProjectTemplate, type ProjectStep } from '@/services/project-service';
 import { getContacts, addContact, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
@@ -47,12 +47,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
@@ -69,27 +68,31 @@ export default function CreateProjectPage() {
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
+  const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
-  const loadDropdownData = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
         setIsLoadingData(false);
         return;
     };
     try {
-        const [foldersData, companiesData, industriesData, contactsData] = await Promise.all([
+        const [foldersData, companiesData, industriesData, contactsData, templatesData] = await Promise.all([
             getContactFolders(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
             getContacts(user.uid),
+            getProjectTemplates(user.uid),
         ]);
         setContactFolders(foldersData);
         setCompanies(companiesData);
         setCustomIndustries(industriesData);
         setContacts(contactsData);
+        setTemplates(templatesData);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
     } finally {
@@ -98,8 +101,8 @@ export default function CreateProjectPage() {
   }, [user, toast]);
 
   useEffect(() => {
-    loadDropdownData();
-  }, [loadDropdownData]);
+    loadData();
+  }, [loadData]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
@@ -110,23 +113,31 @@ export default function CreateProjectPage() {
       } else {
           setContacts(prev => [...prev, savedContact]);
       }
-      setSelectedContactId(savedContact.id); // Select the new or updated contact
+      setSelectedContactId(savedContact.id);
       setIsContactFormOpen(false);
   };
 
 
   const handleSave = async () => {
     if (!user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to create a project.' });
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to create a project." });
         return;
     }
     if (!projectName.trim()) {
-        toast({ variant: 'destructive', title: 'Validation Error', description: 'Project Name is required.' });
+        toast({ variant: "destructive", title: "Validation Error", description: "Project Name is required." });
         return;
     }
 
     setIsSaving(true);
     try {
+        let templateSteps: Partial<ProjectStep>[] = [];
+        if (selectedTemplateId) {
+            const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+            if (selectedTemplate) {
+                templateSteps = selectedTemplate.steps.map(step => ({...step, id: `step_${Date.now()}_${Math.random()}`}));
+            }
+        }
+
         await addProject({
             name: projectName,
             description: description,
@@ -134,6 +145,7 @@ export default function CreateProjectPage() {
             userId: user.uid,
             createdAt: new Date(),
             contactId: selectedContactId,
+            steps: templateSteps,
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
         router.push('/projects/all');
@@ -257,6 +269,20 @@ export default function CreateProjectPage() {
                     </Popover>
                     <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
+              </div>
+               <div className="space-y-2">
+                  <Label>Start from a Template (Optional)</Label>
+                  <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {templates.map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
               </div>
               <div className="pt-4 flex justify-end">
                   <Button onClick={handleSave} disabled={isSaving}>

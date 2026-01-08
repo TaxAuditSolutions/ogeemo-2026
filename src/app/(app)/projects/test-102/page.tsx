@@ -30,11 +30,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
-  const [testInfo, setTestInfo] = useState('');
+  const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -107,12 +108,11 @@ export default function CreateProjectPage() {
     try {
         await addProject({
             name: projectName,
-            description: '',
+            description: description,
             status: 'planning',
             userId: user.uid,
             createdAt: new Date(),
-            testPField: testInfo,
-            projectManagerId: selectedContactId, // Saving the project lead
+            contactId: selectedContactId,
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
         router.push('/projects/all');
@@ -137,7 +137,7 @@ export default function CreateProjectPage() {
                     </Link>
                 </Button>
             </div>
-            <h1 className="text-3xl font-bold font-headline text-primary">
+            <h1 className="text-3xl font-bold font-headline text-primary text-center">
                 Create Your Project
             </h1>
         </header>
@@ -192,12 +192,12 @@ export default function CreateProjectPage() {
                   />
               </div>
               <div className="space-y-2">
-                  <Label htmlFor="test-info">Test info</Label>
-                  <Input 
-                      id="test-info" 
-                      placeholder="Enter test info..."
-                      value={testInfo}
-                      onChange={(e) => setTestInfo(e.target.value)}
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea 
+                      id="description" 
+                      placeholder="Enter a brief description of the project..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                   />
               </div>
                <div className="space-y-2">

@@ -12,36 +12,60 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { LoaderCircle, Save, FolderPlus, ChevronsUpDown, Check, Plus, ArrowLeft, X, Info, Briefcase, ListTodo, Route, File, FileText } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog";
+import {
+  LoaderCircle,
+  Save,
+  FolderPlus,
+  ChevronsUpDown,
+  Check,
+  Plus,
+  ArrowLeft,
+  X,
+  Info,
+  FileText,
+  FilePlus,
+} from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { getContacts, addContact, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { addProject, getProjectTemplates, type Project, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
+import { getProjectTemplates, addProject, type Project, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
-import type { Event as TaskEvent } from '@/types/calendar-types';
-
 
 export default function CreateProjectPage() {
   const [creationStep, setCreationStep] = useState<'choice' | 'form'>('choice');
@@ -62,7 +86,7 @@ export default function CreateProjectPage() {
   
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
-
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -100,7 +124,7 @@ export default function CreateProjectPage() {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
           if(selectedContactId === savedContact.id) {
-            setSelectedContactId(savedContact.id); // Re-set to trigger any updates
+            setSelectedContactId(savedContact.id);
           }
       } else {
           setContacts(prev => [...prev, savedContact]);
@@ -160,6 +184,9 @@ export default function CreateProjectPage() {
     <>
       <div className="p-6 h-full flex flex-col items-center">
         <header className="relative text-center mb-4 w-full max-w-lg">
+            <h1 className="text-3xl font-bold font-headline text-primary text-center">
+                Create Your Project
+            </h1>
             <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
                     <Link href="/projects/all" aria-label="Close">
@@ -167,9 +194,49 @@ export default function CreateProjectPage() {
                     </Link>
                 </Button>
             </div>
-            <h1 className="text-3xl font-bold font-headline text-primary text-center">
-                Create Your Project
-            </h1>
+             <div className="text-center mt-4">
+               <Dialog>
+                 <DialogTrigger asChild>
+                   <Button variant="link" className="text-muted-foreground">
+                     <Info className="mr-2 h-4 w-4" />
+                     How does Project Management work in Ogeemo?
+                   </Button>
+                 </DialogTrigger>
+                 <DialogContent className="sm:max-w-2xl">
+                   <DialogHeader>
+                     <DialogTitle>The Ogeemo Method (TOM)</DialogTitle>
+                     <DialogDescription>
+                       A quick guide to projects, tasks, and getting things done.
+                     </DialogDescription>
+                   </DialogHeader>
+                   <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                     <AccordionItem value="item-1">
+                       <AccordionTrigger>Step 1: Create a Project</AccordionTrigger>
+                       <AccordionContent>
+                         A "Project" is any outcome that requires more than one step. Start by creating a project for any goal, from "Renovate Kitchen" to "Launch New Website".
+                       </AccordionContent>
+                     </AccordionItem>
+                     <AccordionItem value="item-2">
+                       <AccordionTrigger>Step 2: Plan Your Project</AccordionTrigger>
+                       <AccordionContent>
+                         Once a project is created, you'll be taken to the "Project Planner". Here, you can list out all the individual steps required to complete your project. You can also save this list of steps as a reusable template for similar projects in the future.
+                       </AccordionContent>
+                     </AccordionItem>
+                     <AccordionItem value="item-3">
+                       <AccordionTrigger>Step 3: Work on Tasks</AccordionTrigger>
+                       <AccordionContent>
+                         From the Planner, go to the "Task Board". This is a Kanban-style board where each step from your plan appears as a task card in the "To Do" column. Drag tasks from "To Do" to "In Progress" and finally to "Done" as you complete your work.
+                       </AccordionContent>
+                     </AccordionItem>
+                   </Accordion>
+                   <DialogFooter>
+                     <DialogClose asChild>
+                       <Button type="button">Close</Button>
+                     </DialogClose>
+                   </DialogFooter>
+                 </DialogContent>
+               </Dialog>
+             </div>
         </header>
         
         {creationStep === 'choice' && (

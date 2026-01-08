@@ -59,12 +59,19 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 export default function CreateProjectPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -120,6 +127,16 @@ export default function CreateProjectPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+  
+    useEffect(() => {
+    const title = searchParams.get('title');
+    const desc = searchParams.get('description');
+    if (title) {
+        setProjectName(title);
+        setDescription(desc || '');
+        setCreationStep('form');
+    }
+  }, [searchParams]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {

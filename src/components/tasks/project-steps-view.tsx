@@ -39,15 +39,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask, addProjectTemplate } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -224,6 +224,29 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         }
     };
 
+    const handleSaveToTemplates = async () => {
+        if (!user || !project) return;
+        try {
+            const templateData = {
+                name: `${project.name} Template`,
+                description: project.description || `Template based on project: ${project.name}`,
+                steps: steps,
+                userId: user.uid,
+            };
+            await addProjectTemplate(templateData);
+            toast({
+                title: 'Template Saved',
+                description: `A new template based on "${project.name}" has been saved.`
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to Save Template',
+                description: error.message
+            });
+        }
+    };
+
 
     const moveStep = useCallback(async (dragIndex: number, hoverIndex: number) => {
         const newSteps = [...steps];
@@ -340,7 +363,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                 onChange={(e) => setNewStepTitle(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
                             />
-                            <Button onClick={handleAddStep}><Save className="mr-2 h-4 w-4" /> Save</Button>
+                            <Button onClick={handleAddStep}><Plus className="mr-2 h-4 w-4" /> Add</Button>
                         </div>
                     </CardHeader>
                     <ScrollArea className="flex-1">
@@ -382,6 +405,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                             )}
                         </CardContent>
                     </ScrollArea>
+                    <CardFooter className="pt-4 justify-end">
+                        <Button onClick={handleSaveToTemplates}>
+                            <Save className="mr-2 h-4 w-4" /> Save to Templates
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
             
@@ -420,7 +448,9 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteStep} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteStep} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                    </AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -438,4 +468,3 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     );
 }
 
-    

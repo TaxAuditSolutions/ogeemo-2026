@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -30,29 +30,6 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   ArrowLeft,
   ChevronsUpDown,
   Check,
@@ -61,8 +38,8 @@ import {
   Save,
   X,
   Info,
-  FileText,
   FilePlus,
+  FileText,
   LoaderCircle,
   Briefcase,
   ListTodo,
@@ -78,6 +55,8 @@ import { addProject, getProjectTemplates, type Project, type ProjectStep, type P
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { cn } from '@/lib/utils';
 import { type Event as TaskEvent } from '@/types/calendar-types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogClose, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export default function CreateProjectPage() {
   const [creationStep, setCreationStep] = useState<'choice' | 'form'>('choice');
@@ -90,14 +69,13 @@ export default function CreateProjectPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   
-  const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('no-template');
-
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -133,23 +111,23 @@ export default function CreateProjectPage() {
   }, [loadData]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-    if (isEditing) {
-      setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-      if (selectedContactId === savedContact.id) {
-        setSelectedContactId(savedContact.id);
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+          if (selectedContactId === savedContact.id) {
+            setSelectedContactId(savedContact.id);
+          }
+      } else {
+          setContacts(prev => [...prev, savedContact]);
+          setSelectedContactId(savedContact.id);
       }
-    } else {
-      setContacts(prev => [...prev, savedContact]);
-      setSelectedContactId(savedContact.id);
-    }
-    setIsContactFormOpen(false);
+      setIsContactFormOpen(false);
   };
   
   const handleStartBlank = () => {
     setProjectName('');
     setDescription('');
     setSelectedContactId(null);
-    setSelectedTemplateId('no-template');
+    setSelectedTemplateId(null);
     setCreationStep('form');
   };
 
@@ -193,7 +171,6 @@ export default function CreateProjectPage() {
   };
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
   return (
     <>
@@ -307,7 +284,7 @@ export default function CreateProjectPage() {
                               onChange={(e) => setProjectName(e.target.value)}
                           />
                       </div>
-                       <div className="space-y-2">
+                      <div className="space-y-2">
                           <Label htmlFor="description">Description</Label>
                           <Textarea
                               id="description"
@@ -323,26 +300,6 @@ export default function CreateProjectPage() {
                             <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
                         </div>
                       </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="template-select">Template (Optional)</Label>
-                          <Select value={selectedTemplateId} onValueChange={(value) => {
-                            if (value === 'no-template') {
-                                setSelectedTemplateId("");
-                            } else {
-                                setSelectedTemplateId(value);
-                            }
-                          }}>
-                              <SelectTrigger id="template-select">
-                                  <SelectValue placeholder="Select a template..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="no-template">None</SelectItem>
-                                {templates.map(template => (
-                                    <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                          </Select>
-                      </div>
                       <div className="pt-4 flex justify-end">
                           <Button onClick={handleSave} disabled={isSaving}>
                               {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
@@ -354,7 +311,6 @@ export default function CreateProjectPage() {
                 </div>
             </div>
         )}
-        
       </div>
       <ContactFormDialog
         isOpen={isContactFormOpen}
@@ -367,6 +323,7 @@ export default function CreateProjectPage() {
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
+        initialData={{}}
       />
     </>
   );

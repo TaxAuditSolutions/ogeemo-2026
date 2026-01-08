@@ -109,9 +109,6 @@ export function TaskCard({
                             Mark as Done
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onSelect={() => onMakeProject(task)}>
-                        <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
-                    </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => onArchive(task)}>
                         <Archive className="mr-2 h-4 w-4" /> Archive
                     </DropdownMenuItem>
@@ -127,3 +124,5 @@ export function TaskCard({
     </>
   );
 }
+
+    

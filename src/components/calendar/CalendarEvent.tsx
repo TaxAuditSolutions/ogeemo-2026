@@ -117,9 +117,6 @@ export function CalendarEvent({
               <CheckCircle className="mr-2 h-4 w-4" />
               {isCompleted ? 'Mark as Not Completed' : 'Mark as Completed'}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={handleConvertToProject}>
-              <Briefcase className="mr-2 h-4 w-4" /> Convert to Project
-            </DropdownMenuItem>
             {event.projectId && (
               <DropdownMenuItem asChild>
                 <Link href={`/projects/${event.projectId}/tasks`}>
@@ -140,3 +137,5 @@ export function CalendarEvent({
     </div>
   );
 }
+
+    

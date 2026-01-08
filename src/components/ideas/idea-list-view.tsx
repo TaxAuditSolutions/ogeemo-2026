@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar, ArrowLeft, X } from 'lucide-react';
@@ -12,8 +12,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -139,9 +139,11 @@ export function IdeaListView() {
   };
   
   const handleMakeProject = (idea: Idea) => {
-    setInitialDialogData({ name: idea.title, description: idea.description });
-    setTaskToConvert(idea);
-    setIsNewProjectDialogOpen(true);
+    const query = new URLSearchParams({
+        title: idea.title,
+        description: idea.description || '',
+    }).toString();
+    router.push(`/projects/test-102?${query}`);
   };
   
   const handleScheduleTask = async (idea: Idea) => {
@@ -189,6 +191,9 @@ export function IdeaListView() {
         router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+    } finally {
+        setIsNewProjectDialogOpen(false);
+        setTaskToConvert(null);
     }
   };
   
@@ -282,14 +287,13 @@ export function IdeaListView() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                              <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
-                            </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
-                                <Calendar className="mr-2 h-4 w-4" /> Schedule a Task
+                                <Calendar className="mr-2 h-4 w-4" />
+                                <span>Schedule a Task</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleArchive(idea)}>
-                              <Archive className="mr-2 h-4 w-4" /> Archive
+                              <Archive className="mr-2 h-4 w-4" />
+                              <span>Archive</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
@@ -323,3 +327,5 @@ export function IdeaListView() {
     </>
   );
 }
+
+    

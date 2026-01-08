@@ -208,27 +208,19 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
 
     const handleDeleteStep = async () => {
         if (!stepToDelete || !user) return;
-        
-        const stepIdToDelete = stepToDelete.id;
-
-        const originalSteps = [...steps];
-        const updatedSteps = steps.filter(s => s.id !== stepIdToDelete);
-        setSteps(updatedSteps);
-        
         try {
-            const taskToDelete = tasks.find(t => t.stepId === stepIdToDelete);
+            const taskToDelete = tasks.find(t => t.stepId === stepToDelete.id);
             if (taskToDelete) {
                 await deleteTask(taskToDelete.id);
-                setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
             }
-            
+            const updatedSteps = steps.filter(s => s.id !== stepToDelete.id);
             await handleSaveSteps(updatedSteps);
             toast({ title: 'Step Deleted' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
-            setSteps(originalSteps);
         } finally {
             setStepToDelete(null);
+            loadData();
         }
     };
 
@@ -246,14 +238,15 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         setEditingStepText(step.title || '');
     };
 
-    const handleUpdateStepTitle = async () => {
+    const handleUpdateStepTitle = () => {
         if (!editingStepId) return;
         const updatedSteps = steps.map(s => s.id === editingStepId ? { ...s, title: editingStepText } : s);
-        await handleSaveSteps(updatedSteps);
+        setSteps(updatedSteps);
+        handleSaveSteps(updatedSteps);
         
         const taskToUpdate = tasks.find(t => t.stepId === editingStepId);
         if(taskToUpdate) {
-            await updateTask(taskToUpdate.id, { title: editingStepText });
+            updateTask(taskToUpdate.id, { title: editingStepText });
             setTasks(prev => prev.map(t => t.id === taskToUpdate.id ? {...t, title: editingStepText} : t));
         }
 
@@ -281,7 +274,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
           setTaskToConvert(null);
       }
     };
-
+    
     const handleScheduleStep = (step: Partial<ProjectStep>) => {
       const task = tasks.find(t => t.stepId === step.id);
       if (task) {
@@ -335,90 +328,61 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
 
     return (
         <>
-            <div className="p-4 sm:p-6 h-full flex flex-col items-center">
-                <header className="mb-6 w-full max-w-4xl grid grid-cols-3 items-center">
-                    <div className="flex justify-start">
-                        <Button asChild variant="outline">
-                            <Link href="/projects/all">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Project List
-                            </Link>
-                        </Button>
-                    </div>
-                    <div className="text-center">
-                        <h1 className="text-xl font-bold font-headline text-primary">
-                            Project Planner
-                        </h1>
-                         <div className="mt-2 inline-block rounded-md border-2 border-black bg-white p-2">
-                             <h2 className="text-2xl text-foreground font-semibold">{project.name}</h2>
+            <div className="w-full max-w-4xl flex-1 flex flex-col">
+                <Card className="flex-1 flex flex-col">
+                     <CardHeader>
+                        <CardTitle>Project Plan</CardTitle>
+                        <CardDescription>Add steps to your plan. A task will be automatically created on your board for each step.</CardDescription>
+                         <div className="flex items-center gap-2 pt-2">
+                            <Input
+                                placeholder="Add a new step to the plan..."
+                                value={newStepTitle}
+                                onChange={(e) => setNewStepTitle(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
+                            />
+                            <Button onClick={handleAddStep}><Save className="mr-2 h-4 w-4" /> Save</Button>
                         </div>
-                    </div>
-                    <div className="flex justify-end">
-                        <Button asChild variant="outline">
-                            <Link href={`/projects/${projectId}/tasks`}>
-                                Task Board <Route className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                </header>
-
-                <div className="w-full max-w-lg flex-1">
-                    <Card className="flex flex-col h-full">
-                         <CardHeader>
-                            <CardTitle>Project Plan</CardTitle>
-                            <CardDescription>Add steps to your plan. A task will be automatically created on your board for each step.</CardDescription>
-                             <div className="flex items-center gap-2 pt-2">
-                                <Input
-                                    placeholder="Add a new step to the plan..."
-                                    value={newStepTitle}
-                                    onChange={(e) => setNewStepTitle(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddStep(); }}
-                                />
-                                <Button onClick={handleAddStep}><Save className="mr-2 h-4 w-4" /> Save</Button>
-                            </div>
-                        </CardHeader>
-                        <ScrollArea className="flex-1">
-                            <CardContent className="space-y-2">
-                                {steps.length > 0 ? (
-                                    steps.map((step, index) => (
-                                        <DraggableStep key={step.id || index} step={step} index={index} moveStep={moveStep}>
-                                            <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
-                                                <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                                                {editingStepId === step.id ? (
-                                                    <Input autoFocus value={editingStepText} onChange={e => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={e => e.key === 'Enter' && handleUpdateStepTitle()} className="h-7" />
-                                                ) : (
-                                                    <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
-                                                )}
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => handleScheduleStep(step)}><CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleAddToTodoList(step)}><ListTodo className="mr-2 h-4 w-4" /> Add to To-Do List</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleMakeProject(step)}><Briefcase className="mr-2 h-4 w-4" /> Convert to Project</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleArchiveStep(step)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </DraggableStep>
-                                    ))
-                                ) : (
-                                    <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                                        <p>No steps defined yet. Add one to start planning.</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </ScrollArea>
-                    </Card>
-                </div>
+                    </CardHeader>
+                    <ScrollArea className="flex-1">
+                        <CardContent className="space-y-2">
+                            {steps.length > 0 ? (
+                                steps.map((step, index) => (
+                                    <DraggableStep key={step.id || index} step={step} index={index} moveStep={moveStep}>
+                                        <div className="flex items-center gap-2 p-2 rounded-md border bg-card group">
+                                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                                            {editingStepId === step.id ? (
+                                                <Input autoFocus value={editingStepText} onChange={e => setEditingStepText(e.target.value)} onBlur={handleUpdateStepTitle} onKeyDown={e => e.key === 'Enter' && handleUpdateStepTitle()} className="h-7" />
+                                            ) : (
+                                                <button onClick={() => handleOpenStepDetails(step)} className="text-sm flex-1 text-left truncate hover:underline">{step.title}</button>
+                                            )}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenStepDetails(step)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleStartEditStep(step)}><Edit className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onSelect={() => handleScheduleStep(step)}><CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleAddToTodoList(step)}><ListTodo className="mr-2 h-4 w-4" /> Add to To-Do List</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleArchiveStep(step)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </DraggableStep>
+                                ))
+                            ) : (
+                                <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                                    <p>No steps defined yet. Add one to start planning.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </ScrollArea>
+                </Card>
             </div>
             
             <Dialog open={isStepDetailDialogOpen} onOpenChange={setIsStepDetailDialogOpen}>
@@ -473,3 +437,5 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         </>
     );
 }
+
+    

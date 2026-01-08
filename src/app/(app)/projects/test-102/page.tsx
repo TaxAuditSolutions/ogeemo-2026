@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LoaderCircle, Save, Plus, ChevronsUpDown, Check } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Save, Plus, ChevronsUpDown, Check, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,9 +19,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
-export default function Test102Page() {
+export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
   const [testInfo, setTestInfo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -117,19 +127,58 @@ export default function Test102Page() {
   return (
     <>
       <div className="p-6">
-        <header className="relative text-center mb-6">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-              <Button asChild variant="outline">
-                  <Link href="/projects/all">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Project List
-                  </Link>
-              </Button>
-          </div>
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            Create Your Project
-          </h1>
+        <header className="relative text-center mb-4">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                <Button asChild variant="outline">
+                    <Link href="/projects/all">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Project List
+                    </Link>
+                </Button>
+            </div>
+            <h1 className="text-3xl font-bold font-headline text-primary">
+                Create Your Project
+            </h1>
         </header>
+        <div className="text-center mb-6">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="link" className="text-muted-foreground">
+                <Info className="mr-2 h-4 w-4" />
+                How does Project Management work in Ogeemo?
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Project Management Workflow</DialogTitle>
+                <DialogDescription>A quick guide to turning your ideas into actionable projects.</DialogDescription>
+              </DialogHeader>
+              <Accordion type="single" collapsible defaultValue="item-1">
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>1. Create Your Project</AccordionTrigger>
+                  <AccordionContent>Start here by giving your project a name and assigning a lead. This creates the main container for all your tasks and planning.</AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2">
+                  <AccordionTrigger>2. Plan Your Project</AccordionTrigger>
+                  <AccordionContent>Use the "Project Planner" to break down your project into manageable steps. This creates a reusable template for similar projects in the future.</AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="item-3">
+                  <AccordionTrigger>3. Manage Your Tasks</AccordionTrigger>
+                  <AccordionContent>Each step in your plan automatically becomes a task on the project's "Task Board," where you can track progress from "To Do" to "Done."</AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="item-4" className="border-b-0">
+                  <AccordionTrigger>4. Visualize Overall Status</AccordionTrigger>
+                  <AccordionContent>Use the "Project Status Board" to see the big picture. Drag and drop entire projects between statuses like 'Planning', 'Active', and 'Completed' to keep your workload organized.</AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="p-8 border-2 border-dashed rounded-lg max-w-lg mx-auto">
           <div className="space-y-4">
               <div className="space-y-2">

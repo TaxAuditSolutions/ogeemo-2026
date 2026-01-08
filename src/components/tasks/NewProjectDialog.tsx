@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 const projectSchema = z.object({
   description: z.string().optional(),
   contactId: z.string().optional().nullable(),
+  testPField: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -65,6 +66,7 @@ export function NewProjectDialog({
     defaultValues: {
       description: "",
       contactId: null,
+      testPField: "",
     },
   });
 
@@ -76,10 +78,12 @@ export function NewProjectDialog({
           contactId: projectToEdit.contactId,
         });
       } else {
+        const titleFromUrl = searchParams.get('title');
         const descriptionFromUrl = searchParams.get('description');
         form.reset({
           description: descriptionFromUrl || "",
           contactId: null,
+          testPField: "",
         });
       }
     }
@@ -116,9 +120,22 @@ export function NewProjectDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Test 101'}</DialogTitle>
+              <DialogTitle>Test 101</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
+               <FormField
+                control={form.control}
+                name="testPField"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Test P Field</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter data..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="description"

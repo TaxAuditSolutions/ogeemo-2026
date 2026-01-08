@@ -43,7 +43,7 @@ function ProjectPlanPageContent() {
 
   return (
       <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
-        <ResizablePanel defaultSize={50} minSize={30}>
+        <ResizablePanel defaultSize={75} minSize={30}>
             <ProjectStepsView projectId={projectId} />
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -53,6 +53,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -178,7 +184,7 @@ export default function CreateProjectPage() {
             steps: selectedTemplate ? selectedTemplate.steps : [],
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
-        router.push(`/project-plan?projectId=${newProject.id}`);
+        router.push(`/project_plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {

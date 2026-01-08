@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LoaderCircle, Save, Plus, ChevronsUpDown, Check, Info } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Save, Plus, ChevronsUpDown, Check, Info, Briefcase, ListTodo, Route, ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -85,7 +86,7 @@ export default function CreateProjectPage() {
             setSelectedContactId(savedContact.id); // Re-set to trigger any updates
           }
       } else {
-          setContacts(prev => [savedContact, ...prev]);
+          setContacts(prev => [...prev, savedContact]);
       }
       setSelectedContactId(savedContact.id); // Select the new or updated contact
       setIsContactFormOpen(false);

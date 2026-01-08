@@ -33,6 +33,7 @@ export interface Event {
   isTodoItem?: boolean;
   urgency?: ProjectUrgency;
   importance?: ProjectImportance;
+  ritualType?: 'daily' | 'weekly';
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';
@@ -55,6 +56,7 @@ export interface Project {
   startDate?: Date | null;
   endDate?: Date | null;
   projectValue?: number | null;
+  testPField?: string;
 }
 
 export interface ProjectStep {

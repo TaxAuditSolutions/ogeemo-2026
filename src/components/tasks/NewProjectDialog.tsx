@@ -76,6 +76,7 @@ export function NewProjectDialog({
         form.reset({
           description: projectToEdit.description || "",
           contactId: projectToEdit.contactId,
+          testPField: projectToEdit.testPField || "",
         });
       } else {
         const titleFromUrl = searchParams.get('title');
@@ -98,6 +99,7 @@ export function NewProjectDialog({
             name: projectName,
             description: values.description,
             contactId: values.contactId === 'unassigned' ? null : values.contactId,
+            testPField: values.testPField,
         };
         if (projectToEdit) {
             await updateProject(projectToEdit.id, projectData);

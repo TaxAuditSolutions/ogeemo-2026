@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent } from '@/types/calendar-types';
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addProject, updateProject } from '@/services/project-service';
@@ -116,7 +116,7 @@ export function NewProjectDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
+              <DialogTitle>{projectToEdit ? 'Edit Project' : 'Test 101'}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <FormField

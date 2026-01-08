@@ -23,7 +23,7 @@ import {
   ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Input } from '../ui/input';
 import {
   AlertDialog,
@@ -236,7 +236,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
             await addProjectTemplate(templateData);
             toast({
                 title: 'Template Saved',
-                description: `A new template based on "${project.name}" has been saved.`
+                description: `A new template based on "${project.name}" has been saved.`,
             });
         } catch (error: any) {
             toast({
@@ -467,4 +467,3 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         </>
     );
 }
-

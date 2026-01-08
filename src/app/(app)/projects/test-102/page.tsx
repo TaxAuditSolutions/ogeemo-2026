@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -48,6 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
@@ -117,7 +117,6 @@ export default function CreateProjectPage() {
       setIsContactFormOpen(false);
   };
 
-
   const handleSave = async () => {
     if (!user) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in to create a project." });
@@ -144,7 +143,7 @@ export default function CreateProjectPage() {
             status: 'planning',
             userId: user.uid,
             createdAt: new Date(),
-            contactId: selectedContactId,
+            projectManagerId: selectedContactId,
             steps: templateSteps,
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });

@@ -1,15 +1,36 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, LoaderCircle, Save, Plus, ChevronsUpDown, Check, Info, Briefcase, ListTodo, Route, ListChecks } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/auth-context';
+import {
+  ArrowLeft,
+  LoaderCircle,
+  Save,
+  Plus,
+  ChevronsUpDown,
+  Check,
+  Info,
+  Briefcase,
+  ListTodo,
+  Route,
+  ListChecks,
+  X,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 import { addProject } from '@/services/project-service';
 import { getContacts, addContact, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -140,6 +161,13 @@ export default function CreateProjectPage() {
             <h1 className="text-3xl font-bold font-headline text-primary text-center">
                 Create Your Project
             </h1>
+             <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager" aria-label="Close">
+                        <X className="h-5 w-5" />
+                    </Link>
+                </Button>
+            </div>
         </header>
         <div className="text-center mb-6">
           <Dialog>

@@ -16,20 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  LoaderCircle,
-  Plus,
-  ArrowLeft,
-  X,
-  Info,
-  FilePlus2,
-  FileText,
-  ChevronsUpDown,
-  Check,
-  MoreVertical,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { LoaderCircle, Plus, ArrowLeft, X, Info, FilePlus2, FileText, ChevronsUpDown, Check, MoreVertical, Pencil, Trash2, Save } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
@@ -56,6 +43,7 @@ import {
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
+    AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -66,7 +54,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 export default function CreateProjectPage() {
@@ -433,3 +421,5 @@ export default function CreateProjectPage() {
     </>
   );
 }
+
+    

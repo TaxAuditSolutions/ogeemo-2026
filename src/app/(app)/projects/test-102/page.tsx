@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
@@ -22,7 +22,7 @@ import {
   ArrowLeft,
   X,
   Info,
-  FilePlus2 as FilePlus,
+  FilePlus2,
   FileText,
   ChevronsUpDown,
   Check,
@@ -34,23 +34,12 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import ContactFormDialog from '../contacts/contact-form-dialog';
+import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
     Dialog,
     DialogHeader,
@@ -71,7 +60,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 export default function CreateProjectPage() {
@@ -286,7 +275,7 @@ export default function CreateProjectPage() {
                   <Card className="hover:shadow-lg transition-shadow">
                       <CardHeader className="text-center">
                           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                              <FilePlus className="h-8 w-8 text-primary" />
+                              <FilePlus2 className="h-8 w-8 text-primary" />
                           </div>
                           <CardTitle>Start a Blank Project</CardTitle>
                           <CardDescription>Begin with a clean slate to build your project from the ground up.</CardDescription>

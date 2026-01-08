@@ -3,6 +3,10 @@
 
 import { adminDb as db, getAdminStorage } from '@/lib/firebase-admin';
 
+// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
+// to work correctly in modern Node.js environments.
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+
 const PLACEHOLDERS_COLLECTION = 'imagePlaceholders';
 const FILES_COLLECTION = 'files';
 

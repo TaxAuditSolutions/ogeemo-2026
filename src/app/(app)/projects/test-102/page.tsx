@@ -1,22 +1,67 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { LoaderCircle, Plus, ArrowLeft, X, Info, FilePlus2, FileText, ChevronsUpDown, Check, MoreVertical, Pencil, Trash2, Save } from 'lucide-react';
+import {
+  LoaderCircle,
+  Plus,
+  ArrowLeft,
+  X,
+  Info,
+  FilePlus2,
+  FileText,
+  ChevronsUpDown,
+  Check,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Save
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
@@ -27,40 +72,7 @@ import { getCompanies, addCompany, type Company } from '@/services/accounting-se
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import {
-    Dialog,
-    DialogHeader,
-    DialogFooter,
-    DialogContent,
-    DialogTitle,
-    DialogDescription,
-    DialogTrigger,
-    DialogClose
-} from '@/components/ui/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 export default function CreateProjectPage() {
@@ -184,7 +196,7 @@ export default function CreateProjectPage() {
             steps: selectedTemplate ? selectedTemplate.steps : [],
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
-        router.push(`/project_plan?projectId=${newProject.id}`);
+        router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -313,7 +325,7 @@ export default function CreateProjectPage() {
                                       </Button>
                                       <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-9 w-9 opacity-0 group-hover:opacity-100">
+                                              <Button variant="ghost" size="icon" className="h-9 w-9">
                                                   <MoreVertical className="h-4 w-4" />
                                               </Button>
                                           </DropdownMenuTrigger>

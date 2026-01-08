@@ -22,7 +22,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import {
@@ -66,7 +65,7 @@ export default function CreateProjectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   
   const [creationStep, setCreationStep] = useState<'choice' | 'form'>('choice');
   const [projectName, setProjectName] = useState('');
@@ -123,39 +122,44 @@ export default function CreateProjectPage() {
     loadData();
   }, [loadData]);
   
-  useEffect(() => {
+    useEffect(() => {
+    // Wait until authentication is resolved
+    if (isAuthLoading) {
+      return;
+    }
+
     const projectId = searchParams.get('projectId');
-    if (projectId) {
+    if (projectId && user) {
       setProjectToEditId(projectId);
       setCreationStep('form');
       const loadProject = async () => {
         setIsLoadingData(true);
         try {
-            const projectData = await getProjectById(projectId);
-            if (projectData) {
-                setProjectName(projectData.name);
-                setDescription(projectData.description || '');
-                setSelectedContactId(projectData.contactId || null);
-            } else {
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.'});
-            }
+          const projectData = await getProjectById(projectId);
+          if (projectData) {
+            setProjectName(projectData.name);
+            setDescription(projectData.description || '');
+            setSelectedContactId(projectData.contactId || null);
+          } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.' });
+          }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load project data.' });
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to load project data.' });
         } finally {
-            setIsLoadingData(false);
+          setIsLoadingData(false);
         }
       };
       loadProject();
     } else {
-        const title = searchParams.get('title');
-        const desc = searchParams.get('description');
-        if (title) {
-            setProjectName(title);
-            setDescription(desc || '');
-            setCreationStep('form');
-        }
+      const title = searchParams.get('title');
+      const desc = searchParams.get('description');
+      if (title) {
+        setProjectName(title);
+        setDescription(desc || '');
+        setCreationStep('form');
+      }
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, user, isAuthLoading]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {

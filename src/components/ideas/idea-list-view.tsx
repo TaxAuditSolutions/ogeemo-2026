@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar, ArrowLeft } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar, ArrowLeft, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -179,7 +179,7 @@ export function IdeaListView() {
   };
 
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-    if (!user) return;
+    if (!user || !taskToConvert) return;
     try {
         const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
         if (taskToConvert) {
@@ -196,7 +196,8 @@ export function IdeaListView() {
     if (!user) return;
     try {
       await archiveIdeaAsFile(user.uid, idea.title, idea.description || '');
-      await handleDeleteIdea(idea.id);
+      await deleteIdea(idea.id);
+      loadData();
       toast({ title: 'Archived', description: 'Idea saved to File Manager.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
@@ -206,7 +207,7 @@ export function IdeaListView() {
   return (
     <>
       <div className="p-4 sm:p-6 flex flex-col items-center h-full">
-        <header className="text-center mb-6">
+        <header className="relative text-center mb-6 w-full max-w-2xl">
           <h1 className="text-3xl font-bold font-headline text-primary">Idea Board</h1>
           <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
           <div className="mt-4 flex justify-center gap-2">
@@ -221,86 +222,93 @@ export function IdeaListView() {
                   </Link>
               </Button>
           </div>
+           <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager" aria-label="Close Idea Board">
+                        <X className="h-5 w-5" />
+                    </Link>
+                </Button>
+            </div>
         </header>
 
         <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>My Ideas</CardTitle>
-            {!showNewIdeaCard && (
-                <div className="pt-2">
-                    <Button onClick={() => setShowNewIdeaCard(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Record New Idea
-                    </Button>
-                </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-                {showNewIdeaCard && (
-                    <Card className="mb-4 bg-muted/50">
-                        <CardContent className="p-3 space-y-2">
-                            <Input autoFocus placeholder="New idea title..." value={newIdeaTitle} onChange={e => setNewIdeaTitle(e.target.value)} />
-                            <Textarea placeholder="Details (optional)..." value={newIdeaDescription} onChange={e => setNewIdeaDescription(e.target.value)} rows={2} />
-                            <div className="flex justify-end gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => setShowNewIdeaCard(false)}>Cancel</Button>
-                                <Button size="sm" onClick={handleAddIdea}>Save</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-              {isLoading ? (
-                  <div className="flex items-center justify-center p-8">
-                      <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-              ) : ideas.length > 0 ? (
-                ideas.map(idea => (
-                  <div key={idea.id} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50">
-                    {editingId === idea.id ? (
-                        <Input
-                            autoFocus
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            onBlur={handleUpdateIdea}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateIdea(); if (e.key === 'Escape') setEditingId(null); }}
-                            className="flex-1"
-                        />
-                    ) : (
-                        <p className="flex-1">{idea.title}</p>
-                    )}
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
+            <CardHeader>
+                <CardTitle>My Ideas</CardTitle>
+                {!showNewIdeaCard && (
+                    <div className="pt-2">
+                        <Button onClick={() => setShowNewIdeaCard(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Record New Idea
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                          <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
-                            <Calendar className="mr-2 h-4 w-4" /> Schedule a Task
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleArchive(idea)}>
-                          <Archive className="mr-2 h-4 w-4" /> Archive
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))
-              ) : !showNewIdeaCard ? (
-                <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                  <p>Your idea board is empty. Add an idea to get started!</p>
+                    </div>
+                )}
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    {showNewIdeaCard && (
+                        <Card className="mb-4 bg-muted/50">
+                            <CardContent className="p-3 space-y-2">
+                                <Input autoFocus placeholder="New idea title..." value={newIdeaTitle} onChange={e => setNewIdeaTitle(e.target.value)} />
+                                <Textarea placeholder="Details (optional)..." value={newIdeaDescription} onChange={e => setNewIdeaDescription(e.target.value)} rows={2} />
+                                <div className="flex justify-end gap-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setShowNewIdeaCard(false)}>Cancel</Button>
+                                    <Button size="sm" onClick={handleAddIdea}>Save</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                  {isLoading ? (
+                      <div className="flex items-center justify-center p-8">
+                          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                  ) : ideas.length > 0 ? (
+                    ideas.map(idea => (
+                      <div key={idea.id} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50">
+                        {editingId === idea.id ? (
+                            <Input
+                                autoFocus
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                onBlur={handleUpdateIdea}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateIdea(); if (e.key === 'Escape') setEditingId(null); }}
+                                className="flex-1"
+                            />
+                        ) : (
+                            <p className="flex-1">{idea.title}</p>
+                        )}
+                         <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
+                              <Briefcase className="mr-2 h-4 w-4" /> Convert to a Project
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
+                                <Calendar className="mr-2 h-4 w-4" /> Schedule a Task
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleArchive(idea)}>
+                              <Archive className="mr-2 h-4 w-4" /> Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))
+                  ) : !showNewIdeaCard ? (
+                    <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                      <p>Your idea board is empty. Add an idea to get started!</p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </CardContent>
+            </CardContent>
         </Card>
       </div>
        <NewTaskDialog

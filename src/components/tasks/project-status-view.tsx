@@ -13,9 +13,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { DraggableProjectCard, ItemTypes } from '@/components/dashboard/DraggableProjectCard';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
-import { NewProjectDialog } from './NewProjectDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { type Event as TaskEvent } from '@/types/calendar';
 import { Button } from '../ui/button';
 
 const statusColumns: ProjectStatus[] = ['planning', 'active', 'on-hold', 'completed'];
@@ -27,7 +25,7 @@ const statusTitles: Record<ProjectStatus, string> = {
     completed: 'Completed',
 };
 
-const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onDelete }: { title: string; status: ProjectStatus; projects: Project[]; clientMap: Map<string, string>; onDrop: (item: Project, targetStatus: ProjectStatus) => void; onEdit: (project: Project) => void; onDelete?: (project: Project) => void; }) => {
+const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onDelete }: { title: string; status: ProjectStatus; projects: Project[]; clientMap: Map<string, string>; onDrop: (item: Project, targetStatus: ProjectStatus) => void; onEdit?: (project: Project) => void; onDelete?: (project: Project) => void; }) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.PROJECT_CARD,
         drop: (item: Project) => onDrop(item, status),
@@ -71,9 +69,7 @@ export function ProjectStatusView() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -144,11 +140,6 @@ export function ProjectStatusView() {
         }
     }, [projects, toast]);
 
-    const handleEditProject = (project: Project) => {
-        setProjectToEdit(project);
-        setIsFormOpen(true);
-    };
-
     const handleConfirmDelete = async () => {
         if (!projectToDelete) return;
         try {
@@ -163,15 +154,9 @@ export function ProjectStatusView() {
         }
     };
     
-    const handleProjectSaved = () => {
-        setIsFormOpen(false);
-        setProjectToEdit(null);
-        loadData();
-    };
-
     const handleNewProjectClick = () => {
-        setProjectToEdit(null);
-        setIsFormOpen(true);
+        // Placeholder for new project creation
+        toast({ title: "To be implemented", description: "The project creation flow is being redesigned." });
     };
 
 
@@ -212,25 +197,12 @@ export function ProjectStatusView() {
                             projects={projectsByStatus[status]}
                             clientMap={clientMap}
                             onDrop={handleDropProject}
-                            onEdit={handleEditProject}
+                            onEdit={() => {}} // No edit functionality from this board now
                             onDelete={setProjectToDelete}
                         />
                     ))}
                 </div>
             </div>
-
-            <NewProjectDialog
-                isOpen={isFormOpen}
-                onOpenChange={(open) => {
-                    setIsFormOpen(open);
-                    if (!open) {
-                        setProjectToEdit(null);
-                    }
-                }}
-                onProjectSaved={handleProjectSaved}
-                contacts={contacts}
-                projectToEdit={projectToEdit}
-            />
 
             <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
                 <AlertDialogContent>
@@ -247,5 +219,3 @@ export function ProjectStatusView() {
         </>
     );
 }
-
-    

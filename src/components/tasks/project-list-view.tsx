@@ -58,7 +58,6 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from "@/services/accounting-service";
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { NewProjectDialog } from './NewProjectDialog';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
@@ -76,9 +75,6 @@ export function ProjectListView() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
-  
-  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
@@ -122,15 +118,6 @@ export function ProjectListView() {
     loadData();
   }, [loadData]);
   
-  useEffect(() => {
-    const title = searchParams.get('title');
-    const description = searchParams.get('description');
-    if (title) {
-        setProjectToEdit(null);
-        setIsNewProjectDialogOpen(true);
-    }
-  }, [searchParams, router]);
-
   const clientMap = useMemo(() => {
     return new Map(contacts.map(c => [c.id, c.name]));
   }, [contacts]);
@@ -174,11 +161,6 @@ export function ProjectListView() {
   const handleDelete = (project: Project) => {
     setProjectToDelete(project);
   };
-  
-  const handleEdit = (project: Project) => {
-    setProjectToEdit(project);
-    setIsNewProjectDialogOpen(true);
-  };
 
   const handleConfirmDelete = async () => {
     if (!projectToDelete) return;
@@ -194,13 +176,9 @@ export function ProjectListView() {
     }
   };
   
-  const handleProjectSaved = () => {
-      loadData();
-      setIsNewProjectDialogOpen(false);
-      setProjectToEdit(null);
-      if (searchParams.get('title')) {
-          router.replace('/projects/all');
-      }
+  const handleNewProjectClick = () => {
+    // This is where the old dialog was triggered. We can re-purpose this later.
+    toast({ title: "To be implemented", description: "The project creation flow is being redesigned." });
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -263,7 +241,7 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 <Button onClick={() => { setProjectToEdit(null); setIsNewProjectDialogOpen(true); }}>
+                 <Button onClick={handleNewProjectClick}>
                     <Plus className="mr-2 h-4 w-4" /> Create New Project
                  </Button>
             </div>
@@ -328,7 +306,7 @@ export function ProjectListView() {
                               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => handleEdit(p)}>
+                              <DropdownMenuItem onSelect={() => {/* Future Edit Action */}}>
                                 <Pencil className="mr-2 h-4 w-4" /> View / Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
@@ -355,20 +333,6 @@ export function ProjectListView() {
           </CardContent>
         </Card>
       </div>
-
-      <NewProjectDialog
-        isOpen={isNewProjectDialogOpen}
-        onOpenChange={(open) => {
-            setIsNewProjectDialogOpen(open);
-            if (!open) {
-                setProjectToEdit(null);
-                if (searchParams.get('title')) router.replace('/projects/all');
-            }
-        }}
-        onProjectSaved={handleProjectSaved}
-        contacts={contacts}
-        projectToEdit={projectToEdit}
-      />
       
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Button } from '../ui/button';
+import Link from 'next/link';
 
 const statusColumns: ProjectStatus[] = ['planning', 'active', 'on-hold', 'completed'];
 
@@ -56,8 +57,8 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
                         status={status}
                         moveCard={() => {}} // Simple drag and drop between columns, no reordering within
                         onClick={() => handleCardClick(project)}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
+                        onEdit={onEdit && status === 'planning' ? () => onEdit(project) : undefined}
+                        onDelete={onDelete && status === 'planning' ? () => onDelete(project) : undefined}
                     />
                 ))}
             </CardContent>
@@ -154,12 +155,6 @@ export function ProjectStatusView() {
         }
     };
     
-    const handleNewProjectClick = () => {
-        // Placeholder for new project creation
-        toast({ title: "To be implemented", description: "The project creation flow is being redesigned." });
-    };
-
-
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -183,8 +178,10 @@ export function ProjectStatusView() {
                 
                 <div className="flex items-center gap-4">
                     <ProjectManagementHeader />
-                    <Button onClick={handleNewProjectClick}>
-                        <Plus className="mr-2 h-4 w-4" /> New Project
+                    <Button asChild>
+                        <Link href="/projects/test-102">
+                            <Plus className="mr-2 h-4 w-4" /> New Project
+                        </Link>
                     </Button>
                 </div>
 
@@ -197,7 +194,6 @@ export function ProjectStatusView() {
                             projects={projectsByStatus[status]}
                             clientMap={clientMap}
                             onDrop={handleDropProject}
-                            onEdit={() => {}} // No edit functionality from this board now
                             onDelete={setProjectToDelete}
                         />
                     ))}

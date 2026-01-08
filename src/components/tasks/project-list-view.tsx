@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   MoreVertical,
@@ -175,11 +175,6 @@ export function ProjectListView() {
       setProjectToDelete(null);
     }
   };
-  
-  const handleNewProjectClick = () => {
-    // This is where the old dialog was triggered. We can re-purpose this later.
-    toast({ title: "To be implemented", description: "The project creation flow is being redesigned." });
-  };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
@@ -241,8 +236,10 @@ export function ProjectListView() {
                         <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
                     </Button>
                 )}
-                 <Button onClick={handleNewProjectClick}>
-                    <Plus className="mr-2 h-4 w-4" /> Create New Project
+                 <Button asChild>
+                    <Link href="/projects/test-102">
+                        <Plus className="mr-2 h-4 w-4" /> Create New Project
+                    </Link>
                  </Button>
             </div>
           </CardHeader>
@@ -306,9 +303,6 @@ export function ProjectListView() {
                               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => {/* Future Edit Action */}}>
-                                <Pencil className="mr-2 h-4 w-4" /> View / Edit
-                              </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link href={`/projects/${p.id}/tasks`}>
                                   <ListChecks className="mr-2 h-4 w-4" /> Task Board

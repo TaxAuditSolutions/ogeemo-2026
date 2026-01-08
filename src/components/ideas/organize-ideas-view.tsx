@@ -218,9 +218,11 @@ export function OrganizeIdeasView() {
     };
     
     const handleMakeProject = (idea: Idea) => {
-        setInitialDialogData({ name: idea.title, description: idea.description });
-        setTaskToConvert(idea);
-        setIsNewProjectDialogOpen(true);
+        const query = new URLSearchParams({
+            title: idea.title,
+            description: idea.description || '',
+        }).toString();
+        router.push(`/projects/test-102?${query}`);
     };
     
     const handleScheduleItem = async (idea: Idea) => {
@@ -258,7 +260,7 @@ export function OrganizeIdeasView() {
     };
 
      const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
-        if (!user) return;
+        if (!user || !taskToConvert) return;
         try {
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             if (taskToConvert) {

@@ -2,20 +2,42 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  LoaderCircle,
+  Plus,
+  ArrowLeft,
+  X,
+  Info,
+  FilePlus2 as FilePlus,
+  FileText,
+  ChevronsUpDown,
+  Check,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 import {
   Popover,
   PopoverContent,
@@ -30,72 +52,34 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
+    Dialog,
+    DialogHeader,
+    DialogFooter,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+    DialogTrigger,
+    DialogClose
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-
-import {
-  LoaderCircle,
-  Plus,
-  ArrowLeft,
-  X,
-  Info,
-  FilePlus,
-  FileText,
-  ChevronsUpDown,
-  Check,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  Save,
-} from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import {
-  addProject,
-  getProjectTemplates,
-  updateProjectTemplate,
-  deleteProjectTemplate,
-  type Project,
-  type ProjectTemplate,
-} from '@/services/project-service';
-import { getContacts, type Contact } from '@/services/contact-service';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
-import { getIndustries, type Industry } from '@/services/industry-service';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 export default function CreateProjectPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
   const [creationStep, setCreationStep] = useState<'choice' | 'form'>('choice');
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
@@ -118,11 +102,6 @@ export default function CreateProjectPage() {
   const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
-
-
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const router = useRouter();
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -153,6 +132,17 @@ export default function CreateProjectPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+  
+  // This effect handles pre-filling the form from URL parameters
+  useEffect(() => {
+    const titleFromUrl = searchParams.get('title');
+    const descriptionFromUrl = searchParams.get('description');
+    if (titleFromUrl) {
+      setProjectName(titleFromUrl);
+      setDescription(descriptionFromUrl || '');
+      setCreationStep('form');
+    }
+  }, [searchParams]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
@@ -206,7 +196,7 @@ export default function CreateProjectPage() {
             steps: selectedTemplate ? selectedTemplate.steps : [],
         });
         toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
-        router.push(`/projects/${newProject.id}/tasks`);
+        router.push(`/project-plan?projectId=${newProject.id}`);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -278,13 +268,13 @@ export default function CreateProjectPage() {
         
         {creationStep === 'choice' ? (
             <>
-              <div className="text-center mt-4 mb-8">
+              <div className="text-center mt-4">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="link" className="text-muted-foreground">
-                      <Info className="mr-2 h-4 w-4" />
-                      How does Project Management work in Ogeemo?
-                    </Button>
+                   <Button variant="link" className="text-muted-foreground">
+                     <Info className="mr-2 h-4 w-4" />
+                     How does Project Management work in Ogeemo?
+                   </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
@@ -380,7 +370,7 @@ export default function CreateProjectPage() {
                           />
                       </div>
                        <div className="space-y-2">
-                          <Label>Project Lead</Label>
+                          <Label>Client (Optional)</Label>
                           <div className="flex gap-2">
                              <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between"><span className="truncate">{selectedContact?.name || "Select or search..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map((contact) => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { setSelectedContactId(contact.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />{contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>

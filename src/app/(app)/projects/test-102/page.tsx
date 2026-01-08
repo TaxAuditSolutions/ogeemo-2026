@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -30,33 +30,70 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
-  ArrowLeft,
-  ChevronsUpDown,
-  Check,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
+import {
+  LoaderCircle,
   Plus,
-  Edit,
-  Save,
+  ArrowLeft,
   X,
   Info,
   FilePlus,
   FileText,
-  LoaderCircle,
-  Briefcase,
-  ListTodo,
-  Calendar,
+  ChevronsUpDown,
+  Check,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Save,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import {
+  addProject,
+  getProjectTemplates,
+  updateProjectTemplate,
+  deleteProjectTemplate,
+  type Project,
+  type ProjectTemplate,
+} from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
+import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { addProject, getProjectTemplates, type Project, type ProjectStep, type ProjectTemplate } from '@/services/project-service';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { cn } from '@/lib/utils';
-import { type Event as TaskEvent } from '@/types/calendar-types';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogClose, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export default function CreateProjectPage() {
   const [creationStep, setCreationStep] = useState<'choice' | 'form'>('choice');
@@ -76,6 +113,13 @@ export default function CreateProjectPage() {
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   
+  const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
+  const [templateToEdit, setTemplateToEdit] = useState<ProjectTemplate | null>(null);
+  const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDescription, setNewTemplateDescription] = useState('');
+
+
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -170,6 +214,50 @@ export default function CreateProjectPage() {
     }
   };
 
+  const handleEditTemplate = (template: ProjectTemplate) => {
+    setTemplateToEdit(template);
+    setNewTemplateName(template.name);
+    setNewTemplateDescription(template.description || '');
+    setIsTemplateFormOpen(true);
+  };
+
+  const handleDeleteTemplate = (template: ProjectTemplate) => {
+    setTemplateToDelete(template);
+  };
+  
+  const handleSaveTemplate = async () => {
+    if (!user || !newTemplateName.trim()) {
+      toast({ variant: 'destructive', title: 'Template name is required.'});
+      return;
+    }
+    if (!templateToEdit) return;
+
+    try {
+      const updatedData = { name: newTemplateName.trim(), description: newTemplateDescription.trim() };
+      await updateProjectTemplate(templateToEdit.id, updatedData);
+      setTemplates(prev => prev.map(t => t.id === templateToEdit.id ? { ...t, ...updatedData } : t));
+      toast({ title: 'Template Updated' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+      setIsTemplateFormOpen(false);
+    }
+  };
+
+  const handleConfirmDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    try {
+      await deleteProjectTemplate(templateToDelete.id);
+      setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
+      toast({ title: 'Template Deleted', variant: 'destructive' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally {
+      setTemplateToDelete(null);
+    }
+  };
+
+
   const selectedContact = contacts.find(c => c.id === selectedContactId);
 
   return (
@@ -177,95 +265,93 @@ export default function CreateProjectPage() {
       <div className="p-6 h-full flex flex-col items-center">
         <header className="relative text-center mb-4 w-full max-w-lg">
           <h1 className="text-3xl font-bold font-headline text-primary text-center">
-            Create Your Project
+            {creationStep === 'choice' ? 'Create Your Project' : 'Project Details'}
           </h1>
-           <div className="absolute top-0 right-0">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/projects/all" aria-label="Close">
-                        <X className="h-5 w-5" />
-                    </Link>
-                </Button>
-            </div>
-             <div className="text-center mt-4">
-               <Dialog>
-                 <DialogTrigger asChild>
-                   <Button variant="link" className="text-muted-foreground">
-                     <Info className="mr-2 h-4 w-4" />
-                     How does Project Management work in Ogeemo?
-                   </Button>
-                 </DialogTrigger>
-                 <DialogContent className="sm:max-w-2xl">
-                   <DialogHeader>
-                     <DialogTitle>The Ogeemo Method (TOM)</DialogTitle>
-                     <DialogDescription>
-                       A quick guide to projects, tasks, and getting things done.
-                     </DialogDescription>
-                   </DialogHeader>
-                   <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-                     <AccordionItem value="item-1">
-                       <AccordionTrigger>Step 1: Create a Project</AccordionTrigger>
-                       <AccordionContent>
-                         A "Project" is any outcome that requires more than one step. Start by creating a project for any goal, from "Renovate Kitchen" to "Launch New Website".
-                       </AccordionContent>
-                     </AccordionItem>
-                     <AccordionItem value="item-2">
-                       <AccordionTrigger>Step 2: Plan Your Project</AccordionTrigger>
-                       <AccordionContent>
-                         Once a project is created, you'll be taken to the "Project Planner". Here, you can list out all the individual steps required to complete your project. You can also save this list of steps as a reusable template for similar projects in the future.
-                       </AccordionContent>
-                     </AccordionItem>
-                     <AccordionItem value="item-3">
-                       <AccordionTrigger>Step 3: Work on Tasks</AccordionTrigger>
-                       <AccordionContent>
-                         From the Planner, go to the "Task Board". This is a Kanban-style board where each step from your plan appears as a task card in the "To Do" column. Drag tasks from "To Do" to "In Progress" and finally to "Done" as you complete your work.
-                       </AccordionContent>
-                     </AccordionItem>
-                   </Accordion>
-                   <DialogFooter>
-                     <DialogClose asChild>
-                       <Button type="button">Close</Button>
-                     </DialogClose>
-                   </DialogFooter>
-                 </DialogContent>
-               </Dialog>
-             </div>
+          <div className="absolute top-0 right-0">
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/projects/all" aria-label="Close">
+                    <X className="h-5 w-5" />
+                </Link>
+            </Button>
+          </div>
         </header>
         
         {creationStep === 'choice' ? (
-            <div className="flex-1 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-8 animate-in fade-in-50">
-                <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                            <FilePlus className="h-8 w-8 text-primary" />
-                        </div>
-                        <CardTitle>Start a Blank Project</CardTitle>
-                        <CardDescription>Begin with a clean slate to build your project from the ground up.</CardDescription>
-                    </CardHeader>
-                    <CardFooter>
-                        <Button className="w-full" onClick={handleStartBlank}>Create Blank Project</Button>
-                    </CardFooter>
-                </Card>
-                <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="text-center">
-                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                            <FileText className="h-8 w-8 text-primary" />
-                        </div>
-                        <CardTitle>Start from a Template</CardTitle>
-                        <CardDescription>Select one of your saved project templates to get started quickly.</CardDescription>
-                    </CardHeader>
-                     <CardContent>
-                        {isLoadingData ? <div className="flex justify-center"><LoaderCircle className="h-6 w-6 animate-spin"/></div> : (
-                            <div className="space-y-2">
-                                {templates.length > 0 ? templates.map(template => (
-                                    <Button key={template.id} variant="outline" className="w-full justify-start" onClick={() => handleSelectTemplate(template)}>
-                                        {template.name}
-                                    </Button>
-                                )) : <p className="text-center text-sm text-muted-foreground">No templates found.</p>}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            <>
+              <div className="text-center mt-4 mb-8">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="link" className="text-muted-foreground">
+                      <Info className="mr-2 h-4 w-4" />
+                      How does Project Management work in Ogeemo?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>The Ogeemo Method (TOM)</DialogTitle>
+                      <DialogDescription>
+                        A quick guide to projects, tasks, and getting things done.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                      <AccordionItem value="item-1"><AccordionTrigger>Step 1: Create a Project</AccordionTrigger><AccordionContent>A "Project" is any outcome that requires more than one step. Start by creating a project for any goal, from "Renovate Kitchen" to "Launch New Website".</AccordionContent></AccordionItem>
+                      <AccordionItem value="item-2"><AccordionTrigger>Step 2: Plan Your Project</AccordionTrigger><AccordionContent>Once a project is created, you'll be taken to the "Project Planner". Here, you can list out all the individual steps required to complete your project. You can also save this list of steps as a reusable template for similar projects in the future.</AccordionContent></AccordionItem>
+                      <AccordionItem value="item-3"><AccordionTrigger>Step 3: Work on Tasks</AccordionTrigger><AccordionContent>From the Planner, go to the "Task Board". This is a Kanban-style board where each step from your plan appears as a task card in the "To Do" column. Drag tasks from "To Do" to "In Progress" and finally to "Done" as you complete your work.</AccordionContent></AccordionItem>
+                    </Accordion>
+                    <DialogFooter>
+                      <DialogClose asChild><Button type="button">Close</Button></DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="flex-1 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-8 animate-in fade-in-50">
+                  <Card className="hover:shadow-lg transition-shadow">
+                      <CardHeader className="text-center">
+                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                              <FilePlus className="h-8 w-8 text-primary" />
+                          </div>
+                          <CardTitle>Start a Blank Project</CardTitle>
+                          <CardDescription>Begin with a clean slate to build your project from the ground up.</CardDescription>
+                      </CardHeader>
+                      <CardFooter>
+                          <Button className="w-full" onClick={handleStartBlank}>Create Blank Project</Button>
+                      </CardFooter>
+                  </Card>
+                  <Card className="hover:shadow-lg transition-shadow">
+                      <CardHeader className="text-center">
+                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                              <FileText className="h-8 w-8 text-primary" />
+                          </div>
+                          <CardTitle>Start from a Template</CardTitle>
+                          <CardDescription>Select one of your saved project templates to get started quickly.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          {isLoadingData ? <div className="flex justify-center"><LoaderCircle className="h-6 w-6 animate-spin"/></div> : (
+                              <div className="space-y-2">
+                                  {templates.length > 0 ? templates.map(template => (
+                                    <div key={template.id} className="group flex items-center gap-1">
+                                      <Button variant="outline" className="w-full justify-start flex-1" onClick={() => handleSelectTemplate(template)}>
+                                          {template.name}
+                                      </Button>
+                                      <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="icon" className="h-9 w-9 opacity-50 group-hover:opacity-100">
+                                                  <MoreVertical className="h-4 w-4" />
+                                              </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent>
+                                              <DropdownMenuItem onSelect={() => handleEditTemplate(template)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                              <DropdownMenuItem onSelect={() => handleDeleteTemplate(template)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  )) : <p className="text-center text-sm text-muted-foreground">No templates found.</p>}
+                              </div>
+                          )}
+                      </CardContent>
+                  </Card>
+              </div>
+            </>
         ) : (
             <div className="w-full max-w-lg animate-in fade-in-50">
                 <div className="flex justify-start mb-6">
@@ -323,8 +409,43 @@ export default function CreateProjectPage() {
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
-        initialData={{}}
       />
+       <Dialog open={isTemplateFormOpen} onOpenChange={setIsTemplateFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Template</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-name">Template Name</Label>
+              <Input id="template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="template-description">Description</Label>
+              <Textarea id="template-description" value={newTemplateDescription} onChange={(e) => setNewTemplateDescription(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsTemplateFormOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveTemplate}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the template "{templateToDelete?.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

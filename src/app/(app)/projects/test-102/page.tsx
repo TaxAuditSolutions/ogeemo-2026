@@ -52,16 +52,18 @@ export default function Test102Page() {
 
   return (
     <div className="p-6">
-      <header className="flex items-center justify-between mb-6">
+      <header className="relative text-center mb-6">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <Button asChild variant="outline">
+                <Link href="/projects/all">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Project List
+                </Link>
+            </Button>
+        </div>
         <h1 className="text-3xl font-bold font-headline text-primary">
-          Test 102
+          Create Your Project
         </h1>
-        <Button asChild variant="outline">
-          <Link href="/projects/all">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Project List
-          </Link>
-        </Button>
       </header>
       <div className="p-8 border-2 border-dashed rounded-lg max-w-lg mx-auto">
         <div className="space-y-4">

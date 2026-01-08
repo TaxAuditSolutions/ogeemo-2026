@@ -70,9 +70,11 @@ function ProjectPlanPageContent() {
         <div className="text-center">
             <h1 className="text-4xl font-bold font-headline text-primary">Project Planner</h1>
             {isLoading ? (
-              <div className="h-6 w-48 bg-gray-200 animate-pulse rounded-md mx-auto mt-1" />
+              <div className="h-12 w-64 bg-gray-200 animate-pulse rounded-md mx-auto mt-2" />
             ) : (
-              <p className="text-muted-foreground">{project?.name}</p>
+              <div className="bg-white border-2 border-black rounded-md px-4 py-2 mt-2">
+                  <h2 className="text-2xl font-semibold text-black">{project?.name}</h2>
+              </div>
             )}
         </div>
         <div className="w-48 flex justify-end">

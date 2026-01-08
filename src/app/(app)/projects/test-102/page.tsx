@@ -22,7 +22,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -49,7 +48,7 @@ import {
 } from "@/components/ui/accordion";
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil, Route, Briefcase, Archive, Calendar as CalendarIcon, ListTodo } from 'lucide-react';
-import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
+import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent, getProjectById, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -90,6 +89,8 @@ export default function CreateProjectPage() {
   const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplate | null>(null);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
+  
+  const [projectToEditId, setProjectToEditId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -122,14 +123,31 @@ export default function CreateProjectPage() {
   }, [loadData]);
   
     useEffect(() => {
-    const title = searchParams.get('title');
-    const desc = searchParams.get('description');
-    if (title) {
-        setProjectName(title);
-        setDescription(desc || '');
-        setCreationStep('form');
-    }
-  }, [searchParams]);
+        const projectId = searchParams.get('projectId');
+        if (projectId) {
+            setProjectToEditId(projectId);
+            setCreationStep('form');
+            const loadProject = async () => {
+                const projectData = await getProjectById(projectId);
+                if (projectData) {
+                    setProjectName(projectData.name);
+                    setDescription(projectData.description || '');
+                    setSelectedContactId(projectData.contactId || null);
+                } else {
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.'});
+                }
+            };
+            loadProject();
+        } else {
+            const title = searchParams.get('title');
+            const desc = searchParams.get('description');
+            if (title) {
+                setProjectName(title);
+                setDescription(desc || '');
+                setCreationStep('form');
+            }
+        }
+    }, [searchParams, toast]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
@@ -145,6 +163,7 @@ export default function CreateProjectPage() {
   };
   
   const handleStartBlank = () => {
+    setProjectToEditId(null);
     setProjectName('');
     setDescription('');
     setSelectedContactId(null);
@@ -153,6 +172,7 @@ export default function CreateProjectPage() {
   };
 
   const handleSelectTemplate = (template: ProjectTemplate) => {
+    setProjectToEditId(null);
     setProjectName(template.name);
     setDescription(template.description || '');
     setSelectedContactId(null); 
@@ -172,18 +192,28 @@ export default function CreateProjectPage() {
 
     setIsSaving(true);
     try {
-        const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-        const newProject = await addProject({
-            name: projectName,
-            description: description,
-            status: 'planning',
-            userId: user.uid,
-            createdAt: new Date(),
-            contactId: selectedContactId,
-            steps: selectedTemplate ? selectedTemplate.steps : [],
-        });
-        toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
-        router.push(`/project-plan?projectId=${newProject.id}`);
+        if (projectToEditId) {
+            await updateProject(projectToEditId, {
+                name: projectName,
+                description: description,
+                contactId: selectedContactId,
+            });
+            toast({ title: 'Project Updated', description: `"${projectName}" has been updated.` });
+            router.push('/projects/all');
+        } else {
+            const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+            const newProject = await addProject({
+                name: projectName,
+                description: description,
+                status: 'planning',
+                userId: user.uid,
+                createdAt: new Date(),
+                contactId: selectedContactId,
+                steps: selectedTemplate ? selectedTemplate.steps : [],
+            });
+            toast({ title: 'Project Created', description: `"${projectName}" has been added.` });
+            router.push(`/project-plan?projectId=${newProject.id}`);
+        }
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -367,7 +397,7 @@ export default function CreateProjectPage() {
                           <Button onClick={handleSave} disabled={isSaving}>
                               {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                               <Save className="mr-2 h-4 w-4" />
-                              Save Project
+                              {projectToEditId ? 'Save Changes' : 'Save Project'}
                           </Button>
                       </div>
                   </div>

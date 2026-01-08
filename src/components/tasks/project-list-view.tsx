@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   MoreVertical,
@@ -33,6 +33,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -331,6 +332,11 @@ export function ProjectListView() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/project-plan?projectId=${p.id}`}>
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/projects/test-102?projectId=${p.id}`}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleCreateTemplate(p)}>

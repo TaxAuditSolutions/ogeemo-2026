@@ -36,10 +36,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Accordion,
@@ -48,7 +48,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save } from 'lucide-react';
+import { ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil } from 'lucide-react';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -426,3 +426,5 @@ export default function CreateProjectPage() {
     </>
   );
 }
+
+    

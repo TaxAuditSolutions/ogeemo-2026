@@ -20,7 +20,7 @@ import {
   FilePlus2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -340,8 +340,8 @@ export function ProjectListView() {
                                     <Route className="mr-2 h-4 w-4" /> Plan Project
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/projects/create?projectId=${p.id}`}>
+                               <DropdownMenuItem asChild>
+                                <Link href={`/projects/${p.id}/edit`}>
                                   <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                 </Link>
                               </DropdownMenuItem>

@@ -70,6 +70,7 @@ export function AccountingToolsView() {
     "/accounting/accounts-payable",
     "/accounting/payroll/run",
     "/accounting/tax",
+    "/inventory-manager"
 ];
 
   const hubFeatures = accountingMenuItems

@@ -285,20 +285,19 @@ export function ProjectListView() {
                     <TableHead>Project Name</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Test P Field</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24">
+                        <TableCell colSpan={5} className="text-center h-24">
                             <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                         </TableCell>
                     </TableRow>
                   ) : projects.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                            No projects found.
                         </TableCell>
                     </TableRow>
@@ -323,7 +322,6 @@ export function ProjectListView() {
                         <TableCell>
                           <Badge variant="outline">{statusDisplayMap[p.status || 'planning']}</Badge>
                         </TableCell>
-                        <TableCell>{p.testPField}</TableCell>
                         <TableCell className="text-right">
                            <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -1,4 +1,5 @@
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export type TaskStatus = 'todo' | 'inProgress' | 'done';
@@ -26,11 +27,11 @@ export interface Event {
   contactId?: string | null;
   workerId?: string | null; // Added for payroll tracking
   isScheduled?: boolean;
+  isTodoItem?: boolean;
   duration?: number; // in seconds, CUMULATIVE total
   isBillable?: boolean;
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];
-  isTodoItem?: boolean;
   urgency?: ProjectUrgency;
   importance?: ProjectImportance;
   ritualType?: 'daily' | 'weekly';
@@ -56,7 +57,6 @@ export interface Project {
   startDate?: Date | null;
   endDate?: Date | null;
   projectValue?: number | null;
-  testPField?: string;
 }
 
 export interface ProjectStep {

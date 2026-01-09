@@ -159,8 +159,11 @@ export default function ManageHrNavigationPage() {
     });
   }, [handleStateUpdate]);
 
-  const handleActionAdded = () => {
-    loadChips();
+  const handleActionAdded = (newChip: ActionChipData) => {
+    setChipsState(prevState => ({
+        ...prevState,
+        availableChips: [...prevState.availableChips, newChip]
+    }));
     window.dispatchEvent(new Event('hrChipsUpdated'));
   };
   

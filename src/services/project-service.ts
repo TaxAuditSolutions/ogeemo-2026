@@ -706,8 +706,8 @@ export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 
     accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
     hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
   };
-  const collection = collectionNameMap[type];
-  const docRef = doc(await getDb(), collection, chipData.userId);
+  const collectionName = collectionNameMap[type];
+  const docRef = doc(await getDb(), collectionName, chipData.userId);
   const docSnap = await getDoc(docRef);
 
   const existingChips = docSnap.exists() ? (docSnap.data().chips || []).map(docToActionChip) : [];
@@ -722,7 +722,7 @@ export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 
   const newChipForState = { ...chipData, id: `chip_${Date.now()}` };
   const updatedChips = [...existingChips, newChipForState];
 
-  await updateChipsInCollection(chipData.userId, collection, updatedChips);
+  await updateChipsInCollection(chipData.userId, collectionName, updatedChips);
 
   return newChipForState;
 }
@@ -760,3 +760,4 @@ export async function updateActionChip(userId: string, updatedChip: ActionChipDa
     }
 }
     
+

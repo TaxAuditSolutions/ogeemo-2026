@@ -507,6 +507,14 @@
     "/projectTemplates/{templateId}": {
       "schema": { "$ref": "#/entities/ProjectTemplate" },
       "description": "Stores reusable project templates."
+    },
+    "/inventoryItems/{itemId}": {
+      "schema": { "$ref": "#/entities/Item" },
+      "description": "Collection of all inventory items."
+    },
+    "/suppliers/{supplierId}": {
+      "schema": { "$ref": "#/entities/Supplier" },
+      "description": "Collection of all suppliers and vendors."
     }
   }
 }

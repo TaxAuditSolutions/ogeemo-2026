@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -122,6 +122,7 @@ export default function ManageHrNavigationPage() {
     if (user) {
         await updateActionChips(user.uid, newUserChips, 'hr');
         await updateAvailableActionChips(user.uid, newAvailableChips, 'hr');
+        window.dispatchEvent(new Event('hrChipsUpdated'));
     }
   }, [user]);
 
@@ -164,7 +165,6 @@ export default function ManageHrNavigationPage() {
         ...prevState,
         availableChips: [...prevState.availableChips, newChip]
     }));
-    window.dispatchEvent(new Event('hrChipsUpdated'));
   };
   
   const handleActionEdited = (editedChip: ActionChipData) => {
@@ -182,6 +182,7 @@ export default function ManageHrNavigationPage() {
       toast({
         title: 'Action Trashed',
         description: `"${chipToTrash.label}" has been moved to the trash.`,
+        action: <Button variant="link" asChild><Link href="/action-manager/trash">View Trash</Link></Button>,
       });
       loadChips();
     } catch (error: any) {
@@ -291,3 +292,5 @@ export default function ManageHrNavigationPage() {
     </>
   );
 }
+
+    

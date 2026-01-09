@@ -68,8 +68,7 @@ export function AccountingToolsView() {
     "/accounting/bks",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
-    "/accounting/payroll",
-    "/accounting/reports",
+    "/accounting/payroll/run",
     "/accounting/tax",
     "/inventory-manager",
 ];
@@ -95,14 +94,6 @@ export function AccountingToolsView() {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Your central command for managing finances. Use the cards below to navigate to key areas. You can edit this list of available actions by selecting "Manage Quick Nav" from the Quick Navigation drop down list.
           </p>
-          <div className="mt-4">
-              <Button asChild variant="outline" className="bg-white text-black border-2 border-black hover:bg-gray-100">
-                  <Link href="/accounting/manage-navigation">
-                    <Settings className="mr-2 h-4 w-4"/>
-                    Manage Quick Navigation
-                  </Link>
-              </Button>
-          </div>
         </header>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

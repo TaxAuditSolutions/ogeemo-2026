@@ -25,6 +25,7 @@ import {
     Settings,
     History,
     Users,
+    PackageSearch, // Import new icon
 } from 'lucide-react';
 import type { MenuItem } from '@/lib/menu-items';
 
@@ -52,6 +53,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
     { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement" },
+    { href: "/inventory-manager", icon: PackageSearch, label: "Inventory" }, // Add new item
 ];
 
 export default accountingMenuItems;

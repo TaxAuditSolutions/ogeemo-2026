@@ -66,17 +66,12 @@ export function AccountingToolsView() {
   
   const hubFeatureHrefs = [
     "/accounting/bks",
-    "/accounting/ledgers",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
     "/accounting/payroll/run",
-    "/accounting/payroll/manage-workers",
-    "/accounting/invoices/create",
-    "/accounting/invoicing-report",
-    "/accounting/bks-instructions",
-    "/accounting/financial-snapshot",
-    "/accounting/reports/income-statement",
-    "/accounting/bank-statements",
+    "/accounting/reports",
+    "/accounting/tax",
+    "/inventory-manager", // Add new href
 ];
 
   const hubFeatures = accountingMenuItems

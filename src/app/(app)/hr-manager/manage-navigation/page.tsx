@@ -267,7 +267,7 @@ export default function ManageHrNavigationPage() {
             <Card>
                 <CardHeader className="text-center">
                     <CardTitle className="text-lg">Available Items</CardTitle>
-                    <CardDescription>Drag items from here to "Selected Items" to add them to the dropdown.</CardDescription>
+                    <CardDescription>Drag items to "Selected Items" to add them to the dropdown.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
                     {chipsState.availableChips.filter(Boolean).map((chip, index) => (

@@ -377,6 +377,35 @@
         "userId": { "type": "string" }
       },
       "required": ["name", "userId"]
+    },
+    "Item": {
+      "title": "Inventory Item",
+      "description": "Represents a single item in inventory, such as a product for sale or an internal supply.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sku": { "type": "string", "description": "Stock Keeping Unit" },
+        "type": { "type": "string", "enum": ["Product", "Supply", "Material"] },
+        "stockQuantity": { "type": "number" },
+        "cost": { "type": "number", "description": "The cost to acquire the item." },
+        "price": { "type": "number", "description": "The price the item is sold for." },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "type", "stockQuantity", "userId"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Represents a vendor or supplier of goods and materials.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "userId"]
     }
   },
   "auth": {

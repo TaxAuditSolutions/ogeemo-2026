@@ -46,7 +46,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/payroll/run", icon: PlayCircle, label: "Run Payroll" },
     { href: "/accounting/payroll/settings", icon: Settings, label: "Payroll Settings" },
     { href: "/accounting/payroll/history", icon: History, label: "Payroll History" },
-    { href: "/accounting/payroll/manage-workers", icon: Users, label: "Manage Workers" },
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },

@@ -68,10 +68,10 @@ export function AccountingToolsView() {
     "/accounting/bks",
     "/accounting/accounts-receivable",
     "/accounting/accounts-payable",
-    "/accounting/payroll/run",
+    "/accounting/payroll",
     "/accounting/reports",
     "/accounting/tax",
-    "/inventory-manager", // Add new href
+    "/inventory-manager",
 ];
 
   const hubFeatures = accountingMenuItems

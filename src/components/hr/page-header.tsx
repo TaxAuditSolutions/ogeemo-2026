@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ChevronDown, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, ChevronDown, LoaderCircle, Landmark } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -99,8 +99,8 @@ export function HrPageHeader({ pageTitle, hubPath = '/hr-manager', hubLabel = "H
           </DropdownMenu>
          <Button asChild>
             <Link href={hubPath}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to {hubLabel}
+                <Landmark className="mr-2 h-4 w-4" />
+                Quick Navigation
             </Link>
          </Button>
       </div>

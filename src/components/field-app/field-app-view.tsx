@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Play, Pause, Square, LogIn, LogOut, ArrowLeft, GripVertical, MapPin } from 'lucide-react';
+import { Clock, Play, Pause, Square, LogIn, LogOut, ArrowLeft, GripVertical, MapPin, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -135,7 +135,7 @@ export function FieldAppView() {
             <header className="flex items-center justify-between p-4 border-b bg-background">
                 <Logo />
                 <Button variant="outline" onClick={() => router.push('/hr-manager')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to HR Hub
+                    <Landmark className="mr-2 h-4 w-4" /> Quick Navigation
                 </Button>
             </header>
             <main className="flex-1 flex flex-col items-center p-4">

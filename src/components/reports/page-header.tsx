@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Landmark } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,6 +21,9 @@ interface ReportsPageHeaderProps {
 }
 
 export function ReportsPageHeader({ pageTitle, hubPath = "/action-manager", hubLabel = "Action Manager" }: ReportsPageHeaderProps) {
+  const targetHub = hubPath.includes('hr') ? '/hr-manager' : hubPath;
+  const targetLabel = hubPath.includes('hr') ? 'Quick Navigation' : hubLabel;
+
   return (
     <div className="flex items-center justify-between print:hidden">
       <Breadcrumb>
@@ -37,9 +40,9 @@ export function ReportsPageHeader({ pageTitle, hubPath = "/action-manager", hubL
         </BreadcrumbList>
       </Breadcrumb>
       <Button asChild>
-        <Link href={hubPath}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to {hubLabel}
+        <Link href={targetHub}>
+          <Landmark className="mr-2 h-4 w-4" />
+          {targetLabel}
         </Link>
       </Button>
     </div>

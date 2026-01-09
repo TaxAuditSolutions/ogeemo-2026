@@ -271,7 +271,13 @@ export function ProjectListView() {
                   <TableRow>
                     <TableHead className="w-12">
                         <Checkbox 
-                            onCheckedChange={handleToggleSelectAll}
+                            onCheckedChange={() => {
+                                if (selectedProjectIds.length === projects.length) {
+                                    setSelectedProjectIds([]);
+                                } else {
+                                    setSelectedProjectIds(projects.map(p => p.id));
+                                }
+                            }}
                             checked={projects.length > 0 && selectedProjectIds.length === projects.length}
                             aria-label="Select all projects"
                         />

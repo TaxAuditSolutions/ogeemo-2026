@@ -143,7 +143,7 @@ export function IdeaListView() {
         title: idea.title,
         description: idea.description || '',
     }).toString();
-    router.push(`/projects/test-102?${query}`);
+    router.push(`/projects/create?${query}`);
   };
   
   const handleScheduleTask = async (idea: Idea) => {
@@ -226,6 +226,11 @@ export function IdeaListView() {
                       <ArrowLeft className="mr-2 h-4 w-4" /> Back to To-Do List
                   </Link>
               </Button>
+              <Button asChild variant="outline">
+                  <Link href="/projects/all">
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
+                  </Link>
+              </Button>
           </div>
            <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
@@ -291,6 +296,10 @@ export function IdeaListView() {
                                 <Calendar className="mr-2 h-4 w-4" />
                                 <span>Schedule a Task</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
+                                <Briefcase className="mr-2 h-4 w-4" />
+                                <span>Convert to Project</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleArchive(idea)}>
                               <Archive className="mr-2 h-4 w-4" />
                               <span>Archive</span>
@@ -327,5 +336,3 @@ export function IdeaListView() {
     </>
   );
 }
-
-    

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Settings, Landmark } from 'lucide-react';
+import { ArrowLeft, Landmark } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -56,8 +56,8 @@ export function AccountingPageHeader({ pageTitle, hubPath = '/accounting', hubLa
              </Button>
           )}
          <Button asChild variant="outline">
-            <Link href="/accounting/manage-navigation">
-                <Settings className="mr-2 h-4 w-4" /> Manage Quick Nav
+            <Link href="/accounting">
+                <Landmark className="mr-2 h-4 w-4" /> Quick Navigation
             </Link>
          </Button>
          <Button asChild>

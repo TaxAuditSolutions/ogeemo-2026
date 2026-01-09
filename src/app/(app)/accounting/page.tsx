@@ -92,7 +92,7 @@ export default function AccountingHubPage() {
         </header>
         
         <Card className="max-w-6xl mx-auto">
-            <CardHeader>
+            <CardHeader className="text-center">
                 <CardTitle>Your Quick Navigation Actions</CardTitle>
                 <CardDescription>This is your personalized dashboard of accounting tools.</CardDescription>
             </CardHeader>

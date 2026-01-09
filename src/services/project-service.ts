@@ -707,25 +707,23 @@ export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 
     hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
   };
   const collectionName = collectionNameMap[type];
-  const docRef = doc(await getDb(), collectionName, chipData.userId);
+  const db = await getDb();
+  const docRef = doc(db, collectionName, chipData.userId);
   const docSnap = await getDoc(docRef);
 
   const existingChips = docSnap.exists() ? (docSnap.data().chips || []).map(docToActionChip) : [];
 
-  // Find the icon name (string) from the icon component (function)
   const iconName = Object.keys(iconMap).find(key => iconMap[key] === chipData.icon);
-
-  // Create a new object for saving that doesn't include the 'icon' function
   const { icon, ...restOfChipData } = chipData;
-  const newChipDataForDb = { ...restOfChipData, iconName: iconName || 'Wand2' };
-
-  const newChipForState = { ...chipData, id: `chip_${Date.now()}` };
-  const updatedChips = [...existingChips, newChipForState];
-
+  const newChipForDb = { ...restOfChipData, iconName: iconName || 'Wand2' };
+  const newId = `chip_${Date.now()}`;
+  
+  const updatedChips = [...existingChips, {...newChipForDb, id: newId }];
   await updateChipsInCollection(chipData.userId, collectionName, updatedChips);
 
-  return newChipForState;
+  return { ...chipData, id: newId };
 }
+
 
 export async function updateActionChip(userId: string, updatedChip: ActionChipData, type: 'dashboard' | 'accounting' | 'hr' = 'dashboard'): Promise<void> {
     const userChipsCollectionMap = {
@@ -760,5 +758,3 @@ export async function updateActionChip(userId: string, updatedChip: ActionChipDa
     }
 }
     
-
-

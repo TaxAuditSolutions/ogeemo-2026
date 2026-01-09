@@ -60,8 +60,9 @@ export default function AccountingHubPage() {
 
   useEffect(() => {
     loadNavItems();
-    window.addEventListener('accountingChipsUpdated', loadNavItems);
-    return () => window.removeEventListener('accountingChipsUpdated', loadNavItems);
+    const handleChipsUpdate = () => loadNavItems();
+    window.addEventListener('accountingChipsUpdated', handleChipsUpdate);
+    return () => window.removeEventListener('accountingChipsUpdated', handleChipsUpdate);
   }, [loadNavItems]);
 
   return (

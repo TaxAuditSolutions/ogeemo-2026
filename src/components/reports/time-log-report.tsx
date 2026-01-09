@@ -252,6 +252,7 @@ export function TimeLogReport() {
                     </div>
                     <p className="text-muted-foreground">A list of all recorded work sessions.</p>
                 </header>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Filter & Actions</CardTitle>

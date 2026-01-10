@@ -536,10 +536,11 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = await getDb();
     const docRef = doc(db, collectionName, userId);
     const chipsToSave = chips.map((chip, index) => {
+        // Find the string name of the icon component to store in Firestore
         const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
-        // Do not save the icon component itself
+        // Destructure to remove the icon component function before saving
         const { icon, ...rest } = chip;
-        return { ...rest, position: index, iconName: iconName || 'Wand2' };
+        return { ...rest, position: index, iconName: iconName || 'Wand2' }; // Save name, not function
     });
     await setDoc(docRef, { chips: chipsToSave }, { merge: true });
 }
@@ -689,17 +690,12 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 }
 
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-    const db = await getDb();
-    const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-        const currentChips = (docSnap.data().chips || []).map(docToActionChip);
-        const chipIdSet = new Set(chipIdsToDelete);
-        const updatedChips = currentChips.filter((chip: ActionChipData) => !chipIdSet.has(chip.id));
-        await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
-    }
+    const trashedChips = await getTrashedActionChips(userId);
+    const chipIdSet = new Set(chipIdsToDelete);
+    const updatedChips = trashedChips.filter((chip) => !chipIdSet.has(chip.id));
+    await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
 }
+
 
 export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 'dashboard' | 'accounting' | 'hr' = 'dashboard'): Promise<ActionChipData> {
   const collectionNameMap = {

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -19,6 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import {
   DropdownMenu,
@@ -111,6 +112,10 @@ export default function ManageInventoryPage() {
         setItemToDelete(null);
     }
   };
+  
+  const totalInventoryCost = useMemo(() => {
+    return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
+  }, [items]);
 
   return (
     <>
@@ -151,10 +156,12 @@ export default function ManageInventoryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item Name</TableHead>
+                    <TableHead>Description</TableHead>
                     <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Stock Quantity</TableHead>
-                    <TableHead className="text-right">Cost</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Unit Cost</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Total Cost</TableHead>
                     <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -162,10 +169,12 @@ export default function ManageInventoryPage() {
                   {items.map(item => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground truncate max-w-xs">{item.description}</TableCell>
                       <TableCell>{item.sku || 'N/A'}</TableCell>
                       <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -190,12 +199,19 @@ export default function ManageInventoryPage() {
                   ))}
                   {items.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                             No inventory items found. Add one to get started.
                         </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                    <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableFooter>
               </Table>
             )}
           </CardContent>

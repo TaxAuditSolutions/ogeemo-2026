@@ -2,14 +2,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PackageSearch, ShoppingCart, Truck, Wrench, Landmark, FileOutput, UserPlus, LoaderCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { PackageSearch, ShoppingCart, Truck, Wrench, Landmark, FileOutput, UserPlus, LoaderCircle, Package } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, type Contact } from '@/services/contact-service';
+import Link from 'next/link';
 
 const FeatureDetail = ({
   title,
@@ -78,10 +79,15 @@ export default function InventoryManagerPage() {
         <p className="text-muted-foreground max-w-3xl mx-auto mt-2">
           A flexible system for tracking everything your business uses and sells—from retail products to office supplies and project materials.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex justify-center gap-4">
           <Button onClick={() => setShowOnboarding(prev => !prev)}>
             <UserPlus className="mr-2 h-4 w-4" />
             {showOnboarding ? 'Close Onboarding' : 'Supplier Onboarding'}
+          </Button>
+           <Button asChild>
+              <Link href="/inventory-manager/manage">
+                <Package className="mr-2 h-4 w-4" /> Manage Inventory
+              </Link>
           </Button>
         </div>
       </header>
@@ -93,7 +99,6 @@ export default function InventoryManagerPage() {
           ) : (
             <SupplierOnboardingCard
               contacts={contacts}
-              onCancel={() => setShowOnboarding(false)}
               onSave={() => {
                 setShowOnboarding(false);
                 toast({ title: "Supplier designated successfully!" });

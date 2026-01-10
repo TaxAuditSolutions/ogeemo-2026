@@ -690,10 +690,10 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 }
 
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-    const trashedChips = await getTrashedActionChips(userId);
-    const chipIdSet = new Set(chipIdsToDelete);
-    const updatedChips = trashedChips.filter((chip) => !chipIdSet.has(chip.id));
-    await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
+  const trashedChips = await getTrashedActionChips(userId);
+  const chipIdSet = new Set(chipIdsToDelete);
+  const updatedChips = trashedChips.filter((chip) => !chipIdSet.has(chip.id));
+  await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
 }
 
 

@@ -84,6 +84,11 @@ export default function InventoryManagerPage() {
             <UserPlus className="mr-2 h-4 w-4" />
             {showOnboarding ? 'Close Onboarding' : 'Supplier Onboarding'}
           </Button>
+          <Button asChild>
+              <Link href="#">
+                <Package className="mr-2 h-4 w-4" /> Track Inventory
+              </Link>
+          </Button>
            <Button asChild>
               <Link href="/inventory-manager/manage">
                 <Package className="mr-2 h-4 w-4" /> Manage Inventory

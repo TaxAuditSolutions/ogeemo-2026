@@ -1,6 +1,7 @@
 
 'use client';
 
+// Force re-compilation to resolve ChunkLoadError.
 import Link from 'next/link';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';

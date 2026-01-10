@@ -79,7 +79,6 @@ export const allMenuItems: MenuItem[] = [
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },
   { href: "/google", label: "Google Apps", icon: Wand2 },
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },
-  { href: "/dev-notes", label: "Dev Notes", icon: BookText },
   { href: "/forms", label: "Forms", icon: FilePlus2 },
   { href: "/user-list", label: "User List", icon: Users2 },
   { href: "/settings", label: "Settings", icon: Settings },

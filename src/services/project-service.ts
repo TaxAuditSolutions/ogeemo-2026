@@ -696,7 +696,8 @@ export async function deleteActionChips(userId: string, chipIdsToDelete: string[
 
   if (docSnap.exists()) {
     const currentChips = (docSnap.data().chips || []).map(docToActionChip);
-    const updatedChips = currentChips.filter((chip: ActionChipData) => !chipIdsToDelete.includes(chip.id));
+    const chipIdSet = new Set(chipIdsToDelete);
+    const updatedChips = currentChips.filter((chip: ActionChipData) => !chipIdSet.has(chip.id));
     await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
   }
 }

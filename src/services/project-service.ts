@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -690,16 +689,16 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 }
 
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-  const db = await getDb();
-  const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
-  const docSnap = await getDoc(docRef);
+    const db = await getDb();
+    const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
+    const docSnap = await getDoc(docRef);
 
-  if (docSnap.exists()) {
-    const currentChips = (docSnap.data().chips || []).map(docToActionChip);
-    const chipIdSet = new Set(chipIdsToDelete);
-    const updatedChips = currentChips.filter((chip: ActionChipData) => !chipIdSet.has(chip.id));
-    await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
-  }
+    if (docSnap.exists()) {
+        const currentChips = (docSnap.data().chips || []).map(docToActionChip);
+        const chipIdSet = new Set(chipIdsToDelete);
+        const updatedChips = currentChips.filter((chip: ActionChipData) => !chipIdSet.has(chip.id));
+        await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
+    }
 }
 
 export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 'dashboard' | 'accounting' | 'hr' = 'dashboard'): Promise<ActionChipData> {

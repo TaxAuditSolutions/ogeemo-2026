@@ -90,6 +90,17 @@ export async function getContacts(userId: string): Promise<Contact[]> {
   return snapshot.docs.map(docToContact);
 }
 
+export async function getContactById(contactId: string): Promise<Contact | null> {
+    const db = await getDb();
+    const docRef = doc(db, CONTACTS_COLLECTION, contactId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docToContact(docSnap);
+    }
+    return null;
+}
+
+
 export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
   const db = await getDb();
   const dataToSave = {

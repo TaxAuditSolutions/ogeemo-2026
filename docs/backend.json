@@ -407,6 +407,22 @@
         "userId": { "type": "string" }
       },
       "required": ["name", "userId"]
+    },
+    "InventoryLog": {
+        "title": "Inventory Log",
+        "description": "Records a single change in inventory quantity for an item.",
+        "type": "object",
+        "properties": {
+            "itemId": { "type": "string" },
+            "itemName": { "type": "string" },
+            "changeType": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment"] },
+            "quantityChange": { "type": "number" },
+            "newQuantity": { "type": "number" },
+            "notes": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" }
+        },
+        "required": ["itemId", "itemName", "changeType", "quantityChange", "newQuantity", "timestamp", "userId"]
     }
   },
   "auth": {
@@ -516,6 +532,10 @@
     "/suppliers/{supplierId}": {
       "schema": { "$ref": "#/entities/Supplier" },
       "description": "Collection of all suppliers and vendors."
+    },
+    "/inventoryLogs/{logId}": {
+        "schema": { "$ref": "#/entities/InventoryLog" },
+        "description": "A log of all changes to inventory stock levels."
     }
   }
 }

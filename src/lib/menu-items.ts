@@ -97,7 +97,6 @@ export const allMenuItems: MenuItem[] = [
   { href: "/document-manager", label: "Document Manager", icon: Folder },
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
   { href: "/research", label: "Research", icon: Beaker },
-  { href: "/sandbox", label: "Sandbox", icon: Beaker },
   ...accountingMenuItems,
   ...hrMenuItems,
 ];

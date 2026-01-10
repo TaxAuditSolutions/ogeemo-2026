@@ -121,7 +121,7 @@ export function TrashView() {
                 {trashedChips.length > 0 ? (
                     <div className="flex flex-wrap gap-2 p-4 border rounded-lg">
                         {trashedChips.map((chip, index) => (
-                            <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handlePermanentDeleteChip(chip)} />
+                            <ActionChip key={`${chip.id}-${index}`} chip={chip} index={index} onDelete={() => handlePermanentDeleteChip(chip)} />
                         ))}
                     </div>
                 ) : (

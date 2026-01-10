@@ -2,8 +2,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PackageSearch, ShoppingCart, Truck, Wrench, Landmark, FileOutput } from "lucide-react";
+import { PackageSearch, ShoppingCart, Truck, Wrench, Landmark, FileOutput, UserPlus } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 const FeatureDetail = ({
   title,
@@ -41,6 +42,12 @@ export default function InventoryManagerPage() {
         <p className="text-muted-foreground max-w-3xl mx-auto mt-2">
           A flexible system for tracking everything your business uses and sells—from retail products to office supplies and project materials.
         </p>
+        <div className="mt-4">
+            <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Supplier Onboarding
+            </Button>
+        </div>
       </header>
       
       <div className="max-w-4xl mx-auto space-y-6">

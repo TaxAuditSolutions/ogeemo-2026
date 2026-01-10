@@ -22,7 +22,7 @@ export interface Item {
   type: 'Product' | 'Supply' | 'Material';
   stockQuantity: number;
   cost?: number;
-  price?: number;
+  supplierId?: string;
   userId: string;
 }
 

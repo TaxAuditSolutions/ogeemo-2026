@@ -41,6 +41,7 @@ import { PlusCircle, MoreVertical, Pencil, Trash2, History, LoaderCircle, ArrowL
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, addInventoryItem, updateInventoryItem, deleteInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
+import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 
@@ -51,6 +52,7 @@ const formatCurrency = (amount?: number) => {
 
 export default function ManageInventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -68,8 +70,12 @@ export default function ManageInventoryPage() {
     }
     setIsLoading(true);
     try {
-        const fetchedItems = await getInventoryItems(user.uid);
+        const [fetchedItems, fetchedSuppliers] = await Promise.all([
+          getInventoryItems(user.uid),
+          getSuppliers(user.uid)
+        ]);
         setItems(fetchedItems);
+        setSuppliers(fetchedSuppliers);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load inventory', description: error.message });
     } finally {
@@ -116,6 +122,10 @@ export default function ManageInventoryPage() {
   const totalInventoryCost = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
   }, [items]);
+  
+  const supplierMap = useMemo(() => {
+    return new Map(suppliers.map(s => [s.id, s.name]));
+  }, [suppliers]);
 
   return (
     <>
@@ -157,10 +167,10 @@ export default function ManageInventoryPage() {
                   <TableRow>
                     <TableHead>Item Name</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Supplier</TableHead>
                     <TableHead>SKU</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Unit Cost</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Total Cost</TableHead>
                     <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
@@ -170,10 +180,10 @@ export default function ManageInventoryPage() {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground truncate max-w-xs">{item.description}</TableCell>
+                      <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                       <TableCell>{item.sku || 'N/A'}</TableCell>
                       <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

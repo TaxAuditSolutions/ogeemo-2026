@@ -390,6 +390,7 @@
         "stockQuantity": { "type": "number" },
         "cost": { "type": "number", "description": "The cost to acquire the item." },
         "price": { "type": "number", "description": "The price the item is sold for." },
+        "supplierId": { "type": "string" },
         "userId": { "type": "string" }
       },
       "required": ["name", "type", "stockQuantity", "userId"]

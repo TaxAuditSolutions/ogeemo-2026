@@ -15,10 +15,32 @@ import { getContactById } from '@/services/contact-service';
 
 const SUPPLIERS_COLLECTION = 'suppliers';
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  userId: string;
+}
+
 async function getDb() {
   const { db } = await initializeFirebase();
   return db;
 }
+
+const docToSupplier = (doc: any): Supplier => ({
+    id: doc.id,
+    ...doc.data(),
+} as Supplier);
+
+export async function getSuppliers(userId: string): Promise<Supplier[]> {
+    const db = await getDb();
+    const q = query(collection(db, SUPPLIERS_COLLECTION), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));
+}
+
 
 /**
  * Designates an existing contact as a supplier.
@@ -27,10 +49,18 @@ async function getDb() {
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<void> {
   const db = await getDb();
   
-  // In a real implementation, you would fetch the contact details
-  // and create a new document in the 'suppliers' collection.
-  console.log(`User ${userId} designated contact ${contactId} as a supplier.`);
+  const contact = await getContactById(contactId);
+  if (!contact) {
+      throw new Error("Contact not found.");
+  }
   
-  // For now, this function simulates a successful operation.
-  await new Promise(resolve => setTimeout(resolve, 500));
+  const supplierData: Omit<Supplier, 'id'> = {
+      name: contact.businessName || contact.name,
+      contactPerson: contact.name,
+      email: contact.email,
+      phone: contact.cellPhone || contact.businessPhone || contact.homePhone,
+      userId: userId,
+  };
+
+  await setDoc(doc(db, SUPPLIERS_COLLECTION, contactId), supplierData, { merge: true });
 }

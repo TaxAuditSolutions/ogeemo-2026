@@ -22,9 +22,9 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, User } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -80,9 +80,9 @@ export default function TrackInventoryPage() {
                 if (selectedItemId && log.itemId !== selectedItemId) return false;
                 if (selectedType !== 'all' && log.changeType !== selectedType) return false;
                 if (dateRange?.from) {
-                    const toDate = dateRange.to || dateRange.from;
+                    const toDate = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
                     const logDate = new Date(log.timestamp);
-                    return isWithinInterval(logDate, { start: dateRange.from, end: toDate });
+                    return isWithinInterval(logDate, { start: startOfDay(dateRange.from!), end: toDate });
                 }
                 return true;
             })
@@ -212,36 +212,38 @@ export default function TrackInventoryPage() {
                     {isLoading ? (
                         <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Item</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="text-right">Change</TableHead>
-                                    <TableHead className="text-right">New Qty</TableHead>
-                                    <TableHead>Notes</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredLogs.length > 0 ? filteredLogs.map(log => (
-                                    <TableRow key={log.id}>
-                                        <TableCell>{format(new Date(log.timestamp), 'PPpp')}</TableCell>
-                                        <TableCell className="font-medium">{log.itemName}</TableCell>
-                                        <TableCell><Badge variant="secondary">{log.changeType}</Badge></TableCell>
-                                        <TableCell className={cn("text-right font-mono", log.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
-                                            {log.quantityChange > 0 ? '+' : ''}{log.quantityChange}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">{log.newQuantity}</TableCell>
-                                        <TableCell>{log.notes}</TableCell>
-                                    </TableRow>
-                                )) : (
+                        <ScrollArea className="h-96">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">No logs found for the selected filters.</TableCell>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Item</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead className="text-right">Change</TableHead>
+                                        <TableHead className="text-right">New Qty</TableHead>
+                                        <TableHead>Notes</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredLogs.length > 0 ? filteredLogs.map(log => (
+                                        <TableRow key={log.id}>
+                                            <TableCell>{format(new Date(log.timestamp), 'PPpp')}</TableCell>
+                                            <TableCell className="font-medium">{log.itemName}</TableCell>
+                                            <TableCell><Badge variant="secondary">{log.changeType}</Badge></TableCell>
+                                            <TableCell className={cn("text-right font-mono", log.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
+                                                {log.quantityChange > 0 ? '+' : ''}{log.quantityChange}
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono">{log.newQuantity}</TableCell>
+                                            <TableCell>{log.notes}</TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">No logs found for the selected filters.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
                     )}
                 </CardContent>
             </Card>

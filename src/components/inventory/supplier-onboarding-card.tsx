@@ -20,11 +20,10 @@ import { addContact } from '@/services/contact-service';
 interface SupplierOnboardingCardProps {
   contacts: Contact[];
   onSave: () => void;
-  onCancel: () => void;
   onContactsChange: (contacts: Contact[]) => void;
 }
 
-export function SupplierOnboardingCard({ contacts, onSave, onCancel, onContactsChange }: SupplierOnboardingCardProps) {
+export function SupplierOnboardingCard({ contacts, onSave, onContactsChange }: SupplierOnboardingCardProps) {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isNewContactOpen, setIsNewContactOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,12 +94,14 @@ export function SupplierOnboardingCard({ contacts, onSave, onCancel, onContactsC
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium">Select Contact</label>
-                <ContactSelector contacts={contacts} selectedContactId={selectedContactId} onSelectContact={setSelectedContactId} className="w-full" />
-            </div>
-            <div className="flex-1 space-y-2">
-                 <label className="text-sm font-medium">Or, Create New</label>
-                <Button variant="outline" className="w-full" onClick={() => setIsNewContactOpen(true)}>Create New Contact</Button>
+                <label className="text-sm font-medium">Select or Create Contact</label>
+                <ContactSelector
+                  contacts={contacts}
+                  selectedContactId={selectedContactId}
+                  onSelectContact={setSelectedContactId}
+                  onCreateNew={() => setIsNewContactOpen(true)}
+                  className="w-full"
+                />
             </div>
           </div>
         </CardContent>

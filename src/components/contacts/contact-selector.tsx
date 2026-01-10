@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ChevronsUpDown, Check, User } from 'lucide-react';
+import { ChevronsUpDown, Check, User, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Contact } from '@/services/contact-service';
 
@@ -13,10 +13,11 @@ interface ContactSelectorProps {
   contacts: Contact[];
   selectedContactId: string | null;
   onSelectContact: (contactId: string | null) => void;
+  onCreateNew?: () => void;
   className?: string;
 }
 
-export function ContactSelector({ contacts, selectedContactId, onSelectContact, className }: ContactSelectorProps) {
+export function ContactSelector({ contacts, selectedContactId, onSelectContact, onCreateNew, className }: ContactSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -46,8 +47,14 @@ export function ContactSelector({ contacts, selectedContactId, onSelectContact, 
             <CommandGroup>
               <CommandItem onSelect={() => { onSelectContact(null); setIsOpen(false); }}>
                 <Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")} />
-                All Contacts
+                Clear Selection
               </CommandItem>
+              {onCreateNew && (
+                <CommandItem onSelect={() => { onCreateNew(); setIsOpen(false); }}>
+                  <PlusCircle className="mr-2 h-4 w-4 text-primary" />
+                  Create New Contact
+                </CommandItem>
+              )}
               {contacts.map((contact) => (
                 <CommandItem
                   key={contact.id}

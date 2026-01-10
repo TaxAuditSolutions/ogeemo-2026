@@ -7,7 +7,6 @@ import { UploadCloud, Save, X } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
-import ImageSaveDialog from '@/components/image-generator/image-save-dialog';
 import { getImageUrlForHint } from '@/services/image-placeholder-service';
 import { SITE_IMAGES_FOLDER_ID } from '@/services/file-service';
 import { Skeleton } from './skeleton';
@@ -125,7 +124,7 @@ export function ImagePlaceholder({ 'data-ai-hint': hint, className }: ImagePlace
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button onClick={() => setIsSaveDialogOpen(true)} className="pointer-events-auto">
+                    <Button onClick={() => toast({ title: "Save Disabled", description: "This feature is temporarily disabled."})} className="pointer-events-auto">
                         <Save className="mr-2 h-4 w-4" />
                         Save
                     </Button>
@@ -135,18 +134,7 @@ export function ImagePlaceholder({ 'data-ai-hint': hint, className }: ImagePlace
                     </Button>
                 </div>
             </div>
-            {isSaveDialogOpen && (
-                <ImageSaveDialog
-                    isOpen={isSaveDialogOpen}
-                    onOpenChange={setIsSaveDialogOpen}
-                    imageDataUrl={previewUrl}
-                    defaultFileName={selectedFile.name}
-                    convertFileToDataUrl={convertFileToDataUrl}
-                    onSaveSuccess={onSaveSuccess}
-                    preselectedFolderId={SITE_IMAGES_FOLDER_ID}
-                    hint={hint}
-                />
-            )}
+            {/* The ImageSaveDialog component is removed from here */}
         </>
     );
   }

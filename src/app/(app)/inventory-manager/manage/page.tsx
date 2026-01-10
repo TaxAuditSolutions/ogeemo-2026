@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,7 +60,7 @@ export default function ManageInventoryPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const loadItems = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
         setIsLoading(false);
         return;

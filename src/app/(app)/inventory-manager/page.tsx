@@ -98,6 +98,7 @@ export default function InventoryManagerPage() {
                 setShowOnboarding(false);
                 toast({ title: "Supplier designated successfully!" });
               }}
+              onContactsChange={setContacts}
             />
           )
         )}

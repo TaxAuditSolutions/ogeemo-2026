@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContactSelector } from '@/components/contacts/contact-selector';
@@ -11,20 +11,55 @@ import { useToast } from '@/hooks/use-toast';
 import { designateContactAsSupplier } from '@/services/supplier-service';
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, type Company } from '@/services/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import { addContact } from '@/services/contact-service';
+
 
 interface SupplierOnboardingCardProps {
   contacts: Contact[];
   onSave: () => void;
   onCancel: () => void;
+  onContactsChange: (contacts: Contact[]) => void;
 }
 
-export function SupplierOnboardingCard({ contacts, onSave, onCancel }: SupplierOnboardingCardProps) {
+export function SupplierOnboardingCard({ contacts, onSave, onCancel, onContactsChange }: SupplierOnboardingCardProps) {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isNewContactOpen, setIsNewContactOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
+  // State for data required by ContactFormDialog
+  const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+
+
+  const loadDropdownData = useCallback(async () => {
+    if (!user) return;
+    try {
+        const [foldersData, companiesData, industriesData] = await Promise.all([
+            getContactFolders(user.uid),
+            getCompanies(user.uid),
+            getIndustries(user.uid),
+        ]);
+        setContactFolders(foldersData);
+        setCompanies(companiesData);
+        setCustomIndustries(industriesData);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to load support data for contacts.' });
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (isNewContactOpen) {
+        loadDropdownData();
+    }
+  }, [isNewContactOpen, loadDropdownData]);
+
+
   const handleSave = async () => {
     if (!selectedContactId || !user) {
         toast({ variant: 'destructive', title: 'Please select a contact.'});
@@ -39,6 +74,15 @@ export function SupplierOnboardingCard({ contacts, onSave, onCancel }: SupplierO
     } finally {
         setIsSaving(false);
     }
+  };
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+      onContactsChange(isEditing 
+        ? contacts.map(c => c.id === savedContact.id ? savedContact : c)
+        : [...contacts, savedContact]
+      );
+      setSelectedContactId(savedContact.id);
+      setIsNewContactOpen(false);
   };
 
   return (
@@ -68,15 +112,19 @@ export function SupplierOnboardingCard({ contacts, onSave, onCancel }: SupplierO
             </Button>
         </CardFooter>
       </Card>
-
-      {/* The ContactFormDialog is complex and requires many props which we don't have here yet.
-          This will be fully implemented in a later step. For now, it won't render.
-          <ContactFormDialog
-            isOpen={isNewContactOpen}
-            onOpenChange={setIsNewContactOpen}
-            // ... other props
-          /> 
-      */}
+      
+      <ContactFormDialog
+        isOpen={isNewContactOpen}
+        onOpenChange={setIsNewContactOpen}
+        contactToEdit={null}
+        folders={contactFolders}
+        onFoldersChange={setContactFolders}
+        onSave={handleContactSave}
+        companies={companies}
+        onCompaniesChange={setCompanies}
+        customIndustries={customIndustries}
+        onCustomIndustriesChange={setCustomIndustries}
+      />
     </>
   );
 }

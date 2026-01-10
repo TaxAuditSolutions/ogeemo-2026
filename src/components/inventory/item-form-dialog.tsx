@@ -67,8 +67,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
         sku: '',
         type: 'Product',
         stockQuantity: 0,
-        cost: undefined,
-        price: undefined,
+        cost: '' as any, // Initialize as empty string to prevent uncontrolled -> controlled error
+        price: '' as any,
     },
   });
 
@@ -81,11 +81,19 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
           sku: itemToEdit.sku || '',
           type: itemToEdit.type || 'Product',
           stockQuantity: itemToEdit.stockQuantity,
-          cost: itemToEdit.cost,
-          price: itemToEdit.price,
+          cost: itemToEdit.cost ?? '' as any,
+          price: itemToEdit.price ?? '' as any,
         });
       } else {
-        form.reset();
+        form.reset({
+            name: '',
+            description: '',
+            sku: '',
+            type: 'Product',
+            stockQuantity: 0,
+            cost: '' as any,
+            price: '' as any,
+        });
       }
     }
   }, [isOpen, itemToEdit, form]);
@@ -125,7 +133,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea {...field} rows={3}/></FormControl> <FormMessage /> </FormItem> )} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU (Optional)</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product (for sale)</SelectItem><SelectItem value="Supply">Supply (internal use)</SelectItem><SelectItem value="Material">Material (for projects)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product (for sale)</SelectItem><SelectItem value="Supply">Supply (internal use)</SelectItem><SelectItem value="Material">Material (for projects)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
             </div>
             <div className="grid grid-cols-3 gap-4">
                 <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />

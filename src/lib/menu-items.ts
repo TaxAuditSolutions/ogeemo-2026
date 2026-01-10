@@ -14,7 +14,6 @@ import {
   Folder,
   Mail,
   Calculator,
-  Beaker,
   Lightbulb,
   Settings,
   LogOut,
@@ -96,7 +95,6 @@ export const allMenuItems: MenuItem[] = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/document-manager", label: "Document Manager", icon: Folder },
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
-  { href: "/research", label: "Research", icon: Beaker },
   ...accountingMenuItems,
   ...hrMenuItems,
 ];

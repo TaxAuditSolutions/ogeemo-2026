@@ -21,9 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item } from '@/services/inventory-service';
@@ -31,6 +31,8 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange } from 'react-day-picker';
 
 
 export default function TrackInventoryPage() {
@@ -40,8 +42,12 @@ export default function TrackInventoryPage() {
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [selectedType, setSelectedType] = useState<string | 'all'>('all');
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -75,14 +81,23 @@ export default function TrackInventoryPage() {
             .filter(log => {
                 if (selectedItemId && log.itemId !== selectedItemId) return false;
                 if (selectedType !== 'all' && log.changeType !== selectedType) return false;
+                if (dateRange?.from) {
+                    const logDate = new Date(log.timestamp);
+                    const from = startOfDay(dateRange.from);
+                    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+                    if (logDate < from || logDate > to) {
+                        return false;
+                    }
+                }
                 return true;
             })
             .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    }, [logs, selectedItemId, selectedType]);
+    }, [logs, selectedItemId, selectedType, dateRange]);
     
     const clearFilters = () => {
         setSelectedItemId(null);
         setSelectedType('all');
+        setDateRange(undefined);
     };
     
     const changeTypeOptions = ['Initial Stock', 'Purchase', 'Sale', 'Adjustment'];
@@ -127,7 +142,35 @@ export default function TrackInventoryPage() {
                             </SelectContent>
                         </Select>
                      </div>
-                     <Button variant="ghost" onClick={clearFilters} disabled={!selectedItemId && selectedType === 'all'}><FilterX className="mr-2 h-4 w-4"/> Clear</Button>
+                     <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? format(dateRange.from, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ ...prev, from: date })); setIsStartDatePickerOpen(false); }} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.to ? format(dateRange.to, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ ...prev, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                     <Button variant="ghost" onClick={clearFilters} disabled={!selectedItemId && selectedType === 'all' && !dateRange}><FilterX className="mr-2 h-4 w-4"/> Clear</Button>
                 </CardContent>
             </Card>
 

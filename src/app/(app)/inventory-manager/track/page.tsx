@@ -24,7 +24,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from '@/components/ui/calendar';
 import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, User } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,7 @@ export default function TrackInventoryPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
-    const [isTypePopoverOpen, setIsTypePopoverOpen] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -82,7 +82,7 @@ export default function TrackInventoryPage() {
                 if (dateRange?.from) {
                     const toDate = dateRange.to || dateRange.from;
                     const logDate = new Date(log.timestamp);
-                    return logDate >= dateRange.from && logDate <= toDate;
+                    return isWithinInterval(logDate, { start: dateRange.from, end: toDate });
                 }
                 return true;
             })
@@ -139,9 +139,18 @@ export default function TrackInventoryPage() {
                      </div>
                      <div className="space-y-2">
                         <Label>Date Range</Label>
-                        <Popover>
+                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild><Button variant="outline" className={cn("w-64 justify-start text-left font-normal", !dateRange && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>Any Date</span>}</Button></PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2}/></PopoverContent>
+                            <PopoverContent className="w-auto p-0 flex flex-col sm:flex-row">
+                                <div className="p-2 border-r">
+                                    <h4 className="text-sm font-medium mb-2 px-2">Quick Select</h4>
+                                    <div className="grid">
+                                        <Button variant="ghost" className="justify-start" onClick={() => { setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date())}); setIsDatePickerOpen(false);}}>This Week</Button>
+                                        <Button variant="ghost" className="justify-start" onClick={() => { setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date())}); setIsDatePickerOpen(false);}}>This Month</Button>
+                                    </div>
+                                </div>
+                                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={1}/>
+                            </PopoverContent>
                         </Popover>
                      </div>
                      <Button variant="ghost" onClick={clearFilters} disabled={!selectedItemId && selectedType === 'all' && !dateRange}><FilterX className="mr-2 h-4 w-4"/> Clear</Button>
@@ -172,7 +181,7 @@ export default function TrackInventoryPage() {
                                         <TableCell className="font-medium">{log.itemName}</TableCell>
                                         <TableCell><Badge variant="secondary">{log.changeType}</Badge></TableCell>
                                         <TableCell className={cn("text-right font-mono", log.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
-                                            {log.quantityChange > 0 ? `+${log.quantityChange}` : log.quantityChange}
+                                            {log.quantityChange > 0 ? '+' : ''}{log.quantityChange}
                                         </TableCell>
                                         <TableCell className="text-right font-mono">{log.newQuantity}</TableCell>
                                         <TableCell>{log.notes}</TableCell>

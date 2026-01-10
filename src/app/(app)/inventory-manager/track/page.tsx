@@ -97,6 +97,18 @@ export default function TrackInventoryPage() {
     
     const changeTypeOptions = ['Initial Stock', 'Purchase', 'Sale', 'Adjustment'];
 
+    const handleDateRangeSelect = (range: DateRange | undefined) => {
+        setDateRange(range);
+        if (range?.from && range?.to) {
+            setIsDatePickerOpen(false);
+        } else if (range?.from && !range.to) {
+            // single day selected, keep popover open to select end date
+        } else {
+            setIsDatePickerOpen(false);
+        }
+    };
+
+
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <header className="relative text-center">
@@ -140,16 +152,53 @@ export default function TrackInventoryPage() {
                      <div className="space-y-2">
                         <Label>Date Range</Label>
                         <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild><Button variant="outline" className={cn("w-64 justify-start text-left font-normal", !dateRange && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>Any Date</span>}</Button></PopoverTrigger>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-[280px] justify-start text-left font-normal",
+                                        !dateRange && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(dateRange.from, "LLL dd, y")} -{" "}
+                                                {format(dateRange.to, "LLL dd, y")}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Any Date</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 flex flex-col sm:flex-row">
                                 <div className="p-2 border-r">
                                     <h4 className="text-sm font-medium mb-2 px-2">Quick Select</h4>
                                     <div className="grid">
-                                        <Button variant="ghost" className="justify-start" onClick={() => { setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date())}); setIsDatePickerOpen(false);}}>This Week</Button>
-                                        <Button variant="ghost" className="justify-start" onClick={() => { setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date())}); setIsDatePickerOpen(false);}}>This Month</Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start"
+                                            onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}
+                                        >This Week</Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start"
+                                            onClick={() => handleDateRangeSelect({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}
+                                        >This Month</Button>
                                     </div>
                                 </div>
-                                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={1}/>
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={handleDateRangeSelect}
+                                    numberOfMonths={1}
+                                />
                             </PopoverContent>
                         </Popover>
                      </div>

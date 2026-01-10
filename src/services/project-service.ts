@@ -536,11 +536,9 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = await getDb();
     const docRef = doc(db, collectionName, userId);
     const chipsToSave = chips.map((chip, index) => {
-        // Find the string name of the icon component to store in Firestore
         const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
-        // Destructure to remove the icon component function before saving
         const { icon, ...rest } = chip;
-        return { ...rest, position: index, iconName: iconName || 'Wand2' }; // Save name, not function
+        return { ...rest, position: index, iconName: iconName || 'Wand2' };
     });
     await setDoc(docRef, { chips: chipsToSave }, { merge: true });
 }
@@ -644,33 +642,21 @@ export async function getTrashedActionChips(userId: string): Promise<ActionChipD
     return getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
 }
 
-export async function trashActionChips(userId: string, chipsToTrash: ActionChipData[], type: 'dashboard' | 'accounting' | 'hr' = 'dashboard'): Promise<void> {
-    const userChipsCollectionMap = {
-        dashboard: ACTION_CHIPS_COLLECTION,
-        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
-        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
-    };
-    const availableChipsCollectionMap = {
-        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
-        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-    };
-    
-    const userChipsCollection = userChipsCollectionMap[type];
-    const availableChipsCollection = availableChipsCollectionMap[type];
-    
-    const [userChips, availableChips, trashedChips] = await Promise.all([
-      getChipsFromCollection(userId, userChipsCollection),
-      getChipsFromCollection(userId, availableChipsCollection),
-      getTrashedActionChips(userId)
-    ]);
-    
+export async function trashActionChips(userId: string, chipsToTrash: ActionChipData[]): Promise<void> {
+    const allUserChips = await getActionChips(userId);
+    const allAvailableChips = await getAvailableActionChips(userId);
+    const allTrashedChips = await getTrashedActionChips(userId);
+
     const chipIdsToTrash = new Set(chipsToTrash.map(c => c.id));
+    
+    const newUserChips = allUserChips.filter(c => !chipIdsToTrash.has(c.id));
+    const newAvailableChips = allAvailableChips.filter(c => !chipIdsToTrash.has(c.id));
+    const newTrashedChips = [...allTrashedChips, ...chipsToTrash];
 
     await Promise.all([
-        updateChipsInCollection(userId, userChipsCollection, userChips.filter(c => !chipIdsToTrash.has(c.id))),
-        updateChipsInCollection(userId, availableChipsCollection, availableChips.filter(c => !chipIdsToTrash.has(c.id))),
-        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, [...trashedChips, ...chipsToTrash])
+        updateActionChips(userId, newUserChips),
+        updateAvailableActionChips(userId, newAvailableChips),
+        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashedChips)
     ]);
 }
 
@@ -690,10 +676,10 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 }
 
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-  const trashedChips = await getTrashedActionChips(userId);
-  const chipIdSet = new Set(chipIdsToDelete);
-  const updatedChips = trashedChips.filter((chip) => !chipIdSet.has(chip.id));
-  await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, updatedChips);
+  const db = await getDb();
+  const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
+  // Setting an empty array to the 'chips' field effectively deletes all items.
+  await setDoc(docRef, { chips: [] }, { merge: true });
 }
 
 

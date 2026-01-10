@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,12 +14,25 @@ import {
   type ActionChipData,
 } from '@/services/project-service';
 import { ActionChip } from './ActionChip';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export function TrashView() {
   const [trashedChips, setTrashedChips] = React.useState<ActionChipData[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isDeleteAllAlertOpen, setIsDeleteAllAlertOpen] = React.useState(false);
+
 
   const loadTrashedChips = React.useCallback(async () => {
     if (user) {
@@ -62,31 +74,18 @@ export function TrashView() {
   
   const handleDeleteContents = async () => {
     if (!user || trashedChips.length === 0) return;
-    if (!window.confirm("Are you sure you want to permanently delete all items in the trash? This action cannot be undone.")) return;
-    
     try {
+        // The service function now handles deleting all items when passed the full array.
         await deleteActionChips(user.uid, trashedChips.map(c => c.id));
         toast({ title: "Trash Emptied", description: "All trashed items have been permanently deleted."});
         setTrashedChips([]);
-        // Notify other components that chips have been updated
-        window.dispatchEvent(new Event('chipsUpdated'));
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally {
+        setIsDeleteAllAlertOpen(false);
     }
   };
 
-  const handlePermanentDeleteChip = async (chipToDelete: ActionChipData) => {
-    if (!user) return;
-    if (!window.confirm(`Are you sure you want to permanently delete "${chipToDelete.label}"? This action cannot be undone.`)) return;
-
-    try {
-      await deleteActionChips(user.uid, [chipToDelete.id]);
-      toast({ title: 'Action Deleted', description: `"${chipToDelete.label}" has been permanently deleted.` });
-      loadTrashedChips(); // Refresh the list
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -97,6 +96,7 @@ export function TrashView() {
   }
 
   return (
+    <>
     <div className="p-4 sm:p-6 space-y-6">
         <header className="flex items-center justify-between">
             <div className="text-center flex-1">
@@ -121,7 +121,12 @@ export function TrashView() {
                 {trashedChips.length > 0 ? (
                     <div className="flex flex-wrap gap-2 p-4 border rounded-lg">
                         {trashedChips.map((chip, index) => (
-                            <ActionChip key={`${chip.id}-${index}`} chip={chip} index={index} onDelete={() => handlePermanentDeleteChip(chip)} />
+                           <ActionChip
+                                key={`${chip.id}-${index}`}
+                                chip={chip}
+                                index={index}
+                                // No individual delete from the chip itself
+                            />
                         ))}
                     </div>
                 ) : (
@@ -134,11 +139,28 @@ export function TrashView() {
                  <Button variant="outline" onClick={handleRestoreAll} disabled={trashedChips.length === 0}>
                     <Undo className="mr-2 h-4 w-4" /> Restore All
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteContents} disabled={trashedChips.length === 0}>
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Contents
+                <Button variant="destructive" onClick={() => setIsDeleteAllAlertOpen(true)} disabled={trashedChips.length === 0}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Empty Trash
                 </Button>
             </CardFooter>
         </Card>
     </div>
+     <AlertDialog open={isDeleteAllAlertOpen} onOpenChange={setIsDeleteAllAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete all {trashedChips.length} items in the trash. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteContents} className="bg-destructive hover:bg-destructive/90">
+                    Empty Trash
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

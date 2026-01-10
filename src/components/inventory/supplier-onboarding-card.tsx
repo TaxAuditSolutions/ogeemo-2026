@@ -105,7 +105,6 @@ export function SupplierOnboardingCard({ contacts, onSave, onCancel, onContactsC
           </div>
         </CardContent>
         <CardFooter className="justify-end gap-2">
-            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
             <Button onClick={handleSave} disabled={!selectedContactId || isSaving}>
                 {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>}
                 Designate as Supplier

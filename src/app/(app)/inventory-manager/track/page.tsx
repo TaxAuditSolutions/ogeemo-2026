@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package } from 'lucide-react';
 import Link from 'next/link';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
@@ -119,8 +119,18 @@ export default function TrackInventoryPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Filters</CardTitle>
-                    <CardDescription>Filter the log to find specific transactions.</CardDescription>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Filters</CardTitle>
+                            <CardDescription>Filter the log to find specific transactions.</CardDescription>
+                        </div>
+                        <Button asChild>
+                            <Link href="/inventory-manager/manage">
+                                <Package className="mr-2 h-4 w-4" />
+                                Manage Inventory Items
+                            </Link>
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-end gap-4">
                      <div className="space-y-2">
@@ -218,5 +228,3 @@ export default function TrackInventoryPage() {
         </div>
     );
 }
-
-    

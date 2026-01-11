@@ -16,6 +16,7 @@ import {
   Settings,
   Info,
   LoaderCircle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
@@ -68,7 +69,7 @@ export default function HrHubPage() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <header className="text-center mb-6">
+        <header className="relative text-center mb-6">
           <div className="flex justify-center items-center gap-2 mb-2">
             <Users className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold font-headline text-primary">
@@ -77,6 +78,13 @@ export default function HrHubPage() {
             <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
               <Info className="h-5 w-5 text-muted-foreground" />
               <span className="sr-only">About the HR Hub</span>
+            </Button>
+          </div>
+          <div className="absolute top-0 right-0">
+             <Button asChild variant="ghost" size="icon">
+                <Link href="/action-manager" aria-label="Close">
+                    <X className="h-5 w-5" />
+                </Link>
             </Button>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">

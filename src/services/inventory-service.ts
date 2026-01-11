@@ -134,3 +134,5 @@ export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> 
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToLog);
 }
+
+    

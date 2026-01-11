@@ -29,6 +29,7 @@ import {
   ArrowDownAZ,
   ArrowUpZA,
   ArrowDownUp,
+  X,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -345,11 +346,6 @@ export function ContactsView() {
     }
   };
   
-  const handleStartFileRename = (file: Contact) => {
-    // This is a placeholder for file renaming logic, if needed in the future
-    console.log("Renaming file:", file.name);
-  };
-
   const handleContactDrop = async (contact: Contact, newFolderId: string) => {
     if (contact.folderId === newFolderId) return;
 
@@ -451,7 +447,7 @@ export function ContactsView() {
         <div
           ref={node => drag(drop(node))}
           className={cn(
-            "flex items-center justify-between rounded-md h-9",
+            "flex items-center justify-between rounded-md h-9 group",
             isRenaming ? 'bg-background' : 'hover:bg-accent',
             (isOver && canDrop) && 'bg-primary/20 ring-1 ring-primary',
             isDragging && 'opacity-50',
@@ -510,13 +506,20 @@ export function ContactsView() {
   return (
     <>
       <div className="flex flex-col h-full">
-        <header className="text-center py-4 sm:py-6 px-4 sm:px-6">
+        <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
           <h1 className="text-3xl font-bold font-headline text-primary">
             Contact Hub
           </h1>
           <p className="text-muted-foreground">
             Manage your contacts and client relationships
           </p>
+          <div className="absolute top-4 right-4">
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/action-manager" aria-label="Close">
+                    <X className="h-5 w-5" />
+                </Link>
+            </Button>
+          </div>
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
@@ -567,7 +570,7 @@ export function ContactsView() {
                               <TableRow>
                                   <TableHead className="w-[50px]">
                                     <Checkbox
-                                      onCheckedChange={handleToggleSelectAll}
+                                      onCheckedChange={() => handleToggleSelectAll()}
                                       checked={displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length}
                                       aria-label="Select all contacts"
                                     />
@@ -695,5 +698,3 @@ export function ContactsView() {
     </>
   );
 }
-
-    

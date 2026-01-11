@@ -41,6 +41,7 @@ import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '../ui/calendar';
+import { Label } from '@/components/ui/label';
 
 const itemSchema = z.object({
     name: z.string().min(2, { message: "Item name is required." }),

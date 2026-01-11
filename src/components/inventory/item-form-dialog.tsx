@@ -68,9 +68,10 @@ interface ItemFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   itemToEdit: InventoryItem | null;
   onSave: () => void;
+  items: InventoryItem[]; // Pass all items for the dropdown
 }
 
-export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: ItemFormDialogProps) {
+export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [suppliers, setSuppliers] = useState<Contact[]>([]);
@@ -82,20 +83,11 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isAcquisitionDateOpen, setIsAcquisitionDateOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+  const [itemNameSearch, setItemNameSearch] = useState("");
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      sku: '',
-      type: 'Product',
-      stockQuantity: 0,
-      cost: undefined,
-      price: undefined,
-      supplierId: null,
-      acquisitionDate: new Date(),
-    },
   });
 
   const loadDropdownData = useCallback(async () => {
@@ -139,20 +131,19 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
 
   useEffect(() => {
     if (isOpen) {
-      if (itemToEdit) {
+        const initialItem = itemToEdit;
         form.reset({
-          name: itemToEdit.name || '',
-          description: itemToEdit.description || '',
-          sku: itemToEdit.sku || '',
-          type: itemToEdit.type || 'Product',
-          stockQuantity: itemToEdit.stockQuantity || 0,
-          cost: itemToEdit.cost,
-          price: itemToEdit.price,
-          supplierId: itemToEdit.supplierId,
+            name: initialItem?.name || '',
+            description: initialItem?.description || '',
+            sku: initialItem?.sku || '',
+            type: initialItem?.type || 'Product',
+            stockQuantity: initialItem?.stockQuantity || 0,
+            cost: initialItem?.cost,
+            price: initialItem?.price,
+            supplierId: initialItem?.supplierId,
+            acquisitionDate: initialItem?.acquisitionDate ? new Date(initialItem.acquisitionDate) : new Date(),
         });
-      } else {
-        form.reset();
-      }
+        setItemNameSearch(initialItem?.name || '');
     }
   }, [isOpen, itemToEdit, form]);
 
@@ -167,6 +158,21 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
       setIsContactFormOpen(false);
   };
 
+  const handleSelectItem = (item: InventoryItem) => {
+    form.reset({
+        name: item.name || '',
+        description: item.description || '',
+        sku: item.sku || '',
+        type: item.type || 'Product',
+        stockQuantity: item.stockQuantity || 0,
+        cost: item.cost,
+        price: item.price,
+        supplierId: item.supplierId,
+    });
+    setItemNameSearch(item.name);
+    setIsItemPopoverOpen(false);
+  }
+
   async function onSubmit(values: ItemFormData) {
     // The save logic will be implemented in a future step.
     toast({ title: "Save action is not yet implemented."});
@@ -177,9 +183,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-            <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add New Item'}</DialogTitle>
+            <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add & Edit Items'}</DialogTitle>
             <DialogDescription>
-              This form will serve as the source of truth for your inventory items.
+              This form is the source of truth for your inventory items.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -194,46 +200,29 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
                           <FormItem className="flex flex-col">
                             <FormLabel>Supplier</FormLabel>
                             <div className="flex gap-2">
-                              <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
-                                      {isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : field.value ? suppliers.find(s => s.id === field.value)?.name : "Select supplier"}
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search contacts..." />
-                                        <CommandList>
-                                            <CommandEmpty>No contact found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {suppliers.map(contact => (
-                                                    <CommandItem
-                                                        key={contact.id}
-                                                        value={contact.name}
-                                                        onSelect={() => {
-                                                            form.setValue('supplierId', contact.id);
-                                                            setIsSupplierPopoverOpen(false);
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4", field.value === contact.id ? "opacity-100" : "opacity-0")} />
-                                                        {contact.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                              </Popover>
+                              <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}><span className="truncate">{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : field.value ? suppliers.find(s => s.id === field.value)?.name : "Select supplier"}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{suppliers.map(contact => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { form.setValue('supplierId', contact.id); setIsSupplierPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", field.value === contact.id ? "opacity-100" : "opacity-0")} /> {contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                               <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/> New</Button>
                             </div>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} placeholder="e.g., Heavy Duty Screwdriver" /></FormControl> <FormMessage /> </FormItem> )} />
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Item Name</FormLabel>
+                             <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
+                                <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}><span className="truncate">{itemNameSearch || "Select or create an item..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/></Button></FormControl></PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command><CommandInput placeholder="Search or type to add..." value={itemNameSearch} onValueChange={(search) => { setItemNameSearch(search); field.onChange(search); }} /><CommandList><CommandEmpty>No item found. Type a name to create a new one.</CommandEmpty><CommandGroup>{items.map(item => (<CommandItem key={item.id} value={item.name} onSelect={() => handleSelectItem(item)}><Check className={cn("mr-2 h-4 w-4", field.value === item.name ? 'opacity-100' : 'opacity-0')}/>{item.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                   </div>
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -308,7 +297,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
-        contactToEdit={null} // Always creating new for this flow
+        contactToEdit={null}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
         onSave={handleContactSave}

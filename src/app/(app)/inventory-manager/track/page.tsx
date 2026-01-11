@@ -260,7 +260,13 @@ export default function TrackInventoryPage() {
                 </Card>
             </div>
             
-            <ItemFormDialog isOpen={isFormOpen} onOpenChange={setIsFormOpen} itemToEdit={itemToEdit} onSave={handleItemSave} />
+            <ItemFormDialog 
+                isOpen={isFormOpen} 
+                onOpenChange={setIsFormOpen} 
+                itemToEdit={itemToEdit} 
+                onSave={handleItemSave}
+                items={items}
+            />
             <ItemHistoryDialog isOpen={isHistoryOpen} onOpenChange={setIsHistoryOpen} item={itemToViewHistory} />
             <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                 <AlertDialogContent>

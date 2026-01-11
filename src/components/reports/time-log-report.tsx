@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, HandCoins } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, HandCoins, PlusCircle } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';

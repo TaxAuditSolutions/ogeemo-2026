@@ -18,6 +18,7 @@ import {
   ChevronsUpDown,
   Check,
   FilePlus2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -233,19 +234,26 @@ export function ProjectListView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <header className="text-center mb-6">
+        <header className="relative text-center mb-6">
           <div className="flex justify-center items-center gap-4 mb-2">
-              <Briefcase className="h-10 w-10 text-primary" />
-              <h1 className="text-4xl font-bold font-headline text-primary">
-                Project List
-              </h1>
+            <Briefcase className="h-10 w-10 text-primary" />
+            <h1 className="text-4xl font-bold font-headline text-primary">
+              Project List
+            </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            A complete list of all your projects. Click a project to view its task board.
+            A sortable and filterable list of all your projects. Click a project to view its task board.
           </p>
-           <div className="mt-4">
-               <ProjectManagementHeader />
-           </div>
+          <div className="mt-4">
+            <ProjectManagementHeader />
+          </div>
+           <div className="absolute top-0 right-0">
+             <Button asChild variant="ghost" size="icon">
+                <Link href="/action-manager" aria-label="Close">
+                    <X className="h-5 w-5" />
+                </Link>
+            </Button>
+          </div>
         </header>
         
         <Card>

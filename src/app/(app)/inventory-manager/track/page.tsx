@@ -38,6 +38,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
+import { getContacts, type Contact } from '@/services/contact-service';
+
 
 const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return '$0.00';
@@ -48,6 +51,7 @@ export default function TrackInventoryPage() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -68,14 +72,16 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers] = await Promise.all([
+            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
                 getInventoryLogs(user.uid),
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
+                getContacts(user.uid),
             ]);
             setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
+            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -122,6 +128,12 @@ export default function TrackInventoryPage() {
             setItemToDelete(null);
         }
     };
+    
+    const handleSupplierOnboarding = async () => {
+        // This function will simply refresh the data.
+        // The onboarding card handles the logic and the service call.
+        await loadData();
+    }
 
     return (
         <>
@@ -139,59 +151,67 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Inventory Items</CardTitle>
-                      <CardDescription>
-                        A list of all products, supplies, and materials your business uses.
-                      </CardDescription>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <Card>
+                          <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle>Inventory Items</CardTitle>
+                              <CardDescription>
+                                A list of all products, supplies, and materials your business uses.
+                              </CardDescription>
+                            </div>
+                            <Button onClick={() => handleOpenForm()}>
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                            </Button>
+                          </CardHeader>
+                          <CardContent>
+                            {isLoading ? (
+                              <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Item Name</TableHead>
+                                    <TableHead>Supplier</TableHead>
+                                    <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Unit Cost</TableHead>
+                                    <TableHead className="text-right">Total Cost</TableHead>
+                                    <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {items.map(item => (
+                                    <TableRow key={item.id} onClick={() => handleOpenHistory(item)} className={cn("cursor-pointer", selectedItemId === item.id && "bg-muted")}>
+                                      <TableCell className="font-medium">{item.name}</TableCell>
+                                      <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
+                                      <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
+                                      <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
+                                      <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                                      <TableCell className="text-right">
+                                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                                <TableFooter>
+                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell><TableCell /></TableRow>
+                                </TableFooter>
+                              </Table>
+                            )}
+                          </CardContent>
+                        </Card>
                     </div>
-                    <Button onClick={() => handleOpenForm()}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Item Name</TableHead>
-                            <TableHead>Supplier</TableHead>
-                            <TableHead className="text-right">Quantity</TableHead>
-                            <TableHead className="text-right">Unit Cost</TableHead>
-                            <TableHead className="text-right">Total Cost</TableHead>
-                            <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items.map(item => (
-                            <TableRow key={item.id} onClick={() => handleOpenHistory(item)} className={cn("cursor-pointer", selectedItemId === item.id && "bg-muted")}>
-                              <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                              <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                              <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                              <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                              <TableCell className="text-right">
-                                <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                        <TableFooter>
-                          <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell><TableCell /></TableRow>
-                        </TableFooter>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
+                     <div className="lg:col-span-1">
+                        <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
+                    </div>
+                </div>
+
 
                 <Card>
                     <CardHeader>

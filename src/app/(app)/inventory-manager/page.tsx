@@ -46,7 +46,7 @@ export default function InventoryManagerPage() {
         <div className="mt-4 flex justify-center gap-4">
           <Button asChild size="lg">
               <Link href="/inventory-manager/track">
-                Manage Inventory & View Log <ArrowRight className="ml-2 h-4 w-4" />
+                Manage Inventory &amp; View Log <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
         </div>
@@ -60,7 +60,7 @@ export default function InventoryManagerPage() {
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
-              <FeatureDetail title="Item & Supply Tracking" icon={Wrench}>
+              <FeatureDetail title="Item &amp; Supply Tracking" icon={Wrench}>
                 <ul>
                   <li><strong>Centralized Item Catalog:</strong> Maintain a master list of all items, whether for resale, internal use, or project work.</li>
                   <li><strong>Real-Time Stock Levels:</strong> Track quantities on hand, set low-stock alerts, and view inventory valuation.</li>
@@ -68,14 +68,14 @@ export default function InventoryManagerPage() {
                   <li><strong>Project Allocation:</strong> Assign materials and supplies directly to projects to track job costs accurately.</li>
                 </ul>
               </FeatureDetail>
-              <FeatureDetail title="Supplier & Purchase Management" icon={ShoppingCart}>
+              <FeatureDetail title="Supplier &amp; Purchase Management" icon={ShoppingCart}>
                 <ul>
                   <li><strong>Supplier Database:</strong> Keep a record of all your vendors, their contact information, and the items they supply.</li>
                   <li><strong>Purchase Orders:</strong> Create and send professional purchase orders to your suppliers.</li>
-                  <li><strong>Receiving & Stocking:</strong> Easily update stock levels when new orders arrive, ensuring your inventory count is always accurate.</li>
+                  <li><strong>Receiving &amp; Stocking:</strong> Easily update stock levels when new orders arrive, ensuring your inventory count is always accurate.</li>
                 </ul>
               </FeatureDetail>
-              <FeatureDetail title="Order Fulfillment & Sales" icon={Truck}>
+              <FeatureDetail title="Order Fulfillment &amp; Sales" icon={Truck}>
                 <ul>
                   <li><strong>Sales Orders:</strong> Track customer orders and automatically deduct items from inventory.</li>
                   <li><strong>Invoice Integration:</strong> Generate invoices in the Accounting Hub directly from sales orders.</li>

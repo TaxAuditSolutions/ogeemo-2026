@@ -150,12 +150,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea {...field} rows={3}/></FormControl> <FormMessage /> </FormItem> )} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU (Optional)</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product (for sale)</SelectItem><SelectItem value="Supply">Supply (internal use)</SelectItem><SelectItem value="Material">Material (for projects)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-            </div>
             <FormField
               control={form.control}
               name="supplierId"
@@ -217,6 +211,12 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
                 </FormItem>
               )}
             />
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea {...field} rows={3}/></FormControl> <FormMessage /> </FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU (Optional)</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product (for sale)</SelectItem><SelectItem value="Supply">Supply (internal use)</SelectItem><SelectItem value="Material">Material (for projects)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Cost (per unit)</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />

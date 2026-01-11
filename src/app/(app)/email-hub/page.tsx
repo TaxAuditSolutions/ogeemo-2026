@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Mail, ClipboardPaste, BookOpen, Save, Info, Contact, Folder, Clock, FileDigit, Link as LinkIcon, Briefcase } from 'lucide-react';
+import { ArrowRight, Mail, ClipboardPaste, BookOpen, Save, Info, Contact, Folder, Clock, FileDigit, Link as LinkIcon, Briefcase, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,15 @@ export default function EmailHubPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
-                <header className="text-center">
+                <header className="text-center relative w-full">
+                    <div className="absolute top-0 right-0">
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href="/action-manager">
+                                <X className="h-5 w-5" />
+                                <span className="sr-only">Close</span>
+                            </Link>
+                        </Button>
+                    </div>
                     <div className="flex items-center justify-center gap-2">
                         <h1 className="text-3xl font-bold font-headline text-primary">Email Hub</h1>
                         <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
@@ -134,7 +142,7 @@ export default function EmailHubPage() {
                             <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                             <div>
                                 <h4 className="font-semibold">Task & Project Management</h4>
-                                <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events. Scheduled events will automatically appear on your Calendar.</p>
+                                <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
                             </div>
                         </div>
                          <div className="flex items-start gap-4">

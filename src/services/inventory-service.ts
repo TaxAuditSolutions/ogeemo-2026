@@ -12,6 +12,7 @@ import {
   query,
   where,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 

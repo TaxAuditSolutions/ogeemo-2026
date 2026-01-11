@@ -557,9 +557,29 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         <>
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
                 <header className="w-full max-w-5xl">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center justify-start gap-2">
-                             <TooltipProvider>
+                    <div className="flex justify-between items-center relative">
+                        <div className="flex-1 flex justify-start">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button asChild variant="outline">
+                                            <Link href="/master-mind/instructions">
+                                                <Info className="mr-2 h-4 w-4" /> Instructions
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Learn how to use the Master Mind effectively.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                        <div className="text-center absolute left-1/2 -translate-x-1/2">
+                            <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Task &amp; Event Manager</h1>
+                            <p className="text-muted-foreground whitespace-nowrap">Your ‘Master Mind’ for getting things done.</p>
+                        </div>
+                        <div className="flex-1 flex justify-end items-center gap-2">
+                            <TooltipProvider>
                                 {eventToEdit && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -572,14 +592,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                         </TooltipContent>
                                     </Tooltip>
                                 )}
-                            </TooltipProvider>
-                        </div>
-                        <div className="text-center">
-                            <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Task &amp; Event Manager</h1>
-                            <p className="text-muted-foreground whitespace-nowrap">Your ‘Master Mind’ for getting things done.</p>
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button className="bg-card text-card-foreground hover:bg-card/90 border border-black" onClick={() => handleSaveEvent(true)}>
@@ -590,22 +602,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                         <p>Save all changes and close the manager.</p>
                                     </TooltipContent>
                                 </Tooltip>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button asChild variant="ghost" size="icon">
-                                            <Link href="/master-mind/instructions">
-                                                <Info className="h-5 w-5 text-muted-foreground" />
-                                            </Link>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>How to use this manager</p>
-                                    </TooltipContent>
-                                </Tooltip>
                             </TooltipProvider>
-                            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                                <X className="h-5 w-5" />
-                                <span className="sr-only">Close</span>
+                            <Button asChild variant="ghost" size="icon">
+                                <Link href="/action-manager" aria-label="Close">
+                                    <X className="h-5 w-5" />
+                                </Link>
                             </Button>
                         </div>
                     </div>
@@ -640,17 +641,10 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                             </RadioGroup>
 
                                             {contactAction === 'select' ? (
-                                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                        <Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between mt-2">
+                                                    {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                                             ) : (
                                                 <Button variant="outline" onClick={() => setIsContactFormOpen(true)} className="w-full mt-2">
                                                     <Plus className="mr-2 h-4 w-4" /> Create New Contact
@@ -677,8 +671,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
-                                                    </PopoverContent>
+                                                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
                                                 </Popover>
                                             ) : (
                                                 <div className="flex items-center gap-2 mt-2">

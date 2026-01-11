@@ -2,7 +2,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { LoaderCircle, Route, ArrowLeft } from 'lucide-react';
+import { LoaderCircle, Route, ArrowLeft, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,7 @@ function ProjectPlanPageContent() {
 
   return (
     <div className="w-full h-full px-12 mx-auto py-6 flex flex-col items-center">
-      <header className="w-full max-w-7xl flex justify-between items-center mb-6">
+      <header className="w-full max-w-7xl flex justify-between items-center mb-6 relative">
         <Button asChild variant="outline">
             <Link href="/projects/all">
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -77,7 +77,7 @@ function ProjectPlanPageContent() {
               </div>
             )}
         </div>
-        <div className="w-48 flex justify-end">
+        <div className="w-48 flex justify-end items-center gap-2">
           {projectId && (
             <Button asChild variant="outline">
                 <Link href={`/projects/${projectId}/tasks`}>
@@ -85,6 +85,11 @@ function ProjectPlanPageContent() {
                 </Link>
             </Button>
           )}
+           <Button asChild variant="ghost" size="icon">
+                <Link href="/projects/all" aria-label="Close Planner">
+                    <X className="h-5 w-5" />
+                </Link>
+            </Button>
         </div>
       </header>
       <div className="w-full flex-1 flex justify-center">

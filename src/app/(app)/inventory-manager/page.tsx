@@ -1,16 +1,12 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { PackageSearch, ShoppingCart, Truck, Wrench, Landmark, FileOutput, UserPlus, LoaderCircle, Package } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getContacts, type Contact } from '@/services/contact-service';
+import React from 'react';
 import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Wrench, Truck, Landmark, FileOutput, ArrowRight, Package } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FeatureDetail = ({
   title,
@@ -37,77 +33,26 @@ const FeatureDetail = ({
 );
 
 export default function InventoryManagerPage() {
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const loadContacts = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const fetchedContacts = await getContacts(user.uid);
-      setContacts(fetchedContacts);
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to load contacts',
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    if (showOnboarding) {
-      loadContacts();
-    }
-  }, [showOnboarding, loadContacts]);
-
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <header className="text-center">
         <h1 className="text-2xl font-bold font-headline text-primary flex items-center justify-center gap-3">
-          <PackageSearch className="h-8 w-8" />
+          <Package className="h-8 w-8" />
           Inventory Manager
         </h1>
         <p className="text-muted-foreground max-w-3xl mx-auto mt-2">
           A flexible system for tracking everything your business uses and sells—from retail products to office supplies and project materials.
         </p>
         <div className="mt-4 flex justify-center gap-4">
-          <Button onClick={() => setShowOnboarding(prev => !prev)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            {showOnboarding ? 'Close Onboarding' : 'Supplier Onboarding'}
-          </Button>
-           <Button asChild>
+          <Button asChild size="lg">
               <Link href="/inventory-manager/track">
-                <Package className="mr-2 h-4 w-4" /> Inventory Log
+                Manage Inventory & View Log <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto space-y-6">
-        {showOnboarding && (
-          isLoading ? (
-            <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
-          ) : (
-            <SupplierOnboardingCard
-              contacts={contacts}
-              onSave={() => {
-                setShowOnboarding(false);
-                toast({ title: "Supplier designated successfully!" });
-              }}
-              onContactsChange={setContacts}
-            />
-          )
-        )}
-        
         <Card>
           <CardHeader>
             <CardTitle>Core Features (Coming Soon)</CardTitle>

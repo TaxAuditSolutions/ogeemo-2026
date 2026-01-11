@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -35,10 +35,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
-import { LoaderCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle, ChevronsUpDown, Check, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '../ui/command';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '../ui/calendar';
 
 const itemSchema = z.object({
     name: z.string().min(2, { message: "Item name is required." }),
@@ -47,7 +49,9 @@ const itemSchema = z.object({
     type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
     stockQuantity: z.coerce.number().int().default(0),
     cost: z.coerce.number().min(0, "Cost must be non-negative.").optional(),
+    price: z.coerce.number().min(0, "Price must be non-negative.").optional(),
     supplierId: z.string().optional().nullable(),
+    acquisitionDate: z.date().optional(),
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -62,165 +66,131 @@ interface ItemFormDialogProps {
 export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]); // Will be populated in a later step
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
+  const [isAcquisitionDateOpen, setIsAcquisitionDateOpen] = useState(false);
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
     defaultValues: {
-        name: '',
-        description: '',
-        sku: '',
-        type: 'Product',
-        stockQuantity: 0,
-        cost: '' as any,
-        supplierId: null,
+      name: '',
+      description: '',
+      sku: '',
+      type: 'Product',
+      stockQuantity: 0,
+      cost: undefined,
+      price: undefined,
+      supplierId: null,
+      acquisitionDate: new Date(),
     },
   });
 
-  const loadSuppliers = useCallback(async () => {
-    if (!user) return;
-    setIsLoadingSuppliers(true);
-    try {
-        const fetchedSuppliers = await getSuppliers(user.uid);
-        setSuppliers(fetchedSuppliers);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not load suppliers.' });
-    } finally {
-        setIsLoadingSuppliers(false);
-    }
-  }, [user, toast]);
-
   useEffect(() => {
+    // Logic to fetch suppliers and set form data will be added in a future step.
+    // For now, this just resets the form when the dialog opens.
     if (isOpen) {
-      loadSuppliers();
-      if (itemToEdit) {
-        form.reset({
-          name: itemToEdit.name,
-          description: itemToEdit.description || '',
-          sku: itemToEdit.sku || '',
-          type: itemToEdit.type || 'Product',
-          stockQuantity: itemToEdit.stockQuantity,
-          cost: itemToEdit.cost ?? '' as any,
-          supplierId: itemToEdit.supplierId || null,
-        });
-      } else {
-        form.reset({
-            name: '',
-            description: '',
-            sku: '',
-            type: 'Product',
-            stockQuantity: 0,
-            cost: '' as any,
-            supplierId: null,
-        });
-      }
+      form.reset();
     }
-  }, [isOpen, itemToEdit, form, loadSuppliers]);
+  }, [isOpen, form]);
 
   async function onSubmit(values: ItemFormData) {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'You must be logged in.' });
-        return;
-    }
-    try {
-        const dataToSave = { ...values, userId: user.uid, supplierId: values.supplierId || null };
-        if (itemToEdit) {
-            await updateInventoryItem(itemToEdit.id, dataToSave, { type: 'Adjustment', notes: 'Manual edit' });
-            toast({ title: 'Item Updated' });
-        } else {
-            await addInventoryItem(dataToSave);
-            toast({ title: 'Item Created' });
-        }
-        onSave();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-    }
+    // The save logic will be implemented in a future step.
+    toast({ title: "Save action is not yet implemented."});
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add & Edit Item'}</DialogTitle>
+          <DialogTitle>Add & Edit Item</DialogTitle>
           <DialogDescription>
-            {itemToEdit ? 'Update the details for this inventory item.' : 'Add a new product, supply, or material to your inventory.'}
+            This form will serve as the source of truth for your inventory items.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="supplierId"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Supplier</FormLabel>
-                  <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value
-                            ? suppliers.find(
-                                (supplier) => supplier.id === field.value
-                              )?.name
-                            : "Select supplier"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                      <Command>
-                        <CommandInput placeholder="Search suppliers..." />
-                        <CommandList>
-                          <CommandEmpty>No supplier found.</CommandEmpty>
-                          <CommandGroup>
-                            {suppliers.map((supplier) => (
-                              <CommandItem
-                                value={supplier.name}
-                                key={supplier.id}
-                                onSelect={() => {
-                                  form.setValue("supplierId", supplier.id)
-                                  setIsSupplierPopoverOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    supplier.id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {supplier.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea {...field} rows={3}/></FormControl> <FormMessage /> </FormItem> )} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU (Optional)</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product (for sale)</SelectItem><SelectItem value="Supply">Supply (internal use)</SelectItem><SelectItem value="Material">Material (for projects)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Supplier</FormLabel>
+                      <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
+                              {field.value ? suppliers.find(s => s.id === field.value)?.name : "Select supplier"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          {/* Supplier Command list will be populated later */}
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} placeholder="e.g., Heavy Duty Screwdriver" /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Cost (per unit)</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU</FormLabel> <FormControl><Input {...field} placeholder="SKU-12345" /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Initial Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                  control={form.control}
+                  name="acquisitionDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Acquisition Date</FormLabel>
+                      <Popover open={isAcquisitionDateOpen} onOpenChange={setIsAcquisitionDateOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => { field.onChange(date); setIsAcquisitionDateOpen(false); }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <div className="space-y-2">
+                    <Label>Disposition</Label>
+                    <p className="text-sm text-muted-foreground p-3 border rounded-md bg-muted h-10 flex items-center">
+                        Handled via the Inventory Log.
+                    </p>
+                 </div>
+             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>

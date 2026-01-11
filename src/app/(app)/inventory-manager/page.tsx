@@ -86,7 +86,7 @@ export default function InventoryManagerPage() {
           </Button>
            <Button asChild>
               <Link href="/inventory-manager/track">
-                <Package className="mr-2 h-4 w-4" /> Track Inventory
+                <Package className="mr-2 h-4 w-4" /> Inventory Log
               </Link>
           </Button>
            <Button asChild>
@@ -176,5 +176,3 @@ export default function InventoryManagerPage() {
     </div>
   );
 }
-
-    

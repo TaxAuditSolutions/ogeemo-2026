@@ -92,11 +92,31 @@ export function PayrollEmployeesView() {
         setIsFormOpen(true);
     };
 
-    const handleWorkerSaved = async () => {
-        setIsFormOpen(false);
-        setWorkerToEdit(null);
-        await loadWorkers(); // Refresh the list
+    const handleWorkerSave = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
+        if (!user) return;
+        try {
+            await addWorker({ ...workerData, userId: user.uid });
+            toast({ title: "Worker Added" });
+            setIsFormOpen(false);
+            setWorkerToEdit(null);
+            await loadWorkers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
     };
+
+    const handleWorkerUpdate = async (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => {
+        try {
+            await updateWorker(workerId, workerData);
+            toast({ title: "Worker Updated" });
+            setIsFormOpen(false);
+            setWorkerToEdit(null);
+            await loadWorkers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    };
+
 
     const handleConfirmDelete = async () => {
         if (!workerToDelete) return;
@@ -252,8 +272,8 @@ export function PayrollEmployeesView() {
                 }
             }}
             workerToEdit={workerToEdit}
-            onWorkerSave={handleWorkerSaved}
-            onWorkerUpdate={handleWorkerSaved}
+            onWorkerSave={handleWorkerSave}
+            onWorkerUpdate={handleWorkerUpdate}
         />
     
         <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
@@ -265,8 +285,12 @@ export function PayrollEmployeesView() {
 
          <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete {selectedWorkerIds.length} worker(s). This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>
+                    This will permanently delete {selectedWorkerIds.length} worker(s). This action cannot be undone.
+                </AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
@@ -305,7 +329,7 @@ export function PayrollEmployeesView() {
             </DialogContent>
         </Dialog>
         {workerToMerge && (
-            <MergeWorkerDialog 
+            <MergeWorkerDialog
                 isOpen={isMergeDialogOpen}
                 onOpenChange={setIsMergeDialogOpen}
                 sourceWorker={workerToMerge}

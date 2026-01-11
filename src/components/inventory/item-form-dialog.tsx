@@ -47,6 +47,7 @@ import { getFolders as getContactFolders, type FolderData } from '@/services/con
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 
 const itemSchema = z.object({

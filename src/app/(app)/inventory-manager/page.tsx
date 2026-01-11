@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Wrench, Truck, Landmark, FileOutput, ArrowRight, Package } from "lucide-react";
+import { Wrench, ArrowRight, Package } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FeatureDetail = ({
@@ -46,7 +46,7 @@ export default function InventoryManagerPage() {
         <div className="mt-4 flex justify-center gap-4">
           <Button asChild size="lg">
               <Link href="/inventory-manager/track">
-                Manage Inventory &amp; View Log <ArrowRight className="ml-2 h-4 w-4" />
+                Manage Inventory & View Log <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
         </div>
@@ -55,61 +55,19 @@ export default function InventoryManagerPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Core Features (Coming Soon)</CardTitle>
-            <CardDescription>This manager will be built around three key areas of asset tracking.</CardDescription>
+            <CardTitle>Core Features</CardTitle>
+            <CardDescription>This manager is built around a complete transactional log for all inventory items.</CardDescription>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
-              <FeatureDetail title="Item &amp; Supply Tracking" icon={Wrench}>
+              <FeatureDetail title="Item & Supply Tracking" icon={Wrench}>
                 <ul>
                   <li><strong>Centralized Item Catalog:</strong> Maintain a master list of all items, whether for resale, internal use, or project work.</li>
-                  <li><strong>Real-Time Stock Levels:</strong> Track quantities on hand, set low-stock alerts, and view inventory valuation.</li>
+                  <li><strong>Real-Time Stock Levels:</strong> Track quantities on hand based on a full transaction history.</li>
                   <li><strong>Categorization:</strong> Organize items by type (e.g., Product, Supply, Material) for accurate accounting and reporting.</li>
-                  <li><strong>Project Allocation:</strong> Assign materials and supplies directly to projects to track job costs accurately.</li>
-                </ul>
-              </FeatureDetail>
-              <FeatureDetail title="Supplier &amp; Purchase Management" icon={ShoppingCart}>
-                <ul>
-                  <li><strong>Supplier Database:</strong> Keep a record of all your vendors, their contact information, and the items they supply.</li>
-                  <li><strong>Purchase Orders:</strong> Create and send professional purchase orders to your suppliers.</li>
-                  <li><strong>Receiving &amp; Stocking:</strong> Easily update stock levels when new orders arrive, ensuring your inventory count is always accurate.</li>
-                </ul>
-              </FeatureDetail>
-              <FeatureDetail title="Order Fulfillment &amp; Sales" icon={Truck}>
-                <ul>
-                  <li><strong>Sales Orders:</strong> Track customer orders and automatically deduct items from inventory.</li>
-                  <li><strong>Invoice Integration:</strong> Generate invoices in the Accounting Hub directly from sales orders.</li>
-                  <li><strong>Returns Management:</strong> Handle customer returns and update stock levels accordingly.</li>
                 </ul>
               </FeatureDetail>
             </Accordion>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-primary/20">
-          <CardHeader>
-            <CardTitle>Accounting Hub Integration</CardTitle>
-            <CardDescription>The Inventory Manager will work seamlessly with your financial data to eliminate double-entry and provide a clear financial picture.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg mt-1">
-                <Landmark className="h-5 w-5 text-primary"/>
-              </div>
-              <div>
-                <h4 className="font-semibold">Automated Accounts Payable</h4>
-                <p className="text-sm text-muted-foreground">When you mark a Purchase Order as received, a corresponding bill will be automatically created in your <strong>Accounts Payable</strong> ledger, ready for payment. This ensures you never miss a payment and your expenses are recorded instantly.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg mt-1">
-                <FileOutput className="h-5 w-5 text-primary"/>
-              </div>
-              <div>
-                <h4 className="font-semibold">Seamless Invoicing</h4>
-                <p className="text-sm text-muted-foreground">When an item is sold or materials are used for a client project, they can be added directly to an invoice in <strong>Accounts Receivable</strong>. The system will link the sale to the inventory reduction, keeping your stock and revenue perfectly in sync.</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

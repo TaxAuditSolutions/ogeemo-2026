@@ -127,7 +127,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
     try {
         const dataToSave = { ...values, userId: user.uid, supplierId: values.supplierId || null };
         if (itemToEdit) {
-            await updateInventoryItem(itemToEdit.id, dataToSave);
+            await updateInventoryItem(itemToEdit.id, dataToSave, { type: 'Adjustment', notes: 'Manual edit' });
             toast({ title: 'Item Updated' });
         } else {
             await addInventoryItem(dataToSave);
@@ -143,7 +143,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave }: Ite
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add New Item'}</DialogTitle>
+          <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add & Edit Item'}</DialogTitle>
           <DialogDescription>
             {itemToEdit ? 'Update the details for this inventory item.' : 'Add a new product, supply, or material to your inventory.'}
           </DialogDescription>

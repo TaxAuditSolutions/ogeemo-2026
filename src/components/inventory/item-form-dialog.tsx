@@ -174,8 +174,29 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   }
 
   async function onSubmit(values: ItemFormData) {
-    // The save logic will be implemented in a future step.
-    toast({ title: "Save action is not yet implemented."});
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
+        return;
+    }
+    
+    try {
+        if (itemToEdit) {
+            // Update existing item. We pass logInfo to create an 'Adjustment' log if quantity changes.
+            await updateInventoryItem(itemToEdit.id, values, {
+                type: 'Adjustment',
+                notes: 'Item details updated via form'
+            });
+            toast({ title: 'Item Updated' });
+        } else {
+            // Add new item
+            await addInventoryItem({ ...values, userId: user.uid });
+            toast({ title: 'Item Added' });
+        }
+        onSave(); // This will trigger a reload on the parent page
+        onOpenChange(false);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    }
   }
 
   return (

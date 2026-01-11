@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import type { DateRange } from 'react-day-picker';
 
 
@@ -152,7 +152,7 @@ export default function TrackInventoryPage() {
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ ...prev, from: date })); setIsStartDatePickerOpen(false); }} initialFocus />
+                                <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ ...prev, from: date })); setIsStartDatePickerOpen(false); }} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -166,7 +166,7 @@ export default function TrackInventoryPage() {
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ ...prev, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ ...prev, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>

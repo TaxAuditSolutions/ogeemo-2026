@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -45,7 +45,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
 import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins, Info } from 'lucide-react';
@@ -266,13 +266,20 @@ export function TimeLogReport() {
                             
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                                    <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>Filter by date</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={handleDateRangeSelect} numberOfMonths={2} />
+                                    <CustomCalendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={handleDateRangeSelect}
+                                        numberOfMonths={2}
+                                    />
                                     <div className="p-2 border-t flex justify-end gap-2">
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: new Date(), to: new Date() })}>Today</Button>
                                         <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>

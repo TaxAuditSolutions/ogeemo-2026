@@ -58,7 +58,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -398,7 +398,7 @@ export default function TimeOffPage() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
-                                    <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPopoverOpen(false); }} initialFocus />
+                                    <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPopoverOpen(false); }} initialFocus />
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -412,7 +412,7 @@ export default function TimeOffPage() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
-                                    <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPopoverOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus />
+                                    <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPopoverOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus />
                                 </PopoverContent>
                             </Popover>
                         </div>

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
-import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft, Plus, Calendar } from 'lucide-react';
+import { MoreVertical, Briefcase, Pencil, Trash2, Archive, LoaderCircle, Info, Lightbulb, ArrowLeft, Plus, Calendar, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -222,7 +222,7 @@ export function OrganizeIdeasView() {
             title: idea.title,
             description: idea.description || '',
         }).toString();
-        router.push(`/projects/test-102?${query}`);
+        router.push(`/projects/create?${query}`);
     };
     
     const handleScheduleItem = async (idea: Idea) => {
@@ -283,7 +283,9 @@ export function OrganizeIdeasView() {
         }
         try {
             await archiveIdeaAsFile(user.uid, idea.title, idea.description || '');
-            await deleteIdea(idea.id);
+            await deleteIdeaFromDb(idea.id);
+            setIdeas(prev => prev.filter(i => i.id !== idea.id));
+            toast({ title: 'Archived', description: 'Idea saved to File Manager.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
         }
@@ -373,7 +375,7 @@ export function OrganizeIdeasView() {
     return (
         <>
             <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-                <header className="text-center mb-6">
+                <header className="relative text-center mb-6 w-full max-w-6xl">
                     <div className="flex items-center justify-center gap-2">
                         <Lightbulb className="h-8 w-8 text-primary" />
                         <h1 className="text-3xl font-bold font-headline text-primary">
@@ -394,6 +396,13 @@ export function OrganizeIdeasView() {
                     <div className="mt-4">
                         <Button onClick={() => setShowNewIdeaCard(true)}>
                             <Plus className="mr-2 h-4 w-4"/> Record New Idea
+                        </Button>
+                    </div>
+                     <div className="absolute top-0 right-0">
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href="/action-manager" aria-label="Close">
+                                <X className="h-5 w-5" />
+                            </Link>
                         </Button>
                     </div>
                 </header>
@@ -426,7 +435,3 @@ export function OrganizeIdeasView() {
         </>
     );
 }
-
-    
-
-    

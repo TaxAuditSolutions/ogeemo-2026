@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DateRange } from 'react-day-picker';
 import { addDays, format, startOfQuarter, endOfQuarter } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, LoaderCircle, FileDigit } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon, LoaderCircle, FileDigit, FilterX } from 'lucide-react';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getIncomeTransactions, getExpenseTransactions, addExpenseTransaction, type IncomeTransaction, type ExpenseTransaction } from '@/services/accounting-service';
@@ -48,6 +48,9 @@ export default function SalesTaxPage() {
         to: endOfQuarter(new Date()),
     };
     const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = React.useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = React.useState(false);
+
 
     useEffect(() => {
         if (!user) {
@@ -152,34 +155,33 @@ export default function SalesTaxPage() {
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-end gap-4">
                      <div className="space-y-2">
-                        <Label>Date Range</Label>
-                        <Popover>
+                        <Label>Start Date</Label>
+                        <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {dateRange?.from ? (
-                                        dateRange.to ? (
-                                            <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>
-                                        ) : (
-                                            format(dateRange.from, "LLL dd, y")
-                                        )
-                                    ) : (
-                                        <span>Pick a date range</span>
-                                    )}
+                                    {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={dateRange?.from}
-                                    selected={dateRange}
-                                    onSelect={setDateRange}
-                                    numberOfMonths={2}
-                                />
+                            <PopoverContent className="w-auto p-0">
+                                <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                             </PopoverContent>
                         </Popover>
-                     </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                      <div className="space-y-2">
                         <Label htmlFor="carried-forward">Carried Forward Amount</Label>
                         <div className="relative">
@@ -195,7 +197,7 @@ export default function SalesTaxPage() {
                         </div>
                      </div>
                     <Button variant="secondary" onClick={() => setDateRange(defaultDateRange)}>Current Quarter</Button>
-                    <Button variant="ghost" onClick={() => setDateRange(undefined)}>Clear Date</Button>
+                    <Button variant="ghost" onClick={() => setDateRange(undefined)}>Clear Dates</Button>
                 </CardContent>
             </Card>
 
@@ -282,4 +284,3 @@ export default function SalesTaxPage() {
         </div>
     );
 }
-

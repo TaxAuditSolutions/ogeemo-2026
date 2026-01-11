@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -36,31 +36,23 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
-import { LoaderCircle, PlusCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, FileDigit, HandCoins, Info } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, HandCoins } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, type Worker, addWorker, updateWorker } from '@/services/payroll-service';
-import { getTimeLogs, deleteTimeLog, type TimeLog, updateTimeLog, updateTimeLogsStatus } from '@/services/timelog-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
+import { getTimeLogs, deleteTimeLog, updateTimeLog, updateTimeLogsStatus, type TimeLog } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from './page-header';
-import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { LogTimeDialog } from './log-time-dialog';
 import { WorkerSelector } from './WorkerSelector';
 import type { DateRange } from 'react-day-picker';
+import { Label } from '../ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { CustomCalendar } from '../ui/custom-calendar';
 
 
 const formatCurrency = (amount: number) => {
@@ -73,10 +65,10 @@ export function TimeLogReport() {
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const searchParams = useSearchParams();
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-    const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<TimeLog | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<TimeLog | null>(null);
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
@@ -84,14 +76,15 @@ export function TimeLogReport() {
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
     const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
-    const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
     useEffect(() => {
         if (searchParams.get('action') === 'log') {
             setIsLogTimeDialogOpen(true);
+            setPreselectedWorkerId(searchParams.get('workerId'));
         }
     }, [searchParams]);
 
@@ -135,7 +128,7 @@ export function TimeLogReport() {
         }
 
         const totalSeconds = entries.reduce((acc, entry) => acc + entry.durationSeconds, 0);
-        return { filteredEntries: entries.sort((a,b) => b.startTime.getTime() - a.startTime.getTime()), totalDurationSeconds: totalSeconds };
+        return { filteredEntries: entries, totalDurationSeconds: totalSeconds };
 
     }, [allEntries, selectedWorkerId, dateRange]);
 
@@ -158,22 +151,11 @@ export function TimeLogReport() {
         }
     };
     
-    const handleWorkerSaved = async () => {
-      await loadData();
-      setIsWorkerFormOpen(false);
+    const handleClearFilters = () => {
+        setSelectedWorkerId(null);
+        setDateRange(undefined);
     };
 
-    const handleDateRangeSelect = (range: DateRange | undefined) => {
-        setDateRange(range);
-        if (range?.from && range?.to) {
-            setIsDatePickerOpen(false);
-        } else if (range?.from && !range.to) {
-            // If only a single date is picked, keep the popover open
-        } else {
-             setIsDatePickerOpen(false);
-        }
-    };
-    
     const handleProcessPayment = () => {
       setIsProcessConfirmationOpen(true);
     };
@@ -193,11 +175,10 @@ export function TimeLogReport() {
                 await addPayableBill({
                     userId: user.uid,
                     vendor: selectedWorker.name,
-                    dueDate: format(addDays(new Date(), 14), 'yyyy-MM-dd'),
+                    dueDate: format(new Date(), 'yyyy-MM-dd'),
                     totalAmount: totalPay,
                     category: 'Contractor Fees',
                     description: `Services for period ${dateRange?.from ? format(dateRange.from, 'PP') : ''} to ${dateRange?.to ? format(dateRange.to, 'PP') : ''}`,
-                    invoiceNumber: `TL-${selectedWorker.id.slice(0,5)}-${Date.now()}`
                 });
                 await updateTimeLogsStatus(entriesToProcess.map(e => e.id), 'processed');
                 toast({ title: "Bill Created", description: `A payable bill for ${selectedWorker.name} has been added to Accounts Payable.` });
@@ -243,20 +224,14 @@ export function TimeLogReport() {
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
-                        <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
-                            <Info className="h-5 w-5 text-muted-foreground" />
-                            <span className="sr-only">About this report</span>
-                        </Button>
-                    </div>
-                    <p className="text-muted-foreground">A list of all recorded work sessions.</p>
+                  <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                  <p className="text-muted-foreground">Review and manage all work sessions logged by your team.</p>
                 </header>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Filter & Actions</CardTitle>
-                        <div className="flex flex-wrap items-center gap-2 pt-2">
+                        <CardTitle>Filters & Actions</CardTitle>
+                        <div className="flex flex-wrap items-end gap-4 pt-2">
                              <WorkerSelector
                                 workers={workers}
                                 selectedWorkerId={selectedWorkerId}
@@ -264,35 +239,38 @@ export function TimeLogReport() {
                                 isLoading={isLoading}
                             />
                             
-                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}` : format(dateRange.from, "LLL dd, y")) : <span>Filter by date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <CustomCalendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from}
-                                        selected={dateRange}
-                                        onSelect={handleDateRangeSelect}
-                                        numberOfMonths={2}
-                                    />
-                                    <div className="p-2 border-t flex justify-end gap-2">
-                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: new Date(), to: new Date() })}>Today</Button>
-                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
-                                        <Button size="sm" variant="ghost" onClick={() => handleDateRangeSelect({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
+                            <div className="space-y-2">
+                                <Label>Start Date</Label>
+                                <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                             <div className="space-y-2">
+                                <Label>End Date</Label>
+                                <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
 
-                            {(selectedWorkerId || dateRange) && (
-                                <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }}>
-                                    <FilterX className="mr-2 h-4 w-4" /> Clear Filters
-                                </Button>
-                            )}
+                            <Button variant="ghost" onClick={handleClearFilters} disabled={!selectedWorkerId && !dateRange}>
+                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                            </Button>
                             
                             <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null, selectedWorkerId)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
@@ -309,7 +287,7 @@ export function TimeLogReport() {
                                     <TableRow>
                                         <TableHead>Worker</TableHead>
                                         <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
+                                        <TableHead>Notes</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -327,7 +305,7 @@ export function TimeLogReport() {
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
                                                 <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                <TableCell>{entry.notes}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
                                                 <TableCell>{getStatusBadge(entry.status)}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
@@ -391,13 +369,6 @@ export function TimeLogReport() {
                 entryToEdit={entryToEdit}
                 preselectedWorkerId={preselectedWorkerId}
             />
-
-            <WorkerFormDialog 
-                isOpen={isWorkerFormOpen} 
-                onOpenChange={setIsWorkerFormOpen} 
-                onWorkerSave={handleWorkerSaved}
-                onWorkerUpdate={() => {}}
-            />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
@@ -428,35 +399,6 @@ export function TimeLogReport() {
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsProcessConfirmationOpen(false)}>Cancel</Button>
                         <Button onClick={handleConfirmProcessPayment}>Confirm & Process</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-                <DialogContent className="sm:max-w-xl">
-                    <DialogHeader>
-                        <DialogTitle>About the Time Log Report</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                         <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <p>This report is the central hub for reviewing all time logged by your workers, whether from the Ogeemo Field App or entered manually.</p>
-                            
-                            <h4>Key Features:</h4>
-                            <ul>
-                                <li><strong>Filter:</strong> You can filter the list to see entries for a specific worker, a specific date range, or both.</li>
-                                <li><strong>Log Time:</strong> As an administrator, you can manually log time on behalf of any worker. This is useful for making corrections or adding entries for workers who cannot use the Field App.</li>
-                                <li><strong>Process for Payment:</strong> This is the crucial step to move time into your accounting system.
-                                    <ul>
-                                        <li><strong>For Contractors:</strong> This action calculates their total pay (if hourly) for the selected period and creates a single payable bill in your Accounts Payable ledger.</li>
-                                        <li><strong>For Employees:</strong> This action flags the time logs as "Ready for Payroll," so they will be automatically included in your next payroll run.</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                            <p>Once a time log is processed, its status will update, and it will no longer be editable to maintain data integrity.</p>
-                         </div>
-                    </div>
-                     <DialogFooter>
-                        <Button onClick={() => setIsInfoDialogOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

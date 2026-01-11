@@ -415,7 +415,7 @@
         "properties": {
             "itemId": { "type": "string" },
             "itemName": { "type": "string" },
-            "changeType": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment"] },
+            "changeType": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment", "Shrinkage", "Consumed", "Destroyed"] },
             "quantityChange": { "type": "number" },
             "newQuantity": { "type": "number" },
             "notes": { "type": "string" },

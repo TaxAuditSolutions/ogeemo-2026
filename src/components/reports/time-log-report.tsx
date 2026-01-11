@@ -36,6 +36,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
 import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, HandCoins, PlusCircle } from 'lucide-react';
@@ -404,4 +412,5 @@ export function TimeLogReport() {
             </Dialog>
         </>
     );
-}
+
+    

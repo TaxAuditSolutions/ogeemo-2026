@@ -569,7 +569,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <p>Learn how to use the Master Mind effectively.</p>
+                                        <p>Learn how to use this manager effectively.</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -670,8 +670,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </PopoverTrigger>
-                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
+                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
                                                 </Popover>
                                             ) : (
                                                 <div className="flex items-center gap-2 mt-2">

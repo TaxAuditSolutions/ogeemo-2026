@@ -54,7 +54,7 @@ import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog, updateTimeLog, updateTimeLogsStatus, type TimeLog } from '@/services/timelog-service';
 import { addPayableBill } from '@/services/accounting-service';
 import { formatTime, cn } from '@/lib/utils';
-import { ReportsPageHeader } from './page-header';
+import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from './log-time-dialog';
 import { WorkerSelector } from './WorkerSelector';
 import type { DateRange } from 'react-day-picker';
@@ -412,5 +412,4 @@ export function TimeLogReport() {
             </Dialog>
         </>
     );
-
-    
+}

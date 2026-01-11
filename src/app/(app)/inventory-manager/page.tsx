@@ -89,11 +89,6 @@ export default function InventoryManagerPage() {
                 <Package className="mr-2 h-4 w-4" /> Inventory Log
               </Link>
           </Button>
-           <Button asChild>
-              <Link href="/inventory-manager/manage">
-                <Package className="mr-2 h-4 w-4" /> Manage Inventory
-              </Link>
-          </Button>
         </div>
       </header>
 

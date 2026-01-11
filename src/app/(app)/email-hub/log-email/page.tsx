@@ -57,7 +57,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, set } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LogEmailPage() {
@@ -218,17 +218,18 @@ export default function LogEmailPage() {
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-    if (isEditing) {
-        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-        if (selectedContactId === savedContact.id) {
-          setFrom(savedContact.email || '');
-        }
-    } else {
-        setContacts(prev => [...prev, savedContact]);
-    }
-    setSelectedContactId(savedContact.id);
-    setIsContactFormOpen(false);
-    setContactToEdit(null);
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+          if(selectedContactId === savedContact.id) {
+            setSelectedContactId(savedContact.id); // Re-set to trigger updates
+            setFrom(savedContact.email || ''); // Update from field
+          }
+      } else {
+          setContacts(prev => [...prev, savedContact]);
+      }
+      setSelectedContactId(savedContact.id);
+      setIsContactFormOpen(false);
+      setContactToEdit(null);
   };
   
   const handleEditContact = () => {
@@ -397,7 +398,14 @@ export default function LogEmailPage() {
                                   {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
                               </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={startDate} onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} initialFocus /></PopoverContent>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CustomCalendar 
+                                mode="single" 
+                                selected={startDate} 
+                                onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} 
+                                initialFocus 
+                            />
+                          </PopoverContent>
                       </Popover>
                       <div className="flex-1 flex gap-2">
                           <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -413,7 +421,14 @@ export default function LogEmailPage() {
                                   {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
                               </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={endDate} onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} initialFocus /></PopoverContent>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CustomCalendar 
+                                mode="single" 
+                                selected={endDate} 
+                                onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} 
+                                initialFocus 
+                            />
+                          </PopoverContent>
                       </Popover>
                       <div className="flex-1 flex gap-2">
                           <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
@@ -495,15 +510,15 @@ export default function LogEmailPage() {
                  <div className="flex items-start gap-4">
                     <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Task &amp; Project Management</h4>
-                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button to instantly send an email's details to the Task &amp; Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
+                        <h4 className="font-semibold">Task & Project Management</h4>
+                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <FileDigit className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
                         <h4 className="font-semibold">Accounting</h4>
-                        <p className="text-sm text-muted-foreground">Time logged against tasks created from emails becomes a billable entry, which can be automatically pulled into an invoice for that client, ensuring you get paid for all your work.</p>
+                        <p className="text-sm text-muted-foreground">Time logged against an email becomes a billable entry, which can be automatically pulled into an invoice for that client, ensuring you get paid for all your work.</p>
                     </div>
                 </div>
             </div>

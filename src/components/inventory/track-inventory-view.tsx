@@ -38,8 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { getContacts, type Contact } from '@/services/contact-service';
 
 
 const formatCurrency = (amount?: number) => {
@@ -51,6 +50,7 @@ export function TrackInventoryView() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -60,8 +60,6 @@ export function TrackInventoryView() {
     const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
     const [itemToViewHistory, setItemToViewHistory] = useState<Item | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
-    
-    const [newItemName, setNewItemName] = useState('');
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -73,14 +71,16 @@ export function TrackInventoryView() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers] = await Promise.all([
+            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
                 getInventoryLogs(user.uid),
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
+                getContacts(user.uid),
             ]);
             setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
+            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -108,6 +108,7 @@ export function TrackInventoryView() {
     
     const handleItemSave = async () => {
         await loadData();
+        setIsFormOpen(false);
     };
     
     const handleOpenHistory = (item: Item) => {
@@ -127,27 +128,11 @@ export function TrackInventoryView() {
         }
     };
     
-    const handleAddNewItem = async () => {
-        if (!user || !newItemName.trim()) {
-            return;
-        }
-        try {
-            await addInventoryItem({
-                name: newItemName,
-                description: '',
-                sku: '',
-                type: 'Product',
-                stockQuantity: 1, // Default to 1
-                userId: user.uid,
-                acquisitionDate: new Date(),
-            } as Omit<Item, 'id'>);
-            toast({ title: "Item Added", description: `"${newItemName}" has been added to inventory.` });
-            await loadData(); // Refresh data in the parent
-            setNewItemName(''); // Clear the input field
-        } catch (error: any) {
-            toast({ variant: "destructive", title: 'Save Failed', description: error.message });
-        }
-    };
+    const handleSupplierOnboarding = async () => {
+        // This function will simply refresh the data.
+        // The onboarding card handles the logic and the service call.
+        await loadData();
+    }
 
     return (
         <>
@@ -167,7 +152,7 @@ export function TrackInventoryView() {
 
                 <div className="grid grid-cols-1 gap-6">
                     <div>
-                         <Card>
+                        <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                               <CardTitle>Inventory Items</CardTitle>
@@ -175,12 +160,9 @@ export function TrackInventoryView() {
                                 A list of all products, supplies, and materials your business uses.
                               </CardDescription>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Button>Test</Button>
-                              <Button onClick={() => handleOpenForm()}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
-                              </Button>
-                            </div>
+                            <Button onClick={() => handleOpenForm()}>
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
+                            </Button>
                           </CardHeader>
                           <CardContent>
                             {isLoading ? (

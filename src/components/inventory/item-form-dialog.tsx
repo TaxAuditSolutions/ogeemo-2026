@@ -51,7 +51,6 @@ import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
 
 
@@ -92,9 +91,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [quantityAdjustment, setQuantityAdjustment] = useState<number | ''>(0);
   const [selectedExistingItem, setSelectedExistingItem] = useState<InventoryItem | null>(null);
   
-  const [mode, setMode] = useState<'select' | 'add' | 'test'>('select');
-  const [newItemName, setNewItemName] = useState('');
-  const [testItemName, setTestItemName] = useState('');
+  const [mode, setMode] = useState<'select' | 'add'>('select');
 
 
   const form = useForm<ItemFormData>({
@@ -215,27 +212,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     }
   }
-
-  const handleTestModeSave = async () => {
-    if (!user || !testItemName.trim()) {
-      return;
-    }
-    try {
-        await addInventoryItem({
-            name: testItemName,
-            description: '',
-            sku: '',
-            type: 'Product',
-            stockQuantity: 1, // Default to 1
-            userId: user.uid
-        } as Omit<InventoryItem, 'id'>);
-        toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
-        onSave(); // This refreshes data in the parent
-        setTestItemName('');
-    } catch (error: any) {
-        toast({ variant: "destructive", title: 'Save Failed', description: error.message });
-    }
-  };
   
   const handleSelectExisting = (item: InventoryItem) => {
     setSelectedExistingItem(item);
@@ -269,7 +245,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   {!itemToEdit && (
                     <div className="space-y-2">
                         <RadioGroup value={mode} onValueChange={(v) => {
-                          setMode(v as 'select' | 'add' | 'test');
+                          setMode(v as 'select' | 'add');
                           setSelectedExistingItem(null);
                           form.reset({
                               name: '', description: '', sku: '',
@@ -277,11 +253,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                               acquisitionDate: new Date(), dispositionDate: undefined
                           });
                           setQuantityAdjustment('');
-                          setNewItemName('');
                         }} className="flex gap-4">
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Select Existing Item</Label></FormItem>
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="add" id="mode-add" /></FormControl><Label htmlFor="mode-add">Add New Item</Label></FormItem>
-                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="test" id="mode-test" /></FormControl><Label htmlFor="mode-test">Test</Label></FormItem>
                         </RadioGroup>
                     </div>
                   )}
@@ -319,31 +293,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                    {mode === 'add' && !itemToEdit && (
                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>New Item Name</Label><FormControl><Input {...field} placeholder="Enter name for a new item" /></FormControl><FormMessage /></FormItem> )} />
                   )}
-                  
-                  {mode === 'test' && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Update item list</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <Label htmlFor="test-item-name">Enter a new item name</Label>
-                          <Input
-                            id="test-item-name"
-                            value={testItemName}
-                            onChange={(e) => setTestItemName(e.target.value)}
-                            onKeyDown={async (e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                await handleTestModeSave();
-                              }
-                            }}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                  
 
                   <Separator />
 
@@ -392,7 +341,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           </div>
           <DialogFooter className="p-6 border-t mt-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay) || mode === 'test'}>
+            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay)}>
               {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
               {itemToEdit ? 'Save Changes' : 'Save'}
             </Button>

@@ -40,6 +40,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Plus } from 'lucide-react';
 
 
 const formatCurrency = (amount?: number) => {
@@ -61,6 +64,8 @@ export default function TrackInventoryPage() {
     const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
     const [itemToViewHistory, setItemToViewHistory] = useState<Item | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
+    
+    const [testItemName, setTestItemName] = useState('');
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -109,6 +114,7 @@ export default function TrackInventoryPage() {
     
     const handleItemSave = async () => {
         await loadData();
+        // The dialog will close itself, no need to setIsFormOpen(false) here.
     };
     
     const handleOpenHistory = (item: Item) => {
@@ -130,7 +136,29 @@ export default function TrackInventoryPage() {
     
     const handleSupplierOnboarding = async () => {
         await loadData();
-    }
+    };
+    
+    const handleTestModeSave = async () => {
+        if (!user || !testItemName.trim()) {
+            return;
+        }
+        try {
+            await addInventoryItem({
+                name: testItemName,
+                description: '',
+                sku: '',
+                type: 'Product',
+                stockQuantity: 1, // Default to 1
+                userId: user.uid,
+                acquisitionDate: new Date(),
+            } as Omit<Item, 'id'>);
+            toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
+            await loadData(); // Refresh data in the parent
+            setTestItemName(''); // Clear the input field
+        } catch (error: any) {
+            toast({ variant: "destructive", title: 'Save Failed', description: error.message });
+        }
+    };
 
     return (
         <>
@@ -147,10 +175,9 @@ export default function TrackInventoryPage() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                        <Card>
+                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                               <CardTitle>Inventory Items</CardTitle>
@@ -204,8 +231,29 @@ export default function TrackInventoryPage() {
                           </CardContent>
                         </Card>
                     </div>
-                     <div className="lg:col-span-1">
+                     <div className="lg:col-span-1 space-y-6">
                         <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Test Item Creator</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                <Label htmlFor="test-item-name">Enter a new item name</Label>
+                                <Input
+                                    id="test-item-name"
+                                    value={testItemName}
+                                    onChange={(e) => setTestItemName(e.target.value)}
+                                    onKeyDown={async (e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        await handleTestModeSave();
+                                    }
+                                    }}
+                                />
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
 

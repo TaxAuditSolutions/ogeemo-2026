@@ -57,8 +57,8 @@ const itemSchema = z.object({
     description: z.string().optional(),
     sku: z.string().optional(),
     type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
-    cost: z.coerce.number().min(0, "Cost must be non-negative.").optional(),
-    price: z.coerce.number().min(0, "Price must be non-negative.").optional(),
+    cost: z.coerce.number().min(0, "Cost must be non-negative.").optional().nullable(),
+    price: z.coerce.number().min(0, "Price must be non-negative.").optional().nullable(),
     supplierId: z.string().optional().nullable(),
     acquisitionDate: z.date().optional().nullable(),
     dispositionDate: z.date().optional().nullable(),
@@ -189,12 +189,18 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   
   const handleSetNewItemName = (newItemName: string) => {
     if (!newItemName.trim()) return;
-    form.reset({
-      ...form.getValues(),
-      name: newItemName.trim(),
-    });
-    setOpeningQuantity(0);
-    setQuantityAdjustment('');
+    
+    const existingItem = items.find(item => item.name.toLowerCase() === newItemName.trim().toLowerCase());
+    if (existingItem) {
+      handleSelectItem(existingItem);
+    } else {
+      form.reset({
+        ...form.getValues(),
+        name: newItemName.trim(),
+      });
+      setOpeningQuantity(0);
+      setQuantityAdjustment('');
+    }
   };
 
   async function onSubmit(values: ItemFormData) {
@@ -248,41 +254,37 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             <ScrollArea className="flex-1">
               <Form {...form}>
                 <form id="item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
-                  <FormField
+                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <Label>Item Name</Label>
+                        <Label>1. Select an Item</Label>
                         <div className="flex items-center gap-2">
-                          <Input
-                            {...field}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') e.preventDefault();
-                            }}
-                            placeholder={itemToEdit ? '' : 'Type new name or select existing...'}
-                          />
-                          {!itemToEdit && (
-                            <Popover onOpenChange={(open) => { if (!open) handleSetNewItemName(field.value); }}>
+                           <Popover onOpenChange={(open) => { if (!open) handleSetNewItemName(field.value); }}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className="w-full justify-between" onClick={(e) => e.preventDefault()}>
-                                      <span className="truncate">{field.value ? 'Change Selection' : 'Select Existing Item'}</span>
+                                      <span className="truncate">{field.value ? field.value : 'Select Existing or Type New...'}</span>
                                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                     <Command>
-                                        <CommandInput placeholder="Search items..." />
+                                        <CommandInput placeholder="Search items..." onValueChange={field.onChange} value={field.value} />
                                         <CommandList>
-                                            <CommandEmpty>No item found.</CommandEmpty>
+                                            <CommandEmpty>No item found. Type a name and press Enter to add a new one.</CommandEmpty>
                                             <CommandGroup>
-                                                {items.map(item => (<CommandItem key={item.id} value={item.name} onSelect={() => handleSelectItem(item)}><Check className={cn("mr-2 h-4 w-4", field.value === item.name ? 'opacity-100' : 'opacity-0')}/>{item.name}</CommandItem>))}
+                                                {items.map(item => (
+                                                    <CommandItem key={item.id} value={item.name} onSelect={() => handleSelectItem(item)}>
+                                                        <Check className={cn("mr-2 h-4 w-4", field.value === item.name ? 'opacity-100' : 'opacity-0')}/>
+                                                        {item.name}
+                                                    </CommandItem>
+                                                ))}
                                             </CommandGroup>
                                         </CommandList>
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                          )}
                         </div>
                         <FormMessage />
                       </FormItem>

@@ -128,6 +128,12 @@ export default function TrackInventoryPage() {
         }
     };
     
+    const handleSupplierOnboarding = async () => {
+        // This function will simply refresh the data.
+        // The onboarding card handles the logic and the service call.
+        await loadData();
+    }
+
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -144,7 +150,7 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
 
-                <div className="text-center p-4 text-2xl font-bold">9</div>
+                <div className="text-center p-4 text-2xl font-bold"></div>
 
                 <div className="grid grid-cols-1 gap-6">
                     <div>

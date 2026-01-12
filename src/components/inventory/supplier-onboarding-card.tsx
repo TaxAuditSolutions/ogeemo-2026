@@ -88,7 +88,7 @@ export function SupplierOnboardingCard({ contacts, onSave, onContactsChange }: S
     <>
       <Card className="w-full animate-in fade-in-50">
         <CardHeader>
-          <CardTitle>Supplier Onboarding</CardTitle>
+          <CardTitle>Add Inventory Item</CardTitle>
           <CardDescription>Select an existing contact or create a new one to designate them as a supplier.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

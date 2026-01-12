@@ -1,5 +1,4 @@
 
-      
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -36,22 +35,16 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { LoaderCircle, ChevronsUpDown, Check, Calendar as CalendarIcon, Plus } from 'lucide-react';
+import { LoaderCircle, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { CustomCalendar } from '../ui/custom-calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { CustomCalendar } from '../ui/custom-calendar';
-import { Label } from '@/components/ui/label';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { ContactSelector } from '../contacts/contact-selector';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
-import { addCompany } from '@/services/accounting-service';
-import { addIndustry, updateIndustry, deleteIndustry } from '@/services/industry-service';
-
 
 const itemSchema = z.object({
     name: z.string().min(2, { message: "Item name is required." }),
@@ -63,7 +56,6 @@ const itemSchema = z.object({
     supplierId: z.string().optional().nullable(),
     acquisitionDate: z.date().optional().nullable(),
     dispositionDate: z.date().optional().nullable(),
-    // stockQuantity is now managed separately
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -73,7 +65,7 @@ interface ItemFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   itemToEdit: InventoryItem | null;
   onSave: () => void;
-  items: InventoryItem[];
+  items: InventoryItem[]; // Pass all items for duplicate name check
 }
 
 export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items }: ItemFormDialogProps) {
@@ -85,24 +77,15 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
-  const [isAcquisitionDateOpen, setIsAcquisitionDateOpen] = useState(false);
-  const [isDispositionDateOpen, setIsDispositionDateOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   
-  const [quantityAdjustment, setQuantityAdjustment] = useState<number | ''>('');
-  const [openingQuantity, setOpeningQuantity] = useState(0);
-
-  const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
-  
-  const [isNewItem, setIsNewItem] = useState(false);
-
+  const [quantityAdjustment, setQuantityAdjustment] = useState<number | ''>(0);
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
   });
 
-  const loadDropdownData = useCallback(async () => {
+   const loadDropdownData = useCallback(async () => {
     if (!user) return;
     try {
         const [foldersData, companiesData, industriesData] = await Promise.all([
@@ -129,7 +112,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             const contactsData = await getContacts(user.uid);
             setSuppliers(contactsData);
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
         } finally {
             setIsLoading(false);
         }
@@ -140,111 +123,66 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         loadDropdownData();
     }
   }, [isOpen, user, toast, loadDropdownData]);
-  
-  const resetFormToBlank = () => {
-      form.reset({
-        name: '', description: '', sku: '',
-        type: 'Product', cost: null, price: null, supplierId: null,
-        acquisitionDate: new Date(), dispositionDate: undefined
-      });
-      setOpeningQuantity(0);
-      setQuantityAdjustment('');
-  };
 
 
   useEffect(() => {
     if (isOpen) {
-        const initialItem = itemToEdit;
-        if (initialItem) {
-            setIsNewItem(false);
+        if (itemToEdit) {
             form.reset({
-                name: initialItem.name || '',
-                description: initialItem.description || '',
-                sku: initialItem.sku || '',
-                type: initialItem.type || 'Product',
-                cost: initialItem.cost ?? null,
-                price: initialItem.price ?? null,
-                supplierId: initialItem.supplierId,
-                acquisitionDate: initialItem.acquisitionDate ? new Date(initialItem.acquisitionDate) : undefined,
-                dispositionDate: initialItem.dispositionDate ? new Date(initialItem.dispositionDate) : undefined,
+                name: itemToEdit.name || '',
+                description: itemToEdit.description || '',
+                sku: itemToEdit.sku || '',
+                type: itemToEdit.type || 'Product',
+                cost: itemToEdit.cost ?? null,
+                price: itemToEdit.price ?? null,
+                supplierId: itemToEdit.supplierId,
+                acquisitionDate: itemToEdit.acquisitionDate ? new Date(itemToEdit.acquisitionDate) : undefined,
+                dispositionDate: itemToEdit.dispositionDate ? new Date(itemToEdit.dispositionDate) : undefined,
             });
-            setOpeningQuantity(initialItem.stockQuantity || 0);
-            setQuantityAdjustment('');
+            setQuantityAdjustment(0);
         } else {
-            setIsNewItem(true);
-            resetFormToBlank();
+            form.reset({
+                name: '', description: '', sku: '',
+                type: 'Product', cost: null, price: null, supplierId: null,
+                acquisitionDate: new Date(), dispositionDate: undefined
+            });
+            setQuantityAdjustment(''); // For initial quantity
         }
     }
   }, [isOpen, itemToEdit, form]);
 
-  const newTotalQuantity = useMemo(() => {
-    const adjustment = Number(quantityAdjustment);
-    return openingQuantity + (isNaN(adjustment) ? 0 : adjustment);
-  }, [openingQuantity, quantityAdjustment]);
-
-
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      setSuppliers(prev => {
-          if (isEditing) {
-              return prev.map(c => c.id === savedContact.id ? savedContact : c);
-          }
-          return [...prev, savedContact];
-      });
-      form.setValue('supplierId', savedContact.id);
-      setIsContactFormOpen(false);
-  };
-
-  const handleSelectItem = (itemId: string) => {
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-    
-    setIsNewItem(false);
-    form.reset({
-        name: item.name || '',
-        description: item.description || '',
-        sku: item.sku || '',
-        type: item.type || 'Product',
-        cost: item.cost ?? null,
-        price: item.price ?? null,
-        supplierId: item.supplierId,
-        acquisitionDate: item.acquisitionDate ? new Date(item.acquisitionDate) : undefined,
-        dispositionDate: item.dispositionDate ? new Date(item.dispositionDate) : undefined,
-    });
-    setOpeningQuantity(item.stockQuantity);
-    setQuantityAdjustment('');
-    setIsItemPopoverOpen(false);
-  };
+  const currentStock = itemToEdit?.stockQuantity || 0;
+  const newTotalQuantity = currentStock + (Number(quantityAdjustment) || 0);
 
   async function onSubmit(values: ItemFormData) {
     if (!user) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
+        toast({ variant: 'destructive', title: 'Authentication Error' });
         return;
     }
-
-    const dataToSave: Partial<Item> = {
-        ...values,
-        cost: values.cost ?? null,
-        price: values.price ?? null,
-    };
     
-    try {
-        // If we are editing an item OR creating a new one with a name that already exists
-        const existingItem = items.find(i => i.name.toLowerCase() === values.name.toLowerCase());
-        const editingExistingItem = itemToEdit || existingItem;
+    const quantityChange = Number(quantityAdjustment) || 0;
 
-        if (editingExistingItem && !isNewItem) {
-            await updateInventoryItem(editingExistingItem.id, {
-              ...dataToSave,
+    try {
+        if (itemToEdit) {
+            // Updating an existing item
+            await updateInventoryItem(itemToEdit.id, {
+              ...values,
               stockQuantity: newTotalQuantity
             }, {
                 type: 'Adjustment',
-                notes: 'Item details updated via form'
+                notes: 'Manual adjustment via form'
             });
             toast({ title: 'Item Updated' });
         } else {
+            // Creating a new item
+            const existingItem = items.find(i => i.name.toLowerCase() === values.name.toLowerCase());
+            if (existingItem) {
+                toast({ variant: 'destructive', title: 'Item Exists', description: 'An item with this name already exists. Please edit the existing item instead.'});
+                return;
+            }
             await addInventoryItem({
-              ...dataToSave,
-              stockQuantity: newTotalQuantity,
+              ...values,
+              stockQuantity: quantityChange,
               userId: user.uid
             } as Omit<InventoryItem, 'id'>);
             toast({ title: 'Item Added' });
@@ -261,88 +199,29 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-            <DialogTitle>Item Details</DialogTitle>
-            <DialogDescription>
-              Manage the details for your inventory items.
-            </DialogDescription>
+            <DialogTitle>{itemToEdit ? 'Edit Item Details' : 'Add New Item'}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1">
               <Form {...form}>
                 <form id="item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
-                  <div className="space-y-2">
-                    <Label>1. Select an Item</Label>
-                    <div className="flex gap-2">
-                         <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button variant="outline" className="w-full justify-between">
-                                      <span className="truncate">{form.getValues('name') || 'Select Existing Item...'}</span>
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search items..." />
-                                    <CommandList>
-                                        <CommandEmpty>No item found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {items.map(item => (
-                                                <CommandItem key={item.id} value={item.name} onSelect={() => handleSelectItem(item.id)}>
-                                                    <Check className={cn("mr-2 h-4 w-4", form.getValues('name') === item.name ? 'opacity-100' : 'opacity-0')}/>
-                                                    {item.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                setIsNewItem(true);
-                                resetFormToBlank();
-                            }}
-                        >
-                            <Plus className="mr-2 h-4 w-4" /> Add New Item
-                        </Button>
-                    </div>
-                  </div>
-
-                  {isNewItem && (
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label>New Item Name</Label>
-                          <FormControl><Input {...field} placeholder="Enter name for the new item" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-
-                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} placeholder="Enter name for the item" disabled={!!itemToEdit} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl><FormMessage /></FormItem> )} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   </div>
                   
                   <Separator className="my-6" />
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="space-y-2">
                         <Label>Opening Quantity</Label>
-                        <Input value={openingQuantity} readOnly disabled className="bg-muted/50 font-mono text-center" />
+                        <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center" />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="quantity-adjustment">Add / Remove Quantity</Label>
+                        <Label htmlFor="quantity-adjustment">{itemToEdit ? 'Add / Remove Quantity' : 'Initial Quantity'}</Label>
                         <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center" />
                     </div>
                     <div className="space-y-2">
@@ -352,97 +231,30 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="acquisitionDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Acquisition Date</FormLabel>
-                            <Popover open={isAcquisitionDateOpen} onOpenChange={setIsAcquisitionDateOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <CustomCalendar mode="single" selected={field.value || undefined} onSelect={(date) => { field.onChange(date); setIsAcquisitionDateOpen(false); }} initialFocus />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <FormField
-                        control={form.control}
-                        name="dispositionDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Disposition Date</FormLabel>
-                            <Popover open={isDispositionDateOpen} onOpenChange={setIsDispositionDateOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Pick a date (optional)</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <CustomCalendar mode="single" selected={field.value || undefined} onSelect={(date) => { field.onChange(date); setIsDispositionDateOpen(false); }} initialFocus />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><Label>Acquisition Date</Label>
+                            <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CustomCalendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+                            <FormMessage /></FormItem>)} />
+                       <FormField control={form.control} name="dispositionDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><Label>Disposition Date</Label>
+                            <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? (format(field.value, "PPP")) : (<span>Pick a date (optional)</span>)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CustomCalendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+                            <FormMessage /></FormItem>)} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
-                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                      <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <FormField
-                        control={form.control}
-                        name="supplierId"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Supplier</FormLabel>
-                            <div className="flex gap-2">
-                              <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}><span className="truncate">{isLoading ? <LoaderCircle className="h-4 w-4 animate-spin"/> : field.value ? suppliers.find(s => s.id === field.value)?.name : "Select supplier"}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{suppliers.map(contact => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { form.setValue('supplierId', contact.id); setIsSupplierPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", field.value === contact.id ? "opacity-100" : "opacity-0")} /> {contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
-                              <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/> New</Button>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                  </div>
+                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full"/><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
                 </form>
               </Form>
             </ScrollArea>
           </div>
-            <DialogFooter className="p-6 border-t mt-auto">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" form="item-form" disabled={form.formState.isSubmitting}>
+          <DialogFooter className="p-6 border-t mt-auto">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-              Save Item Details
-              </Button>
+              {itemToEdit ? 'Save Changes' : 'Save New Item'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -453,7 +265,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         contactToEdit={null}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
-        onSave={handleContactSave}
+        onSave={(contact) => { setSuppliers(p => [...p, contact]); form.setValue('supplierId', contact.id); setIsContactFormOpen(false); }}
         companies={companies}
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
@@ -463,4 +275,3 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   );
 }
 
-    

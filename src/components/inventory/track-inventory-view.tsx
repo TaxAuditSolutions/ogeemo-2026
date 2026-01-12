@@ -50,7 +50,7 @@ const formatCurrency = (amount?: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-export default function TrackInventoryPage() {
+export function TrackInventoryView() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);

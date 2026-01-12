@@ -207,7 +207,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             toast({ title: 'Item Added' });
         }
         onSave();
-        onOpenChange(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     }

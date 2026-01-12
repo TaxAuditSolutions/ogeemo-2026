@@ -35,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { LoaderCircle, Calendar as CalendarIcon, Plus, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle, Calendar as CalendarIcon, Plus, ChevronsUpDown, Check, Save } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,7 @@ import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 
 
 const itemSchema = z.object({
@@ -91,6 +92,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [selectedExistingItem, setSelectedExistingItem] = useState<InventoryItem | null>(null);
   
   const [mode, setMode] = useState<'select' | 'add' | 'test'>('select');
+  const [newItemName, setNewItemName] = useState('');
+  const [testItemName, setTestItemName] = useState('');
 
 
   const form = useForm<ItemFormData>({
@@ -161,10 +164,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 acquisitionDate: new Date(), dispositionDate: undefined
             });
             setQuantityAdjustment('');
-            setMode('add');
+            setMode(itemToEdit ? 'select' : 'add');
         }
     } else {
-        // Reset state when dialog closes
         setSelectedExistingItem(null);
     }
   }, [isOpen, itemToEdit, selectedExistingItem, form]);
@@ -182,14 +184,13 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     const quantityChange = Number(quantityAdjustment) || 0;
     const finalItemToProcess = mode === 'select' ? (selectedExistingItem || itemToEdit) : null;
     
-    // Validate name for new items
     if (mode === 'add' && !values.name.trim()) {
         form.setError('name', { type: 'manual', message: 'Item name is required to add a new item.' });
         return;
     }
 
     try {
-        if (finalItemToProcess) { // Updating an existing item
+        if (finalItemToProcess) {
             await updateInventoryItem(finalItemToProcess.id, {
               ...values,
               stockQuantity: newTotalQuantity
@@ -198,7 +199,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 notes: 'Manual adjustment via form'
             });
             toast({ title: 'Item Updated' });
-        } else if (mode === 'add') { // Adding a new item
+        } else if (mode === 'add') {
             await addInventoryItem({
               name: values.name,
               ...values,
@@ -213,6 +214,28 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     }
   }
+
+  const handleTestModeSave = async () => {
+    if (!user || !testItemName.trim()) {
+      toast({ variant: "destructive", title: "Item name is required." });
+      return;
+    }
+    try {
+        await addInventoryItem({
+            name: testItemName,
+            description: '',
+            sku: '',
+            type: 'Product',
+            stockQuantity: 1, // Default to 1
+            userId: user.uid
+        });
+        toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
+        onSave(); // Refresh the parent list
+        onOpenChange(false); // Close the dialog
+    } catch (error: any) {
+        toast({ variant: "destructive", title: 'Save Failed', description: error.message });
+    }
+  };
   
   const handleSelectExisting = (item: InventoryItem) => {
     setSelectedExistingItem(item);
@@ -254,6 +277,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                               acquisitionDate: new Date(), dispositionDate: undefined
                           });
                           setQuantityAdjustment('');
+                          setNewItemName('');
                         }} className="flex gap-4">
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Select Existing Item</Label></FormItem>
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="add" id="mode-add" /></FormControl><Label htmlFor="mode-add">Add New Item</Label></FormItem>
@@ -297,10 +321,22 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   )}
                   
                   {mode === 'test' && (
-                     <div className="p-4 border-2 border-dashed border-yellow-500 bg-yellow-50 rounded-lg text-center">
-                        <p className="font-semibold">Test Mode Active</p>
-                        <p className="text-sm text-muted-foreground">This is a placeholder for the "Test" functionality.</p>
-                     </div>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Update item list</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <div className="space-y-2">
+                                <Label htmlFor="test-item-name">Enter a new item name</Label>
+                                <Input id="test-item-name" value={testItemName} onChange={(e) => setTestItemName(e.target.value)} />
+                             </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="button" onClick={handleTestModeSave}>
+                                <Save className="mr-2 h-4 w-4" /> Save
+                            </Button>
+                        </CardFooter>
+                     </Card>
                   )}
                   
 
@@ -344,14 +380,14 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
                       <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
                   </div>
-                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" disabled={!currentItemForDisplay && mode === 'select'} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)} disabled={!currentItemForDisplay && mode === 'select'}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
+                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" disabled={!currentItemForDisplay && mode === 'select'} onCreateNew={() => setIsContactFormOpen(true)} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)} disabled={!currentItemForDisplay && mode === 'select'}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
                 </form>
               </Form>
             </ScrollArea>
           </div>
           <DialogFooter className="p-6 border-t mt-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay)}>
+            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay) || mode === 'test'}>
               {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
               {itemToEdit ? 'Save Changes' : 'Save'}
             </Button>

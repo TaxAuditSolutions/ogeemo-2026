@@ -175,8 +175,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     setIsItemPopoverOpen(false);
   };
   
-  const handleAddNewItem = async (e?: React.FormEvent<HTMLFormElement>) => {
-    e?.preventDefault();
+  const handleAddNewItem = async () => {
     if (!newItemName.trim() || !user) return;
     
     try {
@@ -191,7 +190,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         onSave(); // Refresh parent list
         toast({ title: "Item Added", description: `"${savedItem.name}" created. You can now add details.` });
         
-        // Select the newly created item for editing
         form.reset({
             name: savedItem.name,
             description: savedItem.description || '',
@@ -273,28 +271,27 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <form onSubmit={handleAddNewItem}>
-                        <div className="space-y-2">
-                            <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
-                            <div className="flex items-center gap-2">
-                                <Plus className="h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="new-item-name"
-                                    placeholder="Type new item name..."
-                                    value={newItemName}
-                                    onChange={(e) => setNewItemName(e.target.value)}
-                                />
-                                <Button type="submit">
-                                    <Plus className="mr-2 h-4 w-4"/>Add
-                                </Button>
-                            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
+                        <div className="flex items-center gap-2">
+                            <Plus className="h-5 w-5 text-muted-foreground" />
+                            <Input
+                                id="new-item-name"
+                                placeholder="Type new item name..."
+                                value={newItemName}
+                                onChange={(e) => setNewItemName(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewItem(); } }}
+                            />
+                            <Button type="button" onClick={() => handleAddNewItem()}>
+                                <Plus className="mr-2 h-4 w-4"/>Add
+                            </Button>
                         </div>
-                    </form>
+                    </div>
                 </div>
                 <Separator className="my-6" />
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} placeholder="Item name will appear here..." readOnly disabled className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} readOnly disabled className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />

@@ -38,7 +38,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 
 
@@ -47,7 +46,7 @@ const formatCurrency = (amount?: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-export function TrackInventoryView() {
+export default function TrackInventoryPage() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -129,12 +128,6 @@ export function TrackInventoryView() {
         }
     };
     
-    const handleSupplierOnboarding = async () => {
-        // This function will simply refresh the data.
-        // The onboarding card handles the logic and the service call.
-        await loadData();
-    }
-
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -153,8 +146,8 @@ export function TrackInventoryView() {
 
                 <div className="text-center p-4 text-2xl font-bold">9</div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
+                <div className="grid grid-cols-1 gap-6">
+                    <div>
                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -209,9 +202,6 @@ export function TrackInventoryView() {
                             )}
                           </CardContent>
                         </Card>
-                    </div>
-                     <div className="lg:col-span-1">
-                        <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
                     </div>
                 </div>
 

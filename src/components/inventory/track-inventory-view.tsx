@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item, addInventoryItem, updateInventoryItem, deleteInventoryItem } from '@/services/inventory-service';
@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 
 
@@ -150,8 +151,10 @@ export function TrackInventoryView() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
 
-                <div className="grid grid-cols-1 gap-6">
-                    <div>
+                <div>9</div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -206,6 +209,9 @@ export function TrackInventoryView() {
                             )}
                           </CardContent>
                         </Card>
+                    </div>
+                     <div className="lg:col-span-1">
+                        <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
                     </div>
                 </div>
 

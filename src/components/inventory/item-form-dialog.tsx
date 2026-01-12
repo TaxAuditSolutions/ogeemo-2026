@@ -230,9 +230,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             userId: user.uid
         } as Omit<InventoryItem, 'id'>);
         toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
-        onSave();
+        onSave(); // This refreshes data in the parent
         setTestItemName('');
-        setMode('select'); // Reset mode to hide the card
     } catch (error: any) {
         toast({ variant: "destructive", title: 'Save Failed', description: error.message });
     }

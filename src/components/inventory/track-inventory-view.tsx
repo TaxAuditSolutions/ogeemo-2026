@@ -109,8 +109,6 @@ export default function TrackInventoryPage() {
     
     const handleItemSave = async () => {
         await loadData();
-        // Do not close the dialog here, let the dialog manage its own state.
-        // setIsFormOpen(false);
     };
     
     const handleOpenHistory = (item: Item) => {

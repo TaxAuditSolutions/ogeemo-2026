@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -240,9 +239,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-            <DialogTitle>{itemToEdit ? 'Edit Item' : 'Add & Edit Items'}</DialogTitle>
+            <DialogTitle>Item Details</DialogTitle>
             <DialogDescription>
-              This form is the source of truth for your inventory items.
+              Manage the details for your inventory items.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 flex flex-col min-h-0">

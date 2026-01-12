@@ -243,19 +243,19 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   
                   {!itemToEdit && (
                     <div className="space-y-2">
-                        <RadioGroup value={mode} onValueChange={(v) => {
-                          setMode(v as 'select' | 'add');
-                          setSelectedExistingItem(null);
-                          form.reset({
-                              name: '', description: '', sku: '',
-                              type: 'Product', cost: null, price: null, supplierId: null,
-                              acquisitionDate: new Date(), dispositionDate: undefined
-                          });
-                          setQuantityAdjustment('');
-                        }} className="flex gap-4">
-                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Select Existing Item</Label></FormItem>
-                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="add" id="mode-add" /></FormControl><Label htmlFor="mode-add">Add New Item</Label></FormItem>
-                        </RadioGroup>
+                         <RadioGroup value={mode} onValueChange={(v) => {
+                            const newMode = v as 'select' | 'add';
+                            setMode(newMode);
+                            setSelectedExistingItem(null);
+                             form.reset({
+                                name: '', description: '', sku: '',
+                                type: 'Product', cost: null, price: null, supplierId: null,
+                                acquisitionDate: new Date(), dispositionDate: undefined
+                            });
+                            setQuantityAdjustment('');
+                         }} className="flex gap-4">
+                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Update Existing Item</Label></FormItem>
+                         </RadioGroup>
                     </div>
                   )}
 
@@ -287,10 +287,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                             </PopoverContent>
                         </Popover>
                     </div>
-                  )}
-                  
-                   {mode === 'add' && !itemToEdit && (
-                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>New Item Name</Label><FormControl><Input {...field} placeholder="Enter name for a new item" /></FormControl><FormMessage /></FormItem> )} />
                   )}
 
                   <Separator />
@@ -363,3 +359,5 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
+
+    

@@ -228,10 +228,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             type: 'Product',
             stockQuantity: 1, // Default to 1
             userId: user.uid
-        });
+        } as Omit<InventoryItem, 'id'>);
         toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
         onSave(); // Refresh the parent list
-        onOpenChange(false); // Close the dialog
+        setTestItemName(''); // Clear input for next entry
     } catch (error: any) {
         toast({ variant: "destructive", title: 'Save Failed', description: error.message });
     }
@@ -410,3 +410,5 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
+
+    

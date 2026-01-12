@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 
 
@@ -127,12 +128,6 @@ export default function TrackInventoryPage() {
             setItemToDelete(null);
         }
     };
-    
-    const handleSupplierOnboarding = async () => {
-        // This function will simply refresh the data.
-        // The onboarding card handles the logic and the service call.
-        await loadData();
-    }
 
     return (
         <>
@@ -152,8 +147,8 @@ export default function TrackInventoryPage() {
 
                 <div className="text-center p-4 text-2xl font-bold"></div>
 
-                <div className="grid grid-cols-1 gap-6">
-                    <div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -208,6 +203,9 @@ export default function TrackInventoryPage() {
                             )}
                           </CardContent>
                         </Card>
+                    </div>
+                     <div className="lg:col-span-1">
+                        <AddInventoryItemCard onItemAdded={loadData} />
                     </div>
                 </div>
 

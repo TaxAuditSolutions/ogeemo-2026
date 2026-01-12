@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -64,7 +65,7 @@ export function TrackInventoryView() {
     const [itemToViewHistory, setItemToViewHistory] = useState<Item | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
     
-    const [testItemName, setTestItemName] = useState('');
+    const [newItemName, setNewItemName] = useState('');
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -133,13 +134,13 @@ export function TrackInventoryView() {
         }
     };
     
-    const handleTestModeSave = async () => {
-        if (!user || !testItemName.trim()) {
+    const handleAddNewItem = async () => {
+        if (!user || !newItemName.trim()) {
             return;
         }
         try {
             await addInventoryItem({
-                name: testItemName,
+                name: newItemName,
                 description: '',
                 sku: '',
                 type: 'Product',
@@ -147,9 +148,9 @@ export function TrackInventoryView() {
                 userId: user.uid,
                 acquisitionDate: new Date(),
             } as Omit<Item, 'id'>);
-            toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
+            toast({ title: "Item Added", description: `"${newItemName}" has been added to inventory.` });
             await loadData(); // Refresh data in the parent
-            setTestItemName(''); // Clear the input field
+            setNewItemName(''); // Clear the input field
         } catch (error: any) {
             toast({ variant: "destructive", title: 'Save Failed', description: error.message });
         }
@@ -181,7 +182,7 @@ export function TrackInventoryView() {
                               </CardDescription>
                             </div>
                             <Button onClick={() => handleOpenForm()}>
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
                             </Button>
                           </CardHeader>
                           <CardContent>
@@ -229,19 +230,19 @@ export function TrackInventoryView() {
                      <div className="lg:col-span-1 space-y-6">
                          <Card>
                             <CardHeader>
-                                <CardTitle>Test Item Creator</CardTitle>
+                                <CardTitle>Add Inventory Item</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-2">
-                                <Label htmlFor="test-item-name">Enter a new item name</Label>
+                                <Label htmlFor="new-item-name">Enter a new item name</Label>
                                 <Input
-                                    id="test-item-name"
-                                    value={testItemName}
-                                    onChange={(e) => setTestItemName(e.target.value)}
+                                    id="new-item-name"
+                                    value={newItemName}
+                                    onChange={(e) => setNewItemName(e.target.value)}
                                     onKeyDown={async (e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
-                                        await handleTestModeSave();
+                                        await handleAddNewItem();
                                     }
                                     }}
                                 />

@@ -31,14 +31,14 @@ import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '../ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
+import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 
 
@@ -128,12 +128,6 @@ export default function TrackInventoryPage() {
             setItemToDelete(null);
         }
     };
-    
-    const handleSupplierOnboarding = async () => {
-        // This function will simply refresh the data.
-        // The onboarding card handles the logic and the service call.
-        await loadData();
-    }
 
     return (
         <>
@@ -162,7 +156,7 @@ export default function TrackInventoryPage() {
                               </CardDescription>
                             </div>
                             <Button onClick={() => handleOpenForm()}>
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
                             </Button>
                           </CardHeader>
                           <CardContent>
@@ -189,11 +183,12 @@ export default function TrackInventoryPage() {
                                       <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                       <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                                       <TableCell className="text-right">
-                                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                          </DropdownMenuContent>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                            </DropdownMenuContent>
                                         </DropdownMenu>
                                       </TableCell>
                                     </TableRow>
@@ -208,7 +203,7 @@ export default function TrackInventoryPage() {
                         </Card>
                     </div>
                      <div className="lg:col-span-1">
-                        <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
+                        <AddInventoryItemCard onItemAdded={loadData} />
                     </div>
                 </div>
 

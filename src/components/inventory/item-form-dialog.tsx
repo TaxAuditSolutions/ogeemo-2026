@@ -45,6 +45,7 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { addContact } from '@/services/contact-service';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
@@ -239,7 +240,16 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   
                   {!itemToEdit && (
                     <div className="space-y-2">
-                        <RadioGroup value={mode} onValueChange={(v) => {setMode(v as 'select'|'add'); setSelectedExistingItem(null); form.reset(); }} className="flex gap-4">
+                        <RadioGroup value={mode} onValueChange={(v) => {
+                          setMode(v as 'select' | 'add');
+                          setSelectedExistingItem(null);
+                          form.reset({
+                              name: '', description: '', sku: '',
+                              type: 'Product', cost: null, price: null, supplierId: null,
+                              acquisitionDate: new Date(), dispositionDate: undefined
+                          });
+                          setQuantityAdjustment('');
+                        }} className="flex gap-4">
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Select Existing Item</Label></FormItem>
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="add" id="mode-add" /></FormControl><Label htmlFor="mode-add">Add New Item</Label></FormItem>
                         </RadioGroup>

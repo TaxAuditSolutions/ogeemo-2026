@@ -38,7 +38,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -132,10 +131,6 @@ export function TrackInventoryView() {
         } finally {
             setItemToDelete(null);
         }
-    };
-    
-    const handleSupplierOnboarding = async () => {
-        await loadData();
     };
     
     const handleTestModeSave = async () => {
@@ -232,7 +227,6 @@ export function TrackInventoryView() {
                         </Card>
                     </div>
                      <div className="lg:col-span-1 space-y-6">
-                        <SupplierOnboardingCard contacts={contacts} onSave={handleSupplierOnboarding} onContactsChange={setContacts} />
                          <Card>
                             <CardHeader>
                                 <CardTitle>Test Item Creator</CardTitle>

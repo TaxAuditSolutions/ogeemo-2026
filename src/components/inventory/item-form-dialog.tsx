@@ -50,7 +50,6 @@ import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
 
 const itemSchema = z.object({
-    name: z.string().min(2, { message: "Item name is required." }),
     description: z.string().optional(),
     sku: z.string().optional(),
     type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
@@ -68,7 +67,7 @@ interface ItemFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   itemToEdit: InventoryItem | null;
   onSave: () => void;
-  items: InventoryItem[]; // Pass all items for duplicate name check
+  items: InventoryItem[];
 }
 
 export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items }: ItemFormDialogProps) {
@@ -132,7 +131,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     if (isOpen) {
         if (itemToEdit) {
             form.reset({
-                name: itemToEdit.name || '',
                 description: itemToEdit.description || '',
                 sku: itemToEdit.sku || '',
                 type: itemToEdit.type || 'Product',
@@ -145,7 +143,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             setQuantityAdjustment(0);
         } else {
             form.reset({
-                name: '', description: '', sku: '',
+                description: '', sku: '',
                 type: 'Product', cost: null, price: null, supplierId: null,
                 acquisitionDate: new Date(), dispositionDate: undefined
             });
@@ -167,7 +165,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
     try {
         if (itemToEdit) {
-            // Updating an existing item
             await updateInventoryItem(itemToEdit.id, {
               ...values,
               stockQuantity: newTotalQuantity
@@ -177,13 +174,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             });
             toast({ title: 'Item Updated' });
         } else {
-            // Creating a new item
-            const existingItem = items.find(i => i.name.toLowerCase() === values.name.toLowerCase());
-            if (existingItem) {
-                toast({ variant: 'destructive', title: 'Item Exists', description: 'An item with this name already exists. Please edit the existing item instead.'});
-                return;
-            }
+            const itemName = 'Temporary Name'; // Placeholder, as the name field is removed
             await addInventoryItem({
+              name: itemName,
               ...values,
               stockQuantity: quantityChange,
               userId: user.uid
@@ -202,13 +195,12 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center">
-            <DialogTitle>{itemToEdit ? 'Edit Item Details' : 'Add New Item'}</DialogTitle>
+            <DialogTitle>{itemToEdit ? `Edit: ${itemToEdit.name}` : 'Add New Item'}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1">
               <Form {...form}>
                 <form id="item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} placeholder="Enter name for the item" disabled={!!itemToEdit} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl><FormMessage /></FormItem> )} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

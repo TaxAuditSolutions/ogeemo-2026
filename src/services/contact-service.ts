@@ -163,14 +163,6 @@ export async function deleteContacts(contactIds: string[]): Promise<void> {
 }
 
 
-// This function has been deprecated and its functionality moved to contact-folder-service.
-// It is kept here to avoid breaking imports but should not be used.
-export async function findOrCreateFolder(userId: string, folderName: string) {
-    console.warn("findOrCreateFolder is deprecated. Use services from contact-folder-service instead.");
-    // This function will now do nothing to prevent unintended side-effects.
-    return { id: 'deprecated', name: folderName, userId, parentId: null, createdAt: new Date() };
-}
-
 export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
     const db = await getDb();
     

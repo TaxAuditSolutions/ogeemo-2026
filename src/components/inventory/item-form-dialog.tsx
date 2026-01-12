@@ -52,6 +52,7 @@ import { Label } from '../ui/label';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
+import { Checkbox } from '../ui/checkbox';
 
 
 const itemSchema = z.object({
@@ -410,5 +411,3 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
-
-    

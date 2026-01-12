@@ -212,19 +212,19 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     }
     
     // Determine if we are editing or creating.
-    const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
+    // Use itemToEdit prop to reliably know if we are in edit mode.
+    const isEditing = !!itemToEdit;
     
     try {
-        if (existingItem) {
+        if (isEditing) {
             // Update existing item.
-            await updateInventoryItem(existingItem.id, values, {
+            await updateInventoryItem(itemToEdit.id, values, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
             });
             toast({ title: 'Item Updated' });
         } else {
-            // This case should ideally be handled by the explicit "Add New Item" input now,
-            // but we keep it as a fallback.
+            // Create new item.
             await addInventoryItem({ ...values, userId: user.uid });
             toast({ title: 'Item Added' });
         }
@@ -280,14 +280,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                                 placeholder="Type new item name..."
                                 value={newItemName}
                                 onChange={(e) => setNewItemName(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleAddNewItem();
-                                  }
-                                }}
                             />
-                            <Button type="button" onClick={handleAddNewItem}><Plus className="mr-2 h-4 w-4"/>Add</Button>
+                            <Button type="button" onClick={handleAddNewItem}>
+                                <Plus className="mr-2 h-4 w-4"/>Add
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -295,7 +291,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} readOnly disabled className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                         <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU</FormLabel> <FormControl><Input {...field} placeholder="SKU-12345" /></FormControl> <FormMessage /> </FormItem> )} />
                     </div>
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />

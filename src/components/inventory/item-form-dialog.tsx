@@ -291,7 +291,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         </Popover>
                     </div>
                   )}
-
+                  
                   {mode === 'add' && !itemToEdit && (
                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>New Item Name</Label><FormControl><Input {...field} placeholder="Enter name for a new item" /></FormControl><FormMessage /></FormItem> )} />
                   )}
@@ -302,6 +302,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         <p className="text-sm text-muted-foreground">This is a placeholder for the "Test" functionality.</p>
                      </div>
                   )}
+                  
 
                   <Separator />
 
@@ -343,16 +344,16 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
                       <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
                   </div>
-                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" disabled={!currentItemForDisplay && mode === 'select'} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
+                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" disabled={!currentItemForDisplay && mode === 'select'} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)} disabled={!currentItemForDisplay && mode === 'select'}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
                 </form>
               </Form>
             </ScrollArea>
           </div>
           <DialogFooter className="p-6 border-t mt-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting}>
+            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay)}>
               {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-              {itemToEdit ? 'Save Changes' : 'Save New Item'}
+              {itemToEdit ? 'Save Changes' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -373,5 +374,3 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
-
-    

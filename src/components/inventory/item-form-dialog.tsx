@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -40,7 +39,7 @@ import { LoaderCircle, ChevronsUpDown, Check, Calendar as CalendarIcon, Plus } f
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '@/components/ui/label';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -145,7 +144,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             cost: initialItem?.cost ?? undefined,
             price: initialItem?.price ?? undefined,
             supplierId: initialItem?.supplierId,
-            acquisitionDate: initialItem?.acquisitionDate ? new Date(initialItem.acquisitionDate) : new Date(),
+            acquisitionDate: initialItem?.acquisitionDate ? new Date(initialItem.acquisitionDate) : undefined,
             dispositionDate: initialItem?.dispositionDate ? new Date(initialItem.dispositionDate) : undefined,
         });
         setNewItemName('');
@@ -183,8 +182,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const handleSetNewItemName = () => {
     if (!newItemName.trim()) return;
     form.reset({
-        ...form.getValues(),
-        name: newItemName.trim(),
+      // Keep existing form data, but override the name
+      ...form.getValues(),
+      name: newItemName.trim(),
     });
     setNewItemName('');
   };
@@ -201,19 +201,24 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         price: values.price ?? null,
     };
     
-    const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
+    // An existing item being edited will have an `itemToEdit` object.
+    // A new item will be created if `itemToEdit` is null.
+    const isEditing = !!itemToEdit;
     
     try {
-        if (itemToEdit) {
+        if (isEditing) {
             await updateInventoryItem(itemToEdit.id, dataToSave, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
             });
             toast({ title: 'Item Updated' });
-        } else if (existingItem) {
-             toast({ variant: 'destructive', title: 'Item Exists', description: `An item named "${values.name}" already exists. Please edit the existing item or choose a different name.`});
-             return;
-        } else { // This is a new item creation
+        } else {
+             // For new items, check if an item with the same name already exists to prevent duplicates.
+            const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
+            if (existingItem) {
+                toast({ variant: 'destructive', title: 'Item Exists', description: `An item named "${values.name}" already exists. Please edit the existing item or choose a different name.`});
+                return; // Stop execution
+            }
             await addInventoryItem({ ...dataToSave, userId: user.uid });
             toast({ title: 'Item Added' });
         }
@@ -237,7 +242,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           <div className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
+                <form id="item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                           <Label>1. Select an Item</Label>
@@ -280,7 +285,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       </div>
                   </div>
                   <Separator className="my-6" />
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input placeholder="Enter item name..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />

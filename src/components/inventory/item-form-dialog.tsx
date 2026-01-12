@@ -198,6 +198,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             sku: savedItem.sku || '',
             type: savedItem.type,
             stockQuantity: savedItem.stockQuantity,
+            cost: savedItem.cost,
+            price: savedItem.price,
+            supplierId: savedItem.supplierId,
+            acquisitionDate: savedItem.acquisitionDate ? new Date(savedItem.acquisitionDate) : new Date(),
         });
         setNewItemName(''); // Clear the input field
         
@@ -212,24 +216,21 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         return;
     }
     
-    // Determine if we are editing or creating.
-    // Use itemToEdit prop to reliably know if we are in edit mode.
-    const isEditing = !!itemToEdit;
+    const isEditing = !!items.find(item => item.name === values.name);
     
     try {
         if (isEditing) {
-            // Update existing item.
-            await updateInventoryItem(itemToEdit.id, values, {
+            const itemToUpdate = items.find(item => item.name === values.name)!;
+            await updateInventoryItem(itemToUpdate.id, values, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
             });
             toast({ title: 'Item Updated' });
         } else {
-            // Create new item.
             await addInventoryItem({ ...values, userId: user.uid });
             toast({ title: 'Item Added' });
         }
-        onSave(); // This will trigger a reload on the parent page
+        onSave();
         onOpenChange(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -272,14 +273,14 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                             </PopoverContent>
                         </Popover>
                     </div>
-                     <form onSubmit={handleAddNewItem}>
+                    <form onSubmit={handleAddNewItem}>
                         <div className="space-y-2">
                             <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
                             <div className="flex items-center gap-2">
                                 <Plus className="h-5 w-5 text-muted-foreground" />
                                 <Input
                                     id="new-item-name"
-                                    placeholder="Type new item name and press Enter..."
+                                    placeholder="Type new item name..."
                                     value={newItemName}
                                     onChange={(e) => setNewItemName(e.target.value)}
                                 />
@@ -293,10 +294,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <Separator className="my-6" />
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} placeholder="Item name will appear here..." /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU / Item #</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                    </div>
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} placeholder="Item name will appear here..." readOnly disabled className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -341,8 +339,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                        <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                        <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <FormField

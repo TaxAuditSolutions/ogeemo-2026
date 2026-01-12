@@ -27,6 +27,7 @@ export interface Item {
   price?: number;
   supplierId?: string;
   userId: string;
+  acquisitionDate?: Date;
 }
 
 export interface InventoryLog {
@@ -53,6 +54,7 @@ async function getDb() {
 const docToItem = (doc: any): Item => ({
   id: doc.id,
   ...doc.data(),
+    acquisitionDate: (doc.data().acquisitionDate as Timestamp)?.toDate(),
 } as Item);
 
 const docToLog = (doc: any): InventoryLog => ({

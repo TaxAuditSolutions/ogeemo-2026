@@ -48,6 +48,7 @@ import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
+import { CustomCalendar } from '../ui/custom-calendar';
 
 
 const itemSchema = z.object({
@@ -205,11 +206,21 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         price: values.price ?? null,
     };
     
-    // Check if an item with this name already exists
     const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
     
     try {
-        if (existingItem) { // This is an update
+        if (existingItem && existingItem.id !== itemToEdit?.id) { // Check if we are updating or creating a duplicate
+             toast({ variant: 'destructive', title: 'Item Exists', description: `An item named "${values.name}" already exists. Please edit the existing item or choose a different name.`});
+             return;
+        }
+
+        if (itemToEdit) {
+            await updateInventoryItem(itemToEdit.id, dataToSave, {
+                type: 'Adjustment',
+                notes: 'Item details updated via form'
+            });
+            toast({ title: 'Item Updated' });
+        } else if (existingItem) { // logic to handle updating an existing item when a new one is typed
             await updateInventoryItem(existingItem.id, dataToSave, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
@@ -266,9 +277,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       <div className="space-y-2">
                           <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
                           <div className="flex items-center gap-2">
-                              <Input
+                               <Input
                                   id="new-item-name"
-                                  placeholder="Type new item name and press Enter..."
+                                  placeholder="Type new item name..."
                                   value={newItemName}
                                   onChange={(e) => setNewItemName(e.target.value)}
                                   onKeyDown={(e) => {
@@ -313,7 +324,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                                 </FormControl>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
+                                <CustomCalendar
                                   mode="single"
                                   selected={field.value}
                                   onSelect={(date) => { field.onChange(date); setIsAcquisitionDateOpen(false); }}
@@ -346,17 +357,17 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         )}
                       />
                   </div>
-                   <DialogFooter className="p-6 border-t mt-auto">
-                      <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                      <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Item Details
-                      </Button>
-                  </DialogFooter>
                 </form>
               </Form>
             </ScrollArea>
           </div>
+            <DialogFooter className="p-6 border-t mt-auto">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" form="item-form" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+              Save Item Details
+              </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

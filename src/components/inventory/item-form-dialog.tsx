@@ -198,19 +198,25 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
         return;
     }
+
+    const dataToSave = {
+        ...values,
+        cost: values.cost ?? null,
+        price: values.price ?? null,
+    };
     
     // Check if an item with this name already exists
     const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
     
     try {
         if (existingItem) { // This is an update
-            await updateInventoryItem(existingItem.id, values, {
+            await updateInventoryItem(existingItem.id, dataToSave, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
             });
             toast({ title: 'Item Updated' });
         } else { // This is a new item creation
-            await addInventoryItem({ ...values, userId: user.uid });
+            await addInventoryItem({ ...dataToSave, userId: user.uid });
             toast({ title: 'Item Added' });
         }
         onSave();
@@ -260,7 +266,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       <div className="space-y-2">
                           <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
                           <div className="flex items-center gap-2">
-                              <Plus className="h-5 w-5 text-muted-foreground" />
                               <Input
                                   id="new-item-name"
                                   placeholder="Type new item name and press Enter..."
@@ -277,7 +282,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                       </div>
                   </div>
                   <Separator className="my-6" />
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} readOnly disabled className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input placeholder="Enter item name..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />

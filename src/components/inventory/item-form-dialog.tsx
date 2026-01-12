@@ -218,7 +218,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
   const handleTestModeSave = async () => {
     if (!user || !testItemName.trim()) {
-      toast({ variant: "destructive", title: "Item name is required." });
       return;
     }
     try {
@@ -231,8 +230,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             userId: user.uid
         } as Omit<InventoryItem, 'id'>);
         toast({ title: "Test Item Added", description: `"${testItemName}" has been added to inventory.` });
-        onSave(); // Refresh the parent list
-        setTestItemName(''); // Clear input for next entry
+        onSave();
+        setTestItemName('');
+        setMode('select'); // Reset mode to hide the card
     } catch (error: any) {
         toast({ variant: "destructive", title: 'Save Failed', description: error.message });
     }
@@ -317,27 +317,32 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     </div>
                   )}
                   
-                  {mode === 'add' && !itemToEdit && (
+                   {mode === 'add' && !itemToEdit && (
                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>New Item Name</Label><FormControl><Input {...field} placeholder="Enter name for a new item" /></FormControl><FormMessage /></FormItem> )} />
                   )}
                   
                   {mode === 'test' && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Update item list</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="space-y-2">
-                                <Label htmlFor="test-item-name">Enter a new item name</Label>
-                                <Input id="test-item-name" value={testItemName} onChange={(e) => setTestItemName(e.target.value)} />
-                             </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button type="button" onClick={handleTestModeSave}>
-                                <Save className="mr-2 h-4 w-4" /> Save
-                            </Button>
-                        </CardFooter>
-                     </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Update item list</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <Label htmlFor="test-item-name">Enter a new item name</Label>
+                          <Input
+                            id="test-item-name"
+                            value={testItemName}
+                            onChange={(e) => setTestItemName(e.target.value)}
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                await handleTestModeSave();
+                              }
+                            }}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
                   
 

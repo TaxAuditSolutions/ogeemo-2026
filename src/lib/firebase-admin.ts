@@ -6,6 +6,7 @@ import { getStorage as getAdminStorageSdk } from 'firebase-admin/storage';
 // This environment variable is crucial for the gRPC client used by Firestore Admin SDK
 // to work correctly in modern Node.js environments. It specifies a set of supported
 // SSL cipher suites to avoid low-level DECODER errors.
+// It MUST be set before any other Firebase modules are loaded.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 

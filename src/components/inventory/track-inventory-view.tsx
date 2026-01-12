@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History, Plus } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
@@ -38,9 +38,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getContacts, type Contact } from '@/services/contact-service';
-import { Label } from '../ui/label';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 
 const formatCurrency = (amount?: number) => {
@@ -52,7 +51,6 @@ export function TrackInventoryView() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -75,16 +73,14 @@ export function TrackInventoryView() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
+            const [fetchedLogs, fetchedItems, fetchedSuppliers] = await Promise.all([
                 getInventoryLogs(user.uid),
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
-                getContacts(user.uid),
             ]);
             setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
-            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -112,7 +108,6 @@ export function TrackInventoryView() {
     
     const handleItemSave = async () => {
         await loadData();
-        // The dialog will close itself, no need to setIsFormOpen(false) here.
     };
     
     const handleOpenHistory = (item: Item) => {
@@ -169,8 +164,9 @@ export function TrackInventoryView() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
-                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
+
+                <div className="grid grid-cols-1 gap-6">
+                    <div>
                          <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -179,9 +175,12 @@ export function TrackInventoryView() {
                                 A list of all products, supplies, and materials your business uses.
                               </CardDescription>
                             </div>
-                            <Button onClick={() => handleOpenForm()}>
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button>Test</Button>
+                              <Button onClick={() => handleOpenForm()}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent>
                             {isLoading ? (
@@ -224,35 +223,6 @@ export function TrackInventoryView() {
                               </Table>
                             )}
                           </CardContent>
-                        </Card>
-                    </div>
-                     <div className="lg:col-span-1">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Add Inventory Item</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2">
-                                <Label htmlFor="new-item-name">Enter a new item name</Label>
-                                <Input
-                                    id="new-item-name"
-                                    value={newItemName}
-                                    onChange={(e) => setNewItemName(e.target.value)}
-                                    onKeyDown={async (e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        await handleAddNewItem();
-                                    }
-                                    }}
-                                />
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button onClick={handleAddNewItem}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Save New Item
-                                </Button>
-                            </CardFooter>
                         </Card>
                     </div>
                 </div>

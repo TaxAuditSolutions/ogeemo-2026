@@ -145,7 +145,7 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
 
-                <div className="text-center p-4 text-2xl font-bold"></div>
+                <div className="text-center p-4 text-2xl font-bold">9</div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">

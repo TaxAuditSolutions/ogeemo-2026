@@ -175,7 +175,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     setIsItemPopoverOpen(false);
   };
   
-  const handleAddNewItem = async () => {
+  const handleAddNewItem = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e && e.key !== 'Enter') return;
+    e?.preventDefault();
+
     if (!newItemName.trim() || !user) return;
     
     try {
@@ -250,7 +253,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
               <div className="space-y-4 px-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label>1. Select Existing Item to Edit</Label>
+                        <Label>1. Select an Item</Label>
                         <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className={cn("w-full justify-between", !form.getValues('name') && "text-muted-foreground")}>
@@ -280,8 +283,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                                 placeholder="Type new item name..."
                                 value={newItemName}
                                 onChange={(e) => setNewItemName(e.target.value)}
+                                onKeyDown={handleAddNewItem}
                             />
-                            <Button type="button" onClick={handleAddNewItem}>
+                            <Button type="button" onClick={() => handleAddNewItem()}>
                                 <Plus className="mr-2 h-4 w-4"/>Add
                             </Button>
                         </div>
@@ -290,9 +294,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <Separator className="my-6" />
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Item Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU</FormLabel> <FormControl><Input {...field} placeholder="SKU-12345" /></FormControl> <FormMessage /> </FormItem> )} />
+                    <div className="space-y-2">
+                        <Label htmlFor="item-name">Item Name</Label>
+                        <Input id="item-name" value={form.getValues('name')} onChange={(e) => form.setValue('name', e.target.value)} placeholder="Item name will appear here..." />
                     </div>
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description</FormLabel> <FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl> <FormMessage /> </FormItem> )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

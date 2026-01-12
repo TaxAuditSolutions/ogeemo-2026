@@ -90,7 +90,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [quantityAdjustment, setQuantityAdjustment] = useState<number | ''>(0);
   const [selectedExistingItem, setSelectedExistingItem] = useState<InventoryItem | null>(null);
   
-  const [mode, setMode] = useState<'select' | 'add'>('select');
+  const [mode, setMode] = useState<'select' | 'add' | 'test'>('select');
 
 
   const form = useForm<ItemFormData>({
@@ -180,10 +180,16 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     }
     
     const quantityChange = Number(quantityAdjustment) || 0;
-    const finalItemToProcess = selectedExistingItem || itemToEdit;
+    const finalItemToProcess = mode === 'select' ? (selectedExistingItem || itemToEdit) : null;
+    
+    // Validate name for new items
+    if (mode === 'add' && !values.name.trim()) {
+        form.setError('name', { type: 'manual', message: 'Item name is required to add a new item.' });
+        return;
+    }
 
     try {
-        if (finalItemToProcess) {
+        if (finalItemToProcess) { // Updating an existing item
             await updateInventoryItem(finalItemToProcess.id, {
               ...values,
               stockQuantity: newTotalQuantity
@@ -192,7 +198,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 notes: 'Manual adjustment via form'
             });
             toast({ title: 'Item Updated' });
-        } else {
+        } else if (mode === 'add') { // Adding a new item
             await addInventoryItem({
               name: values.name,
               ...values,
@@ -225,7 +231,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
       setIsContactFormOpen(false);
   };
 
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -241,7 +246,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   {!itemToEdit && (
                     <div className="space-y-2">
                         <RadioGroup value={mode} onValueChange={(v) => {
-                          setMode(v as 'select' | 'add');
+                          setMode(v as 'select' | 'add' | 'test');
                           setSelectedExistingItem(null);
                           form.reset({
                               name: '', description: '', sku: '',
@@ -252,6 +257,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         }} className="flex gap-4">
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Select Existing Item</Label></FormItem>
                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="add" id="mode-add" /></FormControl><Label htmlFor="mode-add">Add New Item</Label></FormItem>
+                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="test" id="mode-test" /></FormControl><Label htmlFor="mode-test">Test</Label></FormItem>
                         </RadioGroup>
                     </div>
                   )}
@@ -288,6 +294,13 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
                   {mode === 'add' && !itemToEdit && (
                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>New Item Name</Label><FormControl><Input {...field} placeholder="Enter name for a new item" /></FormControl><FormMessage /></FormItem> )} />
+                  )}
+                  
+                  {mode === 'test' && (
+                     <div className="p-4 border-2 border-dashed border-yellow-500 bg-yellow-50 rounded-lg text-center">
+                        <p className="font-semibold">Test Mode Active</p>
+                        <p className="text-sm text-muted-foreground">This is a placeholder for the "Test" functionality.</p>
+                     </div>
                   )}
 
                   <Separator />
@@ -360,3 +373,4 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
+

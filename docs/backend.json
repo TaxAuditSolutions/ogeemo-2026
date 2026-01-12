@@ -392,7 +392,8 @@
         "price": { "type": "number", "description": "The price the item is sold for." },
         "supplierId": { "type": "string" },
         "userId": { "type": "string" },
-        "acquisitionDate": { "type": "string", "format": "date-time" }
+        "acquisitionDate": { "type": "string", "format": "date-time" },
+        "dispositionDate": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "type", "stockQuantity", "userId"]
     },

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -40,7 +41,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Calendar } from '../ui/calendar';
+import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '@/components/ui/label';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -48,7 +49,6 @@ import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { CustomCalendar } from '../ui/custom-calendar';
 
 
 const itemSchema = z.object({
@@ -60,7 +60,8 @@ const itemSchema = z.object({
     cost: z.coerce.number().min(0, "Cost must be non-negative.").optional(),
     price: z.coerce.number().min(0, "Price must be non-negative.").optional(),
     supplierId: z.string().optional().nullable(),
-    acquisitionDate: z.date().optional(),
+    acquisitionDate: z.date().optional().nullable(),
+    dispositionDate: z.date().optional().nullable(),
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -84,6 +85,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isAcquisitionDateOpen, setIsAcquisitionDateOpen] = useState(false);
+  const [isDispositionDateOpen, setIsDispositionDateOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
   const [newItemName, setNewItemName] = useState("");
@@ -144,6 +146,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             price: initialItem?.price ?? undefined,
             supplierId: initialItem?.supplierId,
             acquisitionDate: initialItem?.acquisitionDate ? new Date(initialItem.acquisitionDate) : new Date(),
+            dispositionDate: initialItem?.dispositionDate ? new Date(initialItem.dispositionDate) : undefined,
         });
         setNewItemName('');
     }
@@ -171,6 +174,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         price: item.price ?? undefined,
         supplierId: item.supplierId,
         acquisitionDate: item.acquisitionDate ? new Date(item.acquisitionDate) : undefined,
+        dispositionDate: item.dispositionDate ? new Date(item.dispositionDate) : undefined,
     });
     setNewItemName('');
     setIsItemPopoverOpen(false);
@@ -181,17 +185,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     form.reset({
         ...form.getValues(),
         name: newItemName.trim(),
-        description: '',
-        sku: '',
-        type: 'Product',
-        stockQuantity: 0,
-        cost: undefined,
-        price: undefined,
-        supplierId: null,
-        acquisitionDate: new Date(),
     });
     setNewItemName('');
-    toast({ title: "New Item Ready", description: `"${newItemName.trim()}" is ready to be configured and saved.`})
   };
 
   async function onSubmit(values: ItemFormData) {
@@ -209,23 +204,15 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     const existingItem = items.find(item => item.name.toLowerCase() === values.name.toLowerCase());
     
     try {
-        if (existingItem && existingItem.id !== itemToEdit?.id) { // Check if we are updating or creating a duplicate
-             toast({ variant: 'destructive', title: 'Item Exists', description: `An item named "${values.name}" already exists. Please edit the existing item or choose a different name.`});
-             return;
-        }
-
         if (itemToEdit) {
             await updateInventoryItem(itemToEdit.id, dataToSave, {
                 type: 'Adjustment',
                 notes: 'Item details updated via form'
             });
             toast({ title: 'Item Updated' });
-        } else if (existingItem) { // logic to handle updating an existing item when a new one is typed
-            await updateInventoryItem(existingItem.id, dataToSave, {
-                type: 'Adjustment',
-                notes: 'Item details updated via form'
-            });
-            toast({ title: 'Item Updated' });
+        } else if (existingItem) {
+             toast({ variant: 'destructive', title: 'Item Exists', description: `An item named "${values.name}" already exists. Please edit the existing item or choose a different name.`});
+             return;
         } else { // This is a new item creation
             await addInventoryItem({ ...dataToSave, userId: user.uid });
             toast({ title: 'Item Added' });
@@ -275,7 +262,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                           </Popover>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="new-item-name">2. Or, Add New Item</Label>
+                          <Label htmlFor="new-item-name">2. Or, Add New Item Name</Label>
                           <div className="flex items-center gap-2">
                                <Input
                                   id="new-item-name"
@@ -298,7 +285,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Initial Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                    <FormField
+                    <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem> <FormLabel>SKU</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                  </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
                         control={form.control}
                         name="acquisitionDate"
                         render={({ field }) => (
@@ -326,8 +316,46 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                               <PopoverContent className="w-auto p-0" align="start">
                                 <CustomCalendar
                                   mode="single"
-                                  selected={field.value}
+                                  selected={field.value || undefined}
                                   onSelect={(date) => { field.onChange(date); setIsAcquisitionDateOpen(false); }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name="dispositionDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Disposition Date</FormLabel>
+                            <Popover open={isDispositionDateOpen} onOpenChange={setIsDispositionDateOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date (optional)</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CustomCalendar
+                                  mode="single"
+                                  selected={field.value || undefined}
+                                  onSelect={(date) => { field.onChange(date); setIsDispositionDateOpen(false); }}
                                   initialFocus
                                 />
                               </PopoverContent>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -23,11 +24,12 @@ export interface Item {
   sku?: string;
   type: 'Product' | 'Supply' | 'Material';
   stockQuantity: number;
-  cost?: number;
-  price?: number;
+  cost?: number | null;
+  price?: number | null;
   supplierId?: string;
   userId: string;
-  acquisitionDate?: Date;
+  acquisitionDate?: Date | null;
+  dispositionDate?: Date | null;
 }
 
 export interface InventoryLog {
@@ -51,11 +53,15 @@ async function getDb() {
     return db;
 }
 
-const docToItem = (doc: any): Item => ({
-  id: doc.id,
-  ...doc.data(),
-    acquisitionDate: (doc.data().acquisitionDate as Timestamp)?.toDate(),
-} as Item);
+const docToItem = (doc: any): Item => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      acquisitionDate: (data.acquisitionDate as Timestamp)?.toDate() || null,
+      dispositionDate: (data.dispositionDate as Timestamp)?.toDate() || null,
+    } as Item;
+};
 
 const docToLog = (doc: any): InventoryLog => ({
     id: doc.id,

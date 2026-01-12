@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item, addInventoryItem, updateInventoryItem, deleteInventoryItem } from '@/services/inventory-service';
@@ -38,11 +38,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SupplierOnboardingCard } from '@/components/inventory/supplier-onboarding-card';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Plus } from 'lucide-react';
 
 
 const formatCurrency = (amount?: number) => {
@@ -209,11 +207,12 @@ export function TrackInventoryView() {
                                       <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                       <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                                       <TableCell className="text-right">
-                                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                          </DropdownMenuContent>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                            </DropdownMenuContent>
                                         </DropdownMenu>
                                       </TableCell>
                                     </TableRow>
@@ -227,8 +226,8 @@ export function TrackInventoryView() {
                           </CardContent>
                         </Card>
                     </div>
-                     <div className="lg:col-span-1 space-y-6">
-                         <Card>
+                     <div className="lg:col-span-1">
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Add Inventory Item</CardTitle>
                             </CardHeader>
@@ -248,6 +247,12 @@ export function TrackInventoryView() {
                                 />
                                 </div>
                             </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleAddNewItem}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Save New Item
+                                </Button>
+                            </CardFooter>
                         </Card>
                     </div>
                 </div>

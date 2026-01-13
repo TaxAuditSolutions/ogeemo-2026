@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -10,65 +10,11 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, ArrowLeft, PlusCircle } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, type Item } from '@/services/inventory-service';
-import { getSuppliers, type Supplier } from '@/services/supplier-service';
-import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
+import { ArrowLeft, PlusCircle } from 'lucide-react';
 
 export default function TrackInventoryPage() {
-    const [items, setItems] = useState<Item[]>([]);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
-
-    const { user } = useAuth();
-    const { toast } = useToast();
-    
-    const loadData = useCallback(async () => {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const [fetchedItems, fetchedSuppliers] = await Promise.all([
-                getInventoryItems(user.uid),
-                getSuppliers(user.uid),
-            ]);
-            setItems(fetchedItems);
-            setSuppliers(fetchedSuppliers);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user, toast]);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-    
-    const handleOpenForm = (item: Item | null = null) => {
-      setItemToEdit(item);
-      setIsFormOpen(true);
-    };
-    
-    const handleItemSave = () => {
-        loadData();
-        setIsFormOpen(false);
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex h-full w-full items-center justify-center p-4">
-                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-            </div>
-        );
-    }
+    // All previous state management, data fetching, and event handlers have been removed.
 
     return (
         <>
@@ -94,22 +40,13 @@ export default function TrackInventoryPage() {
                             Add new items or update stock for existing items.
                           </CardDescription>
                         </div>
-                        <Button onClick={() => handleOpenForm()}>
+                        {/* This button is now non-functional as per the reset instruction. */}
+                        <Button>
                           <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
                         </Button>
                     </CardHeader>
                 </Card>
             </div>
-            
-            <ItemFormDialog 
-                isOpen={isFormOpen} 
-                onOpenChange={setIsFormOpen} 
-                itemToEdit={itemToEdit} 
-                onSave={handleItemSave}
-                items={items}
-                suppliers={suppliers}
-            />
         </>
     );
 }
-

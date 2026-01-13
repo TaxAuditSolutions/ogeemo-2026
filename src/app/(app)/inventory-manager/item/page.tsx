@@ -30,9 +30,9 @@ const itemFormSchema = z.object({
   sku: z.string().optional(),
   description: z.string().optional(),
   type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']),
-  supplierId: z.string().optional(),
-  unitCost: z.coerce.number().min(0, 'Unit Cost must be a positive number.').optional(),
-  unitPrice: z.coerce.number().min(0, 'Unit Price must be a positive number.').optional(),
+  supplierId: z.string().optional().nullable(),
+  cost: z.coerce.number().min(0, 'Unit Cost must be a positive number.').optional(),
+  price: z.coerce.number().min(0, 'Unit Price must be a positive number.').optional(),
   initialQuantity: z.coerce.number().min(0, 'Quantity must be a positive number.').optional(),
   unitOfMeasure: z.string().optional(),
   acquisitionDate: z.date().optional(),
@@ -74,9 +74,9 @@ export default function ItemFormPage() {
             sku: itemData.sku || '',
             description: itemData.description || '',
             type: itemData.type as any, // Cast because the type in DB might not match exactly
-            supplierId: itemData.supplierId || '',
-            unitCost: itemData.cost || 0,
-            unitPrice: itemData.price || 0,
+            supplierId: itemData.supplierId || null,
+            cost: itemData.cost || 0,
+            price: itemData.price || 0,
             initialQuantity: itemData.stockQuantity,
             unitOfMeasure: (itemData as any).unitOfMeasure || '',
             acquisitionDate: itemData.acquisitionDate ? new Date(itemData.acquisitionDate) : undefined,
@@ -102,9 +102,9 @@ export default function ItemFormPage() {
           sku: data.sku,
           description: data.description,
           type: data.type,
-          supplierId: data.supplierId,
-          cost: data.unitCost,
-          price: data.unitPrice,
+          supplierId: data.supplierId === 'none' ? null : data.supplierId,
+          cost: data.cost,
+          price: data.price,
           stockQuantity: data.initialQuantity, // Assuming this form edits the stock too
           acquisitionDate: data.acquisitionDate,
         }, { reason: 'Adjustment', notes: 'Item details updated.' });
@@ -116,9 +116,9 @@ export default function ItemFormPage() {
           sku: data.sku,
           description: data.description,
           type: data.type,
-          supplierId: data.supplierId,
-          cost: data.unitCost,
-          price: data.unitPrice,
+          supplierId: data.supplierId === 'none' ? null : data.supplierId,
+          cost: data.cost,
+          price: data.price,
           stockQuantity: data.initialQuantity || 0,
           unitOfMeasure: data.unitOfMeasure,
           acquisitionDate: data.acquisitionDate,
@@ -168,10 +168,32 @@ export default function ItemFormPage() {
               </div>
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Detailed description of the item..." {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product for Sale">Product for Sale</SelectItem><SelectItem value="Internal Supply">Internal Supply</SelectItem><SelectItem value="Raw Material">Raw Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><FormLabel>Supplier</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">No Supplier</SelectItem>{suppliers.map(s => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField
+                control={form.control}
+                name="supplierId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === 'none' ? null : value)} value={field.value || 'none'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a supplier..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No Supplier</SelectItem>
+                        {suppliers.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="unitCost" render={({ field }) => ( <FormItem><FormLabel>Unit Cost</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Unit Price (for sale)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem><FormLabel>Unit Cost</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Unit Price (for sale)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="initialQuantity" render={({ field }) => ( <FormItem><FormLabel>{itemId ? 'Quantity on Hand' : 'Initial Quantity'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />

@@ -89,7 +89,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         try {
             const contactsData = await getContacts(user.uid);
             // This is a placeholder filter. In a real app, you'd likely have a better way to identify suppliers.
-            setSuppliers(contactsData.filter(c => c.folderId === 'suppliers')); 
+            setSuppliers(contactsData.filter(c => c.folderId === 'suppliers' || c.businessName)); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
         } finally {

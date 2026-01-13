@@ -54,7 +54,7 @@ export function ItemHistoryDialog({ isOpen, onOpenChange, item, logs }: ItemHist
                     <TableBody>
                         {logs && logs.map((entry) => (
                             <TableRow key={entry.id}>
-                                <TableCell>{format(entry.timestamp, 'PP')}</TableCell>
+                                <TableCell>{format(new Date(entry.timestamp), 'PP')}</TableCell>
                                 <TableCell>{entry.reason}</TableCell>
                                 <TableCell className={cn("text-right font-mono", entry.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
                                     {entry.quantityChange > 0 ? '+' : ''}{entry.quantityChange}

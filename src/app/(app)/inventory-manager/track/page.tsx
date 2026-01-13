@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item, addInventoryItem, updateInventoryItem, deleteInventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item, deleteInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
@@ -37,10 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
-import { getContacts, type Contact } from '@/services/contact-service';
 import { format } from 'date-fns';
-
 
 const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return '$0.00';
@@ -51,7 +48,6 @@ export default function TrackInventoryPage() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -72,16 +68,14 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
+            const [fetchedLogs, fetchedItems, fetchedSuppliers] = await Promise.all([
                 getInventoryLogs(user.uid),
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
-                getContacts(user.uid),
             ]);
             setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
-            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -94,21 +88,21 @@ export default function TrackInventoryPage() {
     }, [loadData]);
     
     const filteredLogs = useMemo(() => {
-        if (!selectedItemId) return logs;
+        if (!selectedItemId) return [];
         return logs.filter(log => log.itemId === selectedItemId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }, [logs, selectedItemId]);
     
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.id, s.name])), [suppliers]);
     
-    const totalInventoryCost = useMemo(() => items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0), [items]);
+    const totalInventoryValue = useMemo(() => items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0), [items]);
 
     const handleOpenForm = (item: Item | null = null) => {
       setItemToEdit(item);
       setIsFormOpen(true);
     };
     
-    const handleItemSave = async () => {
-        await loadData();
+    const handleItemSave = () => {
+        loadData();
         setIsFormOpen(false);
     };
     
@@ -147,8 +141,8 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-3">
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="col-span-1">
                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -172,7 +166,7 @@ export default function TrackInventoryPage() {
                                     <TableHead>Supplier</TableHead>
                                     <TableHead className="text-right">Quantity</TableHead>
                                     <TableHead className="text-right">Unit Cost</TableHead>
-                                    <TableHead className="text-right">Total Cost</TableHead>
+                                    <TableHead className="text-right">Total Value</TableHead>
                                     <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
                                   </TableRow>
                                 </TableHeader>
@@ -189,8 +183,8 @@ export default function TrackInventoryPage() {
                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                       </TableCell>
@@ -198,7 +192,7 @@ export default function TrackInventoryPage() {
                                   ))}
                                 </TableBody>
                                 <TableFooter>
-                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell><TableCell /></TableRow>
+                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell><TableCell /></TableRow>
                                 </TableFooter>
                               </Table>
                             )}

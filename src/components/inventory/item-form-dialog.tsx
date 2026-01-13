@@ -34,7 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type InventoryLogReason } from '@/services/inventory-service';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { type Supplier } from '@/services/supplier-service';
 import { LoaderCircle, Plus, ChevronsUpDown, Check, Save } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
@@ -61,13 +61,12 @@ interface ItemFormDialogProps {
   itemToEdit: InventoryItem | null;
   onSave: () => void;
   items: InventoryItem[];
+  suppliers: Supplier[];
 }
 
-export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items }: ItemFormDialogProps) {
+export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items, suppliers }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [suppliers, setSuppliers] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
   const [dialogMode, setDialogMode] = useState<'updateStock' | 'newItem'>('updateStock');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -80,23 +79,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
   });
-
-  useEffect(() => {
-    async function loadSuppliers() {
-        if (!user || !isOpen) return;
-        setIsLoading(true);
-        try {
-            const contactsData = await getContacts(user.uid);
-            // Filter contacts to only include those with a businessName, making them likely suppliers
-            setSuppliers(contactsData.filter(c => c.businessName)); 
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    loadSuppliers();
-  }, [isOpen, user, toast]);
 
   useEffect(() => {
     if (isOpen) {
@@ -183,7 +165,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <Label>Select Item</Label>
                  <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-full justify-between border-black">
+                        <Button variant="outline" role="combobox" className="w-full justify-between">
                             <span className="truncate">{selectedItem?.name || "Add or Select an item"}</span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -212,14 +194,14 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             {selectedItem && (
                 <div className="space-y-4 pt-4 border-t animate-in fade-in-50">
                     <div className="grid grid-cols-3 gap-4 items-end">
-                      <div className="space-y-2"> <Label>Current Quantity</Label> <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center border-black" /></div>
-                      <div className="space-y-2"> <Label htmlFor="quantity-adjustment">Add / Remove</Label> <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center border-black" /></div>
-                      <div className="space-y-2"> <Label>New Total</Label> <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold border-black" /></div>
+                      <div className="space-y-2"> <Label>Current Quantity</Label> <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center" /></div>
+                      <div className="space-y-2"> <Label htmlFor="quantity-adjustment">Add / Remove</Label> <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center" /></div>
+                      <div className="space-y-2"> <Label>New Total</Label> <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold" /></div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="reason">Reason for Change</Label>
                         <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}>
-                            <SelectTrigger id="reason" className="border-black"><SelectValue /></SelectTrigger>
+                            <SelectTrigger id="reason"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Purchase">Purchase</SelectItem>
                                 <SelectItem value="Sale">Sale</SelectItem>
@@ -232,7 +214,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="adjustment-notes">Notes (Optional)</Label>
-                        <Textarea id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123, cycle count adjustment, etc." className="border-black" rows={4} />
+                        <Textarea id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123, cycle count adjustment, etc." rows={4} />
                     </div>
                 </div>
             )}
@@ -241,15 +223,15 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           <Form {...form}>
             <form id="new-item-form" onSubmit={form.handleSubmit(handleAddNewItem)} className="py-4 space-y-4">
                  <Button variant="link" onClick={() => setDialogMode('updateStock')} className="p-0 h-auto">{'<'} Back to update existing item</Button>
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Item Name</FormLabel><FormControl><Input placeholder="Enter new item name..." {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Item Name</FormLabel><FormControl><Input placeholder="Enter new item name..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                    <div className="space-y-2">
                     <Label htmlFor="initial-stock">Initial Stock Quantity</Label>
-                    <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="border-black" />
+                    <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} />
                   </div>
-                  <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU</FormLabel><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="border-black"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     <FormField
                         control={form.control}
                         name="supplierId"
@@ -257,11 +239,11 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                             <FormItem>
                                 <FormLabel>Supplier</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                    <FormControl><SelectTrigger className="border-black"><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="none">No Supplier</SelectItem>
                                         {suppliers.map(s => (
-                                            <SelectItem key={s.id} value={s.id}>{s.businessName || s.name}</SelectItem>
+                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -271,8 +253,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />
-                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Sale Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                  </div>
             </form>
           </Form>

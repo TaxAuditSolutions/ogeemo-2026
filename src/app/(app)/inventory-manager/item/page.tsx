@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +15,6 @@ import { useAuth } from '@/context/auth-context';
 import { LoaderCircle, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-// A minimal schema for just the test field.
 const itemFormSchema = z.object({
   test: z.string().optional(),
 });
@@ -37,7 +37,6 @@ export default function ItemFormPage() {
     },
   });
 
-  // This function is a placeholder and will be built out as we add more fields.
   async function onSubmit(data: ItemFormData) {
     console.log(data);
     toast({

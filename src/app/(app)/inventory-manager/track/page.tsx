@@ -3,12 +3,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
 
@@ -29,21 +23,13 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
                 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                          <CardTitle>Manage Inventory</CardTitle>
-                          <CardDescription>
-                            Add new items or update stock for existing items.
-                          </CardDescription>
-                        </div>
-                        <Button asChild>
-                          <Link href="/inventory-manager/item">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                          </Link>
-                        </Button>
-                    </CardHeader>
-                </Card>
+                <div className="text-center p-4 text-2xl font-bold">
+                    <Button asChild size="lg">
+                        <Link href="/inventory-manager/item">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
+                        </Link>
+                    </Button>
+                </div>
             </div>
         </>
     );

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +29,7 @@ const itemFormSchema = z.object({
   name: z.string().min(1, 'Item Name is required.'),
   sku: z.string().optional(),
   description: z.string().optional(),
-  type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
+  type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']).default('Product for Sale'),
   supplierId: z.string().optional().nullable(),
   cost: z.coerce.number().min(0, 'Unit Cost must be a positive number.').optional().nullable(),
   price: z.coerce.number().min(0, 'Unit Price must be a positive number.').optional().nullable(),
@@ -44,7 +44,7 @@ export default function ItemFormPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const itemId = searchParams.get('id');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const { user } = useAuth();
@@ -53,7 +53,7 @@ export default function ItemFormPage() {
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
-      type: 'Product',
+      type: 'Product for Sale',
       initialQuantity: 0,
     },
   });
@@ -180,9 +180,9 @@ export default function ItemFormPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Product">Product for Sale</SelectItem>
-                        <SelectItem value="Supply">Internal Supply</SelectItem>
-                        <SelectItem value="Material">Raw Material</SelectItem>
+                        <SelectItem value="Product for Sale">Product for Sale</SelectItem>
+                        <SelectItem value="Internal Supply">Internal Supply</SelectItem>
+                        <SelectItem value="Raw Material">Raw Material</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -87,6 +87,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         setIsLoading(true);
         try {
             const contactsData = await getContacts(user.uid);
+            // A simple way to get suppliers is to filter contacts that are in a 'suppliers' folder or have a business name.
+            // This logic can be refined as needed.
             setSuppliers(contactsData.filter(c => c.folderId === 'suppliers' || c.businessName)); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
@@ -203,13 +205,27 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             {selectedItem && (
                 <div className="space-y-4 pt-4 border-t animate-in fade-in-50">
                     <div className="grid grid-cols-3 gap-4 items-end">
-                      <div className="space-y-2"> <Label>Current Quantity</Label> <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center" /></div>
+                      <div className="space-y-2"> <Label>Current Quantity</Label> <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center border-black" /></div>
                       <div className="space-y-2"> <Label htmlFor="quantity-adjustment">Add / Remove</Label> <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center border-black" /></div>
-                      <div className="space-y-2"> <Label>New Total</Label> <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold" /></div>
+                      <div className="space-y-2"> <Label>New Total</Label> <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold border-black" /></div>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"> <Label htmlFor="reason">Reason for Change</Label> <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}><SelectTrigger id="reason" className="border-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Purchase">Purchase</SelectItem><SelectItem value="Sale">Sale</SelectItem><SelectItem value="Adjustment">Adjustment</SelectItem><SelectItem value="Shrinkage">Shrinkage</SelectItem><SelectItem value="Consumed">Consumed</SelectItem><SelectItem value="Destroyed">Destroyed</SelectItem></SelectContent></Select></div>
-                      <div className="space-y-2"> <Label htmlFor="adjustment-notes">Notes (Optional)</Label> <Input id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123" className="border-black" /></div>
+                     <div className="space-y-2">
+                        <Label htmlFor="reason">Reason for Change</Label>
+                        <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}>
+                            <SelectTrigger id="reason" className="border-black"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Purchase">Purchase</SelectItem>
+                                <SelectItem value="Sale">Sale</SelectItem>
+                                <SelectItem value="Adjustment">Adjustment</SelectItem>
+                                <SelectItem value="Shrinkage">Shrinkage</SelectItem>
+                                <SelectItem value="Consumed">Consumed</SelectItem>
+                                <SelectItem value="Destroyed">Destroyed</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="adjustment-notes">Notes (Optional)</Label>
+                        <Textarea id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123, cycle count adjustment, etc." className="border-black" rows={4} />
                     </div>
                 </div>
             )}

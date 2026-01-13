@@ -14,7 +14,6 @@ import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<Item[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
     
@@ -41,8 +40,8 @@ export default function TrackInventoryPage() {
         loadData();
     }, [loadData]);
     
-    const handleOpenForm = (item: Item | null = null) => {
-      setItemToEdit(item);
+    const handleOpenForm = () => {
+      setItemToEdit(null); // Always open for adding new or updating existing via selection
       setIsFormOpen(true);
     };
     
@@ -83,7 +82,7 @@ export default function TrackInventoryPage() {
                         Add new items or update stock quantities for existing ones.
                       </CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenForm()}>
+                    <Button onClick={handleOpenForm}>
                       <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
                     </Button>
                   </CardHeader>

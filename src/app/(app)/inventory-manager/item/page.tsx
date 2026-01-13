@@ -29,10 +29,10 @@ const itemFormSchema = z.object({
   name: z.string().min(1, 'Item Name is required.'),
   sku: z.string().optional(),
   description: z.string().optional(),
-  type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']),
+  type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
   supplierId: z.string().optional().nullable(),
-  cost: z.coerce.number().min(0, 'Unit Cost must be a positive number.').optional(),
-  price: z.coerce.number().min(0, 'Unit Price must be a positive number.').optional(),
+  cost: z.coerce.number().min(0, 'Unit Cost must be a positive number.').optional().nullable(),
+  price: z.coerce.number().min(0, 'Unit Price must be a positive number.').optional().nullable(),
   initialQuantity: z.coerce.number().min(0, 'Quantity must be a positive number.').optional(),
   unitOfMeasure: z.string().optional(),
   acquisitionDate: z.date().optional(),
@@ -53,7 +53,7 @@ export default function ItemFormPage() {
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
-      type: 'Product for Sale',
+      type: 'Product',
       initialQuantity: 0,
     },
   });
@@ -167,7 +167,7 @@ export default function ItemFormPage() {
                 <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU / Item ID</FormLabel><FormControl><Input placeholder="e.g., HD-SCR-001" {...field} /></FormControl><FormMessage /></FormItem> )} />
               </div>
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Detailed description of the item..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product for Sale">Product for Sale</SelectItem><SelectItem value="Internal Supply">Internal Supply</SelectItem><SelectItem value="Raw Material">Raw Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product for Sale</SelectItem><SelectItem value="Supply">Internal Supply</SelectItem><SelectItem value="Material">Raw Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField
                 control={form.control}
                 name="supplierId"
@@ -192,8 +192,8 @@ export default function ItemFormPage() {
                 )}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem><FormLabel>Unit Cost</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Unit Price (for sale)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem><FormLabel>Unit Cost</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Unit Price (for sale)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="initialQuantity" render={({ field }) => ( <FormItem><FormLabel>{itemId ? 'Quantity on Hand' : 'Initial Quantity'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />

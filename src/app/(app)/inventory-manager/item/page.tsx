@@ -7,16 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { LoaderCircle, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-// A minimal schema for just the name field.
+// A minimal schema for just the test field.
 const itemFormSchema = z.object({
-  name: z.string().min(1, 'Item name is required.'),
+  test: z.string().optional(),
 });
 type ItemFormData = z.infer<typeof itemFormSchema>;
 
@@ -33,13 +33,17 @@ export default function ItemFormPage() {
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
-      name: '',
+      test: '',
     },
   });
 
-  // This function is now empty and will be rebuilt as we add more fields.
+  // This function is a placeholder and will be built out as we add more fields.
   async function onSubmit(data: ItemFormData) {
     console.log(data);
+    toast({
+      title: "Form Submitted",
+      description: `Data: ${JSON.stringify(data)}`
+    })
   }
   
   if (isLoading) {
@@ -70,7 +74,19 @@ export default function ItemFormPage() {
               <CardDescription>Enter all the relevant details for this inventory item.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 min-h-[200px]">
-              {/* All form fields have been removed as requested. */}
+              <FormField
+                control={form.control}
+                name="test"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>test</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter data..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
             <CardFooter className="justify-end">
               <Button type="submit" disabled={isSaving}>

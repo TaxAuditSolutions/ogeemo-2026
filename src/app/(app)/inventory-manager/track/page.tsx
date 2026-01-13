@@ -162,8 +162,8 @@ export default function TrackInventoryPage() {
                                                                 key={item.id}
                                                                 value={item.name}
                                                                 onSelect={() => {
-                                                                    setTestSelectedItem(item);
-                                                                    setIsTestPopoverOpen(false); // Close main popover on selection
+                                                                    handleOpenForm(item);
+                                                                    setIsTestPopoverOpen(false);
                                                                 }}
                                                             >
                                                                 <Check className={cn("mr-2 h-4 w-4", testSelectedItem?.id === item.id ? "opacity-100" : "opacity-0")} />

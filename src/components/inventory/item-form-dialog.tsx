@@ -94,6 +94,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [reason, setReason] = useState<InventoryLogReason>('Adjustment');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
   
+  const [dialogMode, setDialogMode] = useState<'newItem' | 'updateItem'>('newItem');
+
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -140,39 +142,50 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
 
   useEffect(() => {
-    const item = itemToEdit || selectedExistingItem;
     if (isOpen) {
-        if (item) {
+        if (itemToEdit) {
+            setDialogMode('updateItem');
             form.reset({
-                name: item.name,
-                description: item.description || '',
-                sku: item.sku || '',
-                type: item.type || 'Product',
-                cost: item.cost ?? null,
-                price: item.price ?? null,
-                supplierId: item.supplierId,
-                acquisitionDate: item.acquisitionDate ? new Date(item.acquisitionDate) : undefined,
-                dispositionDate: item.dispositionDate ? new Date(item.dispositionDate) : undefined,
+                name: itemToEdit.name,
+                description: itemToEdit.description || '',
+                sku: itemToEdit.sku || '',
+                type: itemToEdit.type || 'Product',
+                cost: itemToEdit.cost ?? null,
+                price: itemToEdit.price ?? null,
+                supplierId: itemToEdit.supplierId,
+                acquisitionDate: itemToEdit.acquisitionDate ? new Date(itemToEdit.acquisitionDate) : undefined,
+                dispositionDate: itemToEdit.dispositionDate ? new Date(itemToEdit.dispositionDate) : undefined,
             });
-            setQuantityAdjustment(0);
-            setAdjustmentNotes('');
-            setReason('Adjustment');
+        } else if (selectedExistingItem) {
+            setDialogMode('updateItem');
+            form.reset({
+                name: selectedExistingItem.name,
+                description: selectedExistingItem.description || '',
+                sku: selectedExistingItem.sku || '',
+                type: selectedExistingItem.type || 'Product',
+                cost: selectedExistingItem.cost ?? null,
+                price: selectedExistingItem.price ?? null,
+                supplierId: selectedExistingItem.supplierId,
+                acquisitionDate: selectedExistingItem.acquisitionDate ? new Date(selectedExistingItem.acquisitionDate) : undefined,
+                dispositionDate: selectedExistingItem.dispositionDate ? new Date(selectedExistingItem.dispositionDate) : undefined,
+            });
         } else {
+            setDialogMode('newItem');
             form.reset({
                 name: '', description: '', sku: '',
                 type: 'Product', cost: null, price: null, supplierId: null,
                 acquisitionDate: new Date(), dispositionDate: undefined
             });
-            setQuantityAdjustment('');
-            setAdjustmentNotes('');
-            setReason('Initial Stock');
         }
+        setQuantityAdjustment(0);
+        setAdjustmentNotes('');
+        setReason(itemToEdit || selectedExistingItem ? 'Adjustment' : 'Initial Stock');
     } else {
         setSelectedExistingItem(null);
     }
   }, [isOpen, itemToEdit, selectedExistingItem, form]);
   
-  const currentItemForDisplay = selectedExistingItem || itemToEdit;
+  const currentItemForDisplay = itemToEdit || selectedExistingItem;
   const currentStock = currentItemForDisplay?.stockQuantity || 0;
   const newTotalQuantity = currentStock + (Number(quantityAdjustment) || 0);
 
@@ -185,7 +198,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     const quantityChange = Number(quantityAdjustment) || 0;
     const finalItemToProcess = itemToEdit || selectedExistingItem;
     
-    if (!finalItemToProcess && !values.name.trim()) {
+    if (dialogMode === 'newItem' && !values.name.trim()) {
         form.setError('name', { type: 'manual', message: 'Item name is required to add a new item.' });
         return;
     }
@@ -217,6 +230,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   
   const handleSelectExisting = (item: InventoryItem) => {
     setSelectedExistingItem(item);
+    setDialogMode('updateItem');
     setIsItemPopoverOpen(false);
   };
   
@@ -245,35 +259,62 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <form id="item-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
                   
                   {!itemToEdit && (
-                    <div className="space-y-2">
-                        <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    <span className="truncate">{selectedExistingItem?.name || "Select an item to update..."}</span>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search items..." />
-                                    <CommandList>
-                                        <CommandEmpty>No item found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {items.map((item) => (
-                                            <CommandItem key={item.id} value={item.name} onSelect={() => handleSelectExisting(item)}>
-                                                <Check className={cn("mr-2 h-4 w-4", selectedExistingItem?.id === item.id ? "opacity-100" : "opacity-0")} />
-                                                {item.name}
-                                            </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                    <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                        {dialogMode === 'newItem' ? (
+                            <div className="flex justify-between items-center">
+                                <Label>Creating New Item</Label>
+                                <Button variant="link" onClick={() => setDialogMode('updateItem')}>Update existing item instead?</Button>
+                            </div>
+                        ) : (
+                             <div className="flex justify-between items-center">
+                                <Label>Updating Existing Item</Label>
+                                <Button variant="link" onClick={() => { setSelectedExistingItem(null); setDialogMode('newItem'); }}>Create a new item instead?</Button>
+                            </div>
+                        )}
                     </div>
                   )}
                   
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} disabled={!!currentItemForDisplay} /></FormControl><FormMessage /></FormItem> )} />
+                  {dialogMode === 'updateItem' ? (
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label>Item Name</Label>
+                           <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button variant="outline" role="combobox" className="w-full justify-between">
+                                        <span className="truncate">{field.value || "Select an item to update..."}</span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search items..." />
+                                        <CommandList>
+                                            <CommandEmpty>No item found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {items.map((item) => (
+                                                <CommandItem key={item.id} value={item.name} onSelect={() => handleSelectExisting(item)}>
+                                                    <Check className={cn("mr-2 h-4 w-4", selectedExistingItem?.id === item.id ? "opacity-100" : "opacity-0")} />
+                                                    {item.name}
+                                                </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} placeholder="Enter item name here..." /></FormControl><FormMessage /></FormItem> )} />
+                  )}
+
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl><FormMessage /></FormItem> )} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

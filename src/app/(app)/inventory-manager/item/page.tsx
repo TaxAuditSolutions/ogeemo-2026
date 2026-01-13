@@ -8,16 +8,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Item as InventoryItem } from '@/services/inventory-service';
 import { type Supplier } from '@/services/supplier-service';
-import { LoaderCircle, ArrowLeft } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
 // A minimal schema for the now-empty form. This will be expanded as we rebuild.
-const itemFormSchema = z.object({});
+const itemFormSchema = z.object({
+  name: z.string().min(1, 'Item name is required.'),
+});
 type ItemFormData = z.infer<typeof itemFormSchema>;
 
 export default function ItemFormPage() {
@@ -32,11 +35,15 @@ export default function ItemFormPage() {
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
+    defaultValues: {
+      name: '',
+    },
   });
 
   // This function is now empty and will be rebuilt.
   async function onSubmit(data: ItemFormData) {
-    // Logic will be added here as we rebuild the form.
+    // Logic will be added here as we add more fields.
+    console.log(data);
   }
   
   if (isLoading) {
@@ -67,10 +74,25 @@ export default function ItemFormPage() {
               <CardDescription>Enter all the relevant details for this inventory item.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 min-h-[200px]">
-              {/* Form fields will be added here one by one based on your instructions. */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter the name of the new item" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
             <CardFooter className="justify-end">
-              {/* The save button will be added back as we build the form. */}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save
+              </Button>
             </CardFooter>
           </form>
         </Form>
@@ -78,4 +100,3 @@ export default function ItemFormPage() {
     </div>
   );
 }
-

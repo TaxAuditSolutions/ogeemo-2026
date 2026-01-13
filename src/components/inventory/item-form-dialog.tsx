@@ -81,14 +81,12 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     resolver: zodResolver(itemSchema),
   });
 
-  // Load suppliers for the dropdown
   useEffect(() => {
     async function loadSuppliers() {
         if (!user || !isOpen) return;
         setIsLoading(true);
         try {
             const contactsData = await getContacts(user.uid);
-            // This is a placeholder filter. In a real app, you'd likely have a better way to identify suppliers.
             setSuppliers(contactsData.filter(c => c.folderId === 'suppliers' || c.businessName)); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
@@ -99,7 +97,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     loadSuppliers();
   }, [isOpen, user, toast]);
 
-  // Effect to reset dialog state when opened
   useEffect(() => {
     if (isOpen) {
       if (itemToEdit) {
@@ -164,7 +161,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{dialogMode === 'newItem' ? 'Create New Item' : 'Add/Update Item Stock'}</DialogTitle>
         </DialogHeader>
@@ -175,7 +172,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <Label>Select Item</Label>
                  <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                        <Button variant="outline" role="combobox" className="w-full justify-between border-black">
                             <span className="truncate">{selectedItem?.name || "Select an item to update..."}</span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -207,12 +204,12 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 <div className="space-y-4 pt-4 border-t animate-in fade-in-50">
                     <div className="grid grid-cols-3 gap-4 items-end">
                       <div className="space-y-2"> <Label>Current Quantity</Label> <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center" /></div>
-                      <div className="space-y-2"> <Label htmlFor="quantity-adjustment">Add / Remove</Label> <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center" /></div>
+                      <div className="space-y-2"> <Label htmlFor="quantity-adjustment">Add / Remove</Label> <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center border-black" /></div>
                       <div className="space-y-2"> <Label>New Total</Label> <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold" /></div>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"> <Label htmlFor="reason">Reason for Change</Label> <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}><SelectTrigger id="reason"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Purchase">Purchase</SelectItem><SelectItem value="Sale">Sale</SelectItem><SelectItem value="Adjustment">Adjustment</SelectItem><SelectItem value="Shrinkage">Shrinkage</SelectItem><SelectItem value="Consumed">Consumed</SelectItem><SelectItem value="Destroyed">Destroyed</SelectItem></SelectContent></Select></div>
-                      <div className="space-y-2"> <Label htmlFor="adjustment-notes">Notes (Optional)</Label> <Input id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123" /></div>
+                      <div className="space-y-2"> <Label htmlFor="reason">Reason for Change</Label> <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}><SelectTrigger id="reason" className="border-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Purchase">Purchase</SelectItem><SelectItem value="Sale">Sale</SelectItem><SelectItem value="Adjustment">Adjustment</SelectItem><SelectItem value="Shrinkage">Shrinkage</SelectItem><SelectItem value="Consumed">Consumed</SelectItem><SelectItem value="Destroyed">Destroyed</SelectItem></SelectContent></Select></div>
+                      <div className="space-y-2"> <Label htmlFor="adjustment-notes">Notes (Optional)</Label> <Input id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123" className="border-black" /></div>
                     </div>
                 </div>
             )}
@@ -221,19 +218,19 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           <Form {...form}>
             <form id="new-item-form" onSubmit={form.handleSubmit(handleAddNewItem)} className="py-4 space-y-4">
                  <Button variant="link" onClick={() => setDialogMode('updateStock')} className="p-0 h-auto">{'<'} Back to update existing item</Button>
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                   <div className="space-y-2">
                     <Label htmlFor="initial-stock">Initial Stock Quantity</Label>
-                    <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} />
+                    <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="border-black" />
                   </div>
-                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                     <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="border-black"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
-                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />
                  </div>
             </form>
           </Form>

@@ -141,10 +141,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Supplier</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        <SelectItem value="none">No Supplier</SelectItem>
+                                        <SelectItem value="">No Supplier</SelectItem>
                                         {suppliers.map(s => (
                                             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}

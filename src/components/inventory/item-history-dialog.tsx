@@ -52,7 +52,7 @@ export function ItemHistoryDialog({ isOpen, onOpenChange, item, logs }: ItemHist
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {logs.map((entry) => (
+                        {logs && logs.map((entry) => (
                             <TableRow key={entry.id}>
                                 <TableCell>{format(entry.timestamp, 'PP')}</TableCell>
                                 <TableCell>{entry.reason}</TableCell>

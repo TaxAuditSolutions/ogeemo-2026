@@ -37,7 +37,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { format } from 'date-fns';
+
 
 const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return '$0.00';
@@ -48,6 +51,7 @@ export default function TrackInventoryPage() {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [items, setItems] = useState<Item[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -68,14 +72,16 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers] = await Promise.all([
+            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
                 getInventoryLogs(user.uid),
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
+                getContacts(user.uid),
             ]);
-            setLogs(fetchedLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+            setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
+            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -89,12 +95,12 @@ export default function TrackInventoryPage() {
     
     const filteredLogs = useMemo(() => {
         if (!selectedItemId) return logs;
-        return logs.filter(log => log.itemId === selectedItemId);
+        return logs.filter(log => log.itemId === selectedItemId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }, [logs, selectedItemId]);
     
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.id, s.name])), [suppliers]);
     
-    const totalInventoryValue = useMemo(() => items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0), [items]);
+    const totalInventoryCost = useMemo(() => items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0), [items]);
 
     const handleOpenForm = (item: Item | null = null) => {
       setItemToEdit(item);
@@ -107,7 +113,9 @@ export default function TrackInventoryPage() {
     };
     
     const handleOpenHistory = (item: Item) => {
+        setItemToViewHistory(item);
         setSelectedItemId(item.id);
+        setIsHistoryOpen(true);
     };
 
     const handleConfirmDelete = async () => {
@@ -164,13 +172,13 @@ export default function TrackInventoryPage() {
                                     <TableHead>Supplier</TableHead>
                                     <TableHead className="text-right">Quantity</TableHead>
                                     <TableHead className="text-right">Unit Cost</TableHead>
-                                    <TableHead className="text-right">Total Value</TableHead>
+                                    <TableHead className="text-right">Total Cost</TableHead>
                                     <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {items.map(item => (
-                                    <TableRow key={item.id} onClick={() => handleOpenHistory(item)} className={cn("cursor-pointer", selectedItemId === item.id && "bg-muted")}>
+                                    <TableRow key={item.id}>
                                       <TableCell className="font-medium">{item.name}</TableCell>
                                       <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                                       <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
@@ -180,6 +188,7 @@ export default function TrackInventoryPage() {
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -189,7 +198,7 @@ export default function TrackInventoryPage() {
                                   ))}
                                 </TableBody>
                                 <TableFooter>
-                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell><TableCell /></TableRow>
+                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell><TableCell /></TableRow>
                                 </TableFooter>
                               </Table>
                             )}
@@ -197,52 +206,6 @@ export default function TrackInventoryPage() {
                         </Card>
                     </div>
                 </div>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle>Transaction Log</CardTitle>
-                            {selectedItemId && <Button variant="ghost" onClick={() => setSelectedItemId(null)}><FilterX className="mr-2 h-4 w-4"/>Clear Filter</Button>}
-                        </div>
-                        <CardDescription>
-                            {selectedItemId ? `Showing history for: ${items.find(i => i.id === selectedItemId)?.name}` : 'A complete audit trail of all inventory movements. Select an item above to filter.'}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-96">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Item</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead className="text-right">Change</TableHead>
-                                        <TableHead className="text-right">New Qty</TableHead>
-                                        <TableHead>Notes</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredLogs.length > 0 ? filteredLogs.map(log => (
-                                        <TableRow key={log.id}>
-                                            <TableCell>{format(new Date(log.timestamp), 'PPpp')}</TableCell>
-                                            <TableCell className="font-medium">{log.itemName}</TableCell>
-                                            <TableCell><Badge variant="secondary">{log.reason}</Badge></TableCell>
-                                            <TableCell className={cn("text-right font-mono", log.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
-                                                {log.quantityChange > 0 ? '+' : ''}{log.quantityChange}
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">{log.newQuantity}</TableCell>
-                                            <TableCell>{log.notes}</TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center">No logs found for the selected filters.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
             </div>
             
             <ItemFormDialog 
@@ -251,8 +214,9 @@ export default function TrackInventoryPage() {
                 itemToEdit={itemToEdit} 
                 onSave={handleItemSave}
                 items={items}
+                suppliers={suppliers}
             />
-            <ItemHistoryDialog isOpen={isHistoryOpen} onOpenChange={setIsHistoryOpen} item={itemToViewHistory} />
+            <ItemHistoryDialog isOpen={isHistoryOpen} onOpenChange={setIsHistoryOpen} item={itemToViewHistory} logs={filteredLogs} />
             <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{itemToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>

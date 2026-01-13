@@ -12,12 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { type Item as InventoryItem } from '@/services/inventory-service';
-import { type Supplier } from '@/services/supplier-service';
 import { LoaderCircle, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-// A minimal schema for the now-empty form. This will be expanded as we rebuild.
+// A minimal schema for just the name field.
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required.'),
 });
@@ -40,9 +38,8 @@ export default function ItemFormPage() {
     },
   });
 
-  // This function is now empty and will be rebuilt.
+  // This function is now empty and will be rebuilt as we add more fields.
   async function onSubmit(data: ItemFormData) {
-    // Logic will be added here as we add more fields.
     console.log(data);
   }
   

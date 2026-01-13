@@ -12,6 +12,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { getContactById } from '@/services/contact-service';

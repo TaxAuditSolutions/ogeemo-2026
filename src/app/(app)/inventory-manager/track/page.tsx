@@ -145,7 +145,12 @@ export default function TrackInventoryPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Item Name</TableHead>
+                                        <TableHead>
+                                            <button onClick={() => handleOpenForm()} className="group flex items-center gap-2 text-left hover:text-primary">
+                                                Item Name
+                                                <PlusCircle className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </button>
+                                        </TableHead>
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Type</TableHead>
                                         <TableHead>Supplier</TableHead>
@@ -163,7 +168,7 @@ export default function TrackInventoryPage() {
                                             <TableCell>{item.sku || 'N/A'}</TableCell>
                                             <TableCell>{item.type}</TableCell>
                                             <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                                            <TableCell>{item.acquisitionDate ? format(item.acquisitionDate, 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                            <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                             <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                             <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>

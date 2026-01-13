@@ -149,78 +149,8 @@ export default function TrackInventoryPage() {
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <Card>
-                          <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                              <CardTitle>Inventory List</CardTitle>
-                              <CardDescription>
-                                A list of all products, supplies, and materials your business uses.
-                              </CardDescription>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            {isLoading ? (
-                              <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
-                            ) : (
-                              <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Item Name</TableHead>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Supplier</TableHead>
-                                        <TableHead>Action Date</TableHead>
-                                        <TableHead className="text-right">Qty</TableHead>
-                                        <TableHead className="text-right">Unit Cost</TableHead>
-                                        <TableHead className="text-right">Total Cost</TableHead>
-                                        <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {items.length > 0 ? items.map(item => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell>{item.sku || 'N/A'}</TableCell>
-                                            <TableCell>{item.type}</TableCell>
-                                            <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                                            <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                            <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                                            <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                                            <TableCell>
-                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                                 <TableFooter>
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
-                                        <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
-                                        <TableCell></TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                              </Table>
-                            )}
-                          </CardContent>
-                        </Card>
-                    </div>
-                     <div className="lg:col-span-1 space-y-4">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <UpdateStockCard
                           items={items}
                           onItemSelected={(item) => handleOpenForm(item)}
@@ -247,6 +177,75 @@ export default function TrackInventoryPage() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Inventory List</CardTitle>
+                          <CardDescription>
+                            A list of all products, supplies, and materials your business uses.
+                          </CardDescription>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {isLoading ? (
+                          <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Item Name</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Supplier</TableHead>
+                                    <TableHead>Action Date</TableHead>
+                                    <TableHead className="text-right">Qty</TableHead>
+                                    <TableHead className="text-right">Unit Cost</TableHead>
+                                    <TableHead className="text-right">Total Cost</TableHead>
+                                    <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {items.length > 0 ? items.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>{item.sku || 'N/A'}</TableCell>
+                                        <TableCell>{item.type}</TableCell>
+                                        <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
+                                        <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                        <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
+                                        <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                                        <TableCell>
+                                             <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                             <TableFooter>
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                                    <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
+                                    <TableCell></TableCell>
+                                </TableRow>
+                            </TableFooter>
+                          </Table>
+                        )}
+                      </CardContent>
+                    </Card>
                 </div>
             </div>
             

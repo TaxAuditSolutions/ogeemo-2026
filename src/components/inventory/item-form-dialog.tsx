@@ -175,7 +175,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                  <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" className="w-full justify-between border-black">
-                            <span className="truncate">{selectedItem?.name || "Select an item to update..."}</span>
+                            <span className="truncate">{selectedItem?.name || "Add or Select an item"}</span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>

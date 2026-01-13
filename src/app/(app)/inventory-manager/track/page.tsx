@@ -33,6 +33,9 @@ import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
 import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -125,7 +128,21 @@ export default function TrackInventoryPage() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                     <div className="absolute top-0 right-0">
-                        <Button variant="outline">test</Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline">test</Button>
+                            </PopoverTrigger>
+                            <PopoverContent>
+                                <Card>
+                                    <CardContent className="pt-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="test-input">test 101</Label>
+                                            <Input id="test-input" placeholder="Enter data..." />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </header>
                 
@@ -210,7 +227,7 @@ export default function TrackInventoryPage() {
                     </div>
                      <div className="lg:col-span-1">
                         <AddInventoryItemCard 
-                            onItemAdded={loadData}
+                            onItemAdded={() => handleOpenForm(null)}
                         />
                     </div>
                 </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -71,19 +70,7 @@ export default function ItemFormPage() {
               <CardDescription>Enter all the relevant details for this inventory item.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 min-h-[200px]">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter the name of the new item" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* All form fields have been removed as requested. */}
             </CardContent>
             <CardFooter className="justify-end">
               <Button type="submit" disabled={isSaving}>

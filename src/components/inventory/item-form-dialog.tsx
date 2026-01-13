@@ -189,14 +189,11 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
-                            <CommandInput placeholder="Enter New item name and save" />
                             <CommandList>
-                                <CommandEmpty>
-                                    <Button variant="ghost" className="w-full" onClick={() => { setDialogMode('newItem'); setIsItemPopoverOpen(false); }}>
-                                        <Plus className="mr-2 h-4 w-4"/> Create New Item
-                                    </Button>
-                                </CommandEmpty>
                                 <CommandGroup>
+                                    <CommandItem onSelect={() => { setDialogMode('newItem'); setIsItemPopoverOpen(false); }}>
+                                        <Plus className="mr-2 h-4 w-4"/> Create New Item
+                                    </CommandItem>
                                     {items.map((item) => (
                                     <CommandItem key={item.id} value={item.name} onSelect={() => { setSelectedItem(item); setIsItemPopoverOpen(false); }}>
                                         <Check className={cn("mr-2 h-4 w-4", selectedItem?.id === item.id ? "opacity-100" : "opacity-0")} />
@@ -247,10 +244,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     <Label htmlFor="initial-stock">Initial Stock Quantity</Label>
                     <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="border-black" />
                   </div>
+                  <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU</FormLabel><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="border-black"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                     <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />
@@ -270,5 +267,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

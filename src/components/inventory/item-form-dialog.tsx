@@ -87,7 +87,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         setIsLoading(true);
         try {
             const contactsData = await getContacts(user.uid);
-            setSuppliers(contactsData.filter(c => c.folderId === 'suppliers' || c.businessName)); 
+            // Filter contacts to only include those with a businessName, making them likely suppliers
+            setSuppliers(contactsData.filter(c => c.businessName)); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
         } finally {
@@ -240,7 +241,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           <Form {...form}>
             <form id="new-item-form" onSubmit={form.handleSubmit(handleAddNewItem)} className="py-4 space-y-4">
                  <Button variant="link" onClick={() => setDialogMode('updateStock')} className="p-0 h-auto">{'<'} Back to update existing item</Button>
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Item Name</FormLabel><FormControl><Input placeholder="Enter item name here" {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Item Name</FormLabel><FormControl><Input placeholder="Enter new item name..." {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                    <div className="space-y-2">
                     <Label htmlFor="initial-stock">Initial Stock Quantity</Label>
                     <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="border-black" />
@@ -249,6 +250,25 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="border-black"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField
+                        control={form.control}
+                        name="supplierId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Supplier</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                    <FormControl><SelectTrigger className="border-black"><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="none">No Supplier</SelectItem>
+                                        {suppliers.map(s => (
+                                            <SelectItem key={s.id} value={s.id}>{s.businessName || s.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="border-black" /></FormControl> <FormMessage /> </FormItem> )} />

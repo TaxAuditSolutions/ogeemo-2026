@@ -126,7 +126,7 @@ export default function TrackInventoryPage() {
                 </header>
                 
                 <Card>
-                    <CardHeader className="flex-row justify-between items-center">
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Inventory List</CardTitle>
                             <CardDescription>A complete list of all your inventory items.</CardDescription>

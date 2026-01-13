@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -9,6 +10,9 @@ import Link from 'next/link';
 export default function ItemFormPage() {
   const router = useRouter();
 
+  // This page is being replaced by a dialog-based approach on the main track page.
+  // The form has been removed to resolve a Next.js InvariantError.
+  
   return (
     <div className="p-4 sm:p-6 flex flex-col items-center h-full">
       <header className="w-full max-w-2xl text-center relative mb-6">
@@ -24,9 +28,6 @@ export default function ItemFormPage() {
           Add/Edit Item
         </h1>
       </header>
-
-      {/* The form card has been removed as requested. */}
-      
     </div>
   );
 }

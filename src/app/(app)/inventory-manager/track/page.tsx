@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -131,7 +130,7 @@ export default function TrackInventoryPage() {
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Type</TableHead>
                                         <TableHead>Supplier</TableHead>
-                                        <TableHead className="text-right">Qty on Hand</TableHead>
+                                        <TableHead className="text-right">Qty</TableHead>
                                         <TableHead className="text-right">Unit Cost</TableHead>
                                         <TableHead className="text-right">Total Cost</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>

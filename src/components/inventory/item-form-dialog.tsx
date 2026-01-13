@@ -102,11 +102,21 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
       if (itemToEdit) {
         setDialogMode('updateStock');
         setSelectedItem(itemToEdit);
-        form.reset();
+        form.reset({
+            name: itemToEdit.name,
+            description: itemToEdit.description || '',
+            sku: itemToEdit.sku || '',
+            type: itemToEdit.type,
+            cost: itemToEdit.cost,
+            price: itemToEdit.price,
+            supplierId: itemToEdit.supplierId,
+        });
       } else {
         setDialogMode('updateStock');
         setSelectedItem(null);
-        form.reset();
+        form.reset({
+            name: '', description: '', sku: '', type: 'Product', cost: null, price: null, supplierId: null
+        });
       }
       setQuantityAdjustment('');
       setAdjustmentNotes('');

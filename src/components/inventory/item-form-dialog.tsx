@@ -94,8 +94,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [reason, setReason] = useState<InventoryLogReason>('Adjustment');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
   
-  const [mode, setMode] = useState<'select' | 'add'>('add');
-
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -142,8 +140,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
 
   useEffect(() => {
+    const item = itemToEdit || selectedExistingItem;
     if (isOpen) {
-        const item = itemToEdit || selectedExistingItem;
         if (item) {
             form.reset({
                 name: item.name,
@@ -159,7 +157,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             setQuantityAdjustment(0);
             setAdjustmentNotes('');
             setReason('Adjustment');
-            setMode('select');
         } else {
             form.reset({
                 name: '', description: '', sku: '',
@@ -169,7 +166,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
             setQuantityAdjustment('');
             setAdjustmentNotes('');
             setReason('Initial Stock');
-            setMode('add');
         }
     } else {
         setSelectedExistingItem(null);
@@ -187,9 +183,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     }
     
     const quantityChange = Number(quantityAdjustment) || 0;
-    const finalItemToProcess = mode === 'select' ? (selectedExistingItem || itemToEdit) : null;
+    const finalItemToProcess = itemToEdit || selectedExistingItem;
     
-    if (mode === 'add' && !values.name.trim()) {
+    if (!finalItemToProcess && !values.name.trim()) {
         form.setError('name', { type: 'manual', message: 'Item name is required to add a new item.' });
         return;
     }
@@ -204,7 +200,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 notes: adjustmentNotes
             });
             toast({ title: 'Item Updated' });
-        } else if (mode === 'add') {
+        } else {
             await addInventoryItem({
               name: values.name,
               ...values,
@@ -358,3 +354,4 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   );
 }
 
+    

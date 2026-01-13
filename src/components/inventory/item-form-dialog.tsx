@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -88,7 +88,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         setIsLoading(true);
         try {
             const contactsData = await getContacts(user.uid);
-            setSuppliers(contactsData.filter(c => c.folderId === 'suppliers')); // Assuming you have a folder for suppliers
+            // This is a placeholder filter. In a real app, you'd likely have a better way to identify suppliers.
+            setSuppliers(contactsData.filter(c => c.folderId === 'suppliers')); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
         } finally {
@@ -248,8 +249,5 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    </>
   );
 }
-```
-</details>

@@ -31,8 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
-import { format } from 'date-fns';
-
+import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -122,27 +121,31 @@ export default function TrackInventoryPage() {
                             </Link>
                         </Button>
                     </div>
-                    <h1 className="text-3xl font-bold font-headline text-primary">Inventory List</h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
                 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Inventory List</CardTitle>
-                            <CardDescription>A complete list of all your inventory items.</CardDescription>
-                        </div>
-                        <Button onClick={() => handleOpenForm()}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <div className="flex justify-center items-center h-48">
-                                <LoaderCircle className="h-8 w-8 animate-spin" />
+                <div className="text-center p-4 text-2xl font-bold">9</div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <Card>
+                          <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle>Inventory List</CardTitle>
+                              <CardDescription>
+                                A list of all products, supplies, and materials your business uses.
+                              </CardDescription>
                             </div>
-                        ) : (
-                            <Table>
+                            <Button onClick={() => handleOpenForm()}>
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
+                            </Button>
+                          </CardHeader>
+                          <CardContent>
+                            {isLoading ? (
+                              <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+                            ) : (
+                              <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>
@@ -198,12 +201,21 @@ export default function TrackInventoryPage() {
                                         <TableCell></TableCell>
                                     </TableRow>
                                 </TableFooter>
-                            </Table>
-                        )}
-                    </CardContent>
-                </Card>
+                              </Table>
+                            )}
+                          </CardContent>
+                        </Card>
+                    </div>
+                     <div className="lg:col-span-1">
+                        <AddInventoryItemCard 
+                            onItemAdded={loadData}
+                            inventoryItems={items}
+                            onItemSelected={handleOpenForm}
+                        />
+                    </div>
+                </div>
             </div>
-
+            
             <ItemFormDialog 
                 isOpen={isFormOpen} 
                 onOpenChange={setIsFormOpen} 

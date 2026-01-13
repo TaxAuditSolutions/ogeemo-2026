@@ -4,80 +4,80 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addInventoryItem } from '@/services/inventory-service';
-import { LoaderCircle, PlusCircle } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
+import { type Item as InventoryItem } from '@/services/inventory-service';
+import { cn } from '@/lib/utils';
+
 
 interface AddInventoryItemCardProps {
   onItemAdded: () => void;
+  inventoryItems: InventoryItem[];
+  onItemSelected: (item: InventoryItem) => void;
 }
 
-export function AddInventoryItemCard({ onItemAdded }: AddInventoryItemCardProps) {
-  const [itemName, setItemName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+export function AddInventoryItemCard({ onItemAdded, inventoryItems, onItemSelected }: AddInventoryItemCardProps) {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  const handleAddItem = async () => {
-    if (!itemName.trim() || !user) {
-      toast({
-        variant: 'destructive',
-        title: 'Item name is required.',
-      });
-      return;
-    }
-    setIsSaving(true);
-    try {
-      await addInventoryItem({
-        name: itemName.trim(),
-        type: 'Product', // Default type
-        stockQuantity: 0, // Default initial quantity
-        userId: user.uid,
-        // Other fields can be edited later
-      });
-      toast({
-        title: 'Item Added',
-        description: `"${itemName.trim()}" has been added to your inventory.`,
-      });
-      setItemName('');
-      onItemAdded(); // Callback to refresh the parent component's list
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to Add Item',
-        description: error.message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSelect = (item: InventoryItem) => {
+    onItemSelected(item);
+    setIsPopoverOpen(false);
+    setSearchValue("");
   };
 
+  const handleAddNew = () => {
+    onItemSelected(null);
+    setIsPopoverOpen(false);
+    setSearchValue("");
+  };
+  
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Add Inventory Item</CardTitle>
-        <CardDescription>Quickly add a new item to your inventory list.</CardDescription>
+        <CardTitle>Update Stock</CardTitle>
+        <CardDescription>Search for an item to quickly update its stock levels.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="item-name" className="text-sm font-medium">Item Name</label>
-          <Input
-            id="item-name"
-            placeholder="Enter new item name..."
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAddItem();
-            }}
-          />
-        </div>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" role="combobox" className="w-full justify-between">
+              <span className="truncate">{searchValue || "Search item..."}</span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+            <Command>
+              <CommandInput
+                placeholder="Search item name..."
+                value={searchValue}
+                onValueChange={setSearchValue}
+              />
+              <CommandList>
+                <CommandEmpty>No item found.</CommandEmpty>
+                <CommandGroup>
+                  {inventoryItems.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={item.name}
+                      onSelect={() => handleSelect(item)}
+                    >
+                      {item.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleAddItem} disabled={!itemName.trim() || isSaving} className="w-full">
-          {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-          Add Item
+        <Button onClick={handleAddNew} className="w-full">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add New Item
         </Button>
       </CardFooter>
     </Card>

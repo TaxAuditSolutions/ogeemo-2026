@@ -189,3 +189,24 @@ export async function mergeContacts(sourceContactId: string, masterContactId: st
 
     await deleteDoc(sourceRef);
 }
+
+
+export async function findOrCreateFolder(userId: string, folderName: string): Promise<FolderData> {
+    const db = await getDb();
+    const FOLDERS_COLLECTION = 'contactFolders';
+    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as FolderData;
+    }
+
+    const newFolderData = {
+        name: folderName,
+        userId,
+        parentId: null,
+        createdAt: new Date()
+    };
+    const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
+    return { id: docRef.id, ...newFolderData };
+}

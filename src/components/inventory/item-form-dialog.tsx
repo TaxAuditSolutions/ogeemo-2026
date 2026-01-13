@@ -47,7 +47,7 @@ const itemSchema = z.object({
     name: z.string().min(1, 'Item name is required.'),
     description: z.string().optional(),
     sku: z.string().optional(),
-    type: z.enum(['Product', 'Supply', 'Material']).default('Product'),
+    type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']).default('Product for Sale'),
     cost: z.coerce.number().min(0, "Cost must be non-negative.").optional().nullable(),
     price: z.coerce.number().min(0, "Price must be non-negative.").optional().nullable(),
     supplierId: z.string().optional().nullable(),
@@ -98,7 +98,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         setDialogMode('updateStock');
         setSelectedItem(null);
         form.reset({
-            name: '', description: '', sku: '', type: 'Product', cost: null, price: null, supplierId: null
+            name: '', description: '', sku: '', type: 'Product for Sale', cost: null, price: null, supplierId: null
         });
       }
       setQuantityAdjustment('');
@@ -231,7 +231,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product for Sale">For Resale</SelectItem><SelectItem value="Internal Supply">Internal Use</SelectItem><SelectItem value="Raw Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     <FormField
                         control={form.control}
                         name="supplierId"

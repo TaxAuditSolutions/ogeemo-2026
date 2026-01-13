@@ -21,7 +21,7 @@ export interface Item {
   name: string;
   description?: string;
   sku?: string;
-  type: 'Product' | 'Supply' | 'Material';
+  type: 'Product for Sale' | 'Internal Supply' | 'Raw Material';
   stockQuantity: number;
   cost?: number | null;
   price?: number | null;
@@ -30,6 +30,7 @@ export interface Item {
   acquisitionDate?: Date | null;
   dispositionDate?: Date | null;
   dispositionReason?: string;
+  unitOfMeasure?: string;
 }
 
 export type InventoryLogReason = 'Initial Stock' | 'Purchase' | 'Sale' | 'Adjustment' | 'Shrinkage' | 'Consumed' | 'Destroyed';
@@ -82,6 +83,16 @@ export async function getInventoryItems(userId: string): Promise<Item[]> {
   const q = query(collection(db, ITEMS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToItem).sort((a,b) => a.name.localeCompare(b.name));
+}
+
+export async function getInventoryItemById(itemId: string): Promise<Item | null> {
+    const db = await getDb();
+    const docRef = doc(db, ITEMS_COLLECTION, itemId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docToItem(docSnap);
+    }
+    return null;
 }
 
 export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
@@ -142,5 +153,5 @@ export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> 
     const db = await getDb();
     const q = query(collection(db, LOGS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToLog);
+    return snapshot.docs.map(docToLog).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }

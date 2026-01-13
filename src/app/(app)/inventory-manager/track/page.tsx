@@ -13,9 +13,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
 
 export default function TrackInventoryPage() {
-
-    // All previous state management, data fetching, and event handlers have been removed.
-
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -40,9 +37,10 @@ export default function TrackInventoryPage() {
                             Add new items or update stock for existing items.
                           </CardDescription>
                         </div>
-                        {/* This button is now non-functional as per the reset instruction. */}
-                        <Button>
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
+                        <Button asChild>
+                          <Link href="/inventory-manager/item">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                          </Link>
                         </Button>
                     </CardHeader>
                 </Card>

@@ -3,8 +3,9 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
@@ -34,6 +35,8 @@ export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+    const [itemToViewHistory, setItemToViewHistory] = useState<InventoryItem | null>(null);
     const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -142,7 +145,7 @@ export default function TrackInventoryPage() {
                                             <TableCell>{item.type}</TableCell>
                                             <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                                             <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatCurrency(item.cost || 0)}</TableCell>
+                                            <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                             <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                                             <TableCell>
                                                  <DropdownMenu>
@@ -194,4 +197,3 @@ export default function TrackInventoryPage() {
         </>
     );
 }
-

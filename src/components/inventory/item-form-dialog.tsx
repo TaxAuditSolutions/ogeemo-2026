@@ -33,13 +33,16 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type InventoryLogReason } from '@/services/inventory-service';
-import { type Supplier } from '@/services/supplier-service';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Calendar as CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '../ui/label';
+import { type Contact } from '@/services/contact-service';
+import { type Supplier, designateContactAsSupplier } from '@/services/supplier-service';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+
 
 const itemSchema = z.object({
     name: z.string().min(1, 'Item name is required.'),
@@ -58,10 +61,10 @@ interface ItemFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   itemToEdit: InventoryItem | null;
   onSave: () => void;
-  suppliers: Supplier[];
+  contacts: Contact[];
 }
 
-export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppliers }: ItemFormDialogProps) {
+export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, contacts }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -70,7 +73,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-
+  const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,10 +99,24 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
   const handleSave = async (values: ItemFormData) => {
     if (!user) return;
     
+    let finalSupplierId = values.supplierId;
+
+    if (values.supplierId && values.supplierId !== 'none' && !values.supplierId.startsWith('sup_')) {
+      try {
+        const newSupplier = await designateContactAsSupplier(user.uid, values.supplierId);
+        finalSupplierId = newSupplier.id;
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${error.message}` });
+        return;
+      }
+    } else if (values.supplierId === 'none') {
+        finalSupplierId = null;
+    }
+
     try {
       const dataToSave = {
         ...values,
-        supplierId: values.supplierId === 'none' ? null : values.supplierId,
+        supplierId: finalSupplierId,
       };
 
       if (itemToEdit) {
@@ -144,17 +161,38 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
                         control={form.control}
                         name="supplierId"
                         render={({ field }) => (
-                            <FormItem>
+                           <FormItem className="flex flex-col">
                                 <FormLabel>Supplier</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="none">No Supplier</SelectItem>
-                                        {suppliers.map(s => (
-                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                <span className="truncate">{field.value ? contacts.find(c => c.id === field.value)?.name : "Select a supplier..."}</span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search contacts..." />
+                                            <CommandList>
+                                                <CommandEmpty>No contact found.</CommandEmpty>
+                                                <CommandGroup>
+                                                     <CommandItem onSelect={() => { field.onChange(null); setIsSupplierPopoverOpen(false); }}>
+                                                        <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
+                                                        -- No Supplier --
+                                                    </CommandItem>
+                                                    {contacts.map((contact) => (
+                                                        <CommandItem key={contact.id} value={contact.name} onSelect={() => { field.onChange(contact.id); setIsSupplierPopoverOpen(false); }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", field.value === contact.id ? "opacity-100" : "opacity-0")} />
+                                                            {contact.name} {contact.businessName ? `(${contact.businessName})` : ''}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                                 <FormMessage />
                             </FormItem>
                         )}

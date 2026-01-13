@@ -62,13 +62,22 @@ export async function deleteSupplier(id: string): Promise<void> {
 
 /**
  * Designates an existing contact as a supplier.
+ * If a supplier record for this contact already exists, it does nothing.
+ * If not, it creates a new supplier record using the contact's details.
+ * The supplier ID will match the contact ID.
  */
-export async function designateContactAsSupplier(userId: string, contactId: string): Promise<void> {
+export async function designateContactAsSupplier(userId: string, contactId: string): Promise<Supplier> {
   const db = await getDb();
+  const supplierRef = doc(db, SUPPLIERS_COLLECTION, contactId);
   
+  const supplierSnap = await getDoc(supplierRef);
+  if (supplierSnap.exists()) {
+    return docToSupplier(supplierSnap);
+  }
+
   const contact = await getContactById(contactId);
   if (!contact) {
-      throw new Error("Contact not found.");
+      throw new Error("Contact not found to designate as supplier.");
   }
   
   const supplierData: Omit<Supplier, 'id'> = {
@@ -79,5 +88,6 @@ export async function designateContactAsSupplier(userId: string, contactId: stri
       userId: userId,
   };
 
-  await setDoc(doc(db, SUPPLIERS_COLLECTION, contactId), supplierData, { merge: true });
+  await setDoc(supplierRef, supplierData);
+  return { id: contactId, ...supplierData };
 }

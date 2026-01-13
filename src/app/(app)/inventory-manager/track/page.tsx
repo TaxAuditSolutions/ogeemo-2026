@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog, addInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ import { Label } from '@/components/ui/label';
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
@@ -59,14 +61,16 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedItems, fetchedSuppliers, fetchedLogs] = await Promise.all([
+            const [fetchedItems, fetchedSuppliers, fetchedLogs, fetchedContacts] = await Promise.all([
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
                 getInventoryLogs(user.uid),
+                getContacts(user.uid),
             ]);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
             setLogs(fetchedLogs);
+            setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -120,7 +124,7 @@ export default function TrackInventoryPage() {
         try {
             await addInventoryItem({
                 name: newItemName,
-                type: 'Product for Sale', // Default type
+                type: 'Product for Sale',
                 stockQuantity: 0,
                 userId: user.uid,
                 reason: 'Initial Stock'
@@ -254,7 +258,7 @@ export default function TrackInventoryPage() {
                 onOpenChange={setIsFormOpen} 
                 itemToEdit={itemToEdit} 
                 onSave={handleItemSave}
-                suppliers={suppliers}
+                contacts={contacts}
             />
             <ItemHistoryDialog 
                 isOpen={isHistoryOpen} 

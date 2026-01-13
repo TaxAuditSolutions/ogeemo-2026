@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, ChevronsUpDown, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
@@ -36,6 +36,9 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -48,6 +51,10 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     
+    // State for the test popover
+    const [isTestPopoverOpen, setIsTestPopoverOpen] = useState(false);
+    const [testSelectedItem, setTestSelectedItem] = useState<InventoryItem | null>(null);
+
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
@@ -128,16 +135,46 @@ export default function TrackInventoryPage() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                     <div className="absolute top-0 right-0">
-                        <Popover>
+                        <Popover open={isTestPopoverOpen} onOpenChange={setIsTestPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline">test</Button>
                             </PopoverTrigger>
-                            <PopoverContent>
+                            <PopoverContent className="w-80">
                                 <Card>
                                     <CardContent className="pt-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="test-input">test 101</Label>
-                                            <Input id="test-input" placeholder="Enter data..." />
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                        <span className="truncate">{testSelectedItem?.name || "Select an item..."}</span>
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                    <Command>
+                                                        <CommandInput placeholder="Search items..." />
+                                                        <CommandList>
+                                                        <CommandEmpty>No items found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {items.map((item) => (
+                                                            <CommandItem
+                                                                key={item.id}
+                                                                value={item.name}
+                                                                onSelect={() => {
+                                                                    setTestSelectedItem(item);
+                                                                    setIsTestPopoverOpen(false); // Close main popover on selection
+                                                                }}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", testSelectedItem?.id === item.id ? "opacity-100" : "opacity-0")} />
+                                                                {item.name}
+                                                            </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
                                     </CardContent>
                                 </Card>

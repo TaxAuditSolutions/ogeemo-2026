@@ -9,14 +9,14 @@ import { type Item as InventoryItem } from '@/services/inventory-service';
 
 interface AddInventoryItemCardProps {
   onItemAdded: () => void;
-  inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem | null) => void;
 }
 
-export function AddInventoryItemCard({ onItemAdded, inventoryItems, onItemSelected }: AddInventoryItemCardProps) {
+export function AddInventoryItemCard({ onItemAdded }: AddInventoryItemCardProps) {
 
   const handleAddNew = () => {
-    onItemSelected(null);
+    // This function will likely need to open a dialog.
+    // For now, we'll connect it to a prop that the parent can handle.
+    onItemAdded();
   };
   
   return (

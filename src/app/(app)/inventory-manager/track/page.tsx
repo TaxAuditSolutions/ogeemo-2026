@@ -124,6 +124,9 @@ export default function TrackInventoryPage() {
                     </div>
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
+                    <div className="absolute top-0 right-0">
+                        <Button variant="outline">test</Button>
+                    </div>
                 </header>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -208,8 +211,6 @@ export default function TrackInventoryPage() {
                      <div className="lg:col-span-1">
                         <AddInventoryItemCard 
                             onItemAdded={loadData}
-                            inventoryItems={items}
-                            onItemSelected={handleOpenForm}
                         />
                     </div>
                 </div>
@@ -220,7 +221,6 @@ export default function TrackInventoryPage() {
                 onOpenChange={setIsFormOpen} 
                 itemToEdit={itemToEdit} 
                 onSave={handleItemSave}
-                items={items}
                 suppliers={suppliers}
             />
             <ItemHistoryDialog 

@@ -393,7 +393,8 @@
         "supplierId": { "type": "string" },
         "userId": { "type": "string" },
         "acquisitionDate": { "type": "string", "format": "date-time" },
-        "dispositionDate": { "type": "string", "format": "date-time" }
+        "dispositionDate": { "type": "string", "format": "date-time" },
+        "dispositionReason": { "type": "string" }
       },
       "required": ["name", "type", "stockQuantity", "userId"]
     },
@@ -417,14 +418,14 @@
         "properties": {
             "itemId": { "type": "string" },
             "itemName": { "type": "string" },
-            "changeType": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment", "Shrinkage", "Consumed", "Destroyed"] },
+            "reason": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment", "Shrinkage", "Consumed", "Destroyed"] },
             "quantityChange": { "type": "number" },
             "newQuantity": { "type": "number" },
             "notes": { "type": "string" },
             "timestamp": { "type": "string", "format": "date-time" },
             "userId": { "type": "string" }
         },
-        "required": ["itemId", "itemName", "changeType", "quantityChange", "newQuantity", "timestamp", "userId"]
+        "required": ["itemId", "itemName", "reason", "quantityChange", "newQuantity", "timestamp", "userId"]
     }
   },
   "auth": {

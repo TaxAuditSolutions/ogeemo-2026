@@ -30,13 +30,16 @@ export interface Item {
   userId: string;
   acquisitionDate?: Date | null;
   dispositionDate?: Date | null;
+  dispositionReason?: string;
 }
+
+export type InventoryLogReason = 'Initial Stock' | 'Purchase' | 'Sale' | 'Adjustment' | 'Shrinkage' | 'Consumed' | 'Destroyed';
 
 export interface InventoryLog {
     id: string;
     itemId: string;
     itemName: string;
-    changeType: 'Initial Stock' | 'Purchase' | 'Sale' | 'Adjustment';
+    reason: InventoryLogReason;
     quantityChange: number;
     newQuantity: number;
     notes?: string;
@@ -90,7 +93,7 @@ export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
     await addInventoryLog({
         itemId: docRef.id,
         itemName: data.name,
-        changeType: 'Initial Stock',
+        reason: 'Initial Stock',
         quantityChange: data.stockQuantity,
         newQuantity: data.stockQuantity,
         notes: 'Item created',
@@ -102,11 +105,11 @@ export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
   return { id: docRef.id, ...data };
 }
 
-export async function updateInventoryItem(id: string, data: Partial<Omit<Item, 'id' | 'userId'>>, logInfo?: { type: InventoryLog['changeType'], notes?: string }): Promise<void> {
+export async function updateInventoryItem(id: string, data: Partial<Omit<Item, 'id' | 'userId'>>, logInfo: { reason: InventoryLogReason, notes?: string }): Promise<void> {
   const db = await getDb();
   const docRef = doc(db, ITEMS_COLLECTION, id);
 
-  if (logInfo && data.stockQuantity !== undefined) {
+  if (data.stockQuantity !== undefined) {
       const currentDoc = await getDoc(docRef);
       if (currentDoc.exists()) {
           const currentData = currentDoc.data() as Item;
@@ -115,7 +118,7 @@ export async function updateInventoryItem(id: string, data: Partial<Omit<Item, '
             await addInventoryLog({
                 itemId: id,
                 itemName: data.name || currentData.name,
-                changeType: logInfo.type,
+                reason: logInfo.reason,
                 quantityChange: quantityChange,
                 newQuantity: data.stockQuantity,
                 notes: logInfo.notes,

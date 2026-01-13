@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addInventoryItem, updateInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
+import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type InventoryLogReason } from '@/services/inventory-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { LoaderCircle, Calendar as CalendarIcon, Plus, ChevronsUpDown, Check, Save } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -91,7 +91,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
   const [quantityAdjustment, setQuantityAdjustment] = useState<number | ''>(0);
   const [selectedExistingItem, setSelectedExistingItem] = useState<InventoryItem | null>(null);
   
-  const [mode, setMode] = useState<'select' | 'add'>('select');
+  const [reason, setReason] = useState<InventoryLogReason>('Adjustment');
+  const [adjustmentNotes, setAdjustmentNotes] = useState('');
+  
+  const [mode, setMode] = useState<'select' | 'add'>('add');
 
 
   const form = useForm<ItemFormData>({
@@ -154,6 +157,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 dispositionDate: item.dispositionDate ? new Date(item.dispositionDate) : undefined,
             });
             setQuantityAdjustment(0);
+            setAdjustmentNotes('');
+            setReason('Adjustment');
             setMode('select');
         } else {
             form.reset({
@@ -162,7 +167,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                 acquisitionDate: new Date(), dispositionDate: undefined
             });
             setQuantityAdjustment('');
-            setMode(itemToEdit ? 'select' : 'add');
+            setAdjustmentNotes('');
+            setReason('Initial Stock');
+            setMode('add');
         }
     } else {
         setSelectedExistingItem(null);
@@ -193,8 +200,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
               ...values,
               stockQuantity: newTotalQuantity
             }, {
-                type: 'Adjustment',
-                notes: 'Manual adjustment via form'
+                reason: reason,
+                notes: adjustmentNotes
             });
             toast({ title: 'Item Updated' });
         } else if (mode === 'add') {
@@ -243,29 +250,10 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                   
                   {!itemToEdit && (
                     <div className="space-y-2">
-                         <RadioGroup value={mode} onValueChange={(v) => {
-                            const newMode = v as 'select' | 'add';
-                            setMode(newMode);
-                            setSelectedExistingItem(null);
-                             form.reset({
-                                name: '', description: '', sku: '',
-                                type: 'Product', cost: null, price: null, supplierId: null,
-                                acquisitionDate: new Date(), dispositionDate: undefined
-                            });
-                            setQuantityAdjustment('');
-                         }} className="flex gap-4">
-                             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="select" id="mode-select" /></FormControl><Label htmlFor="mode-select">Update Existing Item</Label></FormItem>
-                         </RadioGroup>
-                    </div>
-                  )}
-
-                  {mode === 'select' && !itemToEdit && (
-                     <div className="space-y-2">
-                        <Label>Select Existing Item</Label>
                         <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-full justify-between">
-                                    <span className="truncate">{selectedExistingItem?.name || "Select an item to edit..."}</span>
+                                    <span className="truncate">{selectedExistingItem?.name || "Select an item to update..."}</span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -288,25 +276,24 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         </Popover>
                     </div>
                   )}
-
-                  <Separator />
-
-                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} placeholder="Details about the item..." disabled={!currentItemForDisplay && mode === 'select'} /></FormControl><FormMessage /></FormItem> )} />
+                  
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} disabled={!!currentItemForDisplay} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><Label>Description</Label><FormControl><Textarea {...field} placeholder="Details about the item..." /></FormControl><FormMessage /></FormItem> )} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value} disabled={!currentItemForDisplay && mode === 'select'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><Label>Item Type</Label><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">For Resale</SelectItem><SelectItem value="Supply">Internal Use</SelectItem><SelectItem value="Material">Project Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><Label>SKU</Label><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   </div>
                   
                   <Separator className="my-6" />
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="space-y-2">
-                        <Label>Opening Quantity</Label>
+                        <Label>Current Quantity</Label>
                         <Input value={currentStock} readOnly disabled className="bg-muted/50 font-mono text-center" />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="quantity-adjustment">{currentItemForDisplay ? 'Add / Remove Quantity' : 'Initial Quantity'}</Label>
+                        <Label htmlFor="quantity-adjustment">Add / Remove Quantity</Label>
                         <Input id="quantity-adjustment" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="font-mono text-center" />
                     </div>
                     <div className="space-y-2">
@@ -314,29 +301,40 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                         <Input value={newTotalQuantity} readOnly disabled className="bg-muted/50 font-mono text-center font-bold" />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                          <Label htmlFor="reason">Reason for Change</Label>
+                          <Select value={reason} onValueChange={(v) => setReason(v as InventoryLogReason)}>
+                              <SelectTrigger id="reason"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="Initial Stock">Initial Stock</SelectItem>
+                                  <SelectItem value="Purchase">Purchase</SelectItem>
+                                  <SelectItem value="Sale">Sale</SelectItem>
+                                  <SelectItem value="Adjustment">Adjustment</SelectItem>
+                                  <SelectItem value="Shrinkage">Shrinkage</SelectItem>
+                                  <SelectItem value="Consumed">Consumed</SelectItem>
+                                  <SelectItem value="Destroyed">Destroyed</SelectItem>
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="adjustment-notes">Notes (Optional)</Label>
+                          <Input id="adjustment-notes" value={adjustmentNotes} onChange={e => setAdjustmentNotes(e.target.value)} placeholder="e.g., Invoice #123, Project #42" />
+                      </div>
+                  </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
-                          <FormItem className="flex flex-col"><Label>Acquisition Date</Label>
-                            <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={!currentItemForDisplay && mode === 'select'}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CustomCalendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
-                            <FormMessage /></FormItem>)} />
-                       <FormField control={form.control} name="dispositionDate" render={({ field }) => (
-                          <FormItem className="flex flex-col"><Label>Disposition Date</Label>
-                            <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={!currentItemForDisplay && mode === 'select'}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? (format(field.value, "PPP")) : (<span>Pick a date (optional)</span>)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CustomCalendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
-                            <FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <Label>Unit Cost</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
-                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <Label>Sale Price</Label> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={!currentItemForDisplay && mode === 'select'} /></FormControl> <FormMessage /> </FormItem> )} />
-                  </div>
-                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" disabled={!currentItemForDisplay && mode === 'select'} onCreateNew={() => setIsContactFormOpen(true)} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)} disabled={!currentItemForDisplay && mode === 'select'}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
+                   <FormField control={form.control} name="supplierId" render={({ field }) => ( <FormItem><Label>Supplier</Label><div className="flex gap-2"><ContactSelector contacts={suppliers} selectedContactId={field.value} onSelectContact={(id) => form.setValue('supplierId', id)} className="w-full" onCreateNew={() => setIsContactFormOpen(true)} /><Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4"/> New</Button></div><FormMessage /></FormItem> )} />
                 </form>
               </Form>
             </ScrollArea>
           </div>
           <DialogFooter className="p-6 border-t mt-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting || (mode === 'select' && !currentItemForDisplay)}>
+            <Button type="submit" form="item-form" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
               {itemToEdit ? 'Save Changes' : 'Save'}
             </Button>
@@ -359,5 +357,3 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
     </>
   );
 }
-
-    

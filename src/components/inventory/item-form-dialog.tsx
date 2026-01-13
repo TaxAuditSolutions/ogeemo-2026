@@ -232,7 +232,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
           <Form {...form}>
             <form id="new-item-form" onSubmit={form.handleSubmit(handleAddNewItem)} className="py-4 space-y-4">
                  <Button variant="link" onClick={() => setDialogMode('updateStock')} className="p-0 h-auto">{'<'} Back to update existing item</Button>
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><Label>Item Name</Label><FormControl><Input placeholder="Enter item name here" {...field} className="border-black" /></FormControl><FormMessage /></FormItem> )} />
                   <div className="space-y-2">
                     <Label htmlFor="initial-stock">Initial Stock Quantity</Label>
                     <Input id="initial-stock" type="number" value={quantityAdjustment} onChange={e => setQuantityAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="border-black" />

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -26,7 +25,7 @@ export interface Item {
   stockQuantity: number;
   cost?: number | null;
   price?: number | null;
-  supplierId?: string;
+  supplierId?: string | null;
   userId: string;
   acquisitionDate?: Date | null;
   dispositionDate?: Date | null;

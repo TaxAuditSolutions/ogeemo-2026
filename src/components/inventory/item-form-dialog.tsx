@@ -194,7 +194,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                                 <CommandGroup>
                                     <CommandItem onSelect={() => { setDialogMode('newItem'); setIsItemPopoverOpen(false); }}>
                                         <Plus className="mr-2 h-4 w-4"/>
-                                        Enter New item name and save
+                                        Create New Item
                                     </CommandItem>
                                     {items.map((item) => (
                                     <CommandItem key={item.id} value={item.name} onSelect={() => { setSelectedItem(item); setIsItemPopoverOpen(false); }}>

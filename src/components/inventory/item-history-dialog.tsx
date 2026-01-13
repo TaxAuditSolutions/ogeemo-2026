@@ -8,8 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { type Item as InventoryItem } from '@/services/inventory-service';
+import { type Item as InventoryItem, type InventoryLog } from '@/services/inventory-service';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -27,17 +27,10 @@ interface ItemHistoryDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   item: InventoryItem | null;
+  logs: InventoryLog[];
 }
 
-// Mock data for demonstration purposes
-const mockHistory = [
-    { type: 'Purchase', date: new Date(), quantityChange: 100, notes: 'Initial stock order' },
-    { type: 'Sale', date: new Date(Date.now() - 86400000), quantityChange: -5, notes: 'Invoice #2024-031' },
-    { type: 'Adjustment', date: new Date(Date.now() - 86400000 * 2), quantityChange: -1, notes: 'Internal use' },
-    { type: 'Sale', date: new Date(Date.now() - 86400000 * 3), quantityChange: -10, notes: 'Invoice #2024-028' },
-];
-
-export function ItemHistoryDialog({ isOpen, onOpenChange, item }: ItemHistoryDialogProps) {
+export function ItemHistoryDialog({ isOpen, onOpenChange, item, logs }: ItemHistoryDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -59,11 +52,11 @@ export function ItemHistoryDialog({ isOpen, onOpenChange, item }: ItemHistoryDia
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {mockHistory.map((entry, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{format(entry.date, 'PP')}</TableCell>
-                                <TableCell>{entry.type}</TableCell>
-                                <TableCell className={cn("text-right font-mono", entry.quantityChange > 0 ? 'text-green-600' : 'text-red-600')}>
+                        {logs.map((entry) => (
+                            <TableRow key={entry.id}>
+                                <TableCell>{format(entry.timestamp, 'PP')}</TableCell>
+                                <TableCell>{entry.reason}</TableCell>
+                                <TableCell className={cn("text-right font-mono", entry.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
                                     {entry.quantityChange > 0 ? '+' : ''}{entry.quantityChange}
                                 </TableCell>
                                 <TableCell>{entry.notes}</TableCell>

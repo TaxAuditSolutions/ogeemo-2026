@@ -9,6 +9,9 @@ import {
   query,
   where,
   getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { getContactById } from '@/services/contact-service';
@@ -41,10 +44,24 @@ export async function getSuppliers(userId: string): Promise<Supplier[]> {
     return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));
 }
 
+export async function addSupplier(data: Omit<Supplier, 'id'>): Promise<Supplier> {
+  const db = await getDb();
+  const docRef = await addDoc(collection(db, SUPPLIERS_COLLECTION), data);
+  return { id: docRef.id, ...data };
+}
+
+export async function updateSupplier(id: string, data: Partial<Omit<Supplier, 'id' | 'userId'>>): Promise<void> {
+    const db = await getDb();
+    await updateDoc(doc(db, SUPPLIERS_COLLECTION, id), data);
+}
+
+export async function deleteSupplier(id: string): Promise<void> {
+    const db = await getDb();
+    await deleteDoc(doc(db, SUPPLIERS_COLLECTION, id));
+}
 
 /**
  * Designates an existing contact as a supplier.
- * This is a placeholder function and will be expanded upon.
  */
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<void> {
   const db = await getDb();

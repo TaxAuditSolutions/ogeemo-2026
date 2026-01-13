@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 interface AddInventoryItemCardProps {
   onItemAdded: () => void;
   inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem) => void;
+  onItemSelected: (item: InventoryItem | null) => void;
 }
 
 export function AddInventoryItemCard({ onItemAdded, inventoryItems, onItemSelected }: AddInventoryItemCardProps) {

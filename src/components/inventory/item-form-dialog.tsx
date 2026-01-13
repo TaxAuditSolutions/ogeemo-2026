@@ -87,8 +87,6 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
         setIsLoading(true);
         try {
             const contactsData = await getContacts(user.uid);
-            // A simple way to get suppliers is to filter contacts that are in a 'suppliers' folder or have a business name.
-            // This logic can be refined as needed.
             setSuppliers(contactsData.filter(c => c.folderId === 'suppliers' || c.businessName)); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load suppliers.' });
@@ -163,7 +161,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{dialogMode === 'newItem' ? 'Create New Item' : 'Add/Update Item Stock'}</DialogTitle>
         </DialogHeader>
@@ -181,7 +179,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, items
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
-                            <CommandInput placeholder="Search items..." />
+                            <CommandInput placeholder="Enter New item name and save" />
                             <CommandList>
                                 <CommandEmpty>
                                     <Button variant="ghost" className="w-full" onClick={() => { setDialogMode('newItem'); setIsItemPopoverOpen(false); }}>

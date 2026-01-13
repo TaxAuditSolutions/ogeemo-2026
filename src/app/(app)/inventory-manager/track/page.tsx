@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog } from '@/services/inventory-service';
+import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog, addInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -33,7 +33,8 @@ import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 import { format } from 'date-fns';
 import { UpdateStockCard } from '@/components/inventory/update-stock-card';
-
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -45,6 +46,7 @@ export default function TrackInventoryPage() {
     const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [newItemName, setNewItemName] = useState('');
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -109,7 +111,27 @@ export default function TrackInventoryPage() {
             setItemToDelete(null);
         }
     };
-
+    
+    const handleAddNewItem = async () => {
+        if (!newItemName.trim() || !user) {
+            toast({ variant: 'destructive', title: 'Item name is required.' });
+            return;
+        }
+        try {
+            await addInventoryItem({
+                name: newItemName,
+                type: 'Product for Sale', // Default type
+                stockQuantity: 0,
+                userId: user.uid,
+                reason: 'Initial Stock'
+            });
+            toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
+            setNewItemName('');
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to add item', description: error.message });
+        }
+    };
 
     return (
         <>
@@ -206,14 +228,23 @@ export default function TrackInventoryPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Add New Item</CardTitle>
-                                <CardDescription>Create a new product, supply, or material to track.</CardDescription>
+                                <CardDescription>Quickly add a new item name to your inventory list.</CardDescription>
                             </CardHeader>
-                            <CardFooter>
-                                <Button onClick={() => handleOpenForm(null)} className="w-full">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add New Item
-                                </Button>
-                            </CardFooter>
+                             <CardContent>
+                                <div className="space-y-2">
+                                    <Label htmlFor="new-item-name">New Item Name</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="new-item-name"
+                                            placeholder="Enter item name..."
+                                            value={newItemName}
+                                            onChange={(e) => setNewItemName(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddNewItem(); }}
+                                        />
+                                        <Button onClick={handleAddNewItem}>Add</Button>
+                                    </div>
+                                </div>
+                            </CardContent>
                         </Card>
                     </div>
                 </div>

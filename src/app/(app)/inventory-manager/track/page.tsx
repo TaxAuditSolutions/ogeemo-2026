@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
+import { format } from 'date-fns';
 
 
 export default function TrackInventoryPage() {
@@ -148,6 +149,7 @@ export default function TrackInventoryPage() {
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Type</TableHead>
                                         <TableHead>Supplier</TableHead>
+                                        <TableHead>Action Date</TableHead>
                                         <TableHead className="text-right">Qty</TableHead>
                                         <TableHead className="text-right">Unit Cost</TableHead>
                                         <TableHead className="text-right">Total Cost</TableHead>
@@ -161,6 +163,7 @@ export default function TrackInventoryPage() {
                                             <TableCell>{item.sku || 'N/A'}</TableCell>
                                             <TableCell>{item.type}</TableCell>
                                             <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
+                                            <TableCell>{item.acquisitionDate ? format(item.acquisitionDate, 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                             <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                             <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
@@ -179,13 +182,13 @@ export default function TrackInventoryPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
+                                            <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                                  <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                                        <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
                                         <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
                                         <TableCell></TableCell>
                                     </TableRow>
@@ -219,4 +222,3 @@ export default function TrackInventoryPage() {
         </>
     );
 }
-

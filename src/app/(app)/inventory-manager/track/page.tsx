@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -5,11 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -28,15 +29,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
+import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
     const [itemToViewHistory, setItemToViewHistory] = useState<InventoryItem | null>(null);
     const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
@@ -48,12 +55,14 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedItems, fetchedSuppliers] = await Promise.all([
+            const [fetchedItems, fetchedSuppliers, fetchedLogs] = await Promise.all([
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
+                getInventoryLogs(user.uid),
             ]);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
+            setLogs(fetchedLogs);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -71,8 +80,19 @@ export default function TrackInventoryPage() {
         return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
     }, [items]);
 
-    const handleEditItem = (itemId: string) => {
-        router.push(`/inventory-manager/item?id=${itemId}`);
+    const handleOpenForm = (item: InventoryItem | null = null) => {
+        setItemToEdit(item);
+        setIsFormOpen(true);
+    };
+
+    const handleItemSave = () => {
+        loadData();
+        setIsFormOpen(false);
+    };
+    
+    const handleOpenHistory = (item: InventoryItem) => {
+        setItemToViewHistory(item);
+        setIsHistoryOpen(true);
     };
 
     const handleConfirmDelete = async () => {
@@ -101,7 +121,7 @@ export default function TrackInventoryPage() {
                             </Link>
                         </Button>
                     </div>
-                    <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary">Inventory List</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                 </header>
                 
@@ -111,10 +131,8 @@ export default function TrackInventoryPage() {
                             <CardTitle>Inventory List</CardTitle>
                             <CardDescription>A complete list of all your inventory items.</CardDescription>
                         </div>
-                        <Button asChild>
-                            <Link href="/inventory-manager/item">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                            </Link>
+                        <Button onClick={() => handleOpenForm()}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
                         </Button>
                     </CardHeader>
                     <CardContent>
@@ -152,7 +170,8 @@ export default function TrackInventoryPage() {
                                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => handleEditItem(item.id)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -177,22 +196,27 @@ export default function TrackInventoryPage() {
                 </Card>
             </div>
 
+            <ItemFormDialog 
+                isOpen={isFormOpen} 
+                onOpenChange={setIsFormOpen} 
+                itemToEdit={itemToEdit} 
+                onSave={handleItemSave}
+                items={items}
+                suppliers={suppliers}
+            />
+            <ItemHistoryDialog 
+                isOpen={isHistoryOpen} 
+                onOpenChange={setIsHistoryOpen} 
+                item={itemToViewHistory} 
+                logs={logs.filter(l => l.itemId === itemToViewHistory?.id)}
+            />
             <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
+                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{itemToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>
     );
 }
+

@@ -36,7 +36,7 @@ import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type
 import { type Supplier } from '@/services/supplier-service';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '../ui/label';
@@ -97,18 +97,23 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
     if (!user) return;
     
     try {
+      const dataToSave = {
+        ...values,
+        supplierId: values.supplierId === 'none' ? null : values.supplierId,
+      };
+
       if (itemToEdit) {
-        const dataToUpdate: Partial<Omit<InventoryItem, 'id' | 'userId'>> = {
-            ...values,
-            acquisitionDate: values.acquisitionDate || undefined,
-            cost: values.cost ?? undefined,
-            supplierId: values.supplierId ?? undefined,
+        const updateData: Partial<Omit<InventoryItem, 'id' | 'userId'>> = {
+            ...dataToSave,
+            acquisitionDate: dataToSave.acquisitionDate || undefined,
+            cost: dataToSave.cost ?? undefined,
+            supplierId: dataToSave.supplierId ?? undefined,
         };
-        await updateInventoryItem(itemToEdit.id, dataToUpdate, { reason: 'Adjustment', notes: 'Item details updated.' });
+        await updateInventoryItem(itemToEdit.id, updateData, { reason: 'Adjustment', notes: 'Item details updated.' });
         toast({ title: 'Item Updated', description: `"${values.name}" has been updated.` });
       } else {
         await addInventoryItem({
-            ...values,
+            ...dataToSave,
             userId: user.uid,
         });
         toast({ title: 'Item Added', description: `"${values.name}" has been added to your inventory.` });
@@ -144,7 +149,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
                                 <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier..." /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        <SelectItem value="">No Supplier</SelectItem>
+                                        <SelectItem value="none">No Supplier</SelectItem>
                                         {suppliers.map(s => (
                                             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}

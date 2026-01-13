@@ -36,7 +36,7 @@ import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type
 import { type Supplier } from '@/services/supplier-service';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '../ui/label';
@@ -68,6 +68,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
   });
+
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -155,7 +158,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
                     <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
                         <FormItem className="flex flex-col">
                             <FormLabel>Action Date</FormLabel>
-                            <Popover>
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
                                     <FormControl>
                                         <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -168,7 +171,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, suppl
                                     <CustomCalendar
                                         mode="single"
                                         selected={field.value || undefined}
-                                        onSelect={field.onChange}
+                                        onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }}
                                         disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                         initialFocus
                                     />

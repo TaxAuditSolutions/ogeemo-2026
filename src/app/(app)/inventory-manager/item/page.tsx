@@ -167,7 +167,28 @@ export default function ItemFormPage() {
                 <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU / Item ID</FormLabel><FormControl><Input placeholder="e.g., HD-SCR-001" {...field} /></FormControl><FormMessage /></FormItem> )} />
               </div>
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Detailed description of the item..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="type" render={({ field }) => ( <FormItem><FormLabel>Item Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Product">Product for Sale</SelectItem><SelectItem value="Supply">Internal Supply</SelectItem><SelectItem value="Material">Raw Material</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an item type..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Product">Product for Sale</SelectItem>
+                        <SelectItem value="Supply">Internal Supply</SelectItem>
+                        <SelectItem value="Material">Raw Material</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="supplierId"

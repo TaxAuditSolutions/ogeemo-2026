@@ -102,8 +102,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
     if (!user) return;
     
     let finalSupplierId = values.supplierId;
-
-    if (values.supplierId && values.supplierId !== 'none' && !values.supplierId.startsWith('sup_')) {
+    if (values.supplierId && !values.supplierId.startsWith('sup_')) {
       try {
         const newSupplier = await designateContactAsSupplier(user.uid, values.supplierId);
         finalSupplierId = newSupplier.id;
@@ -111,17 +110,15 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
         toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${error.message}` });
         return;
       }
-    } else if (values.supplierId === 'none') {
-        finalSupplierId = null;
     }
-
+    
     try {
       const dataToSave = {
         name: values.name || 'Untitled Item',
-        sku: values.sku || undefined,
+        sku: values.sku || null,
         type: values.type,
-        supplierId: finalSupplierId,
-        acquisitionDate: values.acquisitionDate || undefined,
+        supplierId: finalSupplierId || null,
+        acquisitionDate: values.acquisitionDate || null,
         stockQuantity: Number(values.stockQuantity) || 0,
         cost: values.cost ?? null,
         price: values.price ?? null,
@@ -242,3 +239,4 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
     </Dialog>
   );
 }
+

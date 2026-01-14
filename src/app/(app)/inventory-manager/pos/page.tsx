@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getInventoryItems, type Item as InventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, type Item as InventoryItem, processSaleTransaction } from '@/services/inventory-service';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 
@@ -58,6 +58,7 @@ interface SaleItem extends InventoryItem {
 export default function PointOfSalePage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | ''>(1);
@@ -66,22 +67,25 @@ export default function PointOfSalePage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      const loadInventory = async () => {
-        setIsLoading(true);
-        try {
-          const items = await getInventoryItems(user.uid);
-          setInventory(items);
-        } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory.' });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadInventory();
+  const loadInventory = useCallback(async () => {
+    if (!user) {
+        setIsLoading(false);
+        return;
+    };
+    setIsLoading(true);
+    try {
+      const items = await getInventoryItems(user.uid);
+      setInventory(items);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory.' });
+    } finally {
+      setIsLoading(false);
     }
   }, [user, toast]);
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
 
   const handleAddItemToCart = () => {
     if (!selectedItemId || !quantity) {
@@ -125,14 +129,34 @@ export default function PointOfSalePage() {
     setCart(cart.filter(item => item.id !== itemId));
   };
   
-  const handleCompleteSale = () => {
-    console.log("Completing sale with items:", cart);
-    // Logic for Step 3 will go here
-    toast({
-      title: "Sale Completed (Simulated)",
-      description: "Inventory would be updated now."
-    });
-    setCart([]);
+  const handleCompleteSale = async () => {
+    if (!user || cart.length === 0) {
+        toast({ variant: 'destructive', title: 'Cart Empty', description: 'Please add items to the sale first.' });
+        return;
+    }
+    setIsProcessing(true);
+    try {
+        const saleItems = cart.map(item => ({
+            itemId: item.id,
+            quantitySold: item.saleQuantity,
+        }));
+        await processSaleTransaction(user.uid, saleItems);
+        toast({
+            title: "Sale Completed!",
+            description: "Inventory levels have been updated and the transaction has been logged."
+        });
+        setCart([]);
+        // Reload inventory to get updated stock counts
+        await loadInventory();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Sale Failed',
+            description: error.message
+        });
+    } finally {
+        setIsProcessing(false);
+    }
   };
 
   const selectedItem = inventory.find(item => item.id === selectedItemId);
@@ -262,8 +286,9 @@ export default function PointOfSalePage() {
               </Table>
             </CardContent>
             <CardFooter>
-                <Button className="w-full" size="lg" onClick={handleCompleteSale} disabled={cart.length === 0}>
-                    Complete Sale
+                <Button className="w-full" size="lg" onClick={handleCompleteSale} disabled={cart.length === 0 || isProcessing}>
+                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isProcessing ? 'Processing...' : 'Complete Sale'}
                 </Button>
             </CardFooter>
           </Card>

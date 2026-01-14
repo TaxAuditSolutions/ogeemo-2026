@@ -2,69 +2,58 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from '@/components/ui/table';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, ArrowLeft, FilterX, ChevronsUpDown, Check, Calendar as CalendarIcon, Package, PlusCircle, MoreVertical, Pencil, Trash2, History } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, getInventoryLogs, type InventoryLog, type Item, addInventoryItem, updateInventoryItem, deleteInventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog, addInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
-import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
-import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '../ui/scroll-area';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { formatCurrency } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { AddInventoryItemCard } from '@/components/inventory/supplier-onboarding-card';
-import { getContacts, type Contact } from '@/services/contact-service';
-
-
-const formatCurrency = (amount?: number) => {
-    if (typeof amount !== 'number') return '$0.00';
-    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-};
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
+import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
+import { format } from 'date-fns';
+import { UpdateStockCard } from '@/components/inventory/update-stock-card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function TrackInventoryPage() {
-    const [logs, setLogs] = useState<InventoryLog[]>([]);
-    const [items, setItems] = useState<Item[]>([]);
+    const [items, setItems] = useState<InventoryItem[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-
+    const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+    const [itemToViewHistory, setItemToViewHistory] = useState<InventoryItem | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-    const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
-    const [itemToViewHistory, setItemToViewHistory] = useState<Item | null>(null);
-    const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
-
+    const [newItemName, setNewItemName] = useState('');
+    
     const { user } = useAuth();
     const { toast } = useToast();
-    
+    const router = useRouter();
+
     const loadData = useCallback(async () => {
         if (!user) {
             setIsLoading(false);
@@ -93,16 +82,18 @@ export default function TrackInventoryPage() {
         loadData();
     }, [loadData]);
     
-    const filteredLogs = useMemo(() => {
-        if (!selectedItemId) return logs;
-        return logs.filter(log => log.itemId === selectedItemId);
-    }, [logs, selectedItemId]);
+    const selectedLogs = useMemo(() => {
+        if (!itemToViewHistory) return [];
+        return logs.filter(log => log.itemId === itemToViewHistory.id);
+    }, [logs, itemToViewHistory]);
     
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.id, s.name])), [suppliers]);
     
-    const totalInventoryCost = useMemo(() => items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0), [items]);
+    const totalInventoryValue = useMemo(() => {
+        return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
+    }, [items]);
 
-    const handleOpenForm = (item: Item | null = null) => {
+    const handleOpenForm = (item: InventoryItem | null = null) => {
       setItemToEdit(item);
       setIsFormOpen(true);
     };
@@ -112,8 +103,9 @@ export default function TrackInventoryPage() {
         setIsFormOpen(false);
     };
     
-    const handleOpenHistory = (item: Item) => {
-        setSelectedItemId(item.id);
+    const handleOpenHistory = (item: InventoryItem) => {
+        setItemToViewHistory(item);
+        setIsHistoryOpen(true);
     };
 
     const handleConfirmDelete = async () => {
@@ -121,11 +113,32 @@ export default function TrackInventoryPage() {
         try {
             await deleteInventoryItem(itemToDelete.id);
             toast({ title: 'Item Deleted' });
-            loadData();
+            loadData(); // Refresh the list
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
             setItemToDelete(null);
+        }
+    };
+    
+    const handleAddNewItem = async () => {
+        if (!newItemName.trim() || !user) {
+            toast({ variant: 'destructive', title: 'Item name is required.' });
+            return;
+        }
+        try {
+            await addInventoryItem({
+                name: newItemName,
+                type: 'Product for Sale',
+                stockQuantity: 0,
+                userId: user.uid,
+                // reason: 'Initial Stock' is handled inside addInventoryItem now
+            });
+            toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
+            setNewItemName('');
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to add item', description: error.message });
         }
     };
 
@@ -143,116 +156,114 @@ export default function TrackInventoryPage() {
                     </div>
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                        <Button asChild>
+                            <Link href="/inventory-manager/pos">
+                                <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale
+                            </Link>
+                        </Button>
+                    </div>
                 </header>
-
-                <div className="text-center p-4 text-2xl font-bold">9</div>
-
+                
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <Card>
-                          <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                              <CardTitle>Inventory Items</CardTitle>
-                              <CardDescription>
-                                A list of all products, supplies, and materials your business uses.
-                              </CardDescription>
+                    <UpdateStockCard
+                        items={items}
+                        onItemSelected={(item) => handleOpenForm(item)}
+                    />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Add New Item</CardTitle>
+                            <CardDescription>Quickly add a new item name to your inventory list.</CardDescription>
+                        </CardHeader>
+                            <CardContent>
+                            <div className="space-y-2">
+                                <Label htmlFor="new-item-name">New Item Name</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="new-item-name"
+                                        placeholder="Enter item name..."
+                                        value={newItemName}
+                                        onChange={(e) => setNewItemName(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddNewItem(); }}
+                                    />
+                                    <Button onClick={handleAddNewItem}>Add</Button>
+                                </div>
                             </div>
-                            <Button onClick={() => handleOpenForm()}>
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add/Update Item Stock
-                            </Button>
-                          </CardHeader>
-                          <CardContent>
-                            {isLoading ? (
-                              <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
-                            ) : (
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Item Name</TableHead>
-                                    <TableHead>Supplier</TableHead>
-                                    <TableHead className="text-right">Quantity</TableHead>
-                                    <TableHead className="text-right">Unit Cost</TableHead>
-                                    <TableHead className="text-right">Total Cost</TableHead>
-                                    <TableHead className="w-20"><span className="sr-only">Actions</span></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {items.map(item => (
-                                    <TableRow key={item.id} onClick={() => handleOpenHistory(item)} className={cn("cursor-pointer", selectedItemId === item.id && "bg-muted")}>
-                                      <TableCell className="font-medium">{item.name}</TableCell>
-                                      <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                                      <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                                      <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                                      <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                                      <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleOpenForm(item);}}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); setItemToDelete(item);}} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                                <TableFooter>
-                                  <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell><TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryCost)}</TableCell><TableCell /></TableRow>
-                                </TableFooter>
-                              </Table>
-                            )}
-                          </CardContent>
-                        </Card>
-                    </div>
-                     <div className="lg:col-span-1">
-                        <AddInventoryItemCard onItemAdded={loadData} />
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
 
                 <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle>Transaction Log</CardTitle>
-                            {selectedItemId && <Button variant="ghost" onClick={() => setSelectedItemId(null)}><FilterX className="mr-2 h-4 w-4"/>Clear Filter</Button>}
-                        </div>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Inventory List</CardTitle>
                         <CardDescription>
-                            {selectedItemId ? `Showing history for: ${items.find(i => i.id === selectedItemId)?.name}` : 'A complete audit trail of all inventory movements. Select an item above to filter.'}
+                        A list of all products, supplies, and materials your business uses.
                         </CardDescription>
+                    </div>
                     </CardHeader>
                     <CardContent>
-                        <ScrollArea className="h-96">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Item</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead className="text-right">Change</TableHead>
-                                        <TableHead className="text-right">New Qty</TableHead>
-                                        <TableHead>Notes</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredLogs.length > 0 ? filteredLogs.map(log => (
-                                        <TableRow key={log.id}>
-                                            <TableCell>{format(new Date(log.timestamp), 'PPpp')}</TableCell>
-                                            <TableCell className="font-medium">{log.itemName}</TableCell>
-                                            <TableCell><Badge variant="secondary">{log.changeType}</Badge></TableCell>
-                                            <TableCell className={cn("text-right font-mono", log.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
-                                                {log.quantityChange > 0 ? '+' : ''}{log.quantityChange}
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">{log.newQuantity}</TableCell>
-                                            <TableCell>{log.notes}</TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center">No logs found for the selected filters.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-48"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+                    ) : (
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Item Name</TableHead>
+                                <TableHead>SKU</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Supplier</TableHead>
+                                <TableHead>Action Date</TableHead>
+                                <TableHead className="text-right">Qty</TableHead>
+                                <TableHead className="text-right">Unit Cost</TableHead>
+                                <TableHead className="text-right">Total Cost</TableHead>
+                                <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {items.length > 0 ? items.map(item => (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-medium">
+                                        <button className="text-left hover:underline" onClick={() => handleOpenForm(item)}>
+                                            {item.name}
+                                        </button>
+                                    </TableCell>
+                                    <TableCell>{item.sku || 'N/A'}</TableCell>
+                                    <TableCell>{item.type}</TableCell>
+                                    <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
+                                    <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                    <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
+                                    <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
+                                    <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                                    <TableCell>
+                                            <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                            <TableFooter>
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                                <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
+                                <TableCell></TableCell>
+                            </TableRow>
+                        </TableFooter>
+                        </Table>
+                    )}
                     </CardContent>
                 </Card>
             </div>
@@ -262,9 +273,14 @@ export default function TrackInventoryPage() {
                 onOpenChange={setIsFormOpen} 
                 itemToEdit={itemToEdit} 
                 onSave={handleItemSave}
-                items={items}
+                contacts={contacts}
             />
-            <ItemHistoryDialog isOpen={isHistoryOpen} onOpenChange={setIsHistoryOpen} item={itemToViewHistory} />
+            <ItemHistoryDialog 
+                isOpen={isHistoryOpen} 
+                onOpenChange={setIsHistoryOpen} 
+                item={itemToViewHistory} 
+                logs={selectedLogs}
+            />
             <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{itemToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>

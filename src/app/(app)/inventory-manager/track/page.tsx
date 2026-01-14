@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info } from 'lucide-react';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
@@ -92,9 +92,9 @@ export default function TrackInventoryPage() {
         setItemToEdit(item);
         setIsFormOpen(true);
     };
-
-    const handleItemSave = () => {
-        loadData();
+    
+    const handleItemSave = async () => {
+        await loadData();
         setIsFormOpen(false);
     };
     
@@ -159,6 +159,13 @@ export default function TrackInventoryPage() {
                         </Button>
                     </div>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                        <Button asChild>
+                            <Link href="/inventory-manager/pos">
+                                <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale
+                            </Link>
+                        </Button>
+                    </div>
                 </header>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

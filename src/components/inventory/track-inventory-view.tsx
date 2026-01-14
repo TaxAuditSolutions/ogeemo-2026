@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
@@ -155,10 +155,15 @@ export default function TrackInventoryPage() {
                     </div>
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
-                     <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <Button asChild>
                             <Link href="/inventory-manager/pos">
                                 <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale
+                            </Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href="/action-manager" aria-label="Close">
+                                <X className="h-5 w-5" />
                             </Link>
                         </Button>
                     </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -36,6 +35,7 @@ import { format } from 'date-fns';
 import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -49,6 +49,7 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -226,9 +227,9 @@ export default function TrackInventoryPage() {
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id}>
+                                <TableRow key={item.id} className={cn(selectedItemId === item.id && 'border-2 border-black')}>
                                     <TableCell className="font-medium">
-                                        <button className="text-left hover:underline" onClick={() => handleOpenForm(item)}>
+                                        <button className="text-left hover:underline" onClick={() => setSelectedItemId(item.id)}>
                                             {item.name}
                                         </button>
                                     </TableCell>

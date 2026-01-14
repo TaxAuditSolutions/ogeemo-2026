@@ -61,15 +61,15 @@ export default function TrackInventoryPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedLogs, fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
-                getInventoryLogs(user.uid),
+            const [fetchedItems, fetchedSuppliers, fetchedLogs, fetchedContacts] = await Promise.all([
                 getInventoryItems(user.uid),
                 getSuppliers(user.uid),
+                getInventoryLogs(user.uid),
                 getContacts(user.uid),
             ]);
-            setLogs(fetchedLogs);
             setItems(fetchedItems);
             setSuppliers(fetchedSuppliers);
+            setLogs(fetchedLogs);
             setContacts(fetchedContacts);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -165,7 +165,7 @@ export default function TrackInventoryPage() {
                     </div>
                 </header>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <UpdateStockCard
                         items={items}
                         onItemSelected={(item) => handleOpenForm(item)}

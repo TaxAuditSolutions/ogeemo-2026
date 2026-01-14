@@ -386,7 +386,7 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "sku": { "type": "string", "description": "Stock Keeping Unit" },
-        "type": { "type": "string", "enum": ["Product", "Supply", "Material"] },
+        "type": { "type": "string", "enum": ["Product for Sale", "Internal Supply", "Raw Material"] },
         "stockQuantity": { "type": "number" },
         "cost": { "type": "number", "description": "The cost to acquire the item." },
         "price": { "type": "number", "description": "The price the item is sold for." },

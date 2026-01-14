@@ -13,6 +13,7 @@ import {
   where,
   Timestamp,
   getDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
@@ -154,4 +155,49 @@ export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> 
     const q = query(collection(db, LOGS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToLog).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+}
+
+export async function processSaleTransaction(
+  userId: string,
+  saleItems: { itemId: string; quantitySold: number }[]
+): Promise<void> {
+  const db = await getDb();
+  const batch = writeBatch(db);
+
+  for (const saleItem of saleItems) {
+    const itemRef = doc(db, ITEMS_COLLECTION, saleItem.itemId);
+    const itemSnap = await getDoc(itemRef);
+
+    if (!itemSnap.exists()) {
+      throw new Error(`Item with ID ${saleItem.itemId} not found.`);
+    }
+
+    const currentItem = docToItem(itemSnap);
+    if (currentItem.userId !== userId) {
+        throw new Error(`Unauthorized to modify item ${currentItem.name}.`);
+    }
+
+    const newQuantity = currentItem.stockQuantity - saleItem.quantitySold;
+    if (newQuantity < 0) {
+      throw new Error(`Insufficient stock for item: ${currentItem.name}.`);
+    }
+
+    batch.update(itemRef, { stockQuantity: newQuantity });
+    
+    // Create a new log entry for the sale
+    const logRef = doc(collection(db, LOGS_COLLECTION));
+    const logData: Omit<InventoryLog, 'id'> = {
+        itemId: currentItem.id,
+        itemName: currentItem.name,
+        reason: 'Sale',
+        quantityChange: -saleItem.quantitySold,
+        newQuantity: newQuantity,
+        notes: 'Point of Sale transaction',
+        timestamp: new Date(),
+        userId: userId,
+    };
+    batch.set(logRef, logData);
+  }
+
+  await batch.commit();
 }

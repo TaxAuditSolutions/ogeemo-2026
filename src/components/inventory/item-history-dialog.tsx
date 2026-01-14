@@ -33,7 +33,7 @@ interface ItemHistoryDialogProps {
 export function ItemHistoryDialog({ isOpen, onOpenChange, item, logs }: ItemHistoryDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Transaction History: {item?.name}</DialogTitle>
           <DialogDescription>
@@ -48,20 +48,28 @@ export function ItemHistoryDialog({ isOpen, onOpenChange, item, logs }: ItemHist
                             <TableHead>Date</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Change</TableHead>
+                            <TableHead className="text-right">New Qty</TableHead>
                             <TableHead>Notes</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {logs && logs.map((entry) => (
+                        {logs && logs.length > 0 ? logs.map((entry) => (
                             <TableRow key={entry.id}>
                                 <TableCell>{format(new Date(entry.timestamp), 'PP')}</TableCell>
                                 <TableCell>{entry.reason}</TableCell>
                                 <TableCell className={cn("text-right font-mono", entry.quantityChange >= 0 ? 'text-green-600' : 'text-red-600')}>
                                     {entry.quantityChange > 0 ? '+' : ''}{entry.quantityChange}
                                 </TableCell>
+                                <TableCell className="text-right font-mono">{entry.newQuantity}</TableCell>
                                 <TableCell>{entry.notes}</TableCell>
                             </TableRow>
-                        ))}
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    No transaction history for this item.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </ScrollArea>

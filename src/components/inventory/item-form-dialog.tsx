@@ -50,7 +50,7 @@ const itemSchema = z.object({
     type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']).default('Product for Sale'),
     supplierId: z.string().optional().nullable(),
     acquisitionDate: z.date().optional().nullable(),
-    stockQuantity: z.coerce.number().min(0, "Stock must be non-negative."),
+    stockQuantity: z.coerce.number().min(0, "Stock must be non-negative.").optional(),
     cost: z.coerce.number().min(0, "Cost must be non-negative.").optional().nullable(),
     price: z.coerce.number().min(0, "Price must be non-negative.").optional().nullable(),
 });
@@ -120,6 +120,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
         ...values,
         name: values.name || 'Untitled Item',
         supplierId: finalSupplierId,
+        stockQuantity: Number(values.stockQuantity) || 0,
       };
 
       if (itemToEdit) {

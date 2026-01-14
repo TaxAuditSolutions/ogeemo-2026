@@ -245,7 +245,7 @@ export default function TrackInventoryPage() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Price</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

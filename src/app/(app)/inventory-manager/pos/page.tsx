@@ -167,9 +167,9 @@ export default function PointOfSalePage() {
         <header className="w-full max-w-4xl text-center relative mb-6">
             <div className="absolute left-0 top-1/2 -translate-y-1/2">
                 <Button asChild variant="outline">
-                    <Link href="/inventory-manager">
+                    <Link href="/inventory-manager/track">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Inventory Hub
+                        Back to Inventory Central
                     </Link>
                 </Button>
             </div>

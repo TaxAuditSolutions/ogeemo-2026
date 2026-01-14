@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, PlusCircle, LoaderCircle, MoreVertical, Pencil, Trash2, History, Info, ShoppingCart, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
@@ -36,6 +36,7 @@ import { format } from 'date-fns';
 import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -49,6 +50,7 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -81,7 +83,12 @@ export default function TrackInventoryPage() {
     useEffect(() => {
         loadData();
     }, [loadData]);
-
+    
+    const selectedLogs = useMemo(() => {
+        if (!itemToViewHistory) return [];
+        return logs.filter(log => log.itemId === itemToViewHistory.id);
+    }, [logs, itemToViewHistory]);
+    
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.id, s.name])), [suppliers]);
     
     const totalInventoryValue = useMemo(() => {
@@ -89,8 +96,8 @@ export default function TrackInventoryPage() {
     }, [items]);
 
     const handleOpenForm = (item: InventoryItem | null = null) => {
-        setItemToEdit(item);
-        setIsFormOpen(true);
+      setItemToEdit(item);
+      setIsFormOpen(true);
     };
     
     const handleItemSave = async () => {
@@ -127,7 +134,6 @@ export default function TrackInventoryPage() {
                 type: 'Product for Sale',
                 stockQuantity: 0,
                 userId: user.uid,
-                // reason: 'Initial Stock' is handled inside addInventoryItem now
             });
             toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
             setNewItemName('');
@@ -143,26 +149,23 @@ export default function TrackInventoryPage() {
                 <header className="relative text-center">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2">
                         <Button asChild variant="outline">
-                            <Link href="/action-manager">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Action Manager
-                            </Link>
-                        </Button>
-                    </div>
-                     <div className="flex items-center justify-center gap-2">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
-                        <Button asChild variant="ghost" size="icon">
                             <Link href="/inventory-manager">
-                                <Info className="h-5 w-5 text-muted-foreground" />
-                                <span className="sr-only">About Inventory Manager</span>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Inventory Hub
                             </Link>
                         </Button>
                     </div>
+                    <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
-                     <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <Button asChild>
                             <Link href="/inventory-manager/pos">
                                 <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale
+                            </Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="icon">
+                            <Link href="/action-manager" aria-label="Close">
+                                <X className="h-5 w-5" />
                             </Link>
                         </Button>
                     </div>
@@ -201,7 +204,7 @@ export default function TrackInventoryPage() {
                     <div>
                         <CardTitle>Inventory List</CardTitle>
                         <CardDescription>
-                        A list of all products, supplies, and materials your business uses.
+                        A list of all products, supplies, and materials your business uses. To set prices, click the edit item in the 3 dot menu
                         </CardDescription>
                     </div>
                     </CardHeader>
@@ -225,7 +228,7 @@ export default function TrackInventoryPage() {
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id}>
+                                <TableRow key={item.id} onClick={() => setSelectedItemId(item.id)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>{item.sku || 'N/A'}</TableCell>
                                     <TableCell>{item.type}</TableCell>
@@ -242,6 +245,7 @@ export default function TrackInventoryPage() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -277,7 +281,7 @@ export default function TrackInventoryPage() {
                 isOpen={isHistoryOpen} 
                 onOpenChange={setIsHistoryOpen} 
                 item={itemToViewHistory} 
-                logs={logs.filter(l => l.itemId === itemToViewHistory?.id)}
+                logs={selectedLogs}
             />
             <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                 <AlertDialogContent>

@@ -69,7 +69,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },
   { href: "/hr-manager", label: "HR Hub", icon: Users2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
-  { href: "/inventory-manager", label: "Inventory", icon: PackageSearch },
+  { href: "/inventory-manager/track", label: "Inventory", icon: PackageSearch },
   { href: "/marketing-manager", label: "Marketing", icon: Megaphone },
   { href: "/google", label: "Google Apps", icon: Wand2 },
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },

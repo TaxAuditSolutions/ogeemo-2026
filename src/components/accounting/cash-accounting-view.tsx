@@ -19,8 +19,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, X } from "lucide-react";
 import { AccountingPageHeader } from './page-header';
+import Link from 'next/link';
 
 type CashTransaction = {
     id: string;
@@ -54,11 +55,18 @@ export function CashAccountingView() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <AccountingPageHeader pageTitle="Cash Accounting" />
-             <header className="text-center">
+             <header className="text-center relative">
                 <h1 className="text-3xl font-bold font-headline text-primary">Cash Accounting</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                     Track physical cash transactions that don't run through a bank account.
                 </p>
+                <div className="absolute top-0 right-0">
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href="/accounting" aria-label="Close">
+                            <X className="h-5 w-5" />
+                        </Link>
+                    </Button>
+                </div>
             </header>
             
             <Card className="max-w-4xl mx-auto">

@@ -52,6 +52,7 @@ const itemSchema = z.object({
     acquisitionDate: z.date().optional().nullable(),
     stockQuantity: z.coerce.number().min(0, "Stock must be non-negative."),
     cost: z.coerce.number().min(0, "Cost must be non-negative.").optional().nullable(),
+    price: z.coerce.number().min(0, "Price must be non-negative.").optional().nullable(),
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -86,10 +87,11 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
                 acquisitionDate: itemToEdit.acquisitionDate ? new Date(itemToEdit.acquisitionDate) : null,
                 stockQuantity: itemToEdit.stockQuantity,
                 cost: itemToEdit.cost,
+                price: itemToEdit.price,
             });
         } else {
             form.reset({
-                name: '', sku: '', type: 'Product for Sale', supplierId: null, acquisitionDate: new Date(), stockQuantity: 0, cost: null
+                name: '', sku: '', type: 'Product for Sale', supplierId: null, acquisitionDate: new Date(), stockQuantity: 0, cost: null, price: null
             });
       }
     }
@@ -124,6 +126,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
             ...dataToSave,
             acquisitionDate: dataToSave.acquisitionDate || undefined,
             cost: dataToSave.cost ?? undefined,
+            price: dataToSave.price ?? undefined,
             supplierId: dataToSave.supplierId ?? undefined,
         };
         await updateInventoryItem(itemToEdit.id, updateData, { reason: 'Adjustment', notes: 'Item details updated.' });
@@ -227,6 +230,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Selling Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                  </div>
             </form>
           </Form>

@@ -117,21 +117,18 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
 
     try {
       const dataToSave = {
-        ...values,
         name: values.name || 'Untitled Item',
+        sku: values.sku || undefined,
+        type: values.type,
         supplierId: finalSupplierId,
+        acquisitionDate: values.acquisitionDate || undefined,
         stockQuantity: Number(values.stockQuantity) || 0,
+        cost: values.cost ?? null,
+        price: values.price ?? null,
       };
 
       if (itemToEdit) {
-        const updateData: Partial<Omit<InventoryItem, 'id' | 'userId'>> = {
-            ...dataToSave,
-            acquisitionDate: dataToSave.acquisitionDate || undefined,
-            cost: dataToSave.cost ?? undefined,
-            price: dataToSave.price ?? undefined,
-            supplierId: dataToSave.supplierId ?? undefined,
-        };
-        await updateInventoryItem(itemToEdit.id, updateData, { reason: 'Adjustment', notes: 'Item details updated.' });
+        await updateInventoryItem(itemToEdit.id, dataToSave, { reason: 'Adjustment', notes: 'Item details updated.' });
         toast({ title: 'Item Updated', description: `"${values.name}" has been updated.` });
       } else {
         await addInventoryItem({

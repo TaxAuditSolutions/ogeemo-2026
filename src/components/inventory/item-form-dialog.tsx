@@ -45,7 +45,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 
 
 const itemSchema = z.object({
-    name: z.string().min(1, 'Item name is required.'),
+    name: z.string().optional(),
     sku: z.string().optional(),
     type: z.enum(['Product for Sale', 'Internal Supply', 'Raw Material']).default('Product for Sale'),
     supplierId: z.string().optional().nullable(),
@@ -118,6 +118,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
     try {
       const dataToSave = {
         ...values,
+        name: values.name || 'Untitled Item',
         supplierId: finalSupplierId,
       };
 
@@ -237,7 +238,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" form="item-form">{itemToEdit ? 'Save Changes' : 'Create Item'}</Button>
+          <Button type="submit" form="item-form">Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

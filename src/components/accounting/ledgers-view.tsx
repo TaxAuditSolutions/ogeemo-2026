@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from "react";
@@ -47,7 +46,7 @@ import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +66,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { format } from 'date-fns';
 import { ScrollArea } from "../ui/scroll-area";
 import { Calendar } from "../ui/calendar";
+import Link from "next/link";
 
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
@@ -397,9 +397,16 @@ export function LedgersView() {
       <div className="p-4 sm:p-6 space-y-6">
         <AccountingPageHeader pageTitle={tabTitles[activeTab] || 'Ledgers'} hubPath="/accounting" hubLabel="Accounting Hub" />
         <div className="flex flex-col">
-          <header className="text-center mb-6 w-full mx-auto">
+          <header className="text-center mb-6 w-full mx-auto relative">
             <h1 className="text-3xl font-bold font-headline text-primary">BKS Ledgers</h1>
             <p className="text-muted-foreground">A unified view of your income and expenses.</p>
+            <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/accounting" aria-label="Close">
+                        <X className="h-5 w-5" />
+                    </Link>
+                </Button>
+            </div>
           </header>
 
             <Tabs defaultValue={initialTab} onValueChange={setActiveTab} className="w-full">
@@ -624,3 +631,5 @@ export function LedgersView() {
     </>
   );
 }
+
+    

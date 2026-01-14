@@ -204,7 +204,7 @@ export default function TrackInventoryPage() {
                     <div>
                         <CardTitle>Inventory List</CardTitle>
                         <CardDescription>
-                        A list of all products, supplies, and materials your business uses.
+                        A list of all products, supplies, and materials your business uses. To set prices, click the edit item in the 3 dot menu
                         </CardDescription>
                     </div>
                     </CardHeader>
@@ -292,3 +292,4 @@ export default function TrackInventoryPage() {
             </AlertDialog>
         </>
     );
+}

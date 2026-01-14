@@ -132,7 +132,6 @@ export default function TrackInventoryPage() {
                 type: 'Product for Sale',
                 stockQuantity: 0,
                 userId: user.uid,
-                // reason: 'Initial Stock' is handled inside addInventoryItem now
             });
             toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
             setNewItemName('');

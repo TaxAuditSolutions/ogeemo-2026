@@ -398,6 +398,22 @@
       },
       "required": ["name", "type", "stockQuantity", "userId"]
     },
+    "InventoryLog": {
+        "title": "Inventory Log",
+        "description": "Records a single change to an inventory item's stock level.",
+        "type": "object",
+        "properties": {
+            "itemId": { "type": "string" },
+            "itemName": { "type": "string" },
+            "reason": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment", "Shrinkage", "Consumed", "Destroyed"] },
+            "quantityChange": { "type": "number", "description": "The amount the quantity changed by (can be positive or negative)." },
+            "newQuantity": { "type": "number", "description": "The stock quantity after the change." },
+            "notes": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" }
+        },
+        "required": ["itemId", "itemName", "reason", "quantityChange", "newQuantity", "timestamp", "userId"]
+    },
     "Supplier": {
       "title": "Supplier",
       "description": "Represents a vendor or supplier of goods and materials.",
@@ -515,6 +531,10 @@
     "/inventoryItems/{itemId}": {
       "schema": { "$ref": "#/entities/Item" },
       "description": "Collection of all inventory items."
+    },
+    "/inventoryLogs/{logId}": {
+        "schema": { "$ref": "#/entities/InventoryLog" },
+        "description": "A log of all inventory transactions."
     },
     "/suppliers/{supplierId}": {
       "schema": { "$ref": "#/entities/Supplier" },

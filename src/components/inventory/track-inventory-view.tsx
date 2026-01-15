@@ -207,6 +207,7 @@ export default function TrackInventoryPage() {
                         A list of all products, supplies, and materials your business uses. To set prices, click the edit item in the 3 dot menu
                         </CardDescription>
                     </div>
+                    <Button>Test</Button>
                     </CardHeader>
                     <CardContent>
                     {isLoading ? (

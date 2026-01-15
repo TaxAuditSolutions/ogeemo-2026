@@ -37,7 +37,6 @@ import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Checkbox } from '../ui/checkbox';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -51,7 +50,6 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -229,9 +227,17 @@ export default function TrackInventoryPage() {
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id} onClick={() => setSelectedItemId(item.id)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
+                                <TableRow key={item.id}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>{item.sku || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <button
+                                            onClick={() => handleOpenForm(item)}
+                                            className="hover:underline"
+                                            disabled={!item.sku}
+                                        >
+                                            {item.sku || 'N/A'}
+                                        </button>
+                                    </TableCell>
                                     <TableCell>{item.type}</TableCell>
                                     <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                                     <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
@@ -246,7 +252,6 @@ export default function TrackInventoryPage() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -293,5 +298,3 @@ export default function TrackInventoryPage() {
         </>
     );
 }
-
-    

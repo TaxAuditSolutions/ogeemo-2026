@@ -51,6 +51,7 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -207,7 +208,6 @@ export default function TrackInventoryPage() {
                         A list of all products, supplies, and materials your business uses. To set prices, click the edit item in the 3 dot menu
                         </CardDescription>
                     </div>
-                    <Button>Test</Button>
                     </CardHeader>
                     <CardContent>
                     {isLoading ? (
@@ -248,6 +248,7 @@ export default function TrackInventoryPage() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

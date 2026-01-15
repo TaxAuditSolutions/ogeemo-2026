@@ -37,6 +37,7 @@ import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { EditableSkuCell } from './EditableSkuCell'; // Import the new component
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -230,13 +231,7 @@ export default function TrackInventoryPage() {
                                 <TableRow key={item.id}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>
-                                        <button
-                                            onClick={() => handleOpenForm(item)}
-                                            className="hover:underline"
-                                            disabled={!item.sku}
-                                        >
-                                            {item.sku || 'N/A'}
-                                        </button>
+                                        <EditableSkuCell item={item} onEdit={() => handleOpenForm(item)} />
                                     </TableCell>
                                     <TableCell>{item.type}</TableCell>
                                     <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>

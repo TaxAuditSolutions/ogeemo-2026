@@ -11,15 +11,22 @@ import {
   TableRow,
   TableFooter,
 } from '@/components/ui/table';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Edit } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, type Item as InventoryItem } from '@/services/inventory-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
+import { ItemFormDialog } from './item-form-dialog';
+import { Button } from '../ui/button';
+
 
 export function InventoryListTest() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -30,8 +37,12 @@ export function InventoryListTest() {
     }
     setIsLoading(true);
     try {
-      const fetchedItems = await getInventoryItems(user.uid);
+      const [fetchedItems, fetchedContacts] = await Promise.all([
+          getInventoryItems(user.uid),
+          getContacts(user.uid),
+      ]);
       setItems(fetchedItems);
+      setContacts(fetchedContacts);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -46,55 +57,81 @@ export function InventoryListTest() {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+  
+  const handleEditClick = (item: InventoryItem) => {
+    setItemToEdit(item);
+    setIsFormOpen(true);
+  };
+  
+  const handleSave = () => {
+    setIsFormOpen(false);
+    setItemToEdit(null);
+    loadItems();
+  };
 
   const totalInventoryValue = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
   }, [items]);
 
   return (
-    <div className="border rounded-md">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Unit Cost</TableHead>
-                    <TableHead className="text-right">Total Cost</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {isLoading ? (
-                    <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
-                        </TableCell>
-                    </TableRow>
-                ) : items.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                            No items in inventory.
-                        </TableCell>
-                    </TableRow>
-                ) : (
-                    items.map(item => (
-                        <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.sku || 'N/A'}</TableCell>
-                            <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                            <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                            <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                        </TableRow>
-                    ))
-                )}
-            </TableBody>
-             <TableFooter>
-                <TableRow>
-                    <TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
-                    <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
-                </TableRow>
-            </TableFooter>
-        </Table>
-    </div>
+    <>
+      <div className="border rounded-md">
+          <Table>
+              <TableHeader>
+                  <TableRow>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Unit Cost</TableHead>
+                      <TableHead className="text-right">Total Cost</TableHead>
+                      <TableHead className="w-12 text-right">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {isLoading ? (
+                      <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                              <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
+                          </TableCell>
+                      </TableRow>
+                  ) : items.length === 0 ? (
+                      <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                              No items in inventory.
+                          </TableCell>
+                      </TableRow>
+                  ) : (
+                      items.map(item => (
+                          <TableRow key={item.id}>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell>{item.sku || 'N/A'}</TableCell>
+                              <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
+                              <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
+                              <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                              <TableCell className="text-right">
+                                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
+                                      <Edit className="h-4 w-4"/>
+                                  </Button>
+                              </TableCell>
+                          </TableRow>
+                      ))
+                  )}
+              </TableBody>
+               <TableFooter>
+                  <TableRow>
+                      <TableCell colSpan={5} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                      <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
+                  </TableRow>
+              </TableFooter>
+          </Table>
+      </div>
+       <ItemFormDialog 
+            isOpen={isFormOpen} 
+            onOpenChange={setIsFormOpen} 
+            itemToEdit={itemToEdit} 
+            onSave={handleSave}
+            contacts={contacts}
+        />
+    </>
   );
 }

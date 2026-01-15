@@ -113,14 +113,14 @@ export function InventoryListTest() {
                   ) : (
                       items.map(item => (
                           <TableRow key={item.id}>
-                              <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell>{item.type}</TableCell>
-                              <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                              <TableCell>{item.sku || 'N/A'}</TableCell>
-                              <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
-                              <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
-                              <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="font-medium py-2">{item.name}</TableCell>
+                              <TableCell className="py-2">{item.type}</TableCell>
+                              <TableCell className="py-2">{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
+                              <TableCell className="py-2">{item.sku || 'N/A'}</TableCell>
+                              <TableCell className="text-right font-mono py-2">{item.stockQuantity}</TableCell>
+                              <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost)}</TableCell>
+                              <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                              <TableCell className="text-right py-2">
                                   <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
                                       <Edit className="h-4 w-4"/>
                                   </Button>
@@ -131,9 +131,8 @@ export function InventoryListTest() {
               </TableBody>
                <TableFooter>
                   <TableRow>
-                      <TableCell colSpan={6} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                      <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
                       <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
-                      <TableCell />
                   </TableRow>
               </TableFooter>
           </Table>

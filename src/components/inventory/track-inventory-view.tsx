@@ -228,7 +228,7 @@ export default function TrackInventoryPage() {
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id} onClick={() => setSelectedItemId(item.id)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
+                                <TableRow key={item.id} onClick={() => handleOpenForm(item)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>{item.sku || 'N/A'}</TableCell>
                                     <TableCell>{item.type}</TableCell>

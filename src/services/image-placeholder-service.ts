@@ -1,4 +1,3 @@
-
 'use server';
 
 // This environment variable is crucial for the gRPC client used by Firestore Admin SDK

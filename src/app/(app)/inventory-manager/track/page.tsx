@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addInventoryItem, type Item as InventoryItem } from '@/services/inventory-service';
+import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { getContacts, type Contact } from '@/services/contact-service';
 
@@ -62,6 +62,16 @@ export default function InventoryTrackPage() {
         setIsFormOpen(false);
         setItemToEdit(null);
         refreshList();
+    };
+
+    const handleDeleteItem = async (itemId: string) => {
+        try {
+            await deleteInventoryItem(itemId);
+            toast({ title: 'Item Deleted', variant: 'destructive' });
+            refreshList();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
+        }
     };
 
   return (
@@ -116,6 +126,7 @@ export default function InventoryTrackPage() {
           onOpenChange={setIsFormOpen} 
           itemToEdit={itemToEdit} 
           onSave={handleItemSave}
+          onDelete={handleDeleteItem}
           contacts={contacts}
       />
     </>

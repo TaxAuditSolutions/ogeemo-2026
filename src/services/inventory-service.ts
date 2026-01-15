@@ -14,6 +14,7 @@ import {
   Timestamp,
   getDoc,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
@@ -146,7 +147,7 @@ export async function deleteInventoryItem(id: string): Promise<void> {
   const db = await getDb();
   const docRef = doc(db, ITEMS_COLLECTION, id);
   await deleteDoc(docRef);
-  // Note: Logs are kept for historical records.
+  // Note: Logs are kept for historical records for now.
 }
 
 export async function deleteInventoryItems(itemIds: string[]): Promise<void> {

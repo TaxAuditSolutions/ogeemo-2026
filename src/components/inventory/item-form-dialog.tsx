@@ -14,6 +14,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -34,7 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, updateInventoryItem, type Item as InventoryItem, type InventoryLogReason } from '@/services/inventory-service';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar as CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronsUpDown, Check, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from '../ui/custom-calendar';
@@ -62,10 +72,11 @@ interface ItemFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   itemToEdit: InventoryItem | null;
   onSave: () => void;
+  onDelete: (itemId: string) => void;
   contacts: Contact[];
 }
 
-export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, contacts }: ItemFormDialogProps) {
+export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDelete, contacts }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -75,6 +86,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -139,8 +151,24 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     }
   };
+  
+  const handleDeleteClick = () => {
+    if (itemToEdit) {
+        setIsDeleteAlertOpen(true);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToEdit) {
+      onDelete(itemToEdit.id);
+      onOpenChange(false);
+    }
+    setIsDeleteAlertOpen(false);
+  };
+
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
@@ -231,11 +259,35 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
             </form>
           </Form>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" form="item-form">Save</Button>
+        <DialogFooter className="justify-between">
+           {itemToEdit ? (
+                <Button variant="destructive" onClick={handleDeleteClick}>
+                   <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </Button>
+            ) : <div />}
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" form="item-form">Save</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+     <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete the item "{itemToEdit?.name}". This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

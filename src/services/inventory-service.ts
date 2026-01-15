@@ -146,9 +146,20 @@ export async function deleteInventoryItem(id: string): Promise<void> {
   const db = await getDb();
   const docRef = doc(db, ITEMS_COLLECTION, id);
   await deleteDoc(docRef);
-  // Note: Consider if logs should also be deleted or kept for historical records.
-  // For now, logs are kept.
+  // Note: Logs are kept for historical records.
 }
+
+export async function deleteInventoryItems(itemIds: string[]): Promise<void> {
+    const db = await getDb();
+    if (itemIds.length === 0) return;
+    const batch = writeBatch(db);
+    itemIds.forEach(id => {
+        const docRef = doc(db, ITEMS_COLLECTION, id);
+        batch.delete(docRef);
+    });
+    await batch.commit();
+}
+
 
 export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> {
     const db = await getDb();

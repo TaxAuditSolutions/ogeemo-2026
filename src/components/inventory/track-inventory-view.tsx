@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog, addInventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, deleteInventoryItem, type Item as InventoryItem, getInventoryLogs, type InventoryLog, addInventoryItem, deleteInventoryItems } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
@@ -51,8 +51,8 @@ export default function TrackInventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+    const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -146,8 +146,7 @@ export default function TrackInventoryPage() {
     };
 
     const handleToggleSelect = (itemId: string) => {
-        setSelectedItemId(itemId);
-        setSelectedItemIds(prev =>
+        setSelecteditemIds(prev =>
             prev.includes(itemId)
             ? prev.filter(id => id !== itemId)
             : [...prev, itemId]
@@ -156,9 +155,29 @@ export default function TrackInventoryPage() {
 
     const handleToggleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
-            setSelectedItemIds(items.map(item => item.id));
+            setSelecteditemIds(items.map(item => item.id));
         } else {
-            setSelectedItemIds([]);
+            setSelecteditemIds([]);
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        if (selectedItemIds.length > 0) {
+            setIsBulkDeleteAlertOpen(true);
+        }
+    };
+    
+    const handleConfirmBulkDelete = async () => {
+        if (!user || selectedItemIds.length === 0) return;
+        try {
+            await deleteInventoryItems(selectedItemIds);
+            toast({ title: `${selectedItemIds.length} item(s) deleted.`});
+            setSelecteditemIds([]);
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
+        } finally {
+            setIsBulkDeleteAlertOpen(false);
         }
     };
 
@@ -223,9 +242,15 @@ export default function TrackInventoryPage() {
                     <div>
                         <CardTitle>Inventory List</CardTitle>
                         <CardDescription>
-                        A list of all products, supplies, and materials your business uses. To set prices, click the edit item in the 3 dot menu
+                        A list of all products, supplies, and materials your business uses.
                         </CardDescription>
                     </div>
+                    {selectedItemIds.length > 0 && (
+                        <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                            <Trash2 className="mr-2 h-4 w-4"/>
+                            Delete Selected ({selectedItemIds.length})
+                        </Button>
+                    )}
                     </CardHeader>
                     <CardContent>
                     {isLoading ? (
@@ -236,47 +261,46 @@ export default function TrackInventoryPage() {
                             <TableRow>
                                 <TableHead className="w-12">
                                     <Checkbox
-                                        checked={items.length > 0 && selectedItemIds.length === items.length}
+                                        checked={items.length > 0 && selectedItemIds.length === items.length ? true : (selectedItemIds.length > 0 ? 'indeterminate' : false)}
                                         onCheckedChange={handleToggleSelectAll}
+                                        aria-label="Select all items"
                                     />
                                 </TableHead>
                                 <TableHead>Item Name</TableHead>
                                 <TableHead>SKU</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Supplier</TableHead>
-                                <TableHead>Action Date</TableHead>
                                 <TableHead className="text-right">Qty</TableHead>
                                 <TableHead className="text-right">Unit Cost</TableHead>
-                                <TableHead className="text-right">Total Cost</TableHead>
+                                <TableHead className="text-right">Total Value</TableHead>
                                 <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id} onClick={() => handleOpenForm(item)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
+                                <TableRow key={item.id}>
                                     <TableCell onClick={(e) => e.stopPropagation()}>
                                         <Checkbox
                                             checked={selectedItemIds.includes(item.id)}
                                             onCheckedChange={() => handleToggleSelect(item.id)}
+                                            aria-label={`Select item ${item.name}`}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => handleOpenForm(item)}>{item.name}</TableCell>
                                     <TableCell>{item.sku || 'N/A'}</TableCell>
                                     <TableCell>{item.type}</TableCell>
                                     <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                                    <TableCell>{item.acquisitionDate ? format(new Date(item.acquisitionDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                                     <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                                     <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                     <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                                     <TableCell>
-                                            <DropdownMenu>
+                                        <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -284,7 +308,7 @@ export default function TrackInventoryPage() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
+                                    <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -318,6 +342,20 @@ export default function TrackInventoryPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{itemToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This action will permanently delete {selectedItemIds.length} item(s). This cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                            Delete Selected Items
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>

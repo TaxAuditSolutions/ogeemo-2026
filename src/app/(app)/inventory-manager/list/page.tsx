@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -20,15 +19,9 @@ export default function InventoryListPage() {
         direction="horizontal"
         className="w-full flex-1 rounded-lg border"
       >
-        <ResizablePanel defaultSize={50}>
+        <ResizablePanel defaultSize={100}>
           <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Left Panel</span>
-          </div>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={50}>
-           <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Right Panel</span>
+            <span className="font-semibold">Panel</span>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

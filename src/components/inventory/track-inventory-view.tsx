@@ -159,6 +159,7 @@ export default function TrackInventoryPage() {
                     <h1 className="text-3xl font-bold font-headline text-primary">Inventory Central</h1>
                     <p className="text-muted-foreground">Manage your items and view their complete transaction history.</p>
                      <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <Button>Test</Button>
                         <Button asChild>
                             <Link href="/inventory-manager/pos">
                                 <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale
@@ -295,3 +296,5 @@ export default function TrackInventoryPage() {
         </>
     );
 }
+
+    

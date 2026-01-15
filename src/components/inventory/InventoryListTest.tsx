@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -8,11 +9,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, type Item as InventoryItem } from '@/services/inventory-service';
+import { formatCurrency } from '@/lib/utils';
 
 export function InventoryListTest() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -44,6 +47,10 @@ export function InventoryListTest() {
     loadItems();
   }, [loadItems]);
 
+  const totalInventoryValue = useMemo(() => {
+    return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
+  }, [items]);
+
   return (
     <div className="border rounded-md">
         <Table>
@@ -70,13 +77,23 @@ export function InventoryListTest() {
                         </TableCell>
                     </TableRow>
                 ) : (
-                    <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                            Data loaded. Ready for next step.
-                        </TableCell>
-                    </TableRow>
+                    items.map(item => (
+                        <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell>{item.sku || 'N/A'}</TableCell>
+                            <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                        </TableRow>
+                    ))
                 )}
             </TableBody>
+             <TableFooter>
+                <TableRow>
+                    <TableCell colSpan={4} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                    <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
+                </TableRow>
+            </TableFooter>
         </Table>
     </div>
   );

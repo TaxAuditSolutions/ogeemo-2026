@@ -228,7 +228,7 @@ export default function TrackInventoryPage() {
                         </TableHeader>
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
-                                <TableRow key={item.id}>
+                                <TableRow key={item.id} onClick={() => handleOpenForm(item)} className="cursor-pointer">
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>
                                         <EditableSkuCell item={item} onEdit={() => handleOpenForm(item)} />

@@ -43,7 +43,8 @@ import {
   Plus,
   Trash2,
   ShoppingCart,
-  LoaderCircle
+  LoaderCircle,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -175,6 +176,13 @@ export default function PointOfSalePage() {
             </div>
             <h1 className="text-3xl font-bold font-headline text-primary">Point of Sale</h1>
             <p className="text-muted-foreground">Record a new sale transaction.</p>
+             <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager" aria-label="Close">
+                        <X className="h-5 w-5" />
+                    </Link>
+                </Button>
+            </div>
         </header>
 
       <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6">

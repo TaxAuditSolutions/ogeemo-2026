@@ -37,6 +37,7 @@ import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '../ui/checkbox';
 
 export default function TrackInventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -51,6 +52,7 @@ export default function TrackInventoryPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newItemName, setNewItemName] = useState('');
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -143,6 +145,23 @@ export default function TrackInventoryPage() {
         }
     };
 
+    const handleToggleSelect = (itemId: string) => {
+        setSelectedItemId(itemId);
+        setSelecteditemIds(prev =>
+            prev.includes(itemId)
+            ? prev.filter(id => id !== itemId)
+            : [...prev, itemId]
+        );
+    };
+
+    const handleToggleSelectAll = (checked: boolean | 'indeterminate') => {
+        if (checked === true) {
+            setSelecteditemIds(items.map(item => item.id));
+        } else {
+            setSelecteditemIds([]);
+        }
+    };
+
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -215,6 +234,12 @@ export default function TrackInventoryPage() {
                         <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-12">
+                                    <Checkbox
+                                        checked={items.length > 0 && selectedItemIds.length === items.length}
+                                        onCheckedChange={handleToggleSelectAll}
+                                    />
+                                </TableHead>
                                 <TableHead>Item Name</TableHead>
                                 <TableHead>SKU</TableHead>
                                 <TableHead>Type</TableHead>
@@ -229,6 +254,12 @@ export default function TrackInventoryPage() {
                         <TableBody>
                             {items.length > 0 ? items.map(item => (
                                 <TableRow key={item.id} onClick={() => handleOpenForm(item)} className={cn('cursor-pointer', selectedItemId === item.id && 'border-2 border-black')}>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <Checkbox
+                                            checked={selectedItemIds.includes(item.id)}
+                                            onCheckedChange={() => handleToggleSelect(item.id)}
+                                        />
+                                    </TableCell>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>{item.sku || 'N/A'}</TableCell>
                                     <TableCell>{item.type}</TableCell>
@@ -237,19 +268,28 @@ export default function TrackInventoryPage() {
                                     <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                                     <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                     <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
-                                    <TableCell>
-                                        <span className="sr-only">Actions for {item.name}</span>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
+                                    <TableCell colSpan={10} className="h-24 text-center">No items in inventory. Add one to get started.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                             <TableFooter>
                             <TableRow>
-                                <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                                <TableCell colSpan={8} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
                                 <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>

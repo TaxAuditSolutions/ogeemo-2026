@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Info, ShoppingCart, X } from 'lucide-react';
+import { Plus, Info, ShoppingCart, X, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
@@ -86,7 +86,15 @@ export default function InventoryTrackPage() {
   return (
     <>
       <div className="p-4 sm:p-6 h-full flex flex-col items-center">
-        <header className="w-full text-center mb-6 relative">
+        <header className="w-full max-w-6xl text-center relative mb-6">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+              <Button asChild variant="outline">
+                  <Link href="/inventory-manager">
+                      <Package className="mr-2 h-4 w-4" />
+                      Back to Inventory Hub
+                  </Link>
+              </Button>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-3xl font-bold font-headline text-primary">
               Inventory Central

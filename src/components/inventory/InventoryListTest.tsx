@@ -14,15 +14,20 @@ import {
 import { LoaderCircle, Edit } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, type Item as InventoryItem } from '@/services/inventory-service';
+import { getInventoryItems, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
 import { ItemFormDialog } from './item-form-dialog';
 import { Button } from '../ui/button';
+import { EditableSkuCell } from './EditableSkuCell'; // Import the new component
 
+interface InventoryListTestProps {
+    refreshTrigger: number;
+    onItemDelete: (itemId: string) => void;
+}
 
-export function InventoryListTest() {
+export function InventoryListTest({ refreshTrigger, onItemDelete }: InventoryListTestProps) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -60,7 +65,7 @@ export function InventoryListTest() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, refreshTrigger]);
   
   const handleEditClick = (item: InventoryItem) => {
     setItemToEdit(item);
@@ -116,7 +121,9 @@ export function InventoryListTest() {
                               <TableCell className="font-medium py-2">{item.name}</TableCell>
                               <TableCell className="py-2">{item.type}</TableCell>
                               <TableCell className="py-2">{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
-                              <TableCell className="py-2">{item.sku || 'N/A'}</TableCell>
+                              <TableCell className="py-2">
+                                  <EditableSkuCell item={item} onEdit={() => handleEditClick(item)} />
+                              </TableCell>
                               <TableCell className="text-right font-mono py-2">{item.stockQuantity}</TableCell>
                               <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost)}</TableCell>
                               <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
@@ -142,6 +149,7 @@ export function InventoryListTest() {
             onOpenChange={setIsFormOpen} 
             itemToEdit={itemToEdit} 
             onSave={handleSave}
+            onDelete={onItemDelete}
             contacts={contacts}
         />
     </>

@@ -123,7 +123,6 @@ export default function InventoryTrackPage() {
         <div className="w-full max-w-6xl space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UpdateStockCard
-                    key={listVersion} // Force re-render when list changes
                     onItemSelected={(item) => handleOpenForm(item)}
                 />
                 <Card>
@@ -152,7 +151,7 @@ export default function InventoryTrackPage() {
                 </Card>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-                <InventoryListTest key={listVersion} />
+                <InventoryListTest refreshTrigger={listVersion} />
             </div>
         </div>
       </div>

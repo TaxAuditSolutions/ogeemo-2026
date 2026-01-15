@@ -242,17 +242,7 @@ export default function TrackInventoryPage() {
                                     <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
                                     <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                                     <TableCell>
-                                            <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleOpenHistory(item)}><History className="mr-2 h-4 w-4" /> View History</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}><Pencil className="mr-2 h-4 w-4" /> Edit Item</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenForm(item)}>Test</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Item</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {/* The DropdownMenu component has been removed from here */}
                                     </TableCell>
                                 </TableRow>
                             )) : (
@@ -296,5 +286,3 @@ export default function TrackInventoryPage() {
         </>
     );
 }
-
-    

@@ -15,6 +15,7 @@ import { LoaderCircle, Edit } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInventoryItems, type Item as InventoryItem } from '@/services/inventory-service';
+import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
 import { ItemFormDialog } from './item-form-dialog';
@@ -23,6 +24,7 @@ import { Button } from '../ui/button';
 
 export function InventoryListTest() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
@@ -30,18 +32,20 @@ export function InventoryListTest() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const loadItems = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      const [fetchedItems, fetchedContacts] = await Promise.all([
+      const [fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
           getInventoryItems(user.uid),
+          getSuppliers(user.uid),
           getContacts(user.uid),
       ]);
       setItems(fetchedItems);
+      setSuppliers(fetchedSuppliers);
       setContacts(fetchedContacts);
     } catch (error: any) {
       toast({
@@ -55,8 +59,8 @@ export function InventoryListTest() {
   }, [user, toast]);
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    loadData();
+  }, [loadData]);
   
   const handleEditClick = (item: InventoryItem) => {
     setItemToEdit(item);
@@ -66,8 +70,12 @@ export function InventoryListTest() {
   const handleSave = () => {
     setIsFormOpen(false);
     setItemToEdit(null);
-    loadItems();
+    loadData();
   };
+
+  const supplierMap = useMemo(() => {
+    return new Map(suppliers.map(s => [s.id, s.name]));
+  }, [suppliers]);
 
   const totalInventoryValue = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
@@ -80,6 +88,8 @@ export function InventoryListTest() {
               <TableHeader>
                   <TableRow>
                       <TableHead>Item Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Supplier</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead className="text-right">Unit Cost</TableHead>
@@ -90,13 +100,13 @@ export function InventoryListTest() {
               <TableBody>
                   {isLoading ? (
                       <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
+                          <TableCell colSpan={8} className="h-24 text-center">
                               <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                           </TableCell>
                       </TableRow>
                   ) : items.length === 0 ? (
                       <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
+                          <TableCell colSpan={8} className="h-24 text-center">
                               No items in inventory.
                           </TableCell>
                       </TableRow>
@@ -104,6 +114,8 @@ export function InventoryListTest() {
                       items.map(item => (
                           <TableRow key={item.id}>
                               <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell>{item.type}</TableCell>
+                              <TableCell>{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                               <TableCell>{item.sku || 'N/A'}</TableCell>
                               <TableCell className="text-right font-mono">{item.stockQuantity}</TableCell>
                               <TableCell className="text-right font-mono">{formatCurrency(item.cost)}</TableCell>
@@ -119,8 +131,9 @@ export function InventoryListTest() {
               </TableBody>
                <TableFooter>
                   <TableRow>
-                      <TableCell colSpan={5} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                      <TableCell colSpan={6} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
                       <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
+                      <TableCell />
                   </TableRow>
               </TableFooter>
           </Table>

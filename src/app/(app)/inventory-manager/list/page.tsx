@@ -1,11 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { InventoryListTest } from '@/components/inventory/InventoryListTest';
 
 export default function InventoryListPage() {
   return (
@@ -15,16 +11,9 @@ export default function InventoryListPage() {
           The Complete List
         </h1>
       </header>
-      <ResizablePanelGroup
-        direction="horizontal"
-        className="w-full flex-1 rounded-lg border"
-      >
-        <ResizablePanel defaultSize={100}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Panel</span>
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      <div className="w-full max-w-6xl">
+        <InventoryListTest />
+      </div>
     </div>
   );
 }

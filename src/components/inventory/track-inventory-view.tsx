@@ -290,4 +290,5 @@ export default function TrackInventoryPage() {
             </AlertDialog>
         </>
     );
-}
+
+    

@@ -107,7 +107,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, conta
         const newSupplier = await designateContactAsSupplier(user.uid, values.supplierId);
         finalSupplierId = newSupplier.id;
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${error.message}` });
+        toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${'' + error.message}` });
         return;
       }
     }

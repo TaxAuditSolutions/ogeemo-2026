@@ -49,6 +49,7 @@ export default function InventoryManagerPage() {
                 Manage Inventory & View Log <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
+          <Button>List</Button>
         </div>
       </header>
 

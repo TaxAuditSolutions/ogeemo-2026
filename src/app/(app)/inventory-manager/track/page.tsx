@@ -62,17 +62,6 @@ export default function InventoryTrackPage() {
         }
     };
     
-    const handleOpenForm = (item: InventoryItem | null = null) => {
-        setItemToEdit(item);
-        setIsFormOpen(true);
-    };
-
-    const handleItemSave = () => {
-        setIsFormOpen(false);
-        setItemToEdit(null);
-        refreshList();
-    };
-
     const handleDeleteItem = async (itemId: string) => {
         try {
             await deleteInventoryItem(itemId);
@@ -123,7 +112,10 @@ export default function InventoryTrackPage() {
         <div className="w-full max-w-6xl space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UpdateStockCard
-                    onItemSelected={(item) => handleOpenForm(item)}
+                    onItemSelected={(item) => {
+                        setItemToEdit(item);
+                        setIsFormOpen(true);
+                    }}
                 />
                 <Card>
                     <CardHeader>
@@ -151,7 +143,7 @@ export default function InventoryTrackPage() {
                 </Card>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-                <InventoryListTest refreshTrigger={listVersion} />
+                <InventoryListTest refreshTrigger={listVersion} onItemDelete={handleDeleteItem} />
             </div>
         </div>
       </div>
@@ -159,7 +151,11 @@ export default function InventoryTrackPage() {
           isOpen={isFormOpen} 
           onOpenChange={setIsFormOpen} 
           itemToEdit={itemToEdit} 
-          onSave={handleItemSave}
+          onSave={() => {
+              setIsFormOpen(false);
+              setItemToEdit(null);
+              refreshList();
+          }}
           onDelete={handleDeleteItem}
           contacts={contacts}
       />

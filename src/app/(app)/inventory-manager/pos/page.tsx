@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -45,48 +44,64 @@ import {
   ShoppingCart,
   LoaderCircle,
   X,
+  Settings,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getInventoryItems, type Item as InventoryItem, processSaleTransaction } from '@/services/inventory-service';
+import { getTaxTypes, type TaxType } from '@/services/accounting-service';
+import { ManageTaxTypesDialog } from '@/components/accounting/manage-tax-types-dialog';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface SaleItem extends InventoryItem {
   saleQuantity: number;
+  taxType?: string;
+  taxRate?: number;
 }
 
 export default function PointOfSalePage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [cart, setCart] = useState<SaleItem[]>([]);
+  
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedTaxTypeId, setSelectedTaxTypeId] = useState<string>('none');
   const [quantity, setQuantity] = useState<number | ''>(1);
+  
   const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+  const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const loadInventory = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
         setIsLoading(false);
         return;
     };
     setIsLoading(true);
     try {
-      const items = await getInventoryItems(user.uid);
+      const [items, taxes] = await Promise.all([
+          getInventoryItems(user.uid),
+          getTaxTypes(user.uid),
+      ]);
       setInventory(items);
+      setTaxTypes(taxes);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory or tax data.' });
     } finally {
       setIsLoading(false);
     }
   }, [user, toast]);
 
   useEffect(() => {
-    loadInventory();
-  }, [loadInventory]);
+    loadData();
+  }, [loadData]);
 
   const handleAddItemToCart = () => {
     if (!selectedItemId || !quantity) {
@@ -104,30 +119,40 @@ export default function PointOfSalePage() {
         toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Only ${itemToAdd.stockQuantity} of ${itemToAdd.name} available.` });
         return;
     }
+    
+    const selectedTaxType = taxTypes.find(t => t.id === selectedTaxTypeId);
 
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === selectedItemId);
-      if (existingItem) {
-        const newQuantity = existingItem.saleQuantity + Number(quantity);
-        if(itemToAdd.stockQuantity < newQuantity) {
-            toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Cannot add ${quantity}. Only ${itemToAdd.stockQuantity - existingItem.saleQuantity} more available.` });
-            return prevCart;
-        }
-        return prevCart.map(item =>
-          item.id === selectedItemId
-            ? { ...item, saleQuantity: newQuantity }
-            : item
-        );
+      const existingItemIndex = prevCart.findIndex(item => item.id === selectedItemId && item.taxType === (selectedTaxType?.name || ''));
+      
+      if (existingItemIndex > -1) {
+          const existingItem = prevCart[existingItemIndex];
+          const newQuantity = existingItem.saleQuantity + Number(quantity);
+
+          if(itemToAdd.stockQuantity < newQuantity) {
+              toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Cannot add ${quantity}. Only ${itemToAdd.stockQuantity - existingItem.saleQuantity} more available.` });
+              return prevCart;
+          }
+          
+          const updatedCart = [...prevCart];
+          updatedCart[existingItemIndex] = { ...existingItem, saleQuantity: newQuantity };
+          return updatedCart;
       }
-      return [...prevCart, { ...itemToAdd, saleQuantity: Number(quantity) }];
+      
+      return [...prevCart, { 
+          ...itemToAdd, 
+          saleQuantity: Number(quantity),
+          taxType: selectedTaxType?.name,
+          taxRate: selectedTaxType?.rate,
+      }];
     });
 
     setSelectedItemId(null);
     setQuantity(1);
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
+  const handleRemoveItem = (uniqueId: string) => {
+    setCart(cart.filter(item => `${item.id}-${item.taxType}` !== uniqueId));
   };
   
   const handleCompleteSale = async () => {
@@ -148,7 +173,7 @@ export default function PointOfSalePage() {
         });
         setCart([]);
         // Reload inventory to get updated stock counts
-        await loadInventory();
+        await loadData();
     } catch (error: any) {
         toast({
             variant: 'destructive',
@@ -161,9 +186,19 @@ export default function PointOfSalePage() {
   };
 
   const selectedItem = inventory.find(item => item.id === selectedItemId);
-  const cartTotal = useMemo(() => cart.reduce((total, item) => total + (item.price || 0) * item.saleQuantity, 0), [cart]);
+  const { subtotal, taxTotal, grandTotal } = useMemo(() => {
+    let sub = 0;
+    let tax = 0;
+    cart.forEach(item => {
+        const itemTotal = (item.price || 0) * item.saleQuantity;
+        sub += itemTotal;
+        tax += itemTotal * ((item.taxRate || 0) / 100);
+    });
+    return { subtotal: sub, taxTotal: tax, grandTotal: sub + tax };
+  }, [cart]);
 
   return (
+    <>
     <div className="p-4 sm:p-6 flex flex-col items-center h-full">
         <header className="w-full max-w-4xl text-center relative mb-6">
             <div className="absolute left-0 top-1/2 -translate-y-1/2">
@@ -198,7 +233,7 @@ export default function PointOfSalePage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" role="combobox" className="w-full justify-between">
                       <span className="truncate">{selectedItem?.name || "Select an item..."}</span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      {isLoading ? <LoaderCircle className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -225,6 +260,25 @@ export default function PointOfSalePage() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+              <div className="space-y-2">
+                  <Label>Sales Tax</Label>
+                  <div className="flex gap-2">
+                    <Select value={selectedTaxTypeId} onValueChange={setSelectedTaxTypeId}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Tax</SelectItem>
+                        {taxTypes.map(type => (
+                            <SelectItem key={type.id} value={type.id}>
+                                {type.name} ({type.rate}%)
+                            </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)}>
+                        <Settings className="h-4 w-4"/>
+                    </Button>
+                  </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity</Label>
@@ -265,13 +319,16 @@ export default function PointOfSalePage() {
                 </TableHeader>
                 <TableBody>
                   {cart.length > 0 ? cart.map(item => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableRow key={`${item.id}-${item.taxType}`}>
+                      <TableCell className="font-medium">
+                        {item.name}
+                        {item.taxType && <span className="text-xs text-muted-foreground ml-2">({item.taxType})</span>}
+                      </TableCell>
                       <TableCell className="text-center">{item.saleQuantity}</TableCell>
-                      <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatCurrency(item.price || 0)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency((item.price || 0) * item.saleQuantity)}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemoveItem(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemoveItem(`${item.id}-${item.taxType}`)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
@@ -286,8 +343,18 @@ export default function PointOfSalePage() {
                 </TableBody>
                  <TableFooter>
                     <TableRow>
+                        <TableCell colSpan={3} className="text-right">Subtotal</TableCell>
+                        <TableCell className="text-right font-mono">{formatCurrency(subtotal)}</TableCell>
+                        <TableCell />
+                    </TableRow>
+                    <TableRow>
+                        <TableCell colSpan={3} className="text-right">Tax</TableCell>
+                        <TableCell className="text-right font-mono">{formatCurrency(taxTotal)}</TableCell>
+                        <TableCell />
+                    </TableRow>
+                    <TableRow>
                         <TableCell colSpan={3} className="text-right font-bold text-lg">Total</TableCell>
-                        <TableCell className="text-right font-bold text-lg font-mono">{formatCurrency(cartTotal)}</TableCell>
+                        <TableCell className="text-right font-bold text-lg font-mono">{formatCurrency(grandTotal)}</TableCell>
                         <TableCell />
                     </TableRow>
                 </TableFooter>
@@ -303,5 +370,13 @@ export default function PointOfSalePage() {
         </div>
       </div>
     </div>
+    
+    <ManageTaxTypesDialog
+        isOpen={isManageTaxDialogOpen}
+        onOpenChange={setIsManageTaxDialogOpen}
+        taxTypes={taxTypes}
+        onTaxTypesChange={setTaxTypes}
+    />
+    </>
   );
 }

@@ -173,7 +173,7 @@ export function ManageTaxTypesDialog({
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the "{typeToDelete?.name}" tax type. This cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete the "{typeToDelete?.name}" tax type. This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

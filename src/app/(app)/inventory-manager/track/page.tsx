@@ -102,6 +102,11 @@ export default function InventoryTrackPage() {
         setItemToEdit(null);
         loadData(); // Refresh the data
     };
+    
+    const handleEditItem = (item: InventoryItem) => {
+        setItemToEdit(item);
+        setIsFormOpen(true);
+    };
 
   return (
     <>
@@ -149,12 +154,9 @@ export default function InventoryTrackPage() {
         <div className="w-full max-w-6xl space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UpdateStockCard
-                    items={items} // Pass items down
+                    items={items}
                     isLoading={isLoading}
-                    onItemSelected={(item) => {
-                        setItemToEdit(item);
-                        setIsFormOpen(true);
-                    }}
+                    onItemSelected={handleEditItem}
                 />
                 <Card>
                     <CardHeader>
@@ -186,8 +188,7 @@ export default function InventoryTrackPage() {
                     items={items} 
                     isLoading={isLoading} 
                     onItemDelete={handleDeleteItem} 
-                    onItemSave={handleItemSave}
-                    contacts={contacts}
+                    onEditItem={handleEditItem}
                 />
             </div>
         </div>

@@ -11,35 +11,22 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { LoaderCircle, Edit } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { getSuppliers, type Supplier } from '@/services/supplier-service';
 import { formatCurrency } from '@/lib/utils';
-import { ItemFormDialog } from './item-form-dialog';
 import { Button } from '../ui/button';
 import { EditableSkuCell } from './EditableSkuCell';
 import { type Item as InventoryItem } from '@/services/inventory-service';
-import { type Contact } from '@/services/contact-service';
 
 
 interface InventoryListTestProps {
     items: InventoryItem[];
     isLoading: boolean;
     onItemDelete: (itemId: string) => void;
-    onItemSave: () => void; 
-    contacts: Contact[];
+    onEditItem: (item: InventoryItem) => void; 
 }
 
-export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave, contacts }: InventoryListTestProps) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const { user } = useAuth();
+export function InventoryListTest({ items, isLoading, onItemDelete, onEditItem }: InventoryListTestProps) {
+  const [suppliers, setSuppliers] = useState<any[]>([]); // Simplified for this view
 
-  const handleEditClick = (item: InventoryItem) => {
-    setItemToEdit(item);
-    setIsFormOpen(true);
-  };
-  
   const supplierMap = useMemo(() => {
     return new Map(suppliers.map(s => [s.id, s.name]));
   }, [suppliers]);
@@ -84,13 +71,13 @@ export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave, 
                               <TableCell className="py-2">{item.type}</TableCell>
                               <TableCell className="py-2">{supplierMap.get(item.supplierId || '') || 'N/A'}</TableCell>
                               <TableCell className="py-2">
-                                  <EditableSkuCell item={item} onEdit={() => handleEditClick(item)} />
+                                  <EditableSkuCell item={item} onEdit={() => onEditItem(item)} />
                               </TableCell>
                               <TableCell className="text-right font-mono py-2">{item.stockQuantity}</TableCell>
                               <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost)}</TableCell>
                               <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                               <TableCell className="text-right py-2">
-                                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
+                                  <Button variant="ghost" size="icon" onClick={() => onEditItem(item)}>
                                       <Edit className="h-4 w-4"/>
                                   </Button>
                               </TableCell>
@@ -106,14 +93,6 @@ export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave, 
               </TableFooter>
           </Table>
       </div>
-       <ItemFormDialog 
-            isOpen={isFormOpen} 
-            onOpenChange={setIsFormOpen} 
-            itemToEdit={itemToEdit} 
-            onSave={onItemSave}
-            onDelete={onItemDelete}
-            contacts={contacts}
-        />
     </>
   );
 }

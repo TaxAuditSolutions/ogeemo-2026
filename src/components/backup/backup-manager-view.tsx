@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DatabaseBackup, Loader2, CheckCircle2, AlertCircle, Users } from 'lucide-react';
+import { DatabaseBackup, LoaderCircle, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 import { initiateBackup, type BackupType } from '@/services/backup-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -72,7 +72,7 @@ export function BackupManagerView() {
     const renderStatus = (status: BackupStatus) => {
         if (status.status === 'idle') return null;
         if (status.status === 'loading') {
-            return <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2"><Loader2 className="h-4 w-4 animate-spin" /> {status.message}</div>
+            return <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2"><LoaderCircle className="h-4 w-4 animate-spin" /> {status.message}</div>
         }
         if (status.status === 'success') {
             return (

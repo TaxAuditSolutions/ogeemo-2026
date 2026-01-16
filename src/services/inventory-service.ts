@@ -17,6 +17,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { t2125IncomeCategories } from '@/data/standard-expense-categories';
 
 export interface Item {
   id: string;
@@ -171,7 +172,8 @@ export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> 
 
 export async function processSaleTransaction(
   userId: string,
-  saleItems: { itemId: string; quantitySold: number }[]
+  saleItems: { itemId: string; quantitySold: number }[],
+  saleDetails: { subtotal: number; taxTotal: number; grandTotal: number }
 ): Promise<void> {
   const db = await getDb();
   const batch = writeBatch(db);
@@ -210,6 +212,24 @@ export async function processSaleTransaction(
     };
     batch.set(logRef, logData);
   }
+
+  // Create the corresponding income transaction
+  const incomeTxRef = doc(collection(db, 'incomeTransactions'));
+  const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+
+  batch.set(incomeTxRef, {
+    userId,
+    date: new Date().toISOString().split('T')[0],
+    company: 'Point of Sale Customer',
+    description: `POS Sale - ${saleItems.length} item(s)`,
+    totalAmount: saleDetails.grandTotal,
+    preTaxAmount: saleDetails.subtotal,
+    taxAmount: saleDetails.taxTotal,
+    taxRate: saleDetails.subtotal > 0 ? (saleDetails.taxTotal / saleDetails.subtotal) * 100 : 0,
+    incomeCategory: primaryIncomeLine || 'C-1', // Default to 'Sales' category or a custom fallback
+    depositedTo: 'Cash Account', // Assuming cash or a default account
+    type: 'business',
+  });
 
   await batch.commit();
 }

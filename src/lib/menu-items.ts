@@ -48,6 +48,7 @@ import {
   ClipboardList,
   PlayCircle,
   Wrench,
+  DatabaseBackup,
 } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -75,6 +76,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },
   { href: "/user-list", label: "User List", icon: Users2 },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/backup", label: "Backups", icon: DatabaseBackup },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
   { href: "/contacts", label: "Contacts Hub", icon: Contact },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -23,7 +24,7 @@ export function UpdateStockCard({ items, onItemSelected, isLoading }: UpdateStoc
         <Card>
             <CardHeader>
                 <CardTitle>Update Existing Item Stock</CardTitle>
-                <CardDescription>Quickly find an item to update its quantity.</CardDescription>
+                <CardDescription>To edit an item details such as quantity and supplers</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-2">

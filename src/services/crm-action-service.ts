@@ -14,6 +14,8 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export interface Action {
   id: string;
@@ -59,28 +61,81 @@ export async function getActionsForLead(userId: string, leadName: string): Promi
   return snapshot.docs.map(docToAction).sort((a, b) => a.position - b.position);
 }
 
-export async function addAction(data: Omit<Action, 'id'>): Promise<Action> {
-  const db = await getDb();
-  const docRef = await addDoc(collection(db, CRM_ACTIONS_COLLECTION), data);
-  return { id: docRef.id, ...data };
-}
-
-export async function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
-  const db = await getDb();
-  await updateDoc(doc(db, CRM_ACTIONS_COLLECTION, id), data);
-}
-
-export async function deleteAction(id: string): Promise<void> {
-  const db = await getDb();
-  await deleteDoc(doc(db, CRM_ACTIONS_COLLECTION, id));
-}
-
-export async function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
-  const db = await getDb();
-  const batch = writeBatch(db);
-  updates.forEach(update => {
-    const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);
-    batch.update(docRef, { position: update.position, status: update.status });
+export function addAction(data: Omit<Action, 'id'>): Promise<Action> {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDb();
+    const collectionRef = collection(db, CRM_ACTIONS_COLLECTION);
+    
+    addDoc(collectionRef, data)
+      .then(docRef => resolve({ id: docRef.id, ...data }))
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: collectionRef.path,
+            operation: 'create',
+            requestResourceData: data,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        reject(serverError);
+      });
   });
-  await batch.commit();
+}
+
+export function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDb();
+    const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
+    
+    updateDoc(docRef, data)
+      .then(resolve)
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: data,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        reject(serverError);
+      });
+  });
+}
+
+export function deleteAction(id: string): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDb();
+    const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
+    
+    deleteDoc(docRef)
+      .then(resolve)
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        reject(serverError);
+      });
+  });
+}
+
+export function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    const db = await getDb();
+    const batch = writeBatch(db);
+    updates.forEach(update => {
+        const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);
+        batch.update(docRef, { position: update.position, status: update.status });
+    });
+    
+    batch.commit()
+      .then(resolve)
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: CRM_ACTIONS_COLLECTION,
+            operation: 'update',
+            requestResourceData: { batch: updates },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        reject(serverError);
+      });
+  });
 }

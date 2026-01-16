@@ -17,6 +17,8 @@ import {
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Contact } from '@/data/contacts';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const CONTACTS_COLLECTION = 'contacts';
 const CLIENT_ACCOUNTS_COLLECTION = 'clientAccounts';
@@ -77,7 +79,16 @@ async function createClientAccount(userId: string, contactId: string, contactNam
           userId,
           createdAt: new Date(),
       };
-      await addDoc(collection(db, CLIENT_ACCOUNTS_COLLECTION), accountData);
+      addDoc(collection(db, CLIENT_ACCOUNTS_COLLECTION), accountData).catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+              path: collection(db, CLIENT_ACCOUNTS_COLLECTION).path,
+              operation: 'create',
+              requestResourceData: accountData
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          // We don't reject here as this is a secondary operation
+          console.error("Failed to create client account (non-critical):", serverError);
+      });
     }
 }
 
@@ -101,93 +112,124 @@ export async function getContactById(contactId: string): Promise<Contact | null>
 }
 
 
-export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
-  const db = await getDb();
-  const dataToSave = {
-    ...contactData,
-    website: contactData.website || '',
-    businessName: contactData.businessName || '',
-    email: contactData.email || '',
-    industryCode: contactData.industryCode || '',
-    keywords: generateKeywords(contactData.name, contactData.email || '', contactData.businessName),
-  };
-
-  const docRef = await addDoc(collection(db, CONTACTS_COLLECTION), dataToSave);
-  
-  await createClientAccount(contactData.userId, docRef.id, contactData.name);
-
-  return { id: docRef.id, ...dataToSave };
-}
-
-export async function updateContact(contactId: string, contactData: Partial<Omit<Contact, 'id' | 'userId'>>): Promise<void> {
+export function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
+  return new Promise(async (resolve, reject) => {
     const db = await getDb();
-    const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
+    const collectionRef = collection(db, CONTACTS_COLLECTION);
+    const dataToSave = {
+      ...contactData,
+      website: contactData.website || '',
+      businessName: contactData.businessName || '',
+      email: contactData.email || '',
+      industryCode: contactData.industryCode || '',
+      keywords: generateKeywords(contactData.name, contactData.email || '', contactData.businessName),
+    };
 
-    const dataToUpdate: {[key: string]: any} = { ...contactData };
-    
-    if (contactData.name || contactData.email || contactData.businessName) {
-        const currentDoc = await getDoc(contactRef);
-        if (currentDoc.exists()) {
-            const currentData = currentDoc.data();
-            const newName = contactData.name ?? currentData.name;
-            const newEmail = contactData.email ?? currentData.email;
-            const newBusinessName = contactData.businessName ?? currentData.businessName;
-            dataToUpdate.keywords = generateKeywords(newName, newEmail, newBusinessName);
-        }
-    }
-
-    await updateDoc(contactRef, dataToUpdate);
-}
-
-
-export async function deleteContacts(contactIds: string[]): Promise<void> {
-    const db = await getDb();
-    if (contactIds.length === 0) return;
-    const batch = writeBatch(db);
-    
-    for (let i = 0; i < contactIds.length; i += 30) {
-      const chunk = contactIds.slice(i, i + 30);
-      const accountsQuery = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where('contactId', 'in', chunk));
-      const accountsSnapshot = await getDocs(accountsQuery);
-      accountsSnapshot.forEach(accountDoc => {
-          batch.delete(accountDoc.ref);
+    addDoc(collectionRef, dataToSave)
+      .then(async (docRef) => {
+        const newContact = { id: docRef.id, ...dataToSave };
+        await createClientAccount(contactData.userId, docRef.id, contactData.name);
+        resolve(newContact);
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        reject(serverError);
       });
-    }
-    
-    contactIds.forEach(id => {
-        const contactRef = doc(db, CONTACTS_COLLECTION, id);
-        batch.delete(contactRef);
-    });
+  });
+}
 
-    await batch.commit();
+export function updateContact(contactId: string, contactData: Partial<Omit<Contact, 'id' | 'userId'>>): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        const db = await getDb();
+        const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
+
+        const dataToUpdate: {[key: string]: any} = { ...contactData };
+        
+        if (contactData.name || contactData.email || contactData.businessName) {
+            const currentDoc = await getDoc(contactRef);
+            if (currentDoc.exists()) {
+                const currentData = currentDoc.data();
+                const newName = contactData.name ?? currentData.name;
+                const newEmail = contactData.email ?? currentData.email;
+                const newBusinessName = contactData.businessName ?? currentData.businessName;
+                dataToUpdate.keywords = generateKeywords(newName, newEmail, newBusinessName);
+            }
+        }
+
+        updateDoc(contactRef, dataToUpdate)
+            .then(() => resolve())
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: contactRef.path,
+                    operation: 'update',
+                    requestResourceData: dataToUpdate,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
+    });
 }
 
 
-export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
-    const db = await getDb();
-    
-    const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
-    const masterRef = doc(db, CONTACTS_COLLECTION, masterContactId);
+export function deleteContacts(contactIds: string[]): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        const db = await getDb();
+        if (contactIds.length === 0) {
+            resolve();
+            return;
+        }
+        const batch = writeBatch(db);
+        
+        for (let i = 0; i < contactIds.length; i += 30) {
+          const chunk = contactIds.slice(i, i + 30);
+          const accountsQuery = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where('contactId', 'in', chunk));
+          const accountsSnapshot = await getDocs(accountsQuery);
+          accountsSnapshot.forEach(accountDoc => {
+              batch.delete(accountDoc.ref);
+          });
+        }
+        
+        contactIds.forEach(id => {
+            const contactRef = doc(db, CONTACTS_COLLECTION, id);
+            batch.delete(contactRef);
+        });
 
-    const sourceDoc = await getDoc(sourceRef);
-    const masterDoc = await getDoc(masterRef);
+        batch.commit()
+            .then(() => resolve())
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: `batch delete on ${CONTACTS_COLLECTION} and ${CLIENT_ACCOUNTS_COLLECTION}`,
+                    operation: 'delete',
+                    requestResourceData: { ids: contactIds },
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
+    });
+}
 
-    if (!sourceDoc.exists() || !masterDoc.exists()) {
-        throw new Error("One or both contacts not found.");
-    }
-    
-    // For this version, we will simply delete the source contact.
-    // In a future version, you could merge fields here before deleting.
-    // For example:
-    // const masterData = masterDoc.data();
-    // const sourceData = sourceDoc.data();
-    // const mergedData = { ...masterData };
-    // if (!masterData.phone && sourceData.phone) {
-    //   mergedData.phone = sourceData.phone;
-    // }
-    // await updateDoc(masterRef, mergedData);
 
-    await deleteDoc(sourceRef);
+export function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        const db = await getDb();
+        const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
+        
+        deleteDoc(sourceRef)
+            .then(() => resolve())
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: sourceRef.path,
+                    operation: 'delete',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
+    });
 }
 
 

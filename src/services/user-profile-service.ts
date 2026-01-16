@@ -4,6 +4,8 @@
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
@@ -62,7 +64,7 @@ export interface UserProfile {
     };
 }
 
-const PROFILES_COLLECTION = 'users'; // Corrected collection name
+const PROFILES_COLLECTION = 'users';
 
 async function getDb() {
     const { db } = await initializeFirebase();
@@ -126,11 +128,12 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     }
 }
 
-export async function updateUserProfile(
+export function updateUserProfile(
     userId: string, 
     email: string,
     data: Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<void> {
+  return new Promise(async (resolve, reject) => {
     const db = await getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
@@ -157,31 +160,59 @@ export async function updateUserProfile(
         
         if (data.businessAddress) {
             const existingAddress = existingData.businessAddress || {};
-            dataWithTimestamp.businessAddress = {
-                ...existingAddress,
-                ...data.businessAddress,
-            };
+            dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
         }
         
         if (data.homeAddress) {
             const existingAddress = existingData.homeAddress || {};
-            dataWithTimestamp.homeAddress = {
-                ...existingAddress,
-                ...data.homeAddress,
-            };
+            dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
         }
 
-        await updateDoc(docRef, dataWithTimestamp);
+        updateDoc(docRef, dataWithTimestamp)
+            .then(resolve)
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'update',
+                    requestResourceData: dataWithTimestamp,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
     } else {
         dataWithTimestamp.email = email;
         dataWithTimestamp.createdAt = serverTimestamp();
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-        await setDoc(docRef, dataWithTimestamp);
+        
+        setDoc(docRef, dataWithTimestamp)
+            .then(resolve)
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'create',
+                    requestResourceData: dataWithTimestamp,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
     }
+  });
 }
 
-export async function deleteUserProfile(userId: string): Promise<void> {
-    const db = await getDb();
-    const docRef = doc(db, PROFILES_COLLECTION, userId);
-    await deleteDoc(docRef);
+export function deleteUserProfile(userId: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        const db = await getDb();
+        const docRef = doc(db, PROFILES_COLLECTION, userId);
+        
+        deleteDoc(docRef)
+            .then(resolve)
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                reject(serverError);
+            });
+    });
 }

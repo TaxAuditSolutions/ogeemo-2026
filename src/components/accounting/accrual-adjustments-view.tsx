@@ -83,7 +83,7 @@ export function AccrualAdjustmentsView() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <AccountingPageHeader pageTitle="Accrual Adjustments" hubPath="/accounting/reports" hubLabel="Reports" />
+      <AccountingPageHeader pageTitle="Accrual Adjustments" hubPath="/accounting" hubLabel="Accounting Hub" />
       <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">
           Accrual Adjustment Report

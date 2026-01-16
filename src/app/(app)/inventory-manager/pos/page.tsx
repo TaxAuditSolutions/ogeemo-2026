@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -169,7 +170,12 @@ export default function PointOfSalePage() {
         await processSaleTransaction(user.uid, saleItems, { subtotal, taxTotal, grandTotal });
         toast({
             title: "Sale Completed!",
-            description: "Inventory levels have been updated and the transaction has been logged."
+            description: "Inventory and income ledger updated.",
+            action: (
+                <Button variant="link" asChild>
+                    <Link href="/accounting/ledgers?tab=income">View Ledger</Link>
+                </Button>
+            )
         });
         setCart([]);
         // Reload inventory to get updated stock counts

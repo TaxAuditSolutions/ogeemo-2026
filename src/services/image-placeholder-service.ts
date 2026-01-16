@@ -1,9 +1,5 @@
-'use server';
 
-// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
-// to work correctly in modern Node.js environments. It specifies a set of supported
-// SSL cipher suites to avoid low-level DECODER errors.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+'use server';
 
 import { adminDb as db, getAdminStorage } from '@/lib/firebase-admin';
 

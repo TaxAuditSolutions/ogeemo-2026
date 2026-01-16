@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -166,6 +166,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
   const handleValueChange = (key: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => {
         const newState = { ...prev, [key]: value };
+        // If creating a new asset, automatically sync cost with UCC
         if (!assetToEdit && key === 'undepreciatedCapitalCost') {
             newState.cost = String(value);
         }
@@ -212,8 +213,8 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                    <Label htmlFor="name">Asset Name</Label>
-                    <Input id="name" value={formData.name} onChange={(e) => handleValueChange('name', e.target.value)} />
+                        <Label htmlFor="name">Asset Name</Label>
+                        <Input id="name" value={formData.name} onChange={(e) => handleValueChange('name', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -300,7 +301,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
             {assetToEdit && (
                 <>
                 <Separator />
-                <div className="space-y-4">
+                <div className="space-y-4 px-6">
                     <h3 className="font-semibold text-lg">Depreciation</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

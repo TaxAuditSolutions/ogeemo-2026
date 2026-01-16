@@ -7,7 +7,7 @@ import { getStorage as getAdminStorageSdk } from 'firebase-admin/storage';
 // to work correctly in modern Node.js environments. It specifies a set of supported
 // SSL cipher suites to avoid low-level DECODER errors.
 // It MUST be set before any other Firebase modules are loaded.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+process.env.GRPC_SSL_CIPHER_SUITES = 'HIGH+ECDSA';
 
 
 let adminApp: admin.app.App;

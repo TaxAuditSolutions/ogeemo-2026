@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -46,6 +45,7 @@ import {
   LoaderCircle,
   X,
   Settings,
+  Landmark,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -207,11 +207,17 @@ export default function PointOfSalePage() {
     <>
     <div className="p-4 sm:p-6 flex flex-col items-center h-full">
         <header className="w-full max-w-4xl text-center relative mb-6">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 <Button asChild variant="outline">
                     <Link href="/inventory-manager/track">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Inventory Central
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/accounting/ledgers">
+                        <Landmark className="mr-2 h-4 w-4" />
+                        General Ledger
                     </Link>
                 </Button>
             </div>

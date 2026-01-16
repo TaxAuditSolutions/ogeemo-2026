@@ -9,10 +9,8 @@ import { v1 } from "@google-cloud/firestore";
 // SSL cipher suites to avoid low-level DECODER errors.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
-// Initialize the Firebase Admin SDK
-if (!admin.apps.length) {
-    admin.initializeApp();
-}
+// Initialize the Firebase Admin SDK. Cloud Functions manages the initialization lifecycle.
+admin.initializeApp();
 
 const firestoreClient = new v1.FirestoreAdminClient();
 

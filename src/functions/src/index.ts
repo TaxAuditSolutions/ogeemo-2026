@@ -1,5 +1,3 @@
-'use server';
-
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 } from "@google-cloud/firestore";

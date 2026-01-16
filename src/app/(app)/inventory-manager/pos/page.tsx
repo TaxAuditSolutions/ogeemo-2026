@@ -166,7 +166,7 @@ export default function PointOfSalePage() {
             itemId: item.id,
             quantitySold: item.saleQuantity,
         }));
-        await processSaleTransaction(user.uid, saleItems);
+        await processSaleTransaction(user.uid, saleItems, { subtotal, taxTotal, grandTotal });
         toast({
             title: "Sale Completed!",
             description: "Inventory levels have been updated and the transaction has been logged."
@@ -354,7 +354,7 @@ export default function PointOfSalePage() {
                     </TableRow>
                     <TableRow>
                         <TableCell colSpan={3} className="text-right font-bold text-lg">Total</TableCell>
-                        <TableCell className="text-right font-bold text-lg font-mono">{formatCurrency(grandTotal)}</TableCell>
+                        <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(grandTotal)}</TableCell>
                         <TableCell />
                     </TableRow>
                 </TableFooter>

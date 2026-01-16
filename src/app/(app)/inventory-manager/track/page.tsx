@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { InventoryListTest } from '@/components/inventory/InventoryListTest';
 import { UpdateStockCard } from '@/components/inventory/update-stock-card';
@@ -39,6 +38,21 @@ export default function InventoryTrackPage() {
     const [listVersion, setListVersion] = useState(0);
     const refreshList = () => setListVersion(v => v + 1);
 
+    const loadContacts = useCallback(async () => {
+        if (!user) return;
+        try {
+            const fetchedContacts = await getContacts(user.uid);
+            setContacts(fetchedContacts);
+        } catch (error) {
+            console.error("Failed to load contacts for dialog:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load contacts for supplier selection.' });
+        }
+    }, [user, toast]);
+
+    useEffect(() => {
+        loadContacts();
+    }, [loadContacts]);
+
     const handleAddNewItem = async () => {
         if (!newItemName.trim() || !user) {
             toast({ variant: 'destructive', title: 'Item name is required.' });
@@ -71,6 +85,12 @@ export default function InventoryTrackPage() {
             toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
         }
     };
+    
+    const handleSave = () => {
+        setIsFormOpen(false);
+        setItemToEdit(null);
+        refreshList();
+    };
 
   return (
     <>
@@ -97,7 +117,7 @@ export default function InventoryTrackPage() {
             Manage your items and view their complete transaction history.
           </p>
           <div className="absolute top-0 right-0 flex items-center gap-2">
-            <Button asChild variant="outline">
+            <Button asChild>
                 <Link href="/accounting/ledgers">
                     <Landmark className="mr-2 h-4 w-4" />
                     General Ledger
@@ -157,11 +177,7 @@ export default function InventoryTrackPage() {
           isOpen={isFormOpen} 
           onOpenChange={setIsFormOpen} 
           itemToEdit={itemToEdit} 
-          onSave={() => {
-              setIsFormOpen(false);
-              setItemToEdit(null);
-              refreshList();
-          }}
+          onSave={handleSave}
           onDelete={handleDeleteItem}
           contacts={contacts}
       />

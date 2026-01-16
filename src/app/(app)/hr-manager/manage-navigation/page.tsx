@@ -88,8 +88,8 @@ export default function ManageHrNavigationPage() {
       setIsLoading(true);
       try {
         const [userChips, availableChips] = await Promise.all([
-          getActionChips(user.uid, 'hrQuickNavItems'),
-          getAvailableActionChips(user.uid, 'availableHrNavItems'),
+          getActionChips(user.uid, 'hr'),
+          getAvailableActionChips(user.uid, 'hr'),
         ]);
         setChipsState({ userChips, availableChips });
       } catch (error) {

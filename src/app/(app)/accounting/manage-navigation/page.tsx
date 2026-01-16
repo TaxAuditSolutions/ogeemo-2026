@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -15,12 +14,10 @@ import {
   updateActionChips,
   updateAvailableActionChips,
   trashActionChips,
-  updateActionChip,
   type ActionChipData,
   addActionChip,
 } from '@/services/project-service';
-import { ActionChip } from '@/components/dashboard/ActionChip';
-import { DraggableItemTypes } from '@/components/dashboard/ActionChip';
+import { ActionChip, DraggableItemTypes } from '@/components/dashboard/ActionChip';
 import { ChipDropZone } from '@/components/dashboard/ChipDropZone';
 import AddActionDialog from '@/components/dashboard/AddActionDialog';
 import { cn } from '@/lib/utils';
@@ -70,7 +67,7 @@ const TrashDropZone = () => {
   );
 };
 
-export default function ManageQuickNavPage() {
+export default function ManageHrNavigationPage() {
   const [chipsState, setChipsState] = React.useState<{
     userChips: ActionChipData[];
     availableChips: ActionChipData[];
@@ -90,12 +87,12 @@ export default function ManageQuickNavPage() {
       setIsLoading(true);
       try {
         const [userChips, availableChips] = await Promise.all([
-          getActionChips(user.uid, 'accountingQuickNavItems'),
-          getAvailableActionChips(user.uid, 'availableAccountingNavItems'),
+          getActionChips(user.uid, 'accounting'),
+          getAvailableActionChips(user.uid, 'accounting'),
         ]);
         setChipsState({ userChips, availableChips });
       } catch (error) {
-        console.error("Failed to load chips:", error);
+        console.error("Failed to load HR nav chips:", error);
         toast({
           variant: 'destructive',
           title: 'Failed to load actions',
@@ -122,9 +119,9 @@ export default function ManageQuickNavPage() {
   ) => {
     setChipsState({ userChips: newUserChips, availableChips: newAvailableChips });
     if (user) {
-        // Correctly call the update functions with the 'accounting' type
         await updateActionChips(user.uid, newUserChips, 'accounting');
         await updateAvailableActionChips(user.uid, newAvailableChips, 'accounting');
+        window.dispatchEvent(new Event('accountingChipsUpdated'));
     }
   }, [user]);
 
@@ -139,16 +136,18 @@ export default function ManageQuickNavPage() {
 
   const handleDrop = React.useCallback((item: ActionChipData & { index: number }, target: 'user' | 'available') => {
     setChipsState(prevState => {
-      const sourceListKey = prevState.userChips.some(c => c.id === item.id) ? 'userChips' : 'availableChips';
+      const sourceListKey = (prevState.userChips || []).some(c => c && c.id === item.id) ? 'userChips' : 'availableChips';
       const targetListKey = target === 'user' ? 'userChips' : 'availableChips';
+
       if (sourceListKey === targetListKey) return prevState;
       
-      const sourceList = [...prevState[sourceListKey]];
-      const targetList = [...prevState[targetListKey]];
-      const movedItem = sourceList.find(c => c.id === item.id);
+      const sourceList = [...(prevState[sourceListKey] || [])];
+      const targetList = [...(prevState[targetListKey] || [])];
+      
+      const movedItem = sourceList.find(c => c && c.id === item.id);
       if (!movedItem) return prevState;
 
-      const newSourceList = sourceList.filter(c => c.id !== item.id);
+      const newSourceList = sourceList.filter(c => c && c.id !== item.id);
       const newTargetList = [...targetList, movedItem];
 
       const newUserChips = targetListKey === 'userChips' ? newTargetList : newSourceList;
@@ -160,13 +159,19 @@ export default function ManageQuickNavPage() {
     });
   }, [handleStateUpdate]);
 
-  const handleActionAdded = () => loadChips();
+  const handleActionAdded = (newChip: ActionChipData) => {
+    setChipsState(prevState => ({
+        ...prevState,
+        availableChips: [...prevState.availableChips, newChip]
+    }));
+  };
   
   const handleActionEdited = (editedChip: ActionChipData) => {
       setChipsState(prevState => ({
           userChips: prevState.userChips.map(c => c.id === editedChip.id ? editedChip : c),
           availableChips: prevState.availableChips.map(c => c.id === editedChip.id ? editedChip : c),
       }));
+      window.dispatchEvent(new Event('accountingChipsUpdated'));
   };
 
   const handleTrashChip = async (chipToTrash: ActionChipData) => {
@@ -244,8 +249,8 @@ export default function ManageQuickNavPage() {
                     <CardTitle className="text-lg">Selected Items</CardTitle>
                     <CardDescription>Items in this list will appear in your dropdown menu.</CardDescription>
                     <div className="flex justify-center gap-2 pt-2">
-                        <Button variant="outline" onClick={() => handleSortUserChips('asc')} className="h-6 px-2 py-1 text-xs"><ArrowDownAZ className="mr-2 h-4 w-4" /> A-Z</Button>
-                        <Button variant="outline" onClick={() => handleSortUserChips('desc')} className="h-6 px-2 py-1 text-xs"><ArrowUpZA className="mr-2 h-4 w-4" /> Z-A</Button>
+                        <Button variant="outline" onClick={() => handleSortUserChips('asc')} className="h-6 px-2 py-1 text-xs"><ArrowDownAZ className="mr-2 h-4 w-4" /> Sort A-Z</Button>
+                        <Button variant="outline" onClick={() => handleSortUserChips('desc')} className="h-6 px-2 py-1 text-xs"><ArrowUpZA className="mr-2 h-4 w-4" /> Sort Z-A</Button>
                         <Button onClick={handleSaveUserChipOrder} className="h-6 px-2 py-1 text-xs"><Save className="mr-2 h-4 w-4" /> Save Order</Button>
                         <Button onClick={handleAddNewChip} className="h-6 px-2 py-1 text-xs">
                             <Plus className="mr-2 h-4 w-4" /> Add Custom Link
@@ -253,7 +258,7 @@ export default function ManageQuickNavPage() {
                     </div>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'user')} onMove={handleMoveUserChip} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.userChips.map((chip, index) => (
+                    {chipsState.userChips.filter(Boolean).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>
@@ -262,15 +267,13 @@ export default function ManageQuickNavPage() {
             <Card>
                 <CardHeader className="text-center">
                     <CardTitle className="text-lg">Available Items</CardTitle>
-                    <CardDescription>Drag items from here to your "Selected Items" to add them to the dropdown.</CardDescription>
+                    <CardDescription>Drag items to "Selected Items" to add them to the dropdown.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.availableChips.map((chip, index) => (
+                    {chipsState.availableChips.filter(Boolean).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>
-                 <CardFooter>
-                 </CardFooter>
             </Card>
         </div>
         <TrashDropZone />

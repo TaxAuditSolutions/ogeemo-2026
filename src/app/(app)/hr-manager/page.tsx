@@ -42,7 +42,7 @@ export default function HrHubPage() {
     if (user) {
       setIsLoading(true);
       try {
-        const items = await getActionChips(user.uid, 'hrQuickNavItems');
+        const items = await getActionChips(user.uid, 'hr');
         setNavItems(items);
       } catch (error) {
         console.error("Failed to load HR quick nav items:", error);

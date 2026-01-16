@@ -41,7 +41,7 @@ export default function AccountingHubPage() {
     if (user) {
       setIsLoading(true);
       try {
-        const items = await getActionChips(user.uid, 'accountingQuickNavItems');
+        const items = await getActionChips(user.uid, 'accounting');
         setNavItems(items);
       } catch (error) {
         console.error("Failed to load accounting quick nav items:", error);
@@ -138,3 +138,4 @@ export default function AccountingHubPage() {
     </>
   );
 }
+

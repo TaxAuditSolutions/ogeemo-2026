@@ -24,9 +24,11 @@ export const triggerFirestoreBackup = functions.https.onCall(async (data, contex
   }
 
   try {
-    const projectId = JSON.parse(process.env.FIREBASE_CONFIG!).projectId;
+    // Use the GCLOUD_PROJECT environment variable, which is automatically set in Cloud Functions.
+    const projectId = process.env.GCLOUD_PROJECT;
     if (!projectId) {
-      throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID.");
+      console.error("GCLOUD_PROJECT environment variable not set.");
+      throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID on the server.");
     }
     
     const bucket = `gs://${projectId}-backups`;
@@ -34,9 +36,11 @@ export const triggerFirestoreBackup = functions.https.onCall(async (data, contex
     const request = {
       name: firestoreClient.databasePath(projectId, "(default)"),
       outputUriPrefix: bucket,
+      // Backup all collections
       collectionIds: [],
     };
 
+    console.log(`Starting Firestore export for project ${projectId} to bucket ${bucket}...`);
     const [response] = await firestoreClient.exportDocuments(request);
     console.log(`Firestore export operation name: ${response.name}`);
     return {
@@ -44,7 +48,7 @@ export const triggerFirestoreBackup = functions.https.onCall(async (data, contex
       operationName: response.name,
     };
   } catch (error: any) {
-    console.error("Error initiating Firestore backup:", error);
+    console.error("Error initiating Firestore backup:", JSON.stringify(error, null, 2));
     throw new functions.https.HttpsError(
       "internal",
       error.message || "An error occurred while initiating the Firestore backup."
@@ -61,7 +65,11 @@ export const triggerAuthBackup = functions.https.onCall(async (data, context) =>
   }
 
   try {
-    const projectId = JSON.parse(process.env.FIREBASE_CONFIG!).projectId;
+    const projectId = process.env.GCLOUD_PROJECT;
+    if (!projectId) {
+      console.error("GCLOUD_PROJECT environment variable not set.");
+      throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID on the server.");
+    }
     const bucketName = `${projectId}-backups`;
     
     const storage = admin.storage();
@@ -99,7 +107,7 @@ export const triggerAuthBackup = functions.https.onCall(async (data, context) =>
       bucket: bucketName
     };
   } catch (error: any) {
-    console.error('Error exporting auth users:', error);
+    console.error('Error exporting auth users:', JSON.stringify(error, null, 2));
     throw new functions.https.HttpsError('internal', error.message || 'An error occurred while exporting users.');
   }
 });

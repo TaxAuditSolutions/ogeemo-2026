@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Info, ShoppingCart, X, Package } from 'lucide-react';
+import { Plus, Info, ShoppingCart, X, Package, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
@@ -97,6 +97,12 @@ export default function InventoryTrackPage() {
             Manage your items and view their complete transaction history.
           </p>
           <div className="absolute top-0 right-0 flex items-center gap-2">
+            <Button asChild variant="outline">
+                <Link href="/accounting/ledgers">
+                    <Landmark className="mr-2 h-4 w-4" />
+                    General Ledger
+                </Link>
+            </Button>
             <Button asChild>
                 <Link href="/inventory-manager/pos">
                     <ShoppingCart className="mr-2 h-4 w-4" /> Point of Sale

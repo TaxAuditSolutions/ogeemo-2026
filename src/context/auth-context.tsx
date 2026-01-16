@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!user && !isPublicPath && !isMarketingPath) {
         router.push('/login');
-      } else if (user && (isPublicPath || pathname === '/home' || pathname === '/')) {
+      } else if (user && isPublicPath) {
         router.push('/action-manager');
       }
     }

@@ -1,6 +1,4 @@
 
-'use server';
-
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
@@ -73,7 +71,7 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
 });
 
 
-// --- NEW Backup Functions ---
+// --- Backup Functions ---
 
 export const triggerFirestoreBackup = functions.https.onCall(async (data, context) => {
   if (!context.auth) {

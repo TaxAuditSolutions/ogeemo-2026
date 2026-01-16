@@ -524,7 +524,7 @@ async function getChipsFromCollection(userId: string, collectionName: string): P
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data();
-        const chips = (data.chips || []).map(docToActionChip);
+        const chips = (data.chips || []).filter(Boolean).map(docToActionChip);
         // Ensure position exists if it doesn't, then sort
         return chips
             .map((chip: any, index: number) => ({ ...chip, position: chip.position ?? index }))
@@ -536,7 +536,7 @@ async function getChipsFromCollection(userId: string, collectionName: string): P
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = await getDb();
     const docRef = doc(db, collectionName, userId);
-    const chipsToSave = chips.map((chip, index) => {
+    const chipsToSave = chips.filter(Boolean).map((chip, index) => {
         const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
         const { icon, ...rest } = chip;
         return { ...rest, position: index, iconName: iconName || 'Wand2' };

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -214,16 +215,16 @@ export default function PointOfSalePage() {
                         Back to Inventory Central
                     </Link>
                 </Button>
+            </div>
+            <h1 className="text-3xl font-bold font-headline text-primary">Point of Sale</h1>
+            <p className="text-muted-foreground">Record a new sale transaction.</p>
+             <div className="absolute top-0 right-0 flex items-center gap-2">
                 <Button asChild variant="outline">
                     <Link href="/accounting/ledgers">
                         <Landmark className="mr-2 h-4 w-4" />
                         General Ledger
                     </Link>
                 </Button>
-            </div>
-            <h1 className="text-3xl font-bold font-headline text-primary">Point of Sale</h1>
-            <p className="text-muted-foreground">Record a new sale transaction.</p>
-             <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
                     <Link href="/action-manager" aria-label="Close">
                         <X className="h-5 w-5" />

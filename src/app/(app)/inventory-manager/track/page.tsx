@@ -97,7 +97,7 @@ export default function InventoryTrackPage() {
         }
     };
     
-    const handleSave = () => {
+    const handleItemSave = () => {
         setIsFormOpen(false);
         setItemToEdit(null);
         loadData(); // Refresh the data
@@ -186,6 +186,8 @@ export default function InventoryTrackPage() {
                     items={items} 
                     isLoading={isLoading} 
                     onItemDelete={handleDeleteItem} 
+                    onItemSave={handleItemSave}
+                    contacts={contacts}
                 />
             </div>
         </div>
@@ -194,7 +196,7 @@ export default function InventoryTrackPage() {
           isOpen={isFormOpen} 
           onOpenChange={setIsFormOpen} 
           itemToEdit={itemToEdit} 
-          onSave={handleSave}
+          onSave={handleItemSave}
           onDelete={handleDeleteItem}
           contacts={contacts}
       />

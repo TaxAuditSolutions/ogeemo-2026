@@ -18,17 +18,18 @@ import { ItemFormDialog } from './item-form-dialog';
 import { Button } from '../ui/button';
 import { EditableSkuCell } from './EditableSkuCell';
 import { type Item as InventoryItem } from '@/services/inventory-service';
+import { type Contact } from '@/services/contact-service';
 
 
 interface InventoryListTestProps {
     items: InventoryItem[];
     isLoading: boolean;
     onItemDelete: (itemId: string) => void;
-    // Add onSave to refresh data after edit
     onItemSave: () => void; 
+    contacts: Contact[];
 }
 
-export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave }: InventoryListTestProps) {
+export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave, contacts }: InventoryListTestProps) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -111,7 +112,7 @@ export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave }
             itemToEdit={itemToEdit} 
             onSave={onItemSave}
             onDelete={onItemDelete}
-            contacts={[]} // contacts are now managed by the parent
+            contacts={contacts}
         />
     </>
   );

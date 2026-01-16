@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -13,71 +12,33 @@ import {
 } from '@/components/ui/table';
 import { LoaderCircle, Edit } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
 import { getSuppliers, type Supplier } from '@/services/supplier-service';
-import { getContacts, type Contact } from '@/services/contact-service';
 import { formatCurrency } from '@/lib/utils';
 import { ItemFormDialog } from './item-form-dialog';
 import { Button } from '../ui/button';
-import { EditableSkuCell } from './EditableSkuCell'; // Import the new component
+import { EditableSkuCell } from './EditableSkuCell';
+import { type Item as InventoryItem } from '@/services/inventory-service';
+
 
 interface InventoryListTestProps {
-    refreshTrigger: number;
+    items: InventoryItem[];
+    isLoading: boolean;
     onItemDelete: (itemId: string) => void;
+    // Add onSave to refresh data after edit
+    onItemSave: () => void; 
 }
 
-export function InventoryListTest({ refreshTrigger, onItemDelete }: InventoryListTestProps) {
-  const [items, setItems] = useState<InventoryItem[]>([]);
+export function InventoryListTest({ items, isLoading, onItemDelete, onItemSave }: InventoryListTestProps) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
 
-  const loadData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const [fetchedItems, fetchedSuppliers, fetchedContacts] = await Promise.all([
-          getInventoryItems(user.uid),
-          getSuppliers(user.uid),
-          getContacts(user.uid),
-      ]);
-      setItems(fetchedItems);
-      setSuppliers(fetchedSuppliers);
-      setContacts(fetchedContacts);
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to load inventory',
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData, refreshTrigger]);
-  
   const handleEditClick = (item: InventoryItem) => {
     setItemToEdit(item);
     setIsFormOpen(true);
   };
   
-  const handleSave = () => {
-    setIsFormOpen(false);
-    setItemToEdit(null);
-    loadData();
-  };
-
   const supplierMap = useMemo(() => {
     return new Map(suppliers.map(s => [s.id, s.name]));
   }, [suppliers]);
@@ -148,9 +109,9 @@ export function InventoryListTest({ refreshTrigger, onItemDelete }: InventoryLis
             isOpen={isFormOpen} 
             onOpenChange={setIsFormOpen} 
             itemToEdit={itemToEdit} 
-            onSave={handleSave}
+            onSave={onItemSave}
             onDelete={onItemDelete}
-            contacts={contacts}
+            contacts={[]} // contacts are now managed by the parent
         />
     </>
   );

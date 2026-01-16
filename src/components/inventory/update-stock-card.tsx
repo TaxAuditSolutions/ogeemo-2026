@@ -1,50 +1,23 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronsUpDown, Check, LoaderCircle } from 'lucide-react';
-import { type Item as InventoryItem, getInventoryItems } from '@/services/inventory-service';
+import { type Item as InventoryItem } from '@/services/inventory-service';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
 
 interface UpdateStockCardProps {
+    items: InventoryItem[];
     onItemSelected: (item: InventoryItem) => void;
+    isLoading?: boolean;
 }
 
-export function UpdateStockCard({ onItemSelected }: UpdateStockCardProps) {
-    const [items, setItems] = useState<InventoryItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export function UpdateStockCard({ items, onItemSelected, isLoading }: UpdateStockCardProps) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-
-    const { user } = useAuth();
-    const { toast } = useToast();
-
-    const loadItems = useCallback(async () => {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const fetchedItems = await getInventoryItems(user.uid);
-            setItems(fetchedItems);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory items.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user, toast]);
-
-    useEffect(() => {
-        loadItems();
-    }, [loadItems]);
 
     return (
         <Card>
@@ -58,7 +31,7 @@ export function UpdateStockCard({ onItemSelected }: UpdateStockCardProps) {
                     <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoading}>
-                                <span className="truncate">{selectedItem?.name || "Search for an item..."}</span>
+                                <span className="truncate">Search for an item...</span>
                                 {isLoading ? <LoaderCircle className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                             </Button>
                         </PopoverTrigger>
@@ -77,7 +50,7 @@ export function UpdateStockCard({ onItemSelected }: UpdateStockCardProps) {
                                                 setIsPopoverOpen(false);
                                             }}
                                         >
-                                            <Check className={cn("mr-2 h-4 w-4", selectedItem?.id === item.id ? "opacity-100" : "opacity-0")} />
+                                            <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
                                             {item.name}
                                         </CommandItem>
                                         ))}

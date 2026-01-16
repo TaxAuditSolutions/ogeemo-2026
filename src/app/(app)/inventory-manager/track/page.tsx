@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Info, ShoppingCart, X, Package, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem } from '@/services/inventory-service';
+import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem, getInventoryItems } from '@/services/inventory-service';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
 import { getContacts, type Contact } from '@/services/contact-service';
 import {
@@ -34,24 +34,35 @@ export default function InventoryTrackPage() {
     const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
+    
+    // Centralize state here
+    const [items, setItems] = useState<InventoryItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [listVersion, setListVersion] = useState(0);
-    const refreshList = () => setListVersion(v => v + 1);
-
-    const loadContacts = useCallback(async () => {
-        if (!user) return;
+    const loadData = useCallback(async () => {
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
         try {
-            const fetchedContacts = await getContacts(user.uid);
+            const [fetchedItems, fetchedContacts] = await Promise.all([
+                getInventoryItems(user.uid),
+                getContacts(user.uid),
+            ]);
+            setItems(fetchedItems);
             setContacts(fetchedContacts);
-        } catch (error) {
-            console.error("Failed to load contacts for dialog:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load contacts for supplier selection.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to load data: ${error.message}`});
+        } finally {
+            setIsLoading(false);
         }
     }, [user, toast]);
 
     useEffect(() => {
-        loadContacts();
-    }, [loadContacts]);
+        loadData();
+    }, [loadData]);
+
 
     const handleAddNewItem = async () => {
         if (!newItemName.trim() || !user) {
@@ -68,7 +79,7 @@ export default function InventoryTrackPage() {
             });
             toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
             setNewItemName('');
-            refreshList();
+            await loadData(); // Refresh the data
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to add item', description: error.message });
         } finally {
@@ -80,7 +91,7 @@ export default function InventoryTrackPage() {
         try {
             await deleteInventoryItem(itemId);
             toast({ title: 'Item Deleted', variant: 'destructive' });
-            refreshList();
+            await loadData(); // Refresh the data
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
         }
@@ -89,7 +100,7 @@ export default function InventoryTrackPage() {
     const handleSave = () => {
         setIsFormOpen(false);
         setItemToEdit(null);
-        refreshList();
+        loadData(); // Refresh the data
     };
 
   return (
@@ -138,6 +149,8 @@ export default function InventoryTrackPage() {
         <div className="w-full max-w-6xl space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UpdateStockCard
+                    items={items} // Pass items down
+                    isLoading={isLoading}
                     onItemSelected={(item) => {
                         setItemToEdit(item);
                         setIsFormOpen(true);
@@ -169,7 +182,11 @@ export default function InventoryTrackPage() {
                 </Card>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-                <InventoryListTest refreshTrigger={listVersion} onItemDelete={handleDeleteItem} />
+                <InventoryListTest 
+                    items={items} 
+                    isLoading={isLoading} 
+                    onItemDelete={handleDeleteItem} 
+                />
             </div>
         </div>
       </div>

@@ -96,18 +96,18 @@ export function AccrualAdjustmentsView() {
       <Card className="max-w-4xl mx-auto" ref={contentRef}>
         <CardHeader className="print:hidden">
           <CardTitle>How to Use This Report</CardTitle>
-          <CardDescription className="prose prose-sm dark:prose-invert max-w-none">
+          <div className="text-sm text-muted-foreground pt-2">
             <p>
               This report helps bridge the gap between cash and accrual accounting for tax purposes.
             </p>
-            <ul>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
               <li><strong>Accounts Receivable:</strong> This is income you've earned but haven't received cash for yet. Your accountant may add this amount to your income for your accrual-based tax return.</li>
               <li><strong>Accounts Payable:</strong> These are expenses you've incurred but haven't paid for yet. Your accountant may add this amount to your expenses.</li>
             </ul>
-            <p className="font-semibold">
+            <p className="font-semibold mt-4">
               Always consult with a professional accountant for tax advice.
             </p>
-          </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (

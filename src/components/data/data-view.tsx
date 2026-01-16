@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,34 +40,30 @@ import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getFilesForFolder, findOrCreateFileFolder, type FileItem, deleteFiles, getFileById } from "@/services/file-service";
+import { getUsers, deleteUserProfile, type UserProfile } from "@/services/user-profile-service";
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
 import Link from 'next/link';
 
 
 export function UserListView() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [userFiles, setUserFiles] = useState<FileItem[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
 
-  const [fileToEdit, setFileToEdit] = useState<FileItem | null>(null);
-  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
-  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
-  const loadUserFiles = useCallback(async () => {
+  const loadUsers = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-        const usersFolder = await findOrCreateFileFolder(user.uid, 'Users');
-        const files = await getFilesForFolder(user.uid, usersFolder.id);
-        setUserFiles(files);
+        const fetchedUsers = await getUsers();
+        setUsers(fetchedUsers);
     } catch(e: any) {
         toast({ variant: 'destructive', title: 'Failed to load users', description: e.message });
     } finally {
@@ -76,41 +72,28 @@ export function UserListView() {
   }, [user, toast]);
 
   useEffect(() => {
-    loadUserFiles();
-  }, [loadUserFiles]);
+    loadUsers();
+  }, [loadUsers]);
   
-  const handleEdit = async (file: FileItem) => {
-    setIsLoadingFile(true);
-    try {
-      // Fetch the full file content before opening the dialog
-      const fullFile = await getFileById(file.id);
-      if (fullFile) {
-        setFileToEdit(fullFile);
-        setIsAddUserDialogOpen(true);
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
-      }
-    } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
-    } finally {
-        setIsLoadingFile(false);
-    }
+  const handleEdit = (user: UserProfile) => {
+    setUserToEdit(user);
+    setIsAddUserDialogOpen(true);
   };
 
-  const handleDelete = (file: FileItem) => {
-    setFileToDelete(file);
+  const handleDelete = (user: UserProfile) => {
+    setUserToDelete(user);
   };
   
   const handleConfirmDelete = async () => {
-    if (!fileToDelete) return;
+    if (!userToDelete) return;
     try {
-        await deleteFiles([fileToDelete.id]);
-        toast({ title: "User file deleted" });
-        loadUserFiles();
+        await deleteUserProfile(userToDelete.id);
+        toast({ title: "User profile deleted", description: "The user's login account has not been affected." });
+        loadUsers();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
-        setFileToDelete(null);
+        setUserToDelete(null);
     }
   };
 
@@ -133,10 +116,10 @@ export function UserListView() {
             <div>
               <CardTitle>Users</CardTitle>
               <CardDescription>
-                A list of users in your database.
+                A list of users with access to this application.
               </CardDescription>
             </div>
-            <Button onClick={() => { setFileToEdit(null); setIsAddUserDialogOpen(true); }}>
+            <Button onClick={() => { setUserToEdit(null); setIsAddUserDialogOpen(true); }}>
                 <Plus className="mr-2 h-4 w-4" /> Add User
             </Button>
           </CardHeader>
@@ -145,6 +128,7 @@ export function UserListView() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead className="hidden md:table-cell">
                     Created at
                   </TableHead>
@@ -156,18 +140,21 @@ export function UserListView() {
               <TableBody>
                 {isLoading ? (
                     <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center">
+                        <TableCell colSpan={4} className="h-24 text-center">
                             <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                         </TableCell>
                     </TableRow>
-                ) : userFiles.length > 0 ? (
-                  userFiles.map((file) => (
-                    <TableRow key={file.id}>
+                ) : users.length > 0 ? (
+                  users.map((userProfile) => (
+                    <TableRow key={userProfile.id}>
                       <TableCell className="font-medium">
-                        {file.name.replace('.txt', '')}
+                        {userProfile.displayName}
+                      </TableCell>
+                      <TableCell>
+                        {userProfile.email}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {format(file.modifiedAt, 'PP')}
+                        {userProfile.createdAt ? format(new Date(userProfile.createdAt.toDate()), 'PP') : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -176,7 +163,6 @@ export function UserListView() {
                               aria-haspopup="true"
                               size="icon"
                               variant="ghost"
-                              disabled={isLoadingFile}
                             >
                               <MoreVertical className="h-4 w-4" />
                               <span className="sr-only">Toggle menu</span>
@@ -184,10 +170,10 @@ export function UserListView() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => handleEdit(file)}>
-                                <BookOpen className="mr-2 h-4 w-4"/> Open / Edit
+                            <DropdownMenuItem onSelect={() => handleEdit(userProfile)}>
+                                <Pencil className="mr-2 h-4 w-4"/> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleDelete(file)} className="text-destructive">
+                            <DropdownMenuItem onSelect={() => handleDelete(userProfile)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4"/> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -197,7 +183,7 @@ export function UserListView() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center">
+                        <TableCell colSpan={4} className="h-24 text-center">
                             No users found.
                         </TableCell>
                     </TableRow>
@@ -212,21 +198,21 @@ export function UserListView() {
         onOpenChange={(open) => {
             setIsAddUserDialogOpen(open);
             if (!open) {
-                setFileToEdit(null); // Clear editing state when dialog closes
+                setUserToEdit(null);
             }
         }}
-        onUserAdded={loadUserFiles}
-        userToEdit={fileToEdit}
+        onUserAdded={loadUsers}
+        userToEdit={userToEdit}
       />
-      <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the user file for "{fileToDelete?.name.replace('.txt', '')}". This cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>This will delete the user's profile information from the list. It will not delete their login account. This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete Profile</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -26,107 +26,96 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { findOrCreateFileFolder, addTextFileClient, updateFile } from '@/services/file-service';
-import { type FileItem } from '@/data/files';
+import { useFirebase } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { updateUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { LoaderCircle } from 'lucide-react';
 
 const userSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
   email: z.string().email({ message: 'A valid email is required.' }),
+  password: z.string().optional(),
   notes: z.string().optional(),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
 
-// Helper function to parse content from the text file
-const parseFileContent = (content?: string): Partial<UserFormData> => {
-    if (!content) return {};
-    const data: Partial<UserFormData> = {};
-    const nameMatch = content.match(/# User Profile: (.*)/);
-    const emailMatch = content.match(/- \*\*Email:\*\* (.*)/);
-    const notesMatch = content.match(/## Notes\n([\s\S]*)/);
-
-    if (nameMatch) data.name = nameMatch[1].trim();
-    if (emailMatch) data.email = emailMatch[1].trim();
-    if (notesMatch) {
-        const notesContent = notesMatch[1].trim();
-        if (notesContent !== 'No notes provided.') {
-            data.notes = notesContent;
-        }
-    }
-    return data;
-};
-
-
 interface AddUserDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onUserAdded: () => void;
-  userToEdit: FileItem | null;
+  userToEdit: UserProfile | null;
 }
 
 export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }: AddUserDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const { user } = useAuth();
+  const { auth } = useFirebase();
   const { toast } = useToast();
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', notes: '' },
+    defaultValues: { name: '', email: '', password: '', notes: '' },
   });
 
   useEffect(() => {
     if (isOpen) {
       if (userToEdit) {
-        // Use the parsing function here
-        const parsedData = parseFileContent(userToEdit.content);
         form.reset({
-          name: parsedData.name || userToEdit.name.replace('.txt', ''),
-          email: parsedData.email || '',
-          notes: parsedData.notes || '',
+          name: userToEdit.displayName || '',
+          email: userToEdit.email || '',
+          notes: userToEdit.notes || '',
+          password: '', // Password is not editable
         });
       } else {
-        form.reset({ name: '', email: '', notes: '' });
+        form.reset({ name: '', email: '', password: '', notes: '' });
       }
     }
   }, [isOpen, userToEdit, form]);
 
   const onSubmit = async (values: UserFormData) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
     setIsSaving(true);
     try {
-        const fileContent = `
-# User Profile: ${values.name}
-
-## Contact Information
-- **Email:** ${values.email}
-
-## Notes
-${values.notes || 'No notes provided.'}
-        `.trim();
-
         if (userToEdit) {
-            // Update existing file
-            await updateFile(userToEdit.id, {
-                name: `${values.name}.txt`,
-                content: fileContent,
+            // Editing existing user profile
+            await updateUserProfile(userToEdit.id, userToEdit.email, {
+                displayName: values.name,
+                notes: values.notes,
             });
             toast({ title: 'User Updated', description: `Information for ${values.name} has been updated.` });
         } else {
-            // Create new file
-            const usersFolder = await findOrCreateFileFolder(user.uid, 'Users');
-            await addTextFileClient(user.uid, usersFolder.id, `${values.name}.txt`, fileContent);
-            toast({ title: 'User Record Created', description: `A file for ${values.name} has been saved.` });
+            // Creating new user
+            if (!auth) {
+                throw new Error("Authentication service is not available.");
+            }
+            if (!values.password || values.password.length < 6) {
+                form.setError('password', { message: 'Password must be at least 6 characters.' });
+                setIsSaving(false);
+                return;
+            }
+            
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const newUser = userCredential.user;
+            
+            await updateProfile(newUser, { displayName: values.name });
+            
+            await updateUserProfile(newUser.uid, newUser.email!, {
+                displayName: values.name,
+                email: newUser.email!,
+                notes: values.notes,
+            });
+            
+            toast({ title: 'User Created', description: `Account for ${values.name} has been created.` });
         }
       
         onUserAdded();
         onOpenChange(false);
 
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        let description = error.message || 'An unexpected error occurred.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = "This email is already in use by another account.";
+        }
+        toast({ variant: 'destructive', title: 'Save Failed', description });
     } finally {
       setIsSaving(false);
     }
@@ -138,7 +127,7 @@ ${values.notes || 'No notes provided.'}
         <DialogHeader>
           <DialogTitle>{userToEdit ? 'Edit User' : 'Add New User'}</DialogTitle>
           <DialogDescription>
-            {userToEdit ? 'Update the details for this user.' : 'Create a record for a new user.'}
+            {userToEdit ? 'Update the details for this user.' : 'Create a new user account with login credentials.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -163,12 +152,27 @@ ${values.notes || 'No notes provided.'}
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="jane.doe@example.com" {...field} />
+                    <Input type="email" placeholder="jane.doe@example.com" {...field} disabled={!!userToEdit} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {!userToEdit && (
+                <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
             <FormField
               control={form.control}
               name="notes"
@@ -186,7 +190,7 @@ ${values.notes || 'No notes provided.'}
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" disabled={isSaving}>
                     {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                    {userToEdit ? 'Save Changes' : 'Save User'}
+                    {userToEdit ? 'Save Changes' : 'Create User'}
                 </Button>
             </DialogFooter>
           </form>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
 
@@ -44,6 +44,7 @@ export interface UserProfile {
     netEquity?: number;
     createdAt?: any;
     updatedAt?: any;
+    notes?: string;
     preferences?: {
         showDictationButton?: boolean;
         showDashboardFrame?: boolean;
@@ -61,7 +62,7 @@ export interface UserProfile {
     };
 }
 
-const PROFILES_COLLECTION = 'userProfiles';
+const PROFILES_COLLECTION = 'users'; // Corrected collection name
 
 async function getDb() {
     const { db } = await initializeFirebase();
@@ -84,6 +85,18 @@ const defaultPreferences: UserProfile['preferences'] = {
     }
 };
 
+const docToUserProfile = (doc: any): UserProfile => {
+    const data = doc.data();
+    return { id: doc.id, ...data } as UserProfile;
+};
+
+export async function getUsers(): Promise<UserProfile[]> {
+  const db = await getDb();
+  const q = query(collection(db, PROFILES_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docToUserProfile);
+}
+
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
     const db = await getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
@@ -91,7 +104,6 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
     if (docSnap.exists()) {
         const data = docSnap.data();
-        // Merge fetched preferences with defaults to ensure all keys are present
         const preferences = { 
             ...defaultPreferences, 
             ...(data.preferences || {}),
@@ -110,19 +122,14 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         };
         return { id: docSnap.id, ...data, preferences } as UserProfile;
     } else {
-        // Return a default profile for a new user
-        return {
-            id: userId,
-            email: '', // This should be populated on creation
-            preferences: defaultPreferences,
-        };
+        return null;
     }
 }
 
 export async function updateUserProfile(
     userId: string, 
     email: string,
-    data: Partial<Omit<UserProfile, 'id' | 'email' | 'createdAt' | 'updatedAt'>>
+    data: Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<void> {
     const db = await getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
@@ -136,7 +143,6 @@ export async function updateUserProfile(
     if (docSnap.exists()) {
         const existingData = docSnap.data();
         
-        // Correctly merge nested preference objects
         if (data.preferences) {
             const existingPrefs = existingData.preferences || {};
             dataWithTimestamp.preferences = {
@@ -148,8 +154,7 @@ export async function updateUserProfile(
                 },
             };
         }
-
-        // Correctly merge nested businessAddress object
+        
         if (data.businessAddress) {
             const existingAddress = existingData.businessAddress || {};
             dataWithTimestamp.businessAddress = {
@@ -158,7 +163,6 @@ export async function updateUserProfile(
             };
         }
         
-        // Correctly merge nested homeAddress object
         if (data.homeAddress) {
             const existingAddress = existingData.homeAddress || {};
             dataWithTimestamp.homeAddress = {
@@ -171,8 +175,13 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email;
         dataWithTimestamp.createdAt = serverTimestamp();
-        // Ensure preferences field is created for new users, merging with any provided data
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
         await setDoc(docRef, dataWithTimestamp);
     }
+}
+
+export async function deleteUserProfile(userId: string): Promise<void> {
+    const db = await getDb();
+    const docRef = doc(db, PROFILES_COLLECTION, userId);
+    await deleteDoc(docRef);
 }

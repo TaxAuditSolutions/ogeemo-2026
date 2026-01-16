@@ -1,4 +1,3 @@
-
 'use server';
 
 import * as admin from "firebase-admin";
@@ -11,55 +10,89 @@ import { v1 } from "@google-cloud/firestore";
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 // Initialize the Firebase Admin SDK
-admin.initializeApp();
+if (!admin.apps.length) {
+    admin.initializeApp();
+}
 
 const firestoreClient = new v1.FirestoreAdminClient();
 
 /**
  * Initiates a backup of the Firestore database.
- *
- * This function is callable from the client-side application and will
- * start an export of the entire Firestore database to a Google Cloud
- * Storage bucket.
  */
-export const triggerBackup = functions.https.onCall(async (data, context) => {
+export const triggerFirestoreBackup = functions.https.onCall(async (data, context) => {
   // Ensure the user is authenticated.
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
   }
 
-  // Get the project ID from the FIREBASE_CONFIG environment variable.
-  // This is a more reliable method than relying on GCP_PROJECT.
   const projectId = JSON.parse(process.env.FIREBASE_CONFIG!).projectId;
   if (!projectId) {
     throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID.");
   }
   
-  // The Google Cloud Storage bucket to export to.
-  // The format is 'gs://[YOUR_BUCKET_NAME]'
   const bucket = `gs://${projectId}-backups`;
 
   const request = {
     name: firestoreClient.databasePath(projectId, "(default)"),
     outputUriPrefix: bucket,
-    // Leave collectionIds empty to export all collections
     collectionIds: [],
   };
 
   try {
     const [response] = await firestoreClient.exportDocuments(request);
-    console.log(`Operation name: ${response.name}`);
+    console.log(`Firestore export operation name: ${response.name}`);
     return {
-      message: "Backup successfully initiated.",
+      message: "Firestore backup successfully initiated.",
       operationName: response.name,
     };
   } catch (error) {
     console.error(error);
     throw new functions.https.HttpsError(
       "internal",
-      "An error occurred while initiating the backup.",
+      "An error occurred while initiating the Firestore backup.",
       error
     );
+  }
+});
+
+/**
+ * Initiates a backup of Firebase Authentication users.
+ */
+export const triggerAuthBackup = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
+  }
+
+  const projectId = JSON.parse(process.env.FIREBASE_CONFIG!).projectId;
+  const bucketName = `${projectId}-backups`;
+  const bucket = admin.storage().bucket(bucketName);
+  const date = new Date().toISOString().split('T')[0];
+  const fileName = `auth-export/auth-backup-${date}.json`;
+  const file = bucket.file(fileName);
+
+  const users: admin.auth.UserRecord[] = [];
+  let nextPageToken: string | undefined;
+
+  try {
+    do {
+      const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
+      listUsersResult.users.forEach(userRecord => users.push(userRecord.toJSON() as admin.auth.UserRecord));
+      nextPageToken = listUsersResult.pageToken;
+    } while (nextPageToken);
+
+    await file.save(JSON.stringify({ users }, null, 2), {
+      contentType: 'application/json',
+    });
+
+    console.log(`Auth export created: ${fileName}`);
+    return {
+      message: "Authentication user backup successfully created.",
+      fileName: fileName,
+      bucket: bucketName
+    };
+  } catch (error) {
+    console.error('Error exporting auth users:', error);
+    throw new functions.https.HttpsError('internal', 'An error occurred while exporting users.');
   }
 });
 

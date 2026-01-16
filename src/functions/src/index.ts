@@ -1,3 +1,4 @@
+
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 } from "@google-cloud/firestore";
@@ -7,109 +8,10 @@ import { v1 } from "@google-cloud/firestore";
 // SSL cipher suites to avoid low-level DECODER errors.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
-// Initialize the Firebase Admin SDK. Cloud Functions manages the initialization lifecycle.
+// Initialize the Firebase Admin SDK
 admin.initializeApp();
 
 const firestoreClient = new v1.FirestoreAdminClient();
-
-/**
- * Initiates a backup of the Firestore database.
- */
-export const triggerFirestoreBackup = functions.https.onCall(async (data, context) => {
-  // Ensure the user is authenticated.
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
-  }
-
-  try {
-    // Use the GCLOUD_PROJECT environment variable, which is automatically set in Cloud Functions.
-    const projectId = process.env.GCLOUD_PROJECT;
-    if (!projectId) {
-      console.error("GCLOUD_PROJECT environment variable not set.");
-      throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID on the server.");
-    }
-    
-    const bucket = `gs://${projectId}-backups`;
-
-    const request = {
-      name: firestoreClient.databasePath(projectId, "(default)"),
-      outputUriPrefix: bucket,
-      // Backup all collections
-      collectionIds: [],
-    };
-
-    console.log(`Starting Firestore export for project ${projectId} to bucket ${bucket}...`);
-    const [response] = await firestoreClient.exportDocuments(request);
-    console.log(`Firestore export operation name: ${response.name}`);
-    return {
-      message: "Firestore backup successfully initiated.",
-      operationName: response.name,
-    };
-  } catch (error: any) {
-    console.error("Error initiating Firestore backup:", JSON.stringify(error, null, 2));
-    throw new functions.https.HttpsError(
-      "internal",
-      error.message || "An error occurred while initiating the Firestore backup."
-    );
-  }
-});
-
-/**
- * Initiates a backup of Firebase Authentication users.
- */
-export const triggerAuthBackup = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
-  }
-
-  try {
-    const projectId = process.env.GCLOUD_PROJECT;
-    if (!projectId) {
-      console.error("GCLOUD_PROJECT environment variable not set.");
-      throw new functions.https.HttpsError("internal", "Could not determine the Firebase project ID on the server.");
-    }
-    const bucketName = `${projectId}-backups`;
-    
-    const storage = admin.storage();
-    const bucket = storage.bucket(bucketName);
-
-    const [exists] = await bucket.exists();
-    if (!exists) {
-        console.log(`Bucket ${bucketName} does not exist. Creating it...`);
-        // You can specify a location, e.g., 'US'
-        await storage.createBucket(bucketName);
-        console.log(`Bucket ${bucketName} created.`);
-    }
-
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `auth-export/auth-backup-${date}.json`;
-    const file = bucket.file(fileName);
-
-    const users: admin.auth.UserRecord[] = [];
-    let nextPageToken: string | undefined;
-
-    do {
-      const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
-      listUsersResult.users.forEach(userRecord => users.push(userRecord.toJSON() as admin.auth.UserRecord));
-      nextPageToken = listUsersResult.pageToken;
-    } while (nextPageToken);
-
-    await file.save(JSON.stringify({ users }, null, 2), {
-      contentType: 'application/json',
-    });
-
-    console.log(`Auth export created: ${fileName}`);
-    return {
-      message: "Authentication user backup successfully created.",
-      fileName: fileName,
-      bucket: bucketName
-    };
-  } catch (error: any) {
-    console.error('Error exporting auth users:', JSON.stringify(error, null, 2));
-    throw new functions.https.HttpsError('internal', error.message || 'An error occurred while exporting users.');
-  }
-});
-
 
 interface SearchActionParams {
     query: string;

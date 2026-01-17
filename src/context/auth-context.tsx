@@ -67,8 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
-      // If the user is not authenticated and they are trying to access a protected page,
-      // redirect them to the login page.
+      // If the user is authenticated and on a public auth page, redirect them away.
+      if (user && isPublicPath) {
+        router.push('/action-manager');
+      }
+
+      // If the user is not authenticated and on a protected page, redirect them to login.
       if (!user && !isPublicPath && !isMarketingPath) {
         router.push('/login');
       }
@@ -109,6 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (auth) {
+      // Clear the server session, sign out of firebase, then clear local state and redirect.
+      // This more imperative flow ensures all state is cleared before navigation.
       await fetch('/api/auth/session', { method: 'DELETE' });
       await signOut(auth);
       setUser(null);

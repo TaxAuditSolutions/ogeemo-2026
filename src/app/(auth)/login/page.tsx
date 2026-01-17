@@ -52,6 +52,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
+      // On success, AuthProvider will handle redirect.
     } catch (error: any) {
       let description = "An unknown error occurred. Please try again.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -62,7 +63,8 @@ export default function LoginPage() {
         title: "Login Failed",
         description: description,
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   }
 
@@ -70,11 +72,11 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithGoogle();
+      // On success, AuthProvider will handle redirect.
     } catch (error: any) {
         let description = `An unknown error occurred. (Code: ${error.code})`;
         if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-          // This is a normal user action, so we don't show a toast.
-          setIsLoading(false);
+          // This is a normal user action, no toast needed. Spinner is handled in finally.
           return;
         } else if (error.code === 'auth/unauthorized-domain') {
             description = `This domain is not authorized. Please add it to your Firebase console's authentication settings.`;
@@ -84,6 +86,7 @@ export default function LoginPage() {
             title: "Google Sign-In Failed",
             description: description,
         });
+    } finally {
         setIsLoading(false);
     }
   };

@@ -1,23 +1,24 @@
-
-'use client';
-
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SiteHeader } from '@/components/landing/header';
 import { SiteFooter } from '@/components/landing/footer';
+import Image from 'next/image';
+import { generateImage } from '@/ai/flows/image-generation-flow';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
-import { ChevronDown } from 'lucide-react';
+import { ScrollButton } from '@/components/landing/scroll-button';
 
-export default function HomePage() {
-  const handleScroll = () => {
-    const nextSection = document.getElementById('visionaries-section');
-    if (nextSection) {
-      nextSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-  
+export default async function HomePage() {
+  let imageUrl: string | null = null;
+  try {
+    const result = await generateImage({ prompt: "An entrepreneur in their office at work, cinematic professional photograph" });
+    imageUrl = result.imageUrl;
+  } catch (error) {
+    console.error("Failed to generate hero image:", error);
+    // Fallback to placeholder if generation fails
+  }
+
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -26,7 +27,19 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="text-center flex flex-col items-center pt-16">
             <div className="space-y-6 max-w-4xl">
-              <ImagePlaceholder data-ai-hint="business person work" className="w-full h-96 mb-8" />
+              <div className="relative w-full h-96 mb-8">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt="An entrepreneur in their office at work"
+                    fill
+                    className="rounded-lg object-cover"
+                    priority
+                  />
+                ) : (
+                  <ImagePlaceholder data-ai-hint="an entrepreneur in their office at work" className="w-full h-full" />
+                )}
+              </div>
               <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary">
                 Ogeemo: Your Business Command Center
               </h1>
@@ -34,10 +47,7 @@ export default function HomePage() {
                 Tired of juggling multiple apps for accounting, projects, and CRM? Ogeemo is the all-in-one platform that unifies every part of your business, so you can stop managing software and start building your empire.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4">
-                <Button variant="link" onClick={handleScroll} className="text-muted-foreground">
-                    Learn More
-                    <ChevronDown className="ml-2 h-5 w-5 animate-bounce" />
-                </Button>
+                <ScrollButton />
               </div>
             </div>
           </section>

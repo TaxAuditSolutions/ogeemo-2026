@@ -46,11 +46,11 @@ export const TermsDialog = ({
         </DialogHeader>
         <div className="py-4">
           <ScrollArea className="h-48 w-full rounded-md border p-4">
-            <h4 className="font-bold mb-2">Beta Program Disclaimer of Liability</h4>
-            <p className="text-sm text-muted-foreground space-y-2">
-              This Beta Program is provided "as is" without warranty of any kind, express or implied. By participating, you acknowledge that Ogeemo and its affiliates shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if Ogeemo has been advised of the possibility of such damages), resulting from the use or the inability to use the service.
-              <br/><br/>
-              You agree to indemnify and hold harmless Ogeemo, its contractors, and its licensors, and their respective directors, officers, employees, and agents from and against any and all claims and expenses, including attorneys’ fees, arising out of your use of the application, including but not limited to your violation of this Agreement.
+             <p className="text-sm text-muted-foreground">
+              Welcome to Ogeemo! Before creating your account, please take a moment to review our legal terms. By checking the box below and proceeding, you acknowledge that you have read, understood, and agree to be bound by our full <Link href="/terms" target="_blank" className="text-primary underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="text-primary underline">Privacy Policy</Link>.
+            </p>
+            <p className="text-sm text-muted-foreground mt-4">
+              These documents govern your use of the Ogeemo platform and outline our commitments to you, and yours to us.
             </p>
           </ScrollArea>
         </div>

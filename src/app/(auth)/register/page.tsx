@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { Rocket } from 'lucide-react';
+import { Rocket, UserPlus } from 'lucide-react';
 
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -105,11 +105,11 @@ export default function RegisterPage() {
     <>
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Rocket className="h-8 w-8 text-primary" />
+            <UserPlus className="h-8 w-8 text-primary" />
         </div>
-        <CardTitle className="text-2xl font-headline font-semibold">Join the Ogeemo Beta Program</CardTitle>
+        <CardTitle className="text-2xl font-headline font-semibold">Create Your Ogeemo Account</CardTitle>
         <CardDescription>
-            Welcome! By signing up, you'll be part of a cutting-edge technology project. Your input will form an invaluable part of our success.
+            Enter your information below to create your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -120,10 +120,10 @@ export default function RegisterPage() {
                 <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="businessName" render={({ field }) => ( <FormItem> <FormLabel>Business Name (Optional)</FormLabel> <FormControl><Input placeholder="Acme Inc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <p className="text-xs text-center text-muted-foreground pt-2">
-                    By clicking "Review Terms", you agree to our Beta Program Terms of Service.
+                    By creating an account, you agree to our <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>.
                 </p>
                 <Button type="submit" className="w-full">
-                    Review Terms
+                    Create Account
                 </Button>
             </form>
         </Form>

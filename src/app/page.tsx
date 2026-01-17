@@ -6,5 +6,4 @@ export default function Home() {
   // The AuthProvider handles routing for logged-in vs. logged-out users.
   redirect('/home');
 }
-
     

@@ -14,7 +14,6 @@
   "dependencies": {
     "@genkit-ai/ai": "^1.15.5",
     "@genkit-ai/core": "^1.15.5",
-    "@genkit-ai/dotprompt": "^0.9.12",
     "@genkit-ai/firebase": "^1.15.1",
     "@genkit-ai/googleai": "^1.15.5",
     "@google-cloud/local-auth": "^3.0.1",
@@ -44,8 +43,8 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "firebase": "^11.9.1",
-    "firebase-admin": "^12.1.1",
+    "firebase": "^12.0.0",
+    "firebase-admin": "^12.2.0",
     "framer-motion": "^11.2.10",
     "genkit": "^1.15.1",
     "google-auth-library": "^9.11.0",

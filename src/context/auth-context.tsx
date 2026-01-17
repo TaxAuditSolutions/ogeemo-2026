@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthLoading, pathname, router]);
   
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     if (!auth) {
         throw new Error("Firebase is not initialized.");
     }
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem('google_access_token', credential.accessToken);
         setAccessToken(credential.accessToken);
     }
-  };
+  }, [auth]);
 
   const getGoogleAccessToken = useCallback(async (): Promise<string | null> => {
     const storedToken = sessionStorage.getItem('google_access_token');
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Failed to sign in to get Google Access Token", error);
         return null;
     }
-  }, []); 
+  }, [signInWithGoogle]); 
 
 
   const logout = useCallback(async () => {
@@ -123,23 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/login');
     }
   }, [auth, router]);
-  
-  if (isAuthLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-            <p className="font-semibold">Starting app...</p>
-        </div>
-      </div>
-    );
-  }
 
   const value = { user, isLoading: isAuthLoading, accessToken, auth, logout, signInWithGoogle, getGoogleAccessToken };
-
+  
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {isAuthLoading ? (
+        <div className="flex h-screen w-screen items-center justify-center">
+          <div className="text-center">
+              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+              <p className="font-semibold">Starting app...</p>
+          </div>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 }

@@ -12,13 +12,24 @@ export function SiteHeader() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-primary/95 text-primary-foreground backdrop-blur supports-[backdrop-filter]:bg-primary/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 flex">
-          <Logo />
+          <Link href="/home" className="flex items-center">
+            <Logo />
+          </Link>
         </div>
+        <nav className="flex flex-1 items-center space-x-2">
+            <Button variant="link" asChild><Link href="/explore">Explore Features</Link></Button>
+            <Button variant="link" asChild><Link href="/for-small-businesses">For Small Businesses</Link></Button>
+            <Button variant="link" asChild><Link href="/for-accountants">For Accountants</Link></Button>
+        </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-            {/* Sign up button removed as requested */}
+            {user ? (
+                <Button onClick={() => router.push('/action-manager')}>Dashboard</Button>
+            ) : (
+                <Button onClick={() => router.push('/login')}>Login</Button>
+            )}
         </div>
       </div>
     </header>

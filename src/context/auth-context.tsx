@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
-      // If the user is authenticated and on a public auth page, redirect them away.
-      if (user && isPublicPath) {
+      // If the user is authenticated and on a public auth or marketing page, redirect them away.
+      if (user && (isPublicPath || isMarketingPath)) {
         router.push('/action-manager');
       }
 

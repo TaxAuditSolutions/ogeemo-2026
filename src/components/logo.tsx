@@ -11,15 +11,14 @@ interface LogoProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Logo({ className, ...props }: LogoProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const handleLogoClick = async () => {
+  const handleLogoClick = () => {
+    // If user is logged in, go to the app dashboard. Otherwise, go to the marketing homepage.
     if (user) {
-      // The logout function now handles the redirect, so we just call it.
-      await logout();
+      router.push('/action-manager');
     } else {
-      // If there's no user, we are on a public page, so just go to login.
-      router.push('/login');
+      router.push('/home');
     }
   };
   
@@ -27,7 +26,7 @@ export function Logo({ className, ...props }: LogoProps) {
     <div 
       onClick={handleLogoClick} 
       className={cn("flex items-center gap-2 cursor-pointer", className)} 
-      aria-label="Go to Ogeemo login page"
+      aria-label="Go to Ogeemo homepage"
       {...props}
     >
       <Image src="/images/Ogeemo-Logo-BonT.png" alt="Ogeemo logo" width={32} height={32} />

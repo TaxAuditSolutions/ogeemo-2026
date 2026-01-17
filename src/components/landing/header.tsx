@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -5,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { Logo } from "../logo";
 import { Button } from "../ui/button";
 import { useAuth } from "@/context/auth-context";
+import { UserNav } from "../user-nav";
 
 export function SiteHeader() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   return (
@@ -25,7 +27,7 @@ export function SiteHeader() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
             {user ? (
-                <Button onClick={() => router.push('/action-manager')}>Dashboard</Button>
+                <UserNav />
             ) : (
                 <Button onClick={() => router.push('/login')}>Login</Button>
             )}

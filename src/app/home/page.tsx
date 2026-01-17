@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="text-center flex flex-col items-center pt-16">
             <div className="space-y-6 max-w-4xl">
-              <ImagePlaceholder data-ai-hint="homepage hero" className="w-full h-96 mb-8" />
+              <ImagePlaceholder data-ai-hint="business planning" className="w-full h-96 mb-8" />
               <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary">
                 Ogeemo: Your Business Command Center
               </h1>

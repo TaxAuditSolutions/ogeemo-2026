@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -35,7 +36,6 @@ export default function InventoryTrackPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     
-    // Centralize state here
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -79,7 +79,7 @@ export default function InventoryTrackPage() {
             });
             toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
             setNewItemName('');
-            await loadData(); // Refresh the data
+            await loadData();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to add item', description: error.message });
         } finally {
@@ -91,7 +91,7 @@ export default function InventoryTrackPage() {
         try {
             await deleteInventoryItem(itemId);
             toast({ title: 'Item Deleted', variant: 'destructive' });
-            await loadData(); // Refresh the data
+            await loadData();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
         }
@@ -100,7 +100,7 @@ export default function InventoryTrackPage() {
     const handleItemSave = () => {
         setIsFormOpen(false);
         setItemToEdit(null);
-        loadData(); // Refresh the data
+        loadData();
     };
     
     const handleEditItem = (item: InventoryItem) => {
@@ -224,7 +224,7 @@ export default function InventoryTrackPage() {
                           <ul className="list-disc space-y-2 pl-5">
                             <li>Every change to an item's quantity is automatically logged as a transaction.</li>
                             <li>When updating stock from the form, it creates an "Adjustment" log entry.</li>
-                            <li>Using the Point of Sale creates a "Sale" log entry and decrements stock.</li>
+                            <li>Using the Point of Sale creates a "Sale" transaction log and decrements stock.</li>
                           </ul>
                         </AccordionContent>
                     </AccordionItem>

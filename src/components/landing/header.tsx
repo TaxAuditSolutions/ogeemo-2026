@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -27,7 +28,6 @@ export function SiteHeader() {
           <Logo />
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-            {/* The login button is removed as requested to show a change */}
             <Button asChild variant="secondary">
                 <Link href="/register" onClick={handleRegisterClick}>Sign Up</Link>
             </Button>

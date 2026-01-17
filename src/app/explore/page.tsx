@@ -1,10 +1,10 @@
 
 import { Button } from "@/components/ui/button";
+import { CheckCircle, Clock, FileSearch, HardHat } from "lucide-react";
+import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import Link from "next/link";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
-import { CheckCircle } from "lucide-react";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 
 const benefitsSmallBusiness = [
     {

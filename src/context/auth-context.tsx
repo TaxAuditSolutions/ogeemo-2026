@@ -5,7 +5,7 @@ import type { User } from 'firebase/auth';
 import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { useFirebase } from '@/firebase/provider'; // Updated import
+import { useFirebase } from '@/firebase/provider';
 import LoadingModal from '@/components/ui/loading-modal';
 
 interface AuthContextType {

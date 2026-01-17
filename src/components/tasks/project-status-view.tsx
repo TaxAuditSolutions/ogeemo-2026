@@ -179,7 +179,7 @@ export function ProjectStatusView() {
                 <div className="flex items-center gap-4">
                     <ProjectManagementHeader />
                     <Button asChild>
-                        <Link href="/projects/test-102">
+                        <Link href="/projects/create">
                             <Plus className="mr-2 h-4 w-4" /> New Project
                         </Link>
                     </Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from "next/link";
@@ -11,11 +10,12 @@ export function SiteHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // This handler is now for a general sign-up/register button.
+  // If a user is logged in, it will log them out first before redirecting.
   const handleRegisterClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (user) {
       e.preventDefault();
       await logout();
-      // After logout, the AuthProvider will handle the redirect, but we can push here for faster navigation.
       router.push('/register');
     }
   };
@@ -27,11 +27,9 @@ export function SiteHeader() {
           <Logo />
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-           <Button asChild variant="secondary">
-                <Link href="/login">Log in</Link>
-            </Button>
+            {/* The login button is removed as requested to show a change */}
             <Button asChild variant="secondary">
-                <Link href="/register" onClick={handleRegisterClick}>Become a Beta Tester</Link>
+                <Link href="/register" onClick={handleRegisterClick}>Sign Up</Link>
             </Button>
         </div>
       </div>

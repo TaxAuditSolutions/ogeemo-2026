@@ -17,14 +17,14 @@ import { EditableSkuCell } from './EditableSkuCell';
 import { type Item as InventoryItem } from '@/services/inventory-service';
 
 
-interface InventoryListTestProps {
+interface InventoryListProps {
     items: InventoryItem[];
     isLoading: boolean;
     onItemDelete: (itemId: string) => void;
     onEditItem: (item: InventoryItem) => void; 
 }
 
-export function InventoryListTest({ items, isLoading, onItemDelete, onEditItem }: InventoryListTestProps) {
+export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: InventoryListProps) {
   const [suppliers, setSuppliers] = useState<any[]>([]); // Simplified for this view
 
   const supplierMap = useMemo(() => {

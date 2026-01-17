@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { InventoryListTest } from '@/components/inventory/InventoryListTest';
+import { InventoryList } from '@/components/inventory/InventoryList';
 import { UpdateStockCard } from '@/components/inventory/update-stock-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -53,7 +53,7 @@ export default function InventoryTrackPage() {
             setItems(fetchedItems);
             setContacts(fetchedContacts);
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `Failed to load data: ${error.message}`});
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to load data: ${'' + error.message}`});
         } finally {
             setIsLoading(false);
         }
@@ -184,7 +184,7 @@ export default function InventoryTrackPage() {
                 </Card>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-                <InventoryListTest 
+                <InventoryList 
                     items={items} 
                     isLoading={isLoading} 
                     onItemDelete={handleDeleteItem} 

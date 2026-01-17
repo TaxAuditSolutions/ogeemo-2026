@@ -212,10 +212,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
             <div className="space-y-6 px-6 py-4">
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Asset Name</Label>
-                        <Input id="name" value={formData.name} onChange={(e) => handleValueChange('name', e.target.value)} />
-                    </div>
+                    
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Label htmlFor="assetClass">Asset Class # (for CRA)</Label>

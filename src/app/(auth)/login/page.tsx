@@ -3,11 +3,10 @@
 
 import { useState } from "react";
 import Link from 'next/link';
-import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +37,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const { toast } = useToast();
-  const { signInWithGoogle } = useAuth(); // Get services from context
+  const { signInWithGoogle } = useAuth();
   const { auth } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,8 +54,6 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // On successful sign-in, the AuthProvider will handle session creation and redirect.
-      // The loading state is managed by the AuthProvider's loading state.
     } catch (error: any) {
       let description = "An unknown error occurred. Please try again.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -67,7 +64,7 @@ export default function LoginPage() {
         title: "Login Failed",
         description: description,
       });
-      setIsLoading(false); // Hide modal on error
+      setIsLoading(false);
     }
   }
 
@@ -75,21 +72,21 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      // On successful sign-in, the AuthProvider will handle the redirect and token storage.
     } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      let description = `An unknown error occurred. (Code: ${error.code})`;
-      if (error.code === 'auth/popup-closed-by-user') {
-        description = "Sign-in was cancelled. Please try again.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-          description = `This domain is not authorized. Please add it to your Firebase console's authentication settings.`;
-      }
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: description,
-      });
-      setIsLoading(false);
+        let description = `An unknown error occurred. (Code: ${error.code})`;
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+          // This is a normal user action, so we don't show a toast.
+          setIsLoading(false);
+          return;
+        } else if (error.code === 'auth/unauthorized-domain') {
+            description = `This domain is not authorized. Please add it to your Firebase console's authentication settings.`;
+        }
+        toast({
+            variant: "destructive",
+            title: "Google Sign-In Failed",
+            description: description,
+        });
+        setIsLoading(false);
     }
   };
 
@@ -164,5 +161,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-    

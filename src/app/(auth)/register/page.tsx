@@ -16,8 +16,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { TermsDialog } from '@/components/auth/terms-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { findOrCreateFolder, addContact } from '@/services/contact-service';
 
 const registerSchema = z.object({
@@ -25,8 +23,6 @@ const registerSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email." }),
     password: z.string().min(6, { message: "Password must be at least 6 characters." }),
     businessName: z.string().optional(),
-    businessType: z.string().optional(),
-    betaReason: z.string().min(10, { message: "Please tell us a bit more about your interest." }),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -40,7 +36,7 @@ export default function RegisterPage() {
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", businessName: "", businessType: "", betaReason: "" },
+    defaultValues: { name: "", email: "", password: "", businessName: "" },
   });
 
   const handleInitialSubmit = (values: RegisterFormData) => {
@@ -64,22 +60,17 @@ export default function RegisterPage() {
         // 2. Update Auth profile display name
         await updateProfile(user, { displayName: formData.name });
         
-        // 3. Find or create the "Beta Testers" folder
-        const betaFolder = await findOrCreateFolder(user.uid, "Beta Testers");
+        // 3. Find or create the "Uncategorized Contacts" folder
+        const contactsFolder = await findOrCreateFolder(user.uid, "Uncategorized Contacts");
 
         // 4. Prepare and save the contact details
-        const notes = `
-            **Beta Application**
-            - **Business Type:** ${formData.businessType || 'N/A'}
-            - **Reason for Joining:** ${formData.betaReason}
-        `;
+        const notes = `New user sign-up on ${new Date().toLocaleDateString()}.`;
 
         const newContactData = {
             name: formData.name,
             email: formData.email,
             businessName: formData.businessName,
-            businessType: formData.businessType,
-            folderId: betaFolder.id,
+            folderId: contactsFolder.id,
             notes: notes.trim(),
             userId: user.uid,
         };
@@ -87,8 +78,8 @@ export default function RegisterPage() {
         await addContact(newContactData);
 
         toast({
-            title: "Welcome to the Beta Program!",
-            description: "Your account has been created and your application details saved.",
+            title: "Welcome to Ogeemo!",
+            description: "Your account has been created successfully.",
         });
         
         // The AuthProvider will handle the redirect to the action manager automatically
@@ -128,28 +119,6 @@ export default function RegisterPage() {
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input placeholder="name@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="businessName" render={({ field }) => ( <FormItem> <FormLabel>Business Name (Optional)</FormLabel> <FormControl><Input placeholder="Acme Inc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="businessType" render={({ field }) => ( 
-                    <FormItem>
-                        <FormLabel>Business Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select your business type..." /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="freelancer">Freelancer / Solopreneur</SelectItem>
-                                <SelectItem value="small-business">Small Business (1-10 employees)</SelectItem>
-                                <SelectItem value="agency">Agency / Consultancy</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                 <FormField control={form.control} name="betaReason" render={({ field }) => ( 
-                    <FormItem>
-                        <FormLabel>Why do you want to be a beta tester?</FormLabel>
-                        <FormControl><Textarea placeholder="I'm interested in testing Ogeemo because..." {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                 )} />
                 <p className="text-xs text-center text-muted-foreground pt-2">
                     By clicking "Review Terms", you agree to our Beta Program Terms of Service.
                 </p>

@@ -1,25 +1,14 @@
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SiteHeader } from '@/components/landing/header';
-import { SiteFooter } from '@/components/landing/footer';
-import Image from 'next/image';
-import { generateImage } from '@/ai/flows/image-generation-flow';
+import { SiteHeader } from "@/components/landing/header";
+import { SiteFooter } from "@/components/landing/footer";
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { ScrollButton } from '@/components/landing/scroll-button';
 
-export default async function HomePage() {
-  let imageUrl: string | null = null;
-  try {
-    const result = await generateImage({ prompt: "An entrepreneur in their office at work, cinematic professional photograph" });
-    imageUrl = result.imageUrl;
-  } catch (error) {
-    console.error("Failed to generate hero image:", error);
-    // Fallback to placeholder if generation fails
-  }
-
+export default function HomePage() {
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -29,17 +18,7 @@ export default async function HomePage() {
           <section className="text-center flex flex-col items-center pt-16">
             <div className="space-y-6 max-w-4xl">
               <div className="relative w-full h-96 mb-8">
-                {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt="An entrepreneur in their office at work"
-                    fill
-                    className="rounded-lg object-cover"
-                    priority
-                  />
-                ) : (
-                  <ImagePlaceholder data-ai-hint="an entrepreneur in their office at work" className="w-full h-full" />
-                )}
+                <ImagePlaceholder data-ai-hint="entrepreneur in office" className="w-full h-full rounded-lg object-cover" />
               </div>
               <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary">
                 Ogeemo: Your Business Command Center

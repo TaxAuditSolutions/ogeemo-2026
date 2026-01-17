@@ -8,10 +8,16 @@
 interface FeedbackData {
     type: 'bug' | 'feature' | 'general';
     feedback: string;
+    reporterName: string;
+    topic: string;
+    date: string;
 }
 
 export async function submitFeedback(data: FeedbackData): Promise<{ success: true }> {
     console.log("--- New Feedback Submitted ---");
+    console.log("Date:", data.date);
+    console.log("From:", data.reporterName);
+    console.log("Topic:", data.topic);
     console.log("Type:", data.type);
     console.log("Feedback:", data.feedback);
     console.log("----------------------------");

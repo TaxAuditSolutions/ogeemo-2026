@@ -29,12 +29,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Megaphone } from 'lucide-react';
 import { submitFeedback } from '@/services/feedback-service';
 
 const feedbackSchema = z.object({
+  reporterName: z.string().min(2, { message: "Please enter your name." }),
+  topic: z.string().min(3, { message: "Please enter a topic for your feedback." }),
   type: z.enum(['bug', 'feature', 'general'], { required_error: "Please select a feedback type." }),
   feedback: z.string().min(10, { message: "Please provide at least 10 characters of feedback." }),
 });
@@ -48,6 +51,8 @@ export default function FeedbackPage() {
   const form = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
+      reporterName: '',
+      topic: '',
       type: 'general',
       feedback: '',
     },
@@ -56,7 +61,10 @@ export default function FeedbackPage() {
   async function onSubmit(values: FeedbackFormData) {
     setIsSubmitting(true);
     try {
-      await submitFeedback(values);
+      await submitFeedback({
+        ...values,
+        date: new Date().toISOString(),
+      });
       toast({
         title: 'Feedback Submitted',
         description: "Thank you! We've received your feedback and appreciate your input.",
@@ -97,6 +105,34 @@ export default function FeedbackPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="reporterName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Your Name</FormLabel>
+                            <FormControl>
+                            <Input placeholder="Jane Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="topic"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Topic / Subject</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Issue with invoices" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
               <FormField
                 control={form.control}
                 name="type"

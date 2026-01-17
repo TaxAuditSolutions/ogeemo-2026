@@ -46,11 +46,8 @@ export default function InventoryManagerPage() {
         <div className="mt-4 flex justify-center gap-4">
           <Button asChild size="lg">
               <Link href="/inventory-manager/track">
-                Manage Inventory & View Log <ArrowRight className="ml-2 h-4 w-4" />
+                Go to Inventory Central <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/inventory-manager/list">List</Link>
           </Button>
         </div>
       </header>

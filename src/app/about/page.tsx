@@ -1,27 +1,27 @@
 
-import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
+import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
 
 const principles = [
     {
         icon: Users,
         title: "Human-Centric Design",
-        description: "We build for people, not for features. Every tool is designed to be intuitive and solve real-world problems, reducing the learning curve and empowering you to get back to what you do best."
+        description: "We build for people, not for an endless list of features. Every tool within Ogeemo is designed to be intuitive, solve real-world problems, and reduce your learning curve, empowering you to get back to the work you love."
     },
     {
         icon: Target,
         title: "Integration Over Isolation",
-        description: "Your business is a single, connected entity. Your software should be too. Ogeemo breaks down the silos between your finances, projects, and client relationships to create a single source of truth."
+        description: "Your business is a single, connected entity. Your software should be too. Ogeemo breaks down the silos between your finances, projects, and client relationships to create a single source of truth, where every action informs the next."
     },
     {
         icon: Lightbulb,
-        title: "AI as a Partner",
-        description: "We leverage artificial intelligence not to replace human intuition, but to augment it. Ogeemo is your smart assistant, automating the mundane so you can focus on the meaningful work that drives growth."
+        title: "AI as a True Partner",
+        description: "We leverage artificial intelligence not to replace human intuition, but to augment it. Ogeemo acts as your smart assistant, automating mundane tasks, providing timely insights, and connecting the dots across your entire workflow so you can focus on the meaningful decisions that drive growth."
     }
 ];
 
@@ -34,14 +34,17 @@ export default function AboutUsPage() {
                 <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary">
-                            Our Mission: Simplify Your Business
+                            Our Mission: To Simplify Your Ambition
                         </h1>
                         <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                            We believe that the power to build a successful business should be in the hands of the creators, the builders, and the dreamers—not just those who can navigate complex software. Ogeemo was born from a simple idea: what if one platform could do it all, intuitively?
+                            We believe the power to build a successful business belongs to the creators, the builders, and the dreamers—not just those who can navigate a labyrinth of complex software. Ogeemo was born from a simple, powerful question: <strong>"What if one platform could do it all, intelligently?"</strong>
+                        </p>
+                        <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+                            Tired of juggling apps for accounting, project management, client relationships, and time tracking? You're not alone. The digital fatigue is real. That's why we built Ogeemo: to unify every part of your business into a single, cohesive command center.
                         </p>
                     </div>
                     <div className="relative h-80 md:h-96 w-full">
-                        <ImagePlaceholder data-ai-hint="team business meeting" className="rounded-lg h-full w-full" />
+                        <ImagePlaceholder data-ai-hint="team business meeting" className="rounded-lg h-full w-full object-cover" />
                     </div>
                 </div>
             </section>
@@ -50,7 +53,7 @@ export default function AboutUsPage() {
                 <div className="container mx-auto px-4">
                      <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">The Ogeemo Philosophy</h2>
-                        <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+                        <p className="mt-4 text-muted-foreground max-w-3xl mx-auto">
                             Our development is guided by three core principles that ensure we build a platform that truly serves you.
                         </p>
                     </div>
@@ -71,8 +74,17 @@ export default function AboutUsPage() {
                     </div>
                 </div>
             </section>
+
+             <section className="py-16 md:py-24 bg-muted">
+                <div className="container mx-auto px-4 text-center">
+                     <h2 className="text-3xl md:text-4xl font-bold font-headline">A Foundation You Can Trust</h2>
+                      <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+                         Ogeemo is built entirely on Google's robust and secure cloud technology. By deeply integrating with the Google Workspace you already know and trust, we provide a seamless and secure experience from day one. Your data's security isn't an afterthought; it's part of our foundation.
+                      </p>
+                </div>
+            </section>
             
-            <section className="py-20 md:py-20 bg-muted">
+            <section className="py-20 md:py-20">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl font-bold font-headline">Ready to See How It Works?</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Explore the features that make Ogeemo the last business platform you'll ever need.</p>

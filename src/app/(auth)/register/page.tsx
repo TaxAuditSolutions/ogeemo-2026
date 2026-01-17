@@ -60,8 +60,8 @@ export default function RegisterPage() {
         // 2. Update Auth profile display name
         await updateProfile(user, { displayName: formData.name });
         
-        // 3. Find or create the "Uncategorized Contacts" folder
-        const contactsFolder = await findOrCreateFolder(user.uid, "Uncategorized Contacts");
+        // 3. Find or create the "Subscribers to Ogeemo" folder
+        const contactsFolder = await findOrCreateFolder(user.uid, "Subscribers to Ogeemo");
 
         // 4. Prepare and save the contact details
         const notes = `New user sign-up on ${new Date().toLocaleDateString()}.`;

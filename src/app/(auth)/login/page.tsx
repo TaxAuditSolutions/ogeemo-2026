@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -95,7 +94,9 @@ export default function LoginPage() {
     <>
       {isLoading && <LoadingModal message="Signing in..." />}
       <CardHeader className="flex flex-col items-center gap-4 text-center">
-        <Logo />
+        <Link href="/action-manager" aria-label="Go to Action Manager">
+          <Logo />
+        </Link>
         <div className="flex flex-col">
             <CardTitle className="text-2xl font-body font-bold text-[#3B2F4A]">Welcome Back</CardTitle>
             <CardDescription>Sign in to your Ogeemo account.</CardDescription>

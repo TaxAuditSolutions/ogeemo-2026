@@ -1,32 +1,17 @@
-
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 import { fontOrbitron } from '@/app/layout';
-import { useAuth } from '@/context/auth-context';
 
 interface LogoProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+// The Logo is now a simple display component.
+// Navigation is handled by wrapping it in a <Link> component where it's used.
 export function Logo({ className, ...props }: LogoProps) {
-  const router = useRouter();
-  const { user } = useAuth();
-
-  const handleLogoClick = () => {
-    // If user is logged in, go to the app dashboard. Otherwise, go to the marketing homepage.
-    if (user) {
-      router.push('/action-manager');
-    } else {
-      router.push('/home');
-    }
-  };
-  
   return (
     <div 
-      onClick={handleLogoClick} 
-      className={cn("flex items-center gap-2 cursor-pointer", className)} 
-      aria-label="Go to Ogeemo homepage"
+      className={cn("flex items-center gap-2", className)} 
       {...props}
     >
       <Image src="/images/Ogeemo-Logo-BonT.png" alt="Ogeemo logo" width={32} height={32} />

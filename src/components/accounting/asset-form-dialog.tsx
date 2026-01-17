@@ -211,6 +211,10 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
         <ScrollArea className="flex-1">
             <div className="space-y-6 px-6 py-4">
             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="asset-name">Asset Name</Label>
+                    <Input id="asset-name" value={formData.name} onChange={(e) => handleValueChange('name', e.target.value)} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     <div className="space-y-2">

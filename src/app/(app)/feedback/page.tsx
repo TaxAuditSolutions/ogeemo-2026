@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +34,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Megaphone } from 'lucide-react';
 import { submitFeedback } from '@/services/feedback-service';
+import { format } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
 const feedbackSchema = z.object({
   reporterName: z.string().min(2, { message: "Please enter your name." }),
@@ -46,7 +48,12 @@ type FeedbackFormData = z.infer<typeof feedbackSchema>;
 
 export default function FeedbackPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentDate, setCurrentDate] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    setCurrentDate(format(new Date(), 'PPP'));
+  }, []);
 
   const form = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
@@ -132,6 +139,10 @@ export default function FeedbackPage() {
                         </FormItem>
                         )}
                     />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input value={currentDate} readOnly disabled />
                 </div>
               <FormField
                 control={form.control}

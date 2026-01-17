@@ -24,6 +24,9 @@ export function SiteHeader() {
             <Button variant="link" asChild><Link href="/explore">Explore Features</Link></Button>
             <Button variant="link" asChild><Link href="/for-small-businesses">For Small Businesses</Link></Button>
             <Button variant="link" asChild><Link href="/for-accountants">For Accountants</Link></Button>
+            <Button variant="link" asChild><Link href="/news">News</Link></Button>
+            <Button variant="link" asChild><Link href="/about">About</Link></Button>
+            <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
             {user ? (

@@ -34,14 +34,6 @@ export default function HomePage() {
                 Tired of juggling multiple apps for accounting, projects, and CRM? Ogeemo is the all-in-one platform that unifies every part of your business, so you can stop managing software and start building your empire.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4">
-                <div className="flex justify-center gap-4">
-                    <Button asChild size="lg">
-                    <Link href="/login">Login</Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline">
-                    <Link href="/explore">Explore Ogeemo</Link>
-                    </Button>
-                </div>
                 <Button variant="link" onClick={handleScroll} className="text-muted-foreground">
                     Learn More
                     <ChevronDown className="ml-2 h-5 w-5 animate-bounce" />

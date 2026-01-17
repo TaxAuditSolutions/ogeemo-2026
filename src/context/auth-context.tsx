@@ -67,10 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
+      // If the user is not authenticated and they are trying to access a protected page,
+      // redirect them to the login page.
       if (!user && !isPublicPath && !isMarketingPath) {
         router.push('/login');
-      } else if (user && (isPublicPath || pathname === '/home' || pathname === '/')) {
-        router.push('/action-manager');
       }
     }
   }, [user, isAuthLoading, pathname, router]);

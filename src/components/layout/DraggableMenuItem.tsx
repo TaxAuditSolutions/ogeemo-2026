@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
@@ -61,7 +61,7 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
 
   drag(drop(ref));
 
-  const isExternal = item.href.startsWith('http');
+  const isExternal = item.href.startsWith('http') || item.href === '/home';
 
   const buttonContent = (
     <>

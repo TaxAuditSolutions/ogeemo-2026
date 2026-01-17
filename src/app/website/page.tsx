@@ -18,7 +18,7 @@ export default function HomePage() {
           <section className="text-center flex flex-col items-center pt-16">
             <div className="space-y-6 max-w-4xl">
               <div className="relative w-full h-96 mb-8">
-                <ImagePlaceholder data-ai-hint="entrepreneur in office" className="w-full h-full rounded-lg object-cover" />
+                <ImagePlaceholder data-ai-hint="business person office" className="w-full h-full rounded-lg object-cover" />
               </div>
               <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary">
                 Ogeemo: Your Business Command Center

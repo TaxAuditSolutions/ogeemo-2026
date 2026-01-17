@@ -427,6 +427,20 @@
         "userId": { "type": "string" }
       },
       "required": ["name", "userId"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Stores user feedback submissions.",
+      "type": "object",
+      "properties": {
+        "reporterName": { "type": "string" },
+        "topic": { "type": "string" },
+        "type": { "type": "string", "enum": ["bug", "feature", "general"] },
+        "feedback": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["reporterName", "topic", "type", "feedback", "date"]
     }
   },
   "auth": {
@@ -540,6 +554,10 @@
     "/suppliers/{supplierId}": {
       "schema": { "$ref": "#/entities/Supplier" },
       "description": "Collection of all suppliers and vendors."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/Feedback" },
+      "description": "Stores user feedback submissions."
     }
   }
 }

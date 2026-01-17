@@ -1,34 +1,53 @@
 
 'use client';
 
-// A simple service to simulate feedback submission.
-// In a real application, this would send data to a backend,
-// an email service, or a database.
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+} from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
-interface FeedbackData {
-    type: 'bug' | 'feature' | 'general';
-    feedback: string;
-    reporterName: string;
-    topic: string;
-    date: string;
+export interface FeedbackData {
+  id?: string;
+  type: 'bug' | 'feature' | 'general';
+  feedback: string;
+  reporterName: string;
+  topic: string;
+  date: string;
+  userId?: string; // Optional for now
 }
 
-export async function submitFeedback(data: FeedbackData): Promise<{ success: true }> {
-    console.log("--- New Feedback Submitted ---");
-    console.log("Date:", data.date);
-    console.log("From:", data.reporterName);
-    console.log("Topic:", data.topic);
-    console.log("Type:", data.type);
-    console.log("Feedback:", data.feedback);
-    console.log("----------------------------");
+const FEEDBACK_COLLECTION = 'feedback';
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // In a real app, you might have error conditions, but for now we'll always succeed.
-    // if (Math.random() > 0.8) {
-    //     throw new Error("Failed to connect to the feedback server. Please try again.");
-    // }
+async function getDb() {
+  const { db } = await initializeFirebase();
+  if (!db) {
+    throw new Error('Firestore is not initialized');
+  }
+  return db;
+}
 
+const docToFeedback = (doc: any): FeedbackData => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+    } as FeedbackData;
+};
+
+
+export async function submitFeedback(data: Omit<FeedbackData, 'id'>): Promise<{ success: true }> {
+    const db = await getDb();
+    await addDoc(collection(db, FEEDBACK_COLLECTION), data);
     return { success: true };
+}
+
+export async function getFeedback(): Promise<FeedbackData[]> {
+    const db = await getDb();
+    const q = query(collection(db, FEEDBACK_COLLECTION));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToFeedback).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

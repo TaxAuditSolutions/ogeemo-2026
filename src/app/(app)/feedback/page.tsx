@@ -32,10 +32,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Megaphone } from 'lucide-react';
+import { LoaderCircle, Megaphone, FileText } from 'lucide-react';
 import { submitFeedback } from '@/services/feedback-service';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const feedbackSchema = z.object({
   reporterName: z.string().min(2, { message: "Please enter your name." }),
@@ -90,7 +91,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col items-center h-full">
-      <header className="text-center mb-6 max-w-4xl">
+      <header className="text-center mb-6 max-w-4xl relative w-full">
         <div className="flex items-center justify-center gap-2 mb-2">
             <Megaphone className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold font-headline text-primary">
@@ -100,6 +101,13 @@ export default function FeedbackPage() {
         <p className="text-muted-foreground">
           Have a bug to report, an idea for a new feature, or general comments? Let us know!
         </p>
+        <div className="absolute top-0 right-0">
+          <Button asChild variant="outline">
+            <Link href="/reports/feedback">
+              <FileText className="mr-2 h-4 w-4" /> Feedback Report
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <Card className="w-full max-w-2xl">

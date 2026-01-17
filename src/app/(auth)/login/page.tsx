@@ -133,7 +133,7 @@ export default function LoginPage() {
               )}
             />
             <p className="text-xs text-center text-muted-foreground pt-1">
-              By signing in, you agree to our <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>.
+              By signing in, you agree to our <a href="/terms" target="_blank" className="underline">Terms of Service</a>.
             </p>
             <Button type="submit" className="w-full" disabled={isLoading}>
               Sign In
@@ -164,3 +164,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    

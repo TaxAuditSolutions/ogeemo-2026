@@ -3,22 +3,16 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
 
 export default function LogoutPage() {
   const { logout } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
-    async function performLogout() {
-      await logout();
-      // The AuthProvider will handle redirecting to /login automatically,
-      // but we push here for a faster redirect client-side.
-      router.push('/login');
-    }
-    performLogout();
-  }, [logout, router]);
+    // The logout function in the auth context now handles the full sign-out
+    // process, including the redirect, so we just need to call it.
+    logout();
+  }, [logout]);
 
   return (
     <div className="flex h-full w-full items-center justify-center p-4">

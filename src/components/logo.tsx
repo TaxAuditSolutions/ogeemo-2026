@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -14,9 +15,12 @@ export function Logo({ className, ...props }: LogoProps) {
 
   const handleLogoClick = async () => {
     if (user) {
+      // The logout function now handles the redirect, so we just call it.
       await logout();
+    } else {
+      // If there's no user, we are on a public page, so just go to login.
+      router.push('/login');
     }
-    router.push('/login');
   };
   
   return (

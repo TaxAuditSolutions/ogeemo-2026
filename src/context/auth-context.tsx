@@ -111,11 +111,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []); // signInWithGoogle is stable due to being defined outside useEffect
 
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     if (auth) {
+      // Clear the server session first to prevent race conditions
+      await fetch('/api/auth/session', { method: 'DELETE' });
+      
+      // Then sign out the client
       await signOut(auth);
+      
+      // Clear any local state immediately for a clean UI transition
+      setUser(null);
+      setAccessToken(null);
+      sessionStorage.removeItem('google_access_token');
+      
+      // Finally, force a navigation to the login page
+      router.push('/login');
     }
-  };
+  }, [auth, router]);
   
   if (isAuthLoading) {
     return (

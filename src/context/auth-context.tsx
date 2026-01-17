@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { User } from 'firebase/auth';
+import type { User, Auth } from 'firebase/auth';
 import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   accessToken: string | null;
+  auth: Auth | null; // Provide the auth object
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   getGoogleAccessToken: () => Promise<string | null>;
@@ -32,10 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   
   useEffect(() => {
-    // The key change: only start listening for auth state once `auth` is available.
     if (!auth) {
-        // If auth is not ready, we are still loading.
-        // The FirebaseClientProvider is responsible for initializing it.
         setIsAuthLoading(true);
         return;
     };
@@ -47,14 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = sessionStorage.getItem('google_access_token');
         setAccessToken(token);
         const idToken = await currentUser.getIdToken();
-        // Securely set the session cookie for server-side authentication
         await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
       } else {
-        // Clear session data on logout
         setAccessToken(null);
         sessionStorage.removeItem('google_access_token');
         await fetch('/api/auth/session', { method: 'DELETE' });
@@ -63,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth]); // This effect now correctly depends on the `auth` object.
+  }, [auth]);
 
 
   useEffect(() => {
@@ -108,23 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Failed to sign in to get Google Access Token", error);
         return null;
     }
-  }, []); // signInWithGoogle is stable due to being defined outside useEffect
+  }, []); 
 
 
   const logout = useCallback(async () => {
     if (auth) {
-      // Clear the server session first to prevent race conditions
       await fetch('/api/auth/session', { method: 'DELETE' });
-      
-      // Then sign out the client
       await signOut(auth);
-      
-      // Clear any local state immediately for a clean UI transition
       setUser(null);
       setAccessToken(null);
       sessionStorage.removeItem('google_access_token');
-      
-      // Finally, force a navigation to the login page
       router.push('/login');
     }
   }, [auth, router]);
@@ -140,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const value = { user, isLoading: isAuthLoading, accessToken, logout, signInWithGoogle, getGoogleAccessToken };
+  const value = { user, isLoading: isAuthLoading, accessToken, auth, logout, signInWithGoogle, getGoogleAccessToken };
 
   return (
     <AuthContext.Provider value={value}>

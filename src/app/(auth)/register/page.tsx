@@ -29,7 +29,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const { toast } = useToast();
-  const { firebaseServices } = useAuth();
+  const { auth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<RegisterFormData | null>(null);
@@ -45,12 +45,12 @@ export default function RegisterPage() {
   };
 
   const handleFinalSubmit = async () => {
-    if (!formData || !firebaseServices) return;
+    if (!formData || !auth) return;
     
     setIsLoading(true);
     try {
         // 1. Create Firebase Auth user
-        const userCredential = await createUserWithEmailAndPassword(firebaseServices.auth, formData.email, formData.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
 
         if (!user) {

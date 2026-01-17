@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { User, Auth } from 'firebase/auth';
@@ -21,7 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPaths = ['/login', '/register'];
-const marketingPaths = ['/home', '/for-small-businesses', '/for-accountants', '/news', '/about', '/contact', '/privacy', '/terms', '/explore'];
+const marketingPaths = ['/website', '/for-small-businesses', '/for-accountants', '/news', '/about', '/contact', '/privacy', '/terms', '/explore'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth } = useFirebase();
@@ -67,8 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
-      // If the user is authenticated and on a public auth or marketing page, redirect them away.
-      if (user && (isPublicPath || isMarketingPath)) {
+      // If the user is authenticated, only redirect them away from the login/register pages.
+      if (user && isPublicPath) {
         router.push('/action-manager');
       }
 

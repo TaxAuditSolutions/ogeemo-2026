@@ -1,8 +1,11 @@
+
 import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SiteHeader } from "@/components/landing/header";
+import { SiteFooter } from "@/components/landing/footer";
 
 const principles = [
     {
@@ -24,6 +27,8 @@ const principles = [
 
 export default function AboutUsPage() {
     return (
+      <div className="flex flex-col min-h-screen">
+        <SiteHeader />
         <main>
             <section className="py-16 md:py-24 bg-muted">
                 <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
@@ -67,7 +72,7 @@ export default function AboutUsPage() {
                 </div>
             </section>
             
-            <section className="py-16 md:py-20 bg-muted">
+            <section className="py-20 md:py-20 bg-muted">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl font-bold font-headline">Ready to See How It Works?</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Explore the features that make Ogeemo the last business platform you'll ever need.</p>
@@ -81,5 +86,7 @@ export default function AboutUsPage() {
                 </div>
             </section>
         </main>
+        <SiteFooter />
+      </div>
     );
 }

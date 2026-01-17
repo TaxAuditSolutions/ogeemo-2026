@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, FileSearch, HardHat } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import Link from "next/link";
+import { SiteHeader } from "@/components/landing/header";
+import { SiteFooter } from "@/components/landing/footer";
 
 const benefits = [
     {
@@ -24,6 +26,8 @@ const benefits = [
 
 export default function ForSmallBusinessesPage() {
     return (
+      <div className="flex flex-col min-h-screen">
+        <SiteHeader />
         <main>
             {/* Hero Section */}
             <section className="py-20 md:py-32 bg-slate-50">
@@ -108,5 +112,7 @@ export default function ForSmallBusinessesPage() {
             </section>
 
         </main>
+        <SiteFooter />
+        </div>
     );
 }

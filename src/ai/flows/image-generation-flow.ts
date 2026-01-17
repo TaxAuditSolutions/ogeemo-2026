@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An image generation AI flow using Google's Imagen model.
@@ -8,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 export const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt to generate an image from.'),

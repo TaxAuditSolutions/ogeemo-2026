@@ -49,7 +49,7 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
                         .map(doc => ({ id: doc.id, ...doc.data() }))
                         .filter(contact => 
                             Array.isArray(contact.keywords) &&
-                            contact.keywords.some((k: string) => k.toLowerCase().includes(searchTerm))
+                            contact.keywords.some((k: any) => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
                         )
                         .map(contact => ({...contact, resultType: 'Contact' as const}));
                 });
@@ -66,7 +66,7 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
                         .map(doc => ({ id: doc.id, ...doc.data() }))
                         .filter(file => 
                             Array.isArray((file as any).keywords) &&
-                            (file as any).keywords.some((k: string) => k.toLowerCase().includes(searchTerm))
+                            (file as any).keywords.some((k: any) => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
                         )
                         .map(file => ({...file, resultType: 'File' as const}));
                 });

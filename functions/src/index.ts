@@ -43,19 +43,33 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
             const contactsPromise = admin.firestore()
                 .collection('contacts')
                 .where('userId', '==', userId)
-                .where('keywords', 'array-contains', searchTerm)
                 .get()
-                .then(snapshot => snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), resultType: 'Contact' as const })));
+                .then(snapshot => {
+                    return snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(contact => 
+                            Array.isArray(contact.keywords) &&
+                            contact.keywords.some((k: any) => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
+                        )
+                        .map(contact => ({...contact, resultType: 'Contact' as const}));
+                });
             searchPromises.push(contactsPromise);
         }
 
         if (sources.includes('files')) {
-            const filesPromise = admin.firestore()
+             const filesPromise = admin.firestore()
                 .collection('files')
                 .where('userId', '==', userId)
-                .where('keywords', 'array-contains', searchTerm)
                 .get()
-                .then(snapshot => snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), resultType: 'File' as const })));
+                .then(snapshot => {
+                    return snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(file => 
+                            Array.isArray((file as any).keywords) &&
+                            (file as any).keywords.some((k: any) => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
+                        )
+                        .map(file => ({...file, resultType: 'File' as const}));
+                });
             searchPromises.push(filesPromise);
         }
 

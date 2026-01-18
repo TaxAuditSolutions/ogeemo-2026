@@ -1,3 +1,4 @@
+
 // This environment variable MUST be set before any other Firebase modules are loaded.
 // It is crucial for the gRPC client used by the Admin SDK to work correctly in
 // modern Node.js environments, avoiding low-level SSL DECODER errors.
@@ -9,13 +10,17 @@ import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 
-// Initialize the Firebase Admin SDK
+// Initialize the Firebase Admin SDK.
+// This is safe to do at the top level as Firebase handles initialization checks internally.
 if (!admin.apps.length) {
     admin.initializeApp();
 }
 
-const firestoreClient = new firestore_v1.FirestoreAdminClient();
+// Get service instances once and reuse them.
+const db = admin.firestore();
 const storage = getStorage();
+const firestoreClient = new firestore_v1.FirestoreAdminClient();
+
 
 // The search function has been removed to be replaced with a client-side implementation.
 
@@ -30,7 +35,7 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    const bucket = getStorage().bucket();
+    const bucket = storage.bucket();
     
     // Extract the base64 part of the data URL
     const base64EncodedImageString = dataUrl.split(';base64,').pop();
@@ -55,7 +60,7 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
     const publicUrl = file.publicUrl();
 
     // Now update Firestore with the new public URL
-    await admin.firestore().collection('siteImages').doc(imageId).set({
+    await db.collection('siteImages').doc(imageId).set({
         url: publicUrl,
         hint: imageId,
     }, { merge: true });
@@ -191,7 +196,7 @@ export const onFeedbackCreated = functions.firestore
 
       // In a real application, you would use a service like the "Trigger Email" Firebase Extension.
       // This function adds a document to the 'mail' collection, which that extension would then process.
-      await admin.firestore().collection('mail').add({
+      await db.collection('mail').add({
         to: recipientEmail,
         message: {
           subject: emailSubject,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from "next/link";
@@ -21,7 +20,7 @@ export function SiteHeader() {
           </Link>
         </div>
         <nav className="flex flex-1 items-center space-x-2">
-            <Button variant="link" asChild><Link href="/explore">Explore Features</Link></Button>
+            <Button variant="link" asChild><Link href="/features">Features</Link></Button>
             <Button variant="link" asChild><Link href="/for-small-businesses">For Small Businesses</Link></Button>
             <Button variant="link" asChild><Link href="/for-accountants">For Accountants</Link></Button>
             <Button variant="link" asChild><Link href="/news">News</Link></Button>

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
@@ -90,7 +89,7 @@ export default function AboutUsPage() {
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Explore the features that make Ogeemo the last business platform you'll ever need.</p>
                     <div className="mt-8">
                         <Button asChild size="lg">
-                            <Link href="/explore">
+                            <Link href="/features">
                                 Explore Features <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>

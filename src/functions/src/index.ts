@@ -1,13 +1,14 @@
 
+// This environment variable MUST be set before any other Firebase modules are loaded.
+// It is crucial for the gRPC client used by the Admin SDK to work correctly in
+// modern Node.js environments, avoiding low-level SSL DECODER errors.
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
 
-// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
-// to work correctly in modern Node.js environments. It specifies a set of supported
-// SSL cipher suites to avoid low-level DECODER errors.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 // Initialize the Firebase Admin SDK
 if (!admin.apps.length) {

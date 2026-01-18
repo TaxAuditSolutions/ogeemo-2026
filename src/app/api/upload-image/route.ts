@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminStorage } from '@/lib/firebase-admin';
 
-// This environment variable is crucial for the gRPC client used by the Admin SDK
-// to work correctly in modern Node.js environments. It specifies a set of supported
-// SSL cipher suites to avoid low-level DECODER errors.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
-
 // Helper to convert data URI to Buffer
 const dataUriToBuffer = (dataUri: string) => {
   const base64 = dataUri.split(',')[1];

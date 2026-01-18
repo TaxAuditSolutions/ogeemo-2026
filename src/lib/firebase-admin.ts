@@ -1,53 +1,63 @@
-// This environment variable MUST be set before any other Firebase modules are loaded.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 import admin from 'firebase-admin';
+import { getApps } from 'firebase-admin/app';
+import { getStorage as getAdminStorageSdk } from 'firebase-admin/storage';
+import { getAuth as getAdminAuthSdk } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestoreSdk } from 'firebase-admin/firestore';
 
-// --- Lazy Initialization ---
+
 let adminApp: admin.app.App;
+let dbInstance: admin.firestore.Firestore;
+let authInstance: admin.auth.Auth;
+let storageInstance: admin.storage.Storage;
 
 function getAdminApp() {
-  if (adminApp) {
-    return adminApp;
-  }
-
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountKey) {
-    throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
-  }
-
-  try {
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  // This function is now idempotent, ensuring it only initializes the app once.
+  if (getApps().length === 0) {
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountKey) {
+      throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
     }
-    const credential = admin.credential.cert(serviceAccount);
 
-    if (!admin.apps.length) {
-      adminApp = admin.initializeApp({
-        credential,
+    try {
+      const serviceAccount = JSON.parse(serviceAccountKey);
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
-    } else {
-      adminApp = admin.app();
+    } catch (e: any) {
+      throw new Error(`Failed to initialize Firebase Admin SDK: ${e.message}`);
     }
-    return adminApp;
-  } catch (e: any) {
-    throw new Error(`Failed to initialize Firebase Admin SDK: ${e.message}`);
   }
+  return admin.app();
 }
 
 export function getAdminDb() {
-  return getAdminApp().firestore();
+  if (!dbInstance) {
+    dbInstance = getAdminFirestoreSdk(getAdminApp());
+  }
+  return dbInstance;
 }
 
 export function getAdminAuth() {
-  return getAdminApp().auth();
+  if (!authInstance) {
+    authInstance = getAdminAuthSdk(getAdminApp());
+  }
+  return authInstance;
 }
 
 export function getAdminStorage() {
-  return getAdminApp().storage();
+  if (!storageInstance) {
+    storageInstance = getAdminStorageSdk(getAdminApp());
+  }
+  return storageInstance;
 }
+
+export { getAdminApp };
 
 export async function getAdminFileContentFromStorage(storagePath: string): Promise<string> {
     if (!storagePath) {

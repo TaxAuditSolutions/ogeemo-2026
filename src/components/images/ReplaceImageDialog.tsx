@@ -16,6 +16,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Upload } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/context/auth-context';
+import { useFirebase } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateSiteImageUrl } from '@/app/actions/image-actions';
+
 
 interface ReplaceImageDialogProps {
   isOpen: boolean;
@@ -31,6 +36,8 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { storage } = useFirebase();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,34 +56,30 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   };
   
   const handleUpload = async () => {
-    if (!selectedFile) {
-        toast({ variant: 'destructive', title: 'No file selected' });
+    if (!selectedFile || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'File, user, or storage service not available.' });
         return;
     }
     
     setIsUploading(true);
     
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('imageId', imageId);
-    
     try {
-        const response = await fetch('/api/upload-site-image', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Upload failed');
-        }
-
+        const fileExtension = selectedFile.name.split('.').pop() || 'jpg';
+        const path = `site-images/${imageId}.${fileExtension}`;
+        const fileStorageRef = storageRef(storage, path);
+        
+        await uploadBytes(fileStorageRef, selectedFile);
+        const downloadURL = await getDownloadURL(fileStorageRef);
+        
+        await updateSiteImageUrl(imageId, downloadURL);
+        
         toast({ title: 'Image Replaced', description: 'The new image is now live.' });
         onImageUpdated();
         onOpenChange(false);
 
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: error.message });
+        console.error("Upload error in dialog:", error);
+        toast({ variant: 'destructive', title: 'Upload failed', description: error.message || "An unknown error occurred during upload." });
     } finally {
         setIsUploading(false);
     }
@@ -96,7 +99,7 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
         <DialogHeader>
           <DialogTitle>Replace Image</DialogTitle>
           <DialogDescription>
-            Upload a new image to replace the current one. Recommended size is similar to the original.
+            Upload a new image to replace the current one. Recommended size is similar to the original. Max 4MB.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">

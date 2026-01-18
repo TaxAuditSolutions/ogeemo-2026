@@ -474,6 +474,16 @@
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] }
       },
       "required": ["postId", "postAuthorId", "authorName", "content", "createdAt", "status"]
+    },
+    "SiteImage": {
+      "title": "Site Image",
+      "description": "Stores URLs for globally used site images like heroes and logos.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "hint": { "type": "string" }
+      },
+      "required": ["url"]
     }
   },
   "auth": {
@@ -599,6 +609,10 @@
     "/blogPosts/{postId}/comments/{commentId}": {
       "schema": { "$ref": "#/entities/BlogComment" },
       "description": "Sub-collection of comments for a specific blog post."
+    },
+    "/siteImages/{imageId}": {
+      "schema": { "$ref": "#/entities/SiteImage" },
+      "description": "Stores URLs for site-wide images, keyed by a unique ID."
     }
   }
 }

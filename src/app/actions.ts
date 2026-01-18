@@ -1,7 +1,7 @@
 // src/app/actions.ts
 'use server';
 
-import { adminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 /**
@@ -15,6 +15,7 @@ export async function getCurrentUserId(): Promise<string | null> {
         return null;
     }
     try {
+        const adminAuth = getAdminAuth();
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
         return decodedToken.uid;
     } catch (error) {

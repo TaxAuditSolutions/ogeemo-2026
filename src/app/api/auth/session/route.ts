@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
     console.log('Session API POST request received.');
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
         
         console.log('Creating session cookie...');
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+        const adminAuth = getAdminAuth();
         const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
         console.log('Session cookie created successfully.');
         

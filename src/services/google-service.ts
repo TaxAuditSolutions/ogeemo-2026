@@ -2,7 +2,7 @@
 'use server';
 
 import { google } from 'googleapis';
-import { adminDb as db, getAdminStorage } from '@/lib/firebase-admin';
+import { getAdminDb, getAdminStorage } from '@/lib/firebase-admin';
 import { type FileItem } from '@/data/files';
 import {
   GetGoogleContactsOutput,

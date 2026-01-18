@@ -1,8 +1,7 @@
 // src/app/actions/file-actions.ts
 'use server';
 
-import { getAdminFileContentFromStorage } from '@/lib/firebase-admin';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getAdminFileContentFromStorage, getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 /**
@@ -15,6 +14,9 @@ export async function fetchFileContent(fileId: string): Promise<{ content?: stri
     }
 
     try {
+        const adminAuth = getAdminAuth();
+        const adminDb = getAdminDb();
+        
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
         const userId = decodedToken.uid;
         

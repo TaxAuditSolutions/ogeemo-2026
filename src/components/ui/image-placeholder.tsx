@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,12 +13,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Pencil, Link as LinkIcon, ClipboardCopy, ClipboardCheck } from 'lucide-react';
+import { Pencil, Link as LinkIcon, ClipboardCopy, ClipboardCheck, LoaderCircle } from 'lucide-react';
 import Link from 'next/link';
-import { Label } from './label';
 import { useToast } from '@/hooks/use-toast';
 import imageData from '@/app/lib/placeholder-images.json';
 import { useAuth } from '@/context/auth-context';
+import { uploadImageFromDataUri } from '@/app/actions/image-actions';
 
 type ImageId = keyof typeof imageData;
 
@@ -34,6 +33,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   const { user } = useAuth();
   const [dataUri, setDataUri] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const imageInfo = imageData[id];
   if (!imageInfo) {
@@ -43,7 +43,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   const hint = dataAiHint || imageInfo.hint;
   const { src } = imageInfo;
 
-  const handlePrepareUpdate = () => {
+  const handlePrepareUpdate = async () => {
     if (!dataUri.trim().startsWith('data:image')) {
       toast({
         variant: 'destructive',
@@ -53,13 +53,26 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
       return;
     }
     
-    const command = `IMAGE_REPLACE::${JSON.stringify({ id, dataUri })}`;
-    navigator.clipboard.writeText(command);
-    setIsCopied(true);
-    toast({
-        title: 'Command Copied!',
-        description: 'Now paste the command into the chat to apply the change.',
-    });
+    setIsUploading(true);
+    try {
+        const fileName = `${id}-${Date.now()}.png`;
+        const { publicUrl } = await uploadImageFromDataUri(dataUri, fileName);
+        const command = `IMAGE_REPLACE::${JSON.stringify({ id, publicUrl })}`;
+        navigator.clipboard.writeText(command);
+        setIsCopied(true);
+        toast({
+            title: 'Command Copied!',
+            description: 'Now paste the command into the chat to apply the change.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: `Could not upload the image: ${error.message}`,
+        });
+    } finally {
+        setIsUploading(false);
+    }
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -131,7 +144,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
                     Find an image on your computer or the web and copy it to your clipboard (right-click &gt; Copy Image). Or, generate a new one.
                 </p>
                 <Button asChild>
-                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`}>
+                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`} target="_blank" rel="noopener noreferrer">
                        <LinkIcon className="mr-2 h-4 w-4" /> Open Image Generator
                     </Link>
                 </Button>
@@ -157,11 +170,11 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
              <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
                 <h4 className="font-semibold">Step 3: Prepare and Apply Update</h4>
                 <p className="text-sm text-muted-foreground">
-                   Click the button below to copy a command, then paste it into the AI chat to finalize the replacement.
+                   Click the button below to upload the image and copy a command, then paste it into the AI chat to finalize the replacement.
                 </p>
-                <Button onClick={handlePrepareUpdate} disabled={!dataUri.trim()}>
-                    {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
-                    {isCopied ? 'Command Copied!' : 'Prepare Update Command'}
+                <Button onClick={handlePrepareUpdate} disabled={!dataUri.trim() || isUploading}>
+                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
+                    {isUploading ? 'Uploading...' : isCopied ? 'Command Copied!' : 'Prepare Update Command'}
                 </Button>
             </div>
         </div>

@@ -17,8 +17,7 @@ export async function updateSiteImageUrl(imageId: string, url: string): Promise<
     const db = getAdminDb();
     const imageDocRef = db.collection('siteImages').doc(imageId);
     
-    // Use set with merge to create the document if it doesn't exist.
-    await imageDocRef.set({ url: url }, { merge: true });
+    await imageDocRef.set({ url: url, hint: imageId }, { merge: true });
 
     return { success: true };
   } catch (error: any) {

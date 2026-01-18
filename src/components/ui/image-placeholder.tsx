@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -57,7 +56,6 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
           fill
           className="object-cover"
           priority
-          // Add a key to force re-render when src changes, helping with cache issues.
           key={src}
         />
         {user && (

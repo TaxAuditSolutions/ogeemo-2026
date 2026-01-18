@@ -22,56 +22,8 @@ const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
 
 
-// The search function has been removed to be replaced with a client-side implementation.
-
-export const uploadSiteImage = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
-  }
-
-  const { imageId, dataUrl, contentType } = data;
-  if (!imageId || !dataUrl || !contentType) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing required data: imageId, dataUrl, contentType.');
-  }
-
-  try {
-    const bucket = storage.bucket();
-    
-    // Extract the base64 part of the data URL
-    const base64EncodedImageString = dataUrl.split(';base64,').pop();
-    if (!base64EncodedImageString) {
-        throw new Error('Invalid data URL format.');
-    }
-
-    const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
-    
-    const fileExtension = contentType.split('/')[1] || 'jpg';
-    const filePath = `site-images/${imageId}.${fileExtension}`;
-    const file = bucket.file(filePath);
-
-    await file.save(imageBuffer, {
-      metadata: {
-        contentType: contentType,
-        cacheControl: 'public, max-age=31536000',
-      },
-      public: true, 
-    });
-    
-    const publicUrl = file.publicUrl();
-
-    // Now update Firestore with the new public URL
-    await db.collection('siteImages').doc(imageId).set({
-        url: publicUrl,
-        hint: imageId,
-    }, { merge: true });
-
-    return { success: true, url: publicUrl };
-
-  } catch (error: any) {
-    console.error('Error uploading site image:', error);
-    throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
-  }
-});
+// The search and uploadSiteImage functions have been removed as they are now obsolete.
+// Search is client-side, and image updates are handled via a simple server action.
 
 
 // --- Backup Functions ---

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,7 +19,6 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import imageData from '@/app/lib/placeholder-images.json';
 import { useAuth } from '@/context/auth-context';
-import { uploadImageFromDataUri } from '@/app/actions/image-actions';
 
 type ImageId = keyof typeof imageData;
 
@@ -56,7 +56,18 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
     setIsUploading(true);
     try {
         const fileName = `${id}-${Date.now()}.png`;
-        const { publicUrl } = await uploadImageFromDataUri(dataUri, fileName);
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataUri, fileName }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to upload image.');
+        }
+
+        const { publicUrl } = await response.json();
         const command = `IMAGE_REPLACE::${JSON.stringify({ id, publicUrl })}`;
         navigator.clipboard.writeText(command);
         setIsCopied(true);

@@ -25,7 +25,7 @@ const groupedMenuItems = {
     Relationships: { icon: Users, items: ['/contacts', '/crm', '/crm/action-manager'] },
     Operations: { icon: Bot, items: ['/projects', '/master-mind', '/accounting'] },
     Growth: { icon: BarChart3, items: ['/reports', '/marketing-manager', '/research', '/idea-board'] },
-    Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup'] },
+    Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup', '/tools/image-generator'] },
 };
 
 // This component is now memoized to prevent re-rendering when its props (item, isActive) don't change.

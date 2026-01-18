@@ -79,6 +79,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/google", label: "Google Apps", icon: Wand2 },
   { href: "/hytexercise", label: "Hytexercise", icon: HeartPulse },
   { href: "/user-list", label: "User List", icon: Users2 },
+  { href: "/tools/image-generator", label: "Image Generator", icon: Wand2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/backup", label: "Backups", icon: DatabaseBackup },
   { href: "/logout", label: "Logout", icon: LogOut },
@@ -97,3 +98,4 @@ export const allMenuItems: MenuItem[] = [
   ...accountingMenuItems,
   ...hrMenuItems,
 ];
+

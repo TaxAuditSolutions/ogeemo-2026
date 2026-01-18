@@ -1,57 +1,52 @@
-
 // This environment variable MUST be set before any other Firebase modules are loaded.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 import admin from 'firebase-admin';
 
-// --- Eager Initialization ---
-
+// --- Lazy Initialization ---
 let adminApp: admin.app.App;
 
-if (!admin.apps.length) {
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+function getAdminApp() {
+  if (adminApp) {
+    return adminApp;
+  }
 
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountKey) {
-    throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. The application cannot connect to Firebase services on the server.');
+    throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
   }
 
   try {
     const serviceAccount = JSON.parse(serviceAccountKey);
     if (serviceAccount.private_key) {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-
     const credential = admin.credential.cert(serviceAccount);
 
-    adminApp = admin.initializeApp({
-      credential,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-
+    if (!admin.apps.length) {
+      adminApp = admin.initializeApp({
+        credential,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      });
+    } else {
+      adminApp = admin.app();
+    }
+    return adminApp;
   } catch (e: any) {
-    throw new Error(`Failed to initialize Firebase Admin SDK. Error: ${e.message}. Ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid, un-escaped JSON string.`);
+    throw new Error(`Failed to initialize Firebase Admin SDK: ${e.message}`);
   }
-} else {
-    adminApp = admin.app();
 }
 
-const adminDb = adminApp.firestore();
-const adminAuth = adminApp.auth();
-const adminStorageInstance = adminApp.storage();
-
-
-// --- Getter Functions ---
-
 export function getAdminDb() {
-    return adminDb;
+  return getAdminApp().firestore();
 }
 
 export function getAdminAuth() {
-    return adminAuth;
+  return getAdminApp().auth();
 }
 
 export function getAdminStorage() {
-    return adminStorageInstance;
+  return getAdminApp().storage();
 }
 
 export async function getAdminFileContentFromStorage(storagePath: string): Promise<string> {
@@ -59,7 +54,6 @@ export async function getAdminFileContentFromStorage(storagePath: string): Promi
         console.warn("Admin Storage: Storage path is empty, returning empty content.");
         return '';
     }
-
     try {
         const bucket = getAdminStorage().bucket();
         const file = bucket.file(storagePath);

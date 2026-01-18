@@ -48,14 +48,16 @@ export default function BlogPage() {
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Updates, insights, and stories from the Ogeemo team.
           </p>
-          <div className="mt-6">
-            <Button asChild variant="outline">
-                <Link href="/blog/moderation">
-                    <MessageCircleQuestion className="mr-2 h-4 w-4" />
-                    Moderate Comments
-                </Link>
-            </Button>
-          </div>
+          {user && (
+            <div className="mt-6">
+              <Button asChild variant="outline">
+                  <Link href="/blog/moderation">
+                      <MessageCircleQuestion className="mr-2 h-4 w-4" />
+                      Moderate Comments
+                  </Link>
+              </Button>
+            </div>
+          )}
         </header>
 
         {isLoading ? (

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Sparkles, Download, RefreshCw, Image as ImageIcon } from 'lucide-react';
@@ -16,6 +16,14 @@ export default function ImageGeneratorPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const promptFromUrl = searchParams.get('prompt');
+    if (promptFromUrl) {
+      setPrompt(decodeURIComponent(promptFromUrl));
+    }
+  }, [searchParams]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {

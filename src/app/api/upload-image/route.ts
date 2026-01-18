@@ -1,3 +1,7 @@
+
+// This environment variable MUST be set before any other Firebase modules are loaded.
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+
 import { NextResponse } from 'next/server';
 import { getAdminStorage } from '@/lib/firebase-admin';
 
@@ -28,7 +32,11 @@ export async function POST(req: Request) {
     }
 
     const buffer = dataUriToBuffer(dataUri);
-    const bucket = getAdminStorage().bucket();
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+        throw new Error("Storage bucket name not configured in environment variables.");
+    }
+    const bucket = getAdminStorage().bucket(bucketName);
 
     const filePath = `site-images/${fileName}`;
     const file = bucket.file(filePath);

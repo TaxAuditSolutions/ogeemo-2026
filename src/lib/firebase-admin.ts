@@ -1,17 +1,22 @@
+
 // This environment variable MUST be set before any other Firebase modules are loaded.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 
 import admin from 'firebase-admin';
+import { Storage } from '@google-cloud/storage';
 
 // Hold instances in a singleton pattern
 let adminApp: admin.app.App | null = null;
 let dbInstance: admin.firestore.Firestore | null = null;
 let authInstance: admin.auth.Auth | null = null;
-let storageInstance: ReturnType<typeof admin.storage> | null = null;
+let storageInstance: Storage | null = null; 
 
 function initializeFirebaseAdmin() {
   if (admin.apps.length > 0) {
     adminApp = admin.apps[0]!;
+    if (!storageInstance) {
+      storageInstance = new Storage();
+    }
     return;
   }
   
@@ -27,10 +32,22 @@ function initializeFirebaseAdmin() {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
 
+    const credential = admin.credential.cert(serviceAccount);
+
     adminApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential,
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
+    
+    // Initialize @google-cloud/storage directly with credentials
+    storageInstance = new Storage({
+        projectId: serviceAccount.project_id,
+        credentials: {
+            client_email: serviceAccount.client_email,
+            private_key: serviceAccount.private_key,
+        },
+    });
+
   } catch (e: any) {
     throw new Error(`Failed to initialize Firebase Admin SDK. Error: ${e.message}. Ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid, un-escaped JSON string.`);
   }
@@ -60,9 +77,10 @@ export function getAdminAuth() {
 
 export function getAdminStorage() {
     if (!storageInstance) {
-        storageInstance = getAdminApp().storage();
+        // This will also initialize the adminApp if it hasn't been already
+        getAdminApp(); 
     }
-    return storageInstance;
+    return storageInstance!;
 }
 
 
@@ -73,7 +91,11 @@ export async function getAdminFileContentFromStorage(storagePath: string): Promi
     }
 
     try {
-        const bucket = getAdminStorage().bucket();
+        const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+        if (!bucketName) {
+            throw new Error("Storage bucket is not configured.");
+        }
+        const bucket = getAdminStorage().bucket(bucketName);
         const file = bucket.file(storagePath);
         const [exists] = await file.exists();
         if (!exists) {

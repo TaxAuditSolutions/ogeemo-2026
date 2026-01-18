@@ -20,6 +20,7 @@ import { Label } from './label';
 import { Textarea } from './textarea';
 import { useToast } from '@/hooks/use-toast';
 import imageData from '@/app/lib/placeholder-images.json';
+import { useAuth } from '@/context/auth-context';
 
 type ImageId = keyof typeof imageData;
 
@@ -30,6 +31,7 @@ interface ImagePlaceholderProps {
 
 export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [dataUri, setDataUri] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   
@@ -59,28 +61,38 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
     });
   };
 
+  const imageElement = (
+    <div
+      className={cn(
+        'relative w-full h-full bg-muted rounded-lg group overflow-hidden',
+        user && 'cursor-pointer'
+      )}
+    >
+      <Image
+        src={src}
+        alt={hint}
+        fill
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        priority // Prioritize loading visible images
+      />
+      {user && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="p-2 bg-background/80 rounded-full">
+            <Pencil className="h-5 w-5 text-foreground" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!user) {
+    return imageElement;
+  }
+
   return (
     <Dialog onOpenChange={(open) => { if (!open) { setIsCopied(false); setDataUri('')} }}>
       <DialogTrigger asChild>
-        <div
-          className={cn(
-            'relative w-full h-full bg-muted rounded-lg group cursor-pointer overflow-hidden',
-            className
-          )}
-        >
-          <Image
-            src={src}
-            alt={hint}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            priority // Prioritize loading visible images
-          />
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="p-2 bg-background/80 rounded-full">
-              <Pencil className="h-5 w-5 text-foreground" />
-            </div>
-          </div>
-        </div>
+        {imageElement}
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
@@ -96,7 +108,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
                     Go to the image generator to create a new image. You can use the prompt hint: <strong className="text-foreground">"{hint}"</strong>
                 </p>
                 <Button asChild>
-                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`} target="_blank">
+                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`}>
                        <LinkIcon className="mr-2 h-4 w-4" /> Open Image Generator
                     </Link>
                 </Button>

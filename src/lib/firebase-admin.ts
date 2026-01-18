@@ -1,5 +1,3 @@
-
-'use server';
 // This environment variable MUST be set before any other Firebase modules are loaded.
 process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
 

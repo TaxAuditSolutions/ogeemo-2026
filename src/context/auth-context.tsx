@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { User, Auth } from 'firebase/auth';
@@ -20,7 +21,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPaths = ['/login', '/register'];
-const marketingPaths = ['/website', '/for-small-businesses', '/for-accountants', '/news', '/about', '/contact', '/privacy', '/terms', '/explore'];
+const marketingPaths = [
+    '/website', 
+    '/features',
+    '/for-small-businesses', 
+    '/for-accountants',
+    '/for-bookkeepers',
+    '/for-virtual-assistants',
+    '/for-lawyers',
+    '/for-paralegals',
+    '/blog',
+    '/about', 
+    '/contact', 
+    '/privacy', 
+    '/terms'
+];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth } = useFirebase();

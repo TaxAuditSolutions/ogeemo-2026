@@ -150,7 +150,7 @@ export default function ActionManagerDashboardPage() {
                             <Button asChild className="h-9">
                                 <Link href="/action-manager/manage">
                                     <Settings className="mr-2 h-4 w-4" />
-                                    Manage Dashboard
+                                    Manage Action Chips
                                 </Link>
                             </Button>
                         </TooltipTrigger>
@@ -188,5 +188,3 @@ export default function ActionManagerDashboardPage() {
     </div>
   );
 }
-
-    

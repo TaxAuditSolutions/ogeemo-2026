@@ -1,21 +1,18 @@
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Pencil, Link as LinkIcon, ClipboardCopy, ClipboardCheck, LoaderCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Pencil, UploadCloud, ClipboardCopy, ClipboardCheck, LoaderCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import imageData from '@/app/lib/placeholder-images.json';
 import { useAuth } from '@/context/auth-context';
@@ -34,7 +31,8 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   const [dataUri, setDataUri] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const imageInfo = imageData[id];
   if (!imageInfo) {
     return <div className={cn("bg-destructive text-destructive-foreground p-2 rounded-md", className)}>Error: Image ID "{id}" not found.</div>
@@ -42,20 +40,41 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   
   const hint = dataAiHint || imageInfo.hint;
   const { src } = imageInfo;
+  
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) { // 4MB limit
+          toast({
+              variant: 'destructive',
+              title: 'File Too Large',
+              description: 'Please select an image file under 4MB.',
+          });
+          return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setDataUri(result);
+        setIsCopied(false); // Reset copy state if a new image is selected
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handlePrepareUpdate = async () => {
     if (!dataUri.trim().startsWith('data:image')) {
       toast({
         variant: 'destructive',
-        title: 'Invalid Image Data',
-        description: 'Please paste a valid image from your clipboard.',
+        title: 'No Image Selected',
+        description: 'Please upload an image first.',
       });
       return;
     }
     
     setIsUploading(true);
     try {
-        const fileName = `${id}-${Date.now()}.png`;
+        const fileName = `${id}-${Date.now()}.png`; // Standardize to png for simplicity
         const response = await fetch('/api/upload-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -86,27 +105,6 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
     }
   };
 
-  const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const items = event.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-            const blob = items[i].getAsFile();
-            if (blob) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const result = e.target?.result as string;
-                    setDataUri(result);
-                };
-                reader.readAsDataURL(blob);
-                toast({ title: 'Image Pasted!', description: 'You can now prepare the update command.' });
-                return; // Exit after handling the first image
-            }
-        }
-    }
-    toast({ variant: 'destructive', title: 'Paste Error', description: 'No image data was found on the clipboard.' });
-  };
-
   const imageElement = (
     <div
       className={cn(
@@ -120,7 +118,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
         alt={hint}
         fill
         className="object-cover transition-transform duration-300 group-hover:scale-105"
-        priority // Prioritize loading visible images
+        priority
       />
       {user && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -141,53 +139,43 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
       <DialogTrigger asChild>
         {imageElement}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Replace Placeholder Image</DialogTitle>
+          <DialogTitle>Replace Image</DialogTitle>
           <DialogDescription>
-            Use the steps below to generate or find a new image and apply it to the site.
+            Upload a new image to replace the placeholder.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-6">
-            <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-semibold">Step 1: Copy an Image</h4>
-                <p className="text-sm text-muted-foreground">
-                    Find an image on your computer or the web and copy it to your clipboard (right-click &gt; Copy Image). Or, generate a new one.
-                </p>
-                <Button asChild>
-                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`} target="_blank" rel="noopener noreferrer">
-                       <LinkIcon className="mr-2 h-4 w-4" /> Open Image Generator
-                    </Link>
-                </Button>
-            </div>
-             <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-semibold">Step 2: Paste Your Image</h4>
-                <p className="text-sm text-muted-foreground">
-                   Click on the area below and paste your copied image.
-                </p>
-                <div
-                    onPaste={handlePaste}
-                    className="mt-2 w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-background cursor-pointer"
-                >
-                    {dataUri ? (
-                        <div className="relative w-full h-full p-2">
-                           <Image src={dataUri} alt="Pasted image preview" fill className="object-contain rounded-md" />
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground">Paste image here</p>
-                    )}
+        <div className="py-4 space-y-4">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+                accept="image/png, image/jpeg, image/gif, image/webp"
+            />
+            <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Select Image from Device
+            </Button>
+            
+            {dataUri && (
+                <div className="space-y-2">
+                    <p className="text-sm font-medium">Preview:</p>
+                    <div className="relative w-full aspect-video border rounded-md bg-muted flex items-center justify-center">
+                        <Image src={dataUri} alt="Uploaded preview" fill className="object-contain rounded-md p-1" />
+                    </div>
                 </div>
-            </div>
-             <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-semibold">Step 3: Prepare and Apply Update</h4>
-                <p className="text-sm text-muted-foreground">
-                   Click the button below to upload the image and copy a command, then paste it into the AI chat to finalize the replacement.
-                </p>
-                <Button onClick={handlePrepareUpdate} disabled={!dataUri.trim() || isUploading}>
-                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
-                    {isUploading ? 'Uploading...' : isCopied ? 'Command Copied!' : 'Prepare Update Command'}
-                </Button>
-            </div>
+            )}
+        </div>
+        <div className="space-y-2">
+            <Button onClick={handlePrepareUpdate} disabled={!dataUri || isUploading} className="w-full">
+                {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
+                {isUploading ? 'Uploading...' : isCopied ? 'Command Copied!' : 'Prepare Update Command'}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+                This will copy a command to your clipboard. Paste it into the chat to apply the change.
+            </p>
         </div>
       </DialogContent>
     </Dialog>

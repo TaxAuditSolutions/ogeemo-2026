@@ -43,19 +43,33 @@ export const search = functions.https.onCall(async (data: SearchActionParams, co
             const contactsPromise = admin.firestore()
                 .collection('contacts')
                 .where('userId', '==', userId)
-                .where('keywords', 'array-contains', searchTerm)
                 .get()
-                .then(snapshot => snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), resultType: 'Contact' as const })));
+                .then(snapshot => {
+                    return snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(contact => 
+                            Array.isArray(contact.keywords) &&
+                            contact.keywords.some((k: string) => k.toLowerCase().includes(searchTerm))
+                        )
+                        .map(contact => ({...contact, resultType: 'Contact' as const}));
+                });
             searchPromises.push(contactsPromise);
         }
 
         if (sources.includes('files')) {
-            const filesPromise = admin.firestore()
+             const filesPromise = admin.firestore()
                 .collection('files')
                 .where('userId', '==', userId)
-                .where('keywords', 'array-contains', searchTerm)
                 .get()
-                .then(snapshot => snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), resultType: 'File' as const })));
+                .then(snapshot => {
+                    return snapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(file => 
+                            Array.isArray((file as any).keywords) &&
+                            (file as any).keywords.some((k: string) => k.toLowerCase().includes(searchTerm))
+                        )
+                        .map(file => ({...file, resultType: 'File' as const}));
+                });
             searchPromises.push(filesPromise);
         }
 
@@ -149,3 +163,61 @@ export const triggerAuthBackup = functions.https.onCall(async (data, context) =>
     throw new functions.https.HttpsError('internal', `Auth backup failed: ${error.message}`);
   }
 });
+
+export const onFeedbackCreated = functions.firestore
+  .document('feedback/{feedbackId}')
+  .onCreate(async (snap, context) => {
+    const feedbackData = snap.data();
+
+    if (!feedbackData) {
+      console.log('No data associated with the feedback submission event.');
+      return;
+    }
+
+    const { userId, topic, reporterName, type, feedback } = feedbackData;
+
+    if (!userId) {
+      console.log('Feedback was submitted without a user ID. No notification sent.');
+      return;
+    }
+
+    try {
+      // Fetch the user's profile to get their email address.
+      const userRecord = await admin.auth().getUser(userId);
+      const recipientEmail = userRecord.email;
+
+      if (!recipientEmail) {
+        console.log(`User ${userId} does not have an email address. Cannot send notification.`);
+        return;
+      }
+      
+      const emailSubject = `New Ogeemo Feedback Received: [${type}] ${topic}`;
+      const emailBody = `
+        <h2>New Feedback Submission</h2>
+        <p>A new piece of feedback has been submitted on the Ogeemo platform.</p>
+        <hr>
+        <p><strong>From:</strong> ${reporterName}</p>
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>Type:</strong> ${type}</p>
+        <p><strong>Feedback:</strong></p>
+        <p style="border-left: 2px solid #ccc; padding-left: 1em; font-style: italic;">${feedback}</p>
+        <hr>
+        <p>You can view all feedback on your <a href="https://[YOUR_APP_URL]/reports/feedback">Feedback Report page</a>.</p>
+      `;
+
+      // In a real application, you would use a service like the "Trigger Email" Firebase Extension.
+      // This function adds a document to the 'mail' collection, which that extension would then process.
+      await admin.firestore().collection('mail').add({
+        to: recipientEmail,
+        message: {
+          subject: emailSubject,
+          html: emailBody,
+        },
+      });
+
+      console.log(`Email notification queued for ${recipientEmail}.`);
+
+    } catch (error) {
+      console.error('Error in onFeedbackCreated function:', error);
+    }
+  });

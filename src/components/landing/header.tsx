@@ -6,6 +6,14 @@ import { Logo } from "../logo";
 import { Button } from "../ui/button";
 import { useAuth } from "@/context/auth-context";
 import { UserNav } from "../user-nav";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+
 
 export function SiteHeader() {
   const { user } = useAuth();
@@ -19,10 +27,25 @@ export function SiteHeader() {
             <Logo />
           </Link>
         </div>
-        <nav className="flex flex-1 items-center space-x-2">
+        <nav className="flex flex-1 items-center space-x-1">
             <Button variant="link" asChild><Link href="/features">Features</Link></Button>
-            <Button variant="link" asChild><Link href="/for-small-businesses">For Small Businesses</Link></Button>
-            <Button variant="link" asChild><Link href="/for-accountants">For Accountants</Link></Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="link">
+                  Solutions <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild><Link href="/for-small-businesses">For Small Businesses</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-accountants">For Accountants</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-bookkeepers">For Bookkeepers</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-virtual-assistants">For Virtual Assistants</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-lawyers">For Lawyers</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-paralegals">For Paralegals</Link></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button variant="link" asChild><Link href="/news">News</Link></Button>
             <Button variant="link" asChild><Link href="/about">About</Link></Button>
             <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircleQuestion } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { SiteHeader } from "@/components/landing/header";
@@ -50,6 +50,14 @@ export default function BlogPage() {
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Updates, insights, and stories from the Ogeemo team.
           </p>
+          <div className="mt-6">
+            <Button asChild variant="outline">
+                <Link href="/blog/moderation">
+                    <MessageCircleQuestion className="mr-2 h-4 w-4" />
+                    Moderate Comments
+                </Link>
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

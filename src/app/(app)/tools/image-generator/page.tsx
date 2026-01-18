@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Sparkles, Download, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { LoaderCircle, Sparkles, Download, RefreshCw, Image as ImageIcon, ClipboardCopy, ClipboardCheck } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,7 @@ export default function ImageGeneratorPage() {
   const [prompt, setPrompt] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
 
@@ -44,7 +45,6 @@ export default function ImageGeneratorPage() {
 
   const handleTryAgain = () => {
     setImageUrl(null);
-    // Keep the prompt for easier editing
   };
 
   const handleDownload = () => {
@@ -55,6 +55,14 @@ export default function ImageGeneratorPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleCopyDataUri = () => {
+    if (!imageUrl) return;
+    navigator.clipboard.writeText(imageUrl);
+    setIsCopied(true);
+    toast({ title: 'Copied!', description: 'Image Data URI copied to clipboard.' });
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   return (
@@ -116,11 +124,18 @@ export default function ImageGeneratorPage() {
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again
                   </Button>
+                  <Button variant="secondary" onClick={handleCopyDataUri}>
+                    {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
+                    {isCopied ? 'Copied!' : 'Copy Data URI'}
+                  </Button>
                   <Button onClick={handleDownload}>
                     <Download className="mr-2 h-4 w-4" />
-                    Use This Image
+                    Download
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  To replace an image on the website, click "Copy Data URI" and paste it into the dialog on the other page.
+                </p>
               </div>
             ) : (
               <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg w-full">

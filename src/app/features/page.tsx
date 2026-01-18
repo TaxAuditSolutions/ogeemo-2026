@@ -42,12 +42,46 @@ const featuresAccountants = [
     }
 ];
 
+const softwareApplicationSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ogeemo",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Ogeemo unifies accounting, projects, and client management into one intelligent platform.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0", // For the beta program
+      "priceCurrency": "USD"
+    },
+    "softwareVersion": "Beta",
+    "featureList": [
+      "All-in-One Platform",
+      "AI-Powered Automation",
+      "Audit-Ready Books",
+      "Seamless Client Collaboration",
+      "Advisory-First Tools",
+      "Track & Bill Every Minute",
+      "Project Management",
+      "Task Management",
+      "Time Tracking",
+      "Invoicing",
+      "CRM"
+    ]
+};
+
 
 export default function FeaturesPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <SiteHeader />
             <main className="flex-1">
+                {/* Add JSON-LD Script for SEO and AI Search */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
+                />
+
                 {/* Hero Section */}
                 <section className="py-20 md:py-32 bg-slate-50">
                     <div className="container mx-auto px-4 text-center">

@@ -2,11 +2,20 @@
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { ScrollButton } from '@/components/landing/scroll-button';
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Ogeemo",
+  "url": "https://www.ogeemo.com", // Assuming the final URL
+  "logo": "https://www.ogeemo.com/images/Ogeemo-Logo-BonT.png", // Assuming a logo path
+  "description": "Ogeemo is an all-in-one business management platform that unifies accounting, project management, and CRM into a single, intelligent command center.",
+};
 
 export default function HomePage() {
   return (
@@ -14,6 +23,12 @@ export default function HomePage() {
       <div className="flex flex-col min-h-screen">
         <SiteHeader />
         <main className="flex-1 container px-4 space-y-16">
+          {/* Add JSON-LD Script for SEO and AI Search */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          />
+
           {/* Hero Section */}
           <section className="text-center flex flex-col items-center pt-16">
             <div className="space-y-6 max-w-4xl">

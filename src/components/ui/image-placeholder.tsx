@@ -75,15 +75,13 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
             </div>
         )}
       </div>
-      {user && (
-          <ReplaceImageDialog
-            isOpen={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            imageId={id}
-            currentSrc={src}
-            onImageUpdated={handleImageUpdate}
-          />
-      )}
+      <ReplaceImageDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        imageId={id}
+        currentSrc={src}
+        onImageUpdated={handleImageUpdate}
+      />
     </>
   );
 }

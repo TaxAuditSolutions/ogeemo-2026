@@ -128,39 +128,38 @@ export async function addComment(data: {
 
 export async function getPendingComments(authorId: string): Promise<BlogCommentWithPost[]> {
   const db = await getDb();
-  const commentsQuery = query(
-    collectionGroup(db, COMMENTS_COLLECTION),
-    where('postAuthorId', '==', authorId),
-    where('status', '==', 'pending')
-  );
-
-  const commentsSnapshot = await getDocs(commentsQuery);
-  if (commentsSnapshot.empty) {
+  
+  // 1. Get all posts for the author
+  const postsQuery = query(collection(db, POSTS_COLLECTION), where('authorId', '==', authorId));
+  const postsSnapshot = await getDocs(postsQuery);
+  
+  if (postsSnapshot.empty) {
     return [];
   }
 
-  const postsMap = new Map<string, string>();
-  const results: BlogCommentWithPost[] = [];
+  const allPendingComments: BlogCommentWithPost[] = [];
 
-  for (const commentDoc of commentsSnapshot.docs) {
-    const comment = docToComment(commentDoc);
-    let postTitle = postsMap.get(comment.postId);
-
-    if (!postTitle) {
-      const postRef = doc(db, POSTS_COLLECTION, comment.postId);
-      const postSnap = await getDoc(postRef);
-      if (postSnap.exists()) {
-        postTitle = postSnap.data().title || 'Untitled Post';
-        postsMap.set(comment.postId, postTitle);
-      } else {
-        postTitle = 'Deleted Post';
-      }
-    }
+  // 2. For each post, get its pending comments
+  for (const postDoc of postsSnapshot.docs) {
+    const postData = docToPost(postDoc);
+    const commentsQuery = query(
+      collection(db, POSTS_COLLECTION, postData.id, COMMENTS_COLLECTION),
+      where('status', '==', 'pending')
+    );
     
-    results.push({ ...comment, postTitle });
+    const commentsSnapshot = await getDocs(commentsQuery);
+    
+    commentsSnapshot.forEach(commentDoc => {
+      const comment = docToComment(commentDoc);
+      allPendingComments.push({
+        ...comment,
+        postTitle: postData.title,
+      });
+    });
   }
 
-  return results.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // 3. Sort by date and return
+  return allPendingComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function updateCommentStatus(postId: string, commentId: string, status: 'approved' | 'rejected'): Promise<void> {

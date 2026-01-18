@@ -12,17 +12,20 @@ import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { getPosts, type BlogPost } from '@/services/blog-service';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPosts = async () => {
       setIsLoading(true);
       try {
-        const fetchedPosts = await getPosts();
+        // Pass user ID to enable seeding on first load
+        const fetchedPosts = await getPosts(user?.uid);
         setPosts(fetchedPosts);
       } catch (error) {
         console.error("Failed to load posts:", error);
@@ -32,7 +35,7 @@ export default function BlogPage() {
       }
     };
     fetchPosts();
-  }, [toast]);
+  }, [toast, user]);
 
   return (
     <div className="flex flex-col min-h-screen">

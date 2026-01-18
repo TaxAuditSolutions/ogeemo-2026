@@ -13,8 +13,11 @@ import {
   query,
   where,
   Timestamp,
+  writeBatch,
+  getDoc,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { mockBlogPosts } from '@/data/blog-posts';
 
 export interface BlogPost {
   id: string;
@@ -63,11 +66,24 @@ const docToComment = (doc: any): BlogComment => ({
   ...doc.data(),
 } as BlogComment);
 
-export async function getPosts(): Promise<BlogPost[]> {
+export async function getPosts(authorId?: string): Promise<BlogPost[]> {
   const db = await getDb();
   const q = query(collection(db, POSTS_COLLECTION), where("status", "==", "published"));
-  const snapshot = await getDocs(q);
-  // Ensure publishedAt is handled correctly, even if it's a string
+  let snapshot = await getDocs(q);
+
+  // If no posts exist AT ALL, and an authenticated user is viewing the page,
+  // seed the database with them as the author.
+  if (snapshot.empty && authorId) {
+      const batch = writeBatch(db);
+      mockBlogPosts.forEach(post => {
+          const docRef = doc(collection(db, POSTS_COLLECTION));
+          batch.set(docRef, { ...post, authorId });
+      });
+      await batch.commit();
+      // Re-fetch after seeding
+      snapshot = await getDocs(q);
+  }
+  
   return snapshot.docs.map(docToPost).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 

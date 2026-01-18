@@ -13,6 +13,7 @@ export interface FileItem {
   content?: string;
   googleFileId?: string;
   driveLink?: string; // Link to Google Drive file
+  keywords?: string[];
 }
 
 export interface FolderItem {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,12 +10,16 @@ import {
 import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
+import type { Functions } from 'firebase/functions';
+import type { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export interface FirebaseContextValue {
   app: FirebaseApp | null;
   auth: Auth | null;
   db: Firestore | null;
+  functions: Functions | null;
+  storage: FirebaseStorage | null;
 }
 
 const FirebaseContext = createContext<FirebaseContextValue | undefined>(
@@ -54,4 +59,12 @@ export function useFirestore() {
 
 export function useAuth() {
   return useFirebase().auth;
+}
+
+export function useFunctions() {
+  return useFirebase().functions;
+}
+
+export function useStorage() {
+  return useFirebase().storage;
 }

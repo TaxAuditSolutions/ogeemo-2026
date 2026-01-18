@@ -51,6 +51,7 @@ import {
   DatabaseBackup,
   Globe,
   MessageCircleQuestion,
+  Search,
 } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -90,6 +91,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
   { href: "/reports/client-statement", label: "Client Statement", icon: FileText },
   { href: "/reports/time-log", label: "Time Log Report", icon: Clock },
+  { href: "/reports/search", label: "Advanced Search", icon: Search },
   { href: "/feedback", label: "Feedback", icon: Megaphone },
   { href: "/blog/moderation", label: "Comment Moderation", icon: MessageCircleQuestion },
   ...accountingMenuItems,

@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { LoaderCircle, Search as SearchIcon, FileText, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { httpsCallable } from 'firebase/functions';
 
 import { ReportsPageHeader } from "@/components/reports/page-header";
 import { Button } from '@/components/ui/button';
@@ -13,10 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { type FileItem } from '@/data/files';
-import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase/provider';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFiles, type FileItem } from '@/services/file-service';
 
 type DataSource = 'contacts' | 'files';
 
@@ -33,7 +31,34 @@ export default function AdvancedSearchPage() {
   const [isSearching, setIsSearching] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
   const { toast } = useToast();
-  const { functions } = useFirebase();
+  const { user } = useAuth();
+
+  // State to hold all searchable data
+  const [allContacts, setAllContacts] = React.useState<Contact[]>([]);
+  const [allFiles, setAllFiles] = React.useState<FileItem[]>([]);
+  const [isDataLoading, setIsDataLoading] = React.useState(true);
+  
+  React.useEffect(() => {
+    async function loadData() {
+        if (!user) {
+            setIsDataLoading(false);
+            return;
+        }
+        try {
+            const [contactsData, filesData] = await Promise.all([
+                getContacts(user.uid),
+                getFiles(user.uid),
+            ]);
+            setAllContacts(contactsData);
+            setAllFiles(filesData);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Data Loading Failed', description: error.message });
+        } finally {
+            setIsDataLoading(false);
+        }
+    }
+    loadData();
+  }, [user, toast]);
   
   const handleDataSourceChange = (sourceValue: DataSource) => {
     setSelectedDataSources(prev => 
@@ -56,29 +81,46 @@ export default function AdvancedSearchPage() {
         toast({ variant: 'destructive', title: "Search query cannot be empty." });
         return;
     }
-    if (!functions) {
-        toast({ variant: 'destructive', title: "Search Failed", description: "Firebase Functions service is not available." });
-        return;
-    }
 
     setIsSearching(true);
     setSearchResults([]);
+
+    // Artificial delay to simulate network/processing
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
-      const searchFunction = httpsCallable(functions, 'search');
-      const result = await searchFunction({ query: searchQuery, sources: selectedDataSources });
-      const data = result.data as { results?: SearchResult[]; error?: string; };
+        const searchTerm = searchQuery.toLowerCase().trim();
+        const results: SearchResult[] = [];
 
-      if (data.error) {
-        throw new Error(data.error);
-      }
+        if (selectedDataSources.includes('contacts')) {
+            allContacts
+                .filter(contact => 
+                    Array.isArray(contact.keywords) && 
+                    contact.keywords.some(k => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
+                )
+                .forEach(contact => results.push({ ...contact, resultType: 'Contact' }));
+        }
 
-      setSearchResults(data.results || []);
+        if (selectedDataSources.includes('files')) {
+            allFiles
+                .filter(file => 
+                    Array.isArray(file.keywords) && 
+                    file.keywords.some(k => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
+                )
+                .forEach(file => results.push({ ...file, resultType: 'File' }));
+        }
+        
+        setSearchResults(results);
+        
+        if (results.length === 0) {
+            toast({ title: "No Results", description: "Your search did not match any items." });
+        }
 
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Search Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: error.message || 'An unexpected error occurred during the client-side search.',
       });
     } finally {
       setIsSearching(false);
@@ -97,7 +139,7 @@ export default function AdvancedSearchPage() {
           Advanced Search
         </h1>
         <p className="text-muted-foreground">
-          Use AI to find exactly what you're looking for across all your apps.
+          Find exactly what you're looking for across all your apps.
         </p>
       </header>
 
@@ -106,7 +148,7 @@ export default function AdvancedSearchPage() {
           <CardHeader>
             <CardTitle>Search Criteria</CardTitle>
             <CardDescription>
-              Select data sources and describe your search objective.
+              Select data sources and enter your search query.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -138,14 +180,11 @@ export default function AdvancedSearchPage() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-base font-semibold">2. Define Search Objective</label>
-                <p className="text-sm text-muted-foreground">
-                  Describe what you're looking for. For example, "find all emails from John Doe about Project Phoenix" or "show me all incomplete tasks".
-                </p>
+                <label className="text-base font-semibold">2. Enter Search Query</label>
               </div>
               <div className="relative">
                 <Textarea
-                  placeholder="I'm looking for..."
+                  placeholder="e.g., phoenix project, or invoice #2024-015"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -154,7 +193,7 @@ export default function AdvancedSearchPage() {
                       handleSearch();
                     }
                   }}
-                  rows={3}
+                  rows={2}
                   disabled={isSearching}
                   className="pr-12"
                 />
@@ -162,7 +201,7 @@ export default function AdvancedSearchPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleSearch} className="w-full sm:w-auto" disabled={isSearching}>
+            <Button onClick={handleSearch} className="w-full sm:w-auto" disabled={isSearching || isDataLoading}>
               {isSearching ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : <SearchIcon className="mr-2 h-4 w-4"/>}

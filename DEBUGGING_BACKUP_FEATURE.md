@@ -1,10 +1,12 @@
-# Debugging the Backup Feature: A Report for Nick
+# How to Fix "Internal" Server Errors
 
-Hi Nick,
+This guide provides precise, command-line steps to resolve the vague "internal" errors that can occur when using server-side features. These errors are almost always caused by missing cloud permissions for the function's service account, not by a bug in the application code itself.
 
-We've been encountering a persistent and vague "internal" error when trying to run the backup Cloud Functions. This type of error usually points to a server-side crash in the Cloud Functions environment, often related to configuration, permissions, or resource availability, rather than a simple logic bug in the function code itself.
+This document covers two known issues that present as an "internal" error:
+1.  **Image Upload Failure:** When uploading a replacement image for the website.
+2.  **Backup Feature Failure:** When triggering a Firestore or Auth backup.
 
-This report provides context on the problem, what has been tried, and a recommended plan of action for debugging.
+The solution for both is often the same: granting the correct roles to the service account. Please follow the steps below carefully.
 
 ---
 ## **Update:** Specific Command-Line Fixes
@@ -15,7 +17,7 @@ Thanks to further analysis from Workspace Gemini, we now have a precise, command
 
 ### 1. Identify the Exact Service Account
 
-First, we need to know exactly which "identity" the function is using, as it might not be the default one.
+First, we need to know exactly which "identity" the function is using, as it might not be the default one. This command will work for both the backup and image upload functions. You can use either function name (`triggerFirestoreBackup` or `uploadSiteImage`).
 
 ```bash
 gcloud functions describe triggerFirestoreBackup --region=[YOUR_REGION] --format="value(serviceConfig.serviceAccountEmail)"
@@ -26,9 +28,9 @@ This command will output the service account email (let's call it `SA_EMAIL`).
 
 ### 2. Grant Required Roles
 
-Once you have the `SA_EMAIL`, ensure it has the necessary roles to export the database and write to the storage bucket.
+Once you have the `SA_EMAIL`, ensure it has the necessary roles to perform its tasks.
 
-**To Grant Firestore Export Permissions:**
+**For the Backup Feature:**
 
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
@@ -36,7 +38,7 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --role="roles/datastore.importExportAdmin"
 ```
 
-**To Grant Storage Bucket Access:**
+**For Both Image Upload and Backups:**
 
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
@@ -45,11 +47,9 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 ```
 *(Replace `[PROJECT_ID]` with your actual Google Cloud Project ID and `SA_EMAIL` with the email from step 1).*
 
-**Note:** The `datastore.importExportAdmin` role is the specific one required for Firestore backups.
+### 3. Enable the "Hidden" Export API (For Backups Only)
 
-### 3. Enable the "Hidden" Export API
-
-This is a very common cause of "internal" errors. The managed export service must be explicitly enabled for the project.
+This is a very common cause of "internal" errors for the backup feature. The managed export service must be explicitly enabled for the project.
 
 ```bash
 gcloud services enable datastore.googleapis.com

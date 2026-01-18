@@ -63,6 +63,14 @@ const docToComment = (doc: any): BlogComment => ({
   ...doc.data(),
 } as BlogComment);
 
+export async function getPosts(): Promise<BlogPost[]> {
+  const db = await getDb();
+  const q = query(collection(db, POSTS_COLLECTION), where("status", "==", "published"));
+  const snapshot = await getDocs(q);
+  // Ensure publishedAt is handled correctly, even if it's a string
+  return snapshot.docs.map(docToPost).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+}
+
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   const db = await getDb();
   const q = query(collection(db, POSTS_COLLECTION), where("slug", "==", slug));

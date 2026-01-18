@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Bot } from 'lucide-react';
+import { LayoutDashboard, Bot, Search } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 
 // Recompilation trigger comment
@@ -77,6 +77,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                               <p>Open Command Centre</p>
                             </TooltipContent>
                           </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
+                                <Link href="/reports/search">
+                                  <Search className="h-5 w-5" />
+                                  <span className="sr-only">Search</span>
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Global Search</p>
+                            </TooltipContent>
+                          </Tooltip>
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">

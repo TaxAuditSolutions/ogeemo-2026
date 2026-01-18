@@ -18,9 +18,7 @@ import { LoaderCircle, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
 import { useFirebase } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateSiteImageUrl } from '@/app/actions/image-actions';
-
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 interface ReplaceImageDialogProps {
   isOpen: boolean;
@@ -37,7 +35,7 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { storage } = useFirebase();
+  const { functions } = useFirebase();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -56,33 +54,46 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   };
   
   const handleUpload = async () => {
-    if (!selectedFile || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'File, user, or storage service not available.' });
+    if (!selectedFile || !user || !functions) {
+        toast({ variant: 'destructive', title: 'Error', description: 'File, user, or functions service not available.' });
         return;
     }
     
     setIsUploading(true);
     
-    try {
-        const fileExtension = selectedFile.name.split('.').pop() || 'jpg';
-        const path = `site-images/${imageId}.${fileExtension}`;
-        const fileStorageRef = storageRef(storage, path);
-        
-        await uploadBytes(fileStorageRef, selectedFile);
-        const downloadURL = await getDownloadURL(fileStorageRef);
-        
-        await updateSiteImageUrl(imageId, downloadURL);
-        
-        toast({ title: 'Image Replaced', description: 'The new image is now live.' });
-        onImageUpdated();
-        onOpenChange(false);
+    const reader = new FileReader();
+    reader.readAsDataURL(selectedFile);
+    
+    reader.onload = async () => {
+        try {
+            const dataUrl = reader.result as string;
+            if (!dataUrl) {
+                throw new Error("Could not read file data.");
+            }
 
-    } catch (error: any) {
-        console.error("Upload error in dialog:", error);
-        toast({ variant: 'destructive', title: 'Upload failed', description: error.message || "An unknown error occurred during upload." });
-    } finally {
+            const uploadFunction = httpsCallable(functions, 'uploadSiteImage');
+            await uploadFunction({ 
+                imageId, 
+                dataUrl, 
+                contentType: selectedFile.type 
+            });
+
+            toast({ title: 'Image Replaced', description: 'The new image is now live.' });
+            onImageUpdated();
+            onOpenChange(false);
+        } catch (error: any) {
+            console.error("Upload error in dialog (onLoad):", error);
+            toast({ variant: 'destructive', title: 'Upload failed', description: error.message || "An unknown error occurred during upload." });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+    
+    reader.onerror = (error) => {
+        console.error("File reading error:", error);
+        toast({ variant: 'destructive', title: 'File Read Error', description: "Could not read the selected file." });
         setIsUploading(false);
-    }
+    };
   };
 
   const resetState = () => {
@@ -99,7 +110,7 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
         <DialogHeader>
           <DialogTitle>Replace Image</DialogTitle>
           <DialogDescription>
-            Upload a new image to replace the current one. Recommended size is similar to the original. Max 4MB.
+            Upload a new image to replace the current one. Max 4MB.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">

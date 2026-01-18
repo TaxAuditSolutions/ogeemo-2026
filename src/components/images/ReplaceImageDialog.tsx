@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle } from 'lucide-react';
 import Image from 'next/image';
-import { updateSiteImageUrl } from '@/app/actions/image-actions';
+import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 interface ReplaceImageDialogProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   const [newUrl, setNewUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const db = useFirestore();
 
   useEffect(() => {
     if (isOpen) {
@@ -37,6 +39,10 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
   }, [isOpen]);
 
   const handleSave = async () => {
+    if (!db) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firestore is not available.' });
+        return;
+    }
     if (!newUrl.trim()) {
       toast({ variant: 'destructive', title: 'URL is required.' });
       return;
@@ -49,14 +55,13 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageId, currentSrc, 
 
     setIsSaving(true);
     try {
-        const result = await updateSiteImageUrl(imageId, newUrl);
-        if (result.success) {
-            toast({ title: 'Image Updated!', description: 'Your new image should now be visible.' });
-            onImageUpdated();
-            onOpenChange(false);
-        } else {
-            throw new Error(result.error || 'An unknown error occurred.');
-        }
+        const imageDocRef = doc(db, 'siteImages', imageId);
+        await setDoc(imageDocRef, { url: newUrl, hint: imageId }, { merge: true });
+        
+        toast({ title: 'Image Updated!', description: 'Your new image should now be visible.' });
+        onImageUpdated();
+        onOpenChange(false);
+
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {

@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/landing/footer";
 const mockPosts = [
   {
     id: 1,
+    slug: "the-future-of-small-business",
     title: "The Future of Small Business: Embracing the All-in-One Platform",
     date: "August 5, 2024",
     category: "Productivity",
@@ -19,6 +20,7 @@ const mockPosts = [
   },
   {
     id: 2,
+    slug: "beta-to-beyond",
     title: "From Beta to Beyond: Our Vision for Ogeemo",
     date: "July 28, 2024",
     category: "Company News",
@@ -27,6 +29,7 @@ const mockPosts = [
   },
   {
     id: 3,
+    slug: "ai-in-accounting",
     title: "5 Ways AI is Revolutionizing Accounting for Freelancers",
     date: "July 19, 2024",
     category: "AI & Automation",
@@ -52,22 +55,28 @@ export default function BlogPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {mockPosts.map((post) => (
             <Card key={post.id} className="flex flex-col overflow-hidden">
-              <div className="relative h-48 w-full">
-                <ImagePlaceholder data-ai-hint={post.imageHint} className="h-full w-full" />
-              </div>
+              <Link href={`/blog/${post.slug}`} className="block">
+                <div className="relative h-48 w-full">
+                  <ImagePlaceholder data-ai-hint={post.imageHint} className="h-full w-full" />
+                </div>
+              </Link>
               <CardHeader>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Badge variant="outline">{post.category}</Badge>
                   <span>{post.date}</span>
                 </div>
-                <CardTitle className="mt-2">{post.title}</CardTitle>
+                <CardTitle className="mt-2">
+                    <Link href={`/blog/${post.slug}`} className="hover:underline">
+                        {post.title}
+                    </Link>
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex-1">
                 <CardDescription>{post.excerpt}</CardDescription>
               </CardContent>
               <CardFooter>
                 <Button asChild variant="link" className="p-0">
-                  <Link href="#">
+                  <Link href={`/blog/${post.slug}`}>
                     Read More <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

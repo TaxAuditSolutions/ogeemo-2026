@@ -16,7 +16,7 @@ import {
     getDoc,
     setDoc,
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString, getDownloadURL } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
@@ -248,7 +248,7 @@ export async function saveEmailForContact(userId: string, contactName: string, e
     }
 
     // 2. Sanitize file name and create HTML content
-    const sanitizedSubject = (email.subject || "Untitled Email").replace(/[^\w\s-]/g, '');
+    const sanitizedSubject = (email.subject || "Untitled Email").replace(/[^a-zA-Z0-9._-]/g, '');
     const dateStamp = new Date().toISOString().split('T')[0];
     const fileName = `${sanitizedSubject} - ${dateStamp}.html`;
     const htmlContent = `
@@ -414,4 +414,56 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
 }
-    
+
+export async function uploadSiteImage(userId: string, file: File): Promise<void> {
+  const db = await getDb();
+  const storage = await getAppStorage();
+
+  const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  const storagePath = `siteImages/${uniqueFileName}`;
+  const fileRef = storageRef(storage, storagePath);
+
+  await uploadBytes(fileRef, file);
+  
+  const downloadUrl = await getDownloadURL(fileRef);
+
+  const imageDocRef = doc(db, 'siteImages', uniqueFileName);
+  const hint = file.name.split('.')[0].replace(/[_-]/g, ' ');
+
+  await setDoc(imageDocRef, {
+    url: downloadUrl,
+    hint: hint,
+    userId: userId,
+    createdAt: new Date(),
+    storagePath: storagePath,
+  });
+}
+
+export async function deleteSiteImage(imageId: string): Promise<void> {
+  const db = await getDb();
+  const storage = await getAppStorage();
+
+  const imageDocRef = doc(db, 'siteImages', imageId);
+  const docSnap = await getDoc(imageDocRef);
+
+  if (!docSnap.exists()) {
+    console.warn(`Firestore document for image ID ${imageId} not found. Cannot delete from storage.`);
+    return;
+  }
+  
+  const imageData = docSnap.data();
+  const storagePath = imageData.storagePath;
+
+  if (storagePath) {
+    const fileRef = storageRef(storage, storagePath);
+    try {
+        await deleteObject(fileRef);
+    } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') {
+            throw error;
+        }
+    }
+  }
+
+  await deleteDoc(imageDocRef);
+}

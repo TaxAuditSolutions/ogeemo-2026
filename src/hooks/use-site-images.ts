@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, query, where } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { useToast } from './use-toast';
+import { useAuth } from '@/context/auth-context';
 
 export interface SiteImage {
     url: string;
@@ -12,6 +13,7 @@ export interface SiteImage {
 }
 
 export function useSiteImages() {
+    const { user } = useAuth();
     const [images, setImages] = useState<Record<string, SiteImage>>({});
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -20,13 +22,17 @@ export function useSiteImages() {
         let unsubscribe: (() => void) | undefined;
 
         const setupListener = async () => {
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
             try {
                 const { db } = await initializeFirebase();
                 if (!db) {
                     setIsLoading(false);
                     return;
                 }
-                const q = collection(db, 'siteImages');
+                const q = query(collection(db, 'siteImages'), where("userId", "==", user.uid));
                 unsubscribe = onSnapshot(q, 
                     (querySnapshot) => {
                         const imagesData: Record<string, SiteImage> = {};
@@ -55,7 +61,7 @@ export function useSiteImages() {
                 unsubscribe();
             }
         };
-    }, [toast]);
+    }, [user, toast]);
     
     return { images, isLoading };
 }

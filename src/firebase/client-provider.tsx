@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -18,11 +17,8 @@ export function FirebaseClientProvider({
     initializeFirebase().then(setServices);
   }, []);
 
-  // While Firebase is initializing, we can show a loader or nothing.
-  // Returning null is fine for a brief moment.
-  if (!services) {
-    return null; 
-  }
-
-  return <FirebaseProvider value={services}>{children}</FirebaseProvider>;
+  // Pass null services down during SSR and initial client render.
+  // Components that use these services are responsible for handling the null case,
+  // typically by showing a loading state. This prevents a major hydration mismatch.
+  return <FirebaseProvider value={services || { app: null, auth: null, db: null, functions: null, storage: null }}>{children}</FirebaseProvider>;
 }

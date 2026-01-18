@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import {
@@ -13,32 +14,53 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import { Pencil, Link as LinkIcon, ClipboardCopy, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
+import { Label } from './label';
+import { Textarea } from './textarea';
+import { useToast } from '@/hooks/use-toast';
+import imageData from '@/app/lib/placeholder-images.json';
+
+type ImageId = keyof typeof imageData;
 
 interface ImagePlaceholderProps {
-  'data-ai-hint': string;
+  id: ImageId;
   className?: string;
 }
 
-// Simple hash function to get a consistent seed from the hint
-const getSeedId = (hint: string): number => {
-    let hash = 0;
-    if (hint.length === 0) return hash;
-    for (let i = 0; i < hint.length; i++) {
-        const char = hint.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-};
+export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
+  const { toast } = useToast();
+  const [dataUri, setDataUri] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+  
+  const imageInfo = imageData[id];
+  if (!imageInfo) {
+    return <div className={cn("bg-destructive text-destructive-foreground p-2 rounded-md", className)}>Error: Image ID "{id}" not found.</div>
+  }
+  
+  const { hint, src } = imageInfo;
 
-export function ImagePlaceholder({ 'data-ai-hint': hint, className }: ImagePlaceholderProps) {
-  const seedId = getSeedId(hint);
-  const imageUrl = `https://picsum.photos/seed/${seedId}/600/400`;
+  const handlePrepareUpdate = () => {
+    if (!dataUri.trim().startsWith('data:image')) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Image Data',
+        description: 'Please paste the full "Image Data URI" from the generator.',
+      });
+      return;
+    }
+    
+    const command = `IMAGE_REPLACE::${JSON.stringify({ id, dataUri })}`;
+    navigator.clipboard.writeText(command);
+    setIsCopied(true);
+    toast({
+        title: 'Command Copied!',
+        description: 'Now paste the command into the chat to apply the change.',
+    });
+  };
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => { if (!open) { setIsCopied(false); setDataUri('')} }}>
       <DialogTrigger asChild>
         <div
           className={cn(
@@ -47,10 +69,11 @@ export function ImagePlaceholder({ 'data-ai-hint': hint, className }: ImagePlace
           )}
         >
           <Image
-            src={imageUrl}
+            src={src}
             alt={hint}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
+            priority // Prioritize loading visible images
           />
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="p-2 bg-background/80 rounded-full">
@@ -59,28 +82,48 @@ export function ImagePlaceholder({ 'data-ai-hint': hint, className }: ImagePlace
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Replace This Image</DialogTitle>
+          <DialogTitle>Replace Placeholder Image</DialogTitle>
           <DialogDescription>
-            You can replace this placeholder image using the AI Image Generator.
+            Use the steps below to generate a new image and apply it to the site.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
-          <p className="text-sm">
-            This image is a placeholder based on the hint: <span className="font-semibold">"{hint}"</span>.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Click the button below to go to the image generator. You can use the hint as a starting point for your prompt. After you generate and download an image, let me know, and I can update the code to use your new image.
-          </p>
+        <div className="py-4 space-y-6">
+            <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-semibold">Step 1: Generate an Image</h4>
+                <p className="text-sm text-muted-foreground">
+                    Go to the image generator to create a new image. You can use the prompt hint: <strong className="text-foreground">"{hint}"</strong>
+                </p>
+                <Button asChild>
+                    <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`} target="_blank">
+                       <LinkIcon className="mr-2 h-4 w-4" /> Open Image Generator
+                    </Link>
+                </Button>
+            </div>
+             <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-semibold">Step 2: Paste Image Data</h4>
+                <p className="text-sm text-muted-foreground">
+                   After generating, copy the "Image Data URI" and paste it into the text area below.
+                </p>
+                <Textarea
+                    placeholder="Paste your 'data:image/...' string here"
+                    value={dataUri}
+                    onChange={(e) => setDataUri(e.target.value)}
+                    rows={4}
+                />
+            </div>
+             <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-semibold">Step 3: Prepare and Apply Update</h4>
+                <p className="text-sm text-muted-foreground">
+                   Click the button below to copy a command, then paste it into the AI chat to finalize the replacement.
+                </p>
+                <Button onClick={handlePrepareUpdate} disabled={!dataUri.trim()}>
+                    {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4" /> : <ClipboardCopy className="mr-2 h-4 w-4" />}
+                    {isCopied ? 'Command Copied!' : 'Prepare Update Command'}
+                </Button>
+            </div>
         </div>
-        <DialogFooter>
-          <Button asChild>
-            <Link href={`/tools/image-generator?prompt=${encodeURIComponent(hint)}`}>
-              Go to Image Generator
-            </Link>
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

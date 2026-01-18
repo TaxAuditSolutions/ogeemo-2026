@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
@@ -30,13 +31,13 @@ const teamMembers = [
         name: "Dan White",
         role: "Founder & CEO",
         bio: "With over 20 years of experience helping small businesses navigate complex financial landscapes, Dan founded Ogeemo to solve the #1 problem he saw every day: software that creates more work instead of simplifying it. His vision is to empower entrepreneurs with a tool that is as ambitious as they are.",
-        aiHint: "professional businessman portrait"
+        imageId: "about-dan" as const
     },
     {
         name: "Alex Chen",
         role: "Lead Architect & Developer",
         bio: "Alex is the technical mastermind behind Ogeemo. A full-stack developer with a passion for clean architecture and seamless user experiences, he leads the team in building a robust, scalable, and secure platform. He believes technology should be an invisible enabler of success.",
-        aiHint: "software developer portrait"
+        imageId: "about-alex" as const
     }
 ]
 
@@ -59,7 +60,7 @@ export default function AboutUsPage() {
                         </p>
                     </div>
                     <div className="relative h-80 md:h-96 w-full">
-                        <ImagePlaceholder data-ai-hint="team business meeting" className="rounded-lg h-full w-full object-cover" />
+                        <ImagePlaceholder id="about-team" className="rounded-lg h-full w-full object-cover" />
                     </div>
                 </div>
             </section>
@@ -77,7 +78,7 @@ export default function AboutUsPage() {
                             <Card key={member.name} className="border-0 shadow-none bg-transparent">
                                 <CardContent className="flex flex-col items-center text-center p-0">
                                     <div className="relative w-32 h-32 mb-4">
-                                        <ImagePlaceholder data-ai-hint={member.aiHint} className="rounded-full"/>
+                                        <ImagePlaceholder id={member.imageId} className="rounded-full"/>
                                     </div>
                                     <CardTitle>{member.name}</CardTitle>
                                     <p className="text-primary font-semibold">{member.role}</p>

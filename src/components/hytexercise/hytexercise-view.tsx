@@ -249,7 +249,7 @@ export function HytexerciseView() {
             </CardHeader>
             <CardContent className="flex-1">
               <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <ImagePlaceholder data-ai-hint="chair exercise" className="w-full h-full" />
+                  <ImagePlaceholder id="hytexercise-preview" className="w-full h-full" />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                       <p className="text-white font-semibold">Animation Placeholder</p>
                   </div>

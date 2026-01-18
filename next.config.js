@@ -34,6 +34,11 @@ const nextConfig = {
       },
     ],
   },
+  // Adding this experimental flag can sometimes help with module resolution issues
+  // in the development server, which might be related to the ChunkLoadError.
+  experimental: {
+    serverComponentsExternalPackages: ['firebase-admin'],
+  },
 };
 
 module.exports = nextConfig;

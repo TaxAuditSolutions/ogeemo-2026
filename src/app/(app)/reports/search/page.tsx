@@ -1,41 +1,46 @@
-
 'use client';
 
 import * as React from 'react';
-import { LoaderCircle, Search as SearchIcon, FileText, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { LoaderCircle, Search as SearchIcon, Briefcase, User, Book } from 'lucide-react';
 
 import { ReportsPageHeader } from "@/components/reports/page-header";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
+
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFiles, type FileItem } from '@/services/file-service';
+import { getProjects, type Project } from '@/services/project-service';
+import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 
-type DataSource = 'contacts' | 'files';
+// Define a unified search result type
+type SearchResult = 
+    | ({ resultType: 'Menu Item' } & MenuItem)
+    | ({ resultType: 'Contact' } & Contact)
+    | ({ resultType: 'Project' } & Project);
 
-const dataSources: { value: DataSource; label: string }[] = [
-  { value: 'contacts', label: 'Contacts' },
-  { value: 'files', label: 'Files' },
-];
-
-type SearchResult = (FileItem | Contact) & { resultType: 'Contact' | 'File' };
+const ResultIcon = ({ type }: { type: SearchResult['resultType'] }) => {
+    switch (type) {
+        case 'Menu Item': return <Book className="h-5 w-5 text-muted-foreground" />;
+        case 'Contact': return <User className="h-5 w-5 text-muted-foreground" />;
+        case 'Project': return <Briefcase className="h-5 w-5 text-muted-foreground" />;
+        default: return <SearchIcon className="h-5 w-5 text-muted-foreground" />;
+    }
+};
 
 export default function AdvancedSearchPage() {
-  const [selectedDataSources, setSelectedDataSources] = React.useState<DataSource[]>(['contacts', 'files']);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isSearching, setIsSearching] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
 
   // State to hold all searchable data
-  const [allContacts, setAllContacts] = React.useState<Contact[]>([]);
-  const [allFiles, setAllFiles] = React.useState<FileItem[]>([]);
+  const [searchableData, setSearchableData] = React.useState<SearchResult[]>([]);
   const [isDataLoading, setIsDataLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -45,12 +50,18 @@ export default function AdvancedSearchPage() {
             return;
         }
         try {
-            const [contactsData, filesData] = await Promise.all([
+            const [contactsData, projectsData] = await Promise.all([
                 getContacts(user.uid),
-                getFiles(user.uid),
+                getProjects(user.uid),
             ]);
-            setAllContacts(contactsData);
-            setAllFiles(filesData);
+
+            const combinedData: SearchResult[] = [
+                ...allMenuItems.map(item => ({ ...item, resultType: 'Menu Item' as const })),
+                ...contactsData.map(item => ({ ...item, resultType: 'Contact' as const })),
+                ...projectsData.map(item => ({ ...item, resultType: 'Project' as const })),
+            ];
+
+            setSearchableData(combinedData);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Data Loading Failed', description: error.message });
         } finally {
@@ -59,22 +70,6 @@ export default function AdvancedSearchPage() {
     }
     loadData();
   }, [user, toast]);
-  
-  const handleDataSourceChange = (sourceValue: DataSource) => {
-    setSelectedDataSources(prev => 
-        prev.includes(sourceValue)
-            ? prev.filter(s => s !== sourceValue)
-            : [...prev, sourceValue]
-    );
-  };
-
-  const handleSelectAllDataSources = (checked: boolean | 'indeterminate') => {
-    if (checked) {
-      setSelectedDataSources(dataSources.map(ds => ds.value));
-    } else {
-      setSelectedDataSources([]);
-    }
-  };
   
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -85,30 +80,24 @@ export default function AdvancedSearchPage() {
     setIsSearching(true);
     setSearchResults([]);
 
-    // Artificial delay to simulate network/processing
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
         const searchTerm = searchQuery.toLowerCase().trim();
-        const results: SearchResult[] = [];
+        const terms = searchTerm.split(/\s+/).filter(Boolean); // Split into multiple keywords
 
-        if (selectedDataSources.includes('contacts')) {
-            allContacts
-                .filter(contact => 
-                    Array.isArray(contact.keywords) && 
-                    contact.keywords.some(k => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
-                )
-                .forEach(contact => results.push({ ...contact, resultType: 'Contact' }));
-        }
-
-        if (selectedDataSources.includes('files')) {
-            allFiles
-                .filter(file => 
-                    Array.isArray(file.keywords) && 
-                    file.keywords.some(k => typeof k === 'string' && k.toLowerCase().includes(searchTerm))
-                )
-                .forEach(file => results.push({ ...file, resultType: 'File' }));
-        }
+        const results = searchableData.filter(item => {
+            let searchableText = '';
+            if (item.resultType === 'Menu Item') {
+                searchableText = `${item.label}`.toLowerCase();
+            } else if (item.resultType === 'Contact') {
+                searchableText = `${item.name} ${item.email} ${item.businessName || ''}`.toLowerCase();
+            } else if (item.resultType === 'Project') {
+                searchableText = `${item.name} ${item.description || ''}`.toLowerCase();
+            }
+            
+            return terms.every(term => searchableText.includes(term));
+        });
         
         setSearchResults(results);
         
@@ -126,86 +115,67 @@ export default function AdvancedSearchPage() {
       setIsSearching(false);
     }
   };
-  
-  const allSourcesSelected = selectedDataSources.length === dataSources.length;
-  const someSourcesSelected = selectedDataSources.length > 0 && !allSourcesSelected;
 
+  const handleResultClick = (item: SearchResult) => {
+    let path = '';
+    if (item.resultType === 'Menu Item') {
+        path = typeof item.href === 'string' ? item.href : item.href.pathname;
+    } else if (item.resultType === 'Contact') {
+        path = '/contacts';
+    } else if (item.resultType === 'Project') {
+        path = `/projects/${item.id}/tasks`;
+    }
+    
+    if (path) {
+        router.push(path);
+    }
+  };
+  
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full space-y-6">
       <ReportsPageHeader pageTitle="Advanced Search" />
 
       <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">
-          Advanced Search
+          Global Search
         </h1>
         <p className="text-muted-foreground">
-          Find exactly what you're looking for across all your apps.
+          Find anything across Ogeemo.
         </p>
       </header>
 
       <div className="space-y-6 max-w-4xl mx-auto w-full">
         <Card>
           <CardHeader>
-            <CardTitle>Search Criteria</CardTitle>
+            <CardTitle>Search Ogeemo</CardTitle>
             <CardDescription>
-              Select data sources and enter your search query.
+              Enter a search query to find menu items, contacts, projects, and more.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-base font-semibold">1. Select Data Sources</label>
-              <div className="flex items-center space-x-2">
-                 <Checkbox
-                    id="select-all"
-                    checked={allSourcesSelected ? true : someSourcesSelected ? 'indeterminate' : false}
-                    onCheckedChange={handleSelectAllDataSources}
-                  />
-                  <label htmlFor="select-all" className="font-medium">
-                    Select All
-                  </label>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {dataSources.map(source => (
-                  <div key={source.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={source.value}
-                      checked={selectedDataSources.includes(source.value)}
-                      onCheckedChange={() => handleDataSourceChange(source.value)}
-                    />
-                    <label htmlFor={source.value} className="font-normal w-full cursor-pointer">{source.label}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-base font-semibold">2. Enter Search Query</label>
-              </div>
-              <div className="relative">
+          <CardContent>
+            <div className="relative">
                 <Textarea
-                  placeholder="e.g., phoenix project, or invoice #2024-015"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
+                    placeholder="e.g., 'invoice' or 'project phoenix'"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSearch();
+                        e.preventDefault();
+                        handleSearch();
                     }
-                  }}
-                  rows={2}
-                  disabled={isSearching}
-                  className="pr-12"
+                    }}
+                    rows={2}
+                    disabled={isSearching || isDataLoading}
+                    className="pr-12"
                 />
-              </div>
             </div>
           </CardContent>
           <CardFooter>
             <Button onClick={handleSearch} className="w-full sm:w-auto" disabled={isSearching || isDataLoading}>
-              {isSearching ? (
+              {isSearching || isDataLoading ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : <SearchIcon className="mr-2 h-4 w-4"/>}
-              {isSearching ? 'Searching...' : 'Search Now'}
+              {isSearching ? 'Searching...' : isDataLoading ? 'Loading data...' : 'Search Now'}
             </Button>
           </CardFooter>
         </Card>
@@ -223,20 +193,32 @@ export default function AdvancedSearchPage() {
                             <TableHead className="w-12">Type</TableHead>
                             <TableHead>Name / Title</TableHead>
                             <TableHead>Details</TableHead>
-                            <TableHead>Last Modified</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {searchResults.map(item => (
-                            <TableRow key={(item.resultType === 'File' ? 'file-' : 'contact-') + item.id}>
+                        {searchResults.map((item, index) => {
+                            let name = '';
+                            let details = '';
+                            if(item.resultType === 'Menu Item') {
+                                name = item.label;
+                                details = `Navigate to ${item.label}`;
+                            } else if (item.resultType === 'Contact') {
+                                name = item.name;
+                                details = item.email || '';
+                            } else if (item.resultType === 'Project') {
+                                name = item.name;
+                                details = item.description || '';
+                            }
+                            
+                            return (
+                            <TableRow key={`${item.resultType}-${index}`} onClick={() => handleResultClick(item)} className="cursor-pointer">
                                 <TableCell>
-                                    {item.resultType === 'Contact' ? <User className="h-5 w-5 text-muted-foreground" /> : <FileText className="h-5 w-5 text-muted-foreground" />}
+                                    <ResultIcon type={item.resultType} />
                                 </TableCell>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell>{(item as Contact).email || (item as FileItem).type}</TableCell>
-                                <TableCell>{(item as FileItem).modifiedAt ? format(new Date((item as FileItem).modifiedAt), 'PP') : 'N/A'}</TableCell>
+                                <TableCell className="font-medium">{name}</TableCell>
+                                <TableCell className="text-muted-foreground truncate max-w-sm">{details}</TableCell>
                             </TableRow>
-                        ))}
+                        )})}
                     </TableBody>
                 </Table>
             </CardContent>

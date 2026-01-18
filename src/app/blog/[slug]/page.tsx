@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
@@ -16,7 +17,10 @@ import { LoaderCircle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getPostBySlug, getApprovedComments, addComment, type BlogPost, type BlogComment } from '@/services/blog-service';
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default function BlogPostPage() {
+    const params = useParams();
+    const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+
     const [post, setPost] = useState<BlogPost | null>(null);
     const [comments, setComments] = useState<BlogComment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -27,9 +31,10 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     const { toast } = useToast();
 
     const loadData = useCallback(async () => {
+        if (!slug) return;
         setIsLoading(true);
         try {
-            const postData = await getPostBySlug(params.slug);
+            const postData = await getPostBySlug(slug);
             setPost(postData);
 
             if (postData) {
@@ -42,7 +47,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         } finally {
             setIsLoading(false);
         }
-    }, [params.slug, toast]);
+    }, [slug, toast]);
 
     useEffect(() => {
         loadData();

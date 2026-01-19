@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
@@ -27,40 +26,47 @@ export type FirebaseServices = {
   functions: Functions;
 };
 
-let firebaseServicesPromise: Promise<FirebaseServices> | null = null;
+let services: FirebaseServices | null = null;
 
-export function initializeFirebase(): Promise<FirebaseServices> {
-    if (firebaseServicesPromise) {
-        return firebaseServicesPromise;
+function createServices(): FirebaseServices {
+    const missingVars = Object.entries(firebaseConfig)
+        .filter(([key, value]) => !value)
+        .map(([key]) => `NEXT_PUBLIC_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`);
+
+    if (missingVars.length > 0) {
+        throw new Error(`Firebase configuration is incomplete. Missing environment variables: ${missingVars.join(", ")}`);
+    }
+    
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const functions = getFunctions(app);
+    
+    // Set persistence asynchronously to avoid blocking initialization
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+        console.error("Firebase persistence error:", error);
+    });
+
+    return { app, auth, db, storage, functions };
+}
+
+export function getFirebaseServices(): FirebaseServices | null {
+    if (typeof window === 'undefined') {
+        return null;
     }
 
-    firebaseServicesPromise = (async () => {
-        if (typeof window === 'undefined') {
-            throw new Error("Firebase client SDK can only be initialized in the browser.");
-        }
-
-        const missingVars = Object.entries(firebaseConfig)
-            .filter(([key, value]) => !value)
-            .map(([key]) => `NEXT_PUBLIC_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`);
-
-        if (missingVars.length > 0) {
-            throw new Error(`Firebase configuration is incomplete. Missing environment variables: ${missingVars.join(", ")}`);
-        }
-        
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-        const functions = getFunctions(app);
-        
-        try {
-            await setPersistence(auth, browserLocalPersistence);
-        } catch (error) {
-            console.error("Firebase persistence error:", error);
-        }
-
-        return { app, auth, db, storage, functions };
-    })();
+    if (!services) {
+        services = createServices();
+    }
     
-    return firebaseServicesPromise;
+    return services;
+}
+
+export function initializeFirebase(): Promise<FirebaseServices> {
+    const s = getFirebaseServices();
+    if (s) {
+        return Promise.resolve(s);
+    }
+    return Promise.reject(new Error("Firebase client SDK can only be initialized in the browser."));
 }

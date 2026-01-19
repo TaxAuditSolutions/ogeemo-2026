@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FirebaseProvider, type FirebaseContextValue } from './provider';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 
 // This component ensures that Firebase is initialized only once on the client-side.
 export function FirebaseClientProvider({
@@ -13,8 +13,9 @@ export function FirebaseClientProvider({
   const [services, setServices] = useState<FirebaseContextValue | null>(null);
 
   useEffect(() => {
-    // The initializeFirebase function returns a promise, so we need to resolve it.
-    initializeFirebase().then(setServices);
+    // Synchronous initialization allows immediate state update
+    const s = getFirebaseServices();
+    setServices(s);
   }, []);
 
   // Pass null services down during SSR and initial client render.

@@ -16,7 +16,7 @@ import {
     getDoc,
     setDoc,
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, deleteObject, getDownloadURL } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
@@ -279,7 +279,7 @@ export async function saveEmailForContact(userId: string, contactName: string, e
     // 3. Upload content to Firebase Storage
     const storagePath = `userFiles/${userId}/${contactFolder.id}/${Date.now()}-${fileName}`;
     const fileRef = storageRef(storage, storagePath);
-    await uploadString(fileRef, htmlContent, 'raw', { contentType: 'text/html' });
+    await uploadBytes(fileRef, new Blob([htmlContent], { type: 'text/html' }));
 
     // 4. Create a record in Firestore
     const newFileRecord: Omit<FileItem, 'id'> = {
@@ -388,4 +388,26 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 // It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
+}
+
+// --- Site Image Functions (New) ---
+
+// Uploads a site image from the client
+export async function uploadSiteImageClientSide(userId: string, file: File): Promise<{ url: string; storagePath: string }> {
+    const storage = await getAppStorage();
+    const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+    const storagePath = `siteimages/${userId}/${fileName}`;
+    const fileRef = storageRef(storage, storagePath);
+    
+    await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(fileRef);
+
+    return { url: downloadURL, storagePath: storagePath };
+}
+
+// Deletes a site image from the client
+export async function deleteSiteImageClientSide(storagePath: string): Promise<void> {
+    const storage = await getAppStorage();
+    const fileRef = storageRef(storage, storagePath);
+    await deleteObject(fileRef);
 }

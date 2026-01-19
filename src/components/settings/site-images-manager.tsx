@@ -2,27 +2,34 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSiteImages } from '@/hooks/use-site-images';
+import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Upload, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
+import { LoaderCircle, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { httpsCallable } from 'firebase/functions';
+import { useAuth } from '@/context/auth-context';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
+import { uploadSiteImageClientSide, deleteSiteImageClientSide } from '@/services/file-service';
 
 export function SiteImagesManager() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
-    const { functions } = useFirebase();
+    const { db } = useFirebase();
+    const { user } = useAuth();
     const { toast } = useToast();
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
 
     const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
+        if (!user || !db) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
+            return;
+        }
+
         const items = event.clipboardData.items;
         let imageFile: File | null = null;
-
         for (let i = 0; i < items.length; i++) {
             if (items[i].type.indexOf('image') !== -1) {
                 imageFile = items[i].getAsFile();
@@ -35,52 +42,44 @@ export function SiteImagesManager() {
             return;
         }
         
-        const file = imageFile;
-
-        if (!functions) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Firebase Functions not initialized.' });
-            return;
-        }
-
         setIsUploading(true);
+        try {
+            const { url, storagePath } = await uploadSiteImageClientSide(user.uid, imageFile);
+            
+            const hint = imageFile.name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+            const docId = `${Date.now()}-${hint.replace(/\s+/g, '-')}`;
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const base64File = reader.result as string;
-            try {
-                const uploadSiteImage = httpsCallable(functions, 'uploadSiteImage');
-                await uploadSiteImage({
-                    fileName: file.name || `pasted-image-${Date.now()}.png`,
-                    fileBuffer: base64File,
-                });
-                toast({ title: 'Upload Successful', description: `${file.name} has been added to your library.` });
-                loadImages(); // Force reload
-            } catch (error: any) {
-                console.error("Upload error:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.details || error.message });
-            } finally {
-                setIsUploading(false);
-            }
-        };
-        reader.onerror = (error) => {
-            console.error("File reader error:", error);
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the pasted image.' });
+            await setDoc(doc(db, 'siteImages', docId), {
+                url,
+                storagePath,
+                hint,
+                uploadedBy: user.uid,
+                createdAt: new Date(),
+            });
+
+            toast({ title: 'Upload Successful', description: `${imageFile.name} has been added.` });
+            loadImages(); // Refresh the image list
+        } catch (error: any) {
+            console.error("Client-side upload error:", error);
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
             setIsUploading(false);
-        };
+        }
     };
 
     const handleDelete = async () => {
-        if (!imageToDelete || !functions) return;
+        if (!imageToDelete || !db) return;
+        
         setIsDeleting(true);
         try {
-            const deleteSiteImage = httpsCallable(functions, 'deleteSiteImage');
-            await deleteSiteImage({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
+            await deleteSiteImageClientSide(imageToDelete.storagePath);
+            await deleteDoc(doc(db, 'siteImages', imageToDelete.id));
+            
             toast({ title: 'Image Deleted' });
             setImageToDelete(null);
-            loadImages();
+            loadImages(); // Refresh the list
         } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Delete Failed', description: error.details || error.message });
+             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
             setIsDeleting(false);
         }

@@ -1,3 +1,2 @@
-// This file is now empty as the server action has been removed.
-// The image update logic is now handled directly on the client-side
-// in ReplaceImageDialog.tsx for improved reliability.
+// This file has been reset and its contents cleared.
+// The new server-side logic will be placed in a Firebase Cloud Function.

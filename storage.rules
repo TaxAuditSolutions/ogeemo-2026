@@ -10,10 +10,9 @@ service firebase.storage {
     }
 
     // Read is public to allow anyone to see the website images.
-    // Write access is now handled by a Cloud Function with admin privileges to avoid client-side permission issues.
-    match /siteImages/{allPaths=**} {
+    // Write access is now handled by a Cloud Function with admin privileges.
+    match /siteimages/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null;
     }
   }
 }

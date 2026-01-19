@@ -11,7 +11,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { uploadSiteImageClientSide, deleteSiteImageClientSide } from '@/services/file-service';
 
 export function SiteImagesManager() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -44,25 +43,36 @@ export function SiteImagesManager() {
         
         setIsUploading(true);
         try {
-            const { url, storagePath } = await uploadSiteImageClientSide(user.uid, imageFile);
-            
-            const hint = imageFile.name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
-            const docId = `${Date.now()}-${hint.replace(/\s+/g, '-')}`;
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const dataUrl = reader.result as string;
 
-            await setDoc(doc(db, 'siteImages', docId), {
-                url,
-                storagePath,
-                hint,
-                uploadedBy: user.uid,
-                createdAt: new Date(),
-            });
+                if (dataUrl.length > 1024 * 1024) { // ~1MB Firestore document limit
+                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 1MB.' });
+                    setIsUploading(false);
+                    return;
+                }
 
-            toast({ title: 'Upload Successful', description: `${imageFile.name} has been added.` });
-            loadImages(); // Refresh the image list
+                const hint = imageFile!.name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+                const docId = `${Date.now()}-${hint.replace(/\s+/g, '-')}`;
+
+                await setDoc(doc(db, 'siteImages', docId), {
+                    url: dataUrl, // Save the Data URL directly
+                    storagePath: `firestore-data-url/${docId}`, // Placeholder path, not used for storage
+                    hint,
+                    uploadedBy: user.uid,
+                    createdAt: new Date(),
+                });
+
+                toast({ title: 'Upload Successful', description: `${imageFile!.name} has been added.` });
+                loadImages();
+                setIsUploading(false);
+            };
+            reader.readAsDataURL(imageFile);
+
         } catch (error: any) {
-            console.error("Client-side upload error:", error);
+            console.error("Client-side data URL error:", error);
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
             setIsUploading(false);
         }
     };
@@ -72,12 +82,11 @@ export function SiteImagesManager() {
         
         setIsDeleting(true);
         try {
-            await deleteSiteImageClientSide(imageToDelete.storagePath);
             await deleteDoc(doc(db, 'siteImages', imageToDelete.id));
             
             toast({ title: 'Image Deleted' });
             setImageToDelete(null);
-            loadImages(); // Refresh the list
+            loadImages();
         } catch (error: any) {
              toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {

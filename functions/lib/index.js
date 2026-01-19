@@ -1,72 +1,141 @@
 
 "use strict";
+// This environment variable MUST be set before any other Firebase modules are loaded.
+// It is crucial for the gRPC client used by the Admin SDK to work correctly in
+// modern Node.js environments, avoiding low-level SSL DECODER errors.
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onFeedbackCreated = exports.triggerAuthBackup = exports.triggerFirestoreBackup = exports.search = void 0;
+exports.onFeedbackCreated = exports.triggerAuthBackup = exports.triggerFirestoreBackup = exports.deleteSiteImage = exports.uploadSiteImage = exports.updateUserAuth = void 0;
+process.env.GRPC_SSL_CIPHER_SUITES = (_a = process.env.GRPC_SSL_CIPHER_SUITES) !== null && _a !== void 0 ? _a : 'HIGH+ECDSA';
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const firestore_1 = require("@google-cloud/firestore");
 const storage_1 = require("firebase-admin/storage");
-// This environment variable is crucial for the gRPC client used by Firestore Admin SDK
-// to work correctly in modern Node.js environments. It specifies a set of supported
-// SSL cipher suites to avoid low-level DECODER errors.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES !== null && process.env.GRPC_SSL_CIPHER_SUITES !== void 0 ? process.env.GRPC_SSL_CIPHER_SUITES : 'HIGH+ECDSA';
-// Initialize the Firebase Admin SDK
+// Initialize the Firebase Admin SDK.
 if (!admin.apps.length) {
     admin.initializeApp();
 }
-const firestoreClient = new firestore_1.v1.FirestoreAdminClient();
+// Get service instances once and reuse them.
+const db = admin.firestore();
 const storage = (0, storage_1.getStorage)();
-exports.search = functions.https.onCall(async (data, context) => {
+const firestoreClient = new firestore_1.v1.FirestoreAdminClient();
+exports.updateUserAuth = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
     if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to update a user.");
     }
-    const userId = context.auth.uid;
-    const { query, sources } = data;
-    if (!query || !sources || sources.length === 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'Query and sources are required.');
+    const { uid, email, password } = data;
+    if (!uid) {
+        throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a "uid" for the user to be updated.');
+    }
+    const updatePayload = {};
+    if (email)
+        updatePayload.email = email;
+    if (password)
+        updatePayload.password = password;
+    if (Object.keys(updatePayload).length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Either "email" or "password" must be provided for the update.');
     }
     try {
-        const searchTerm = query.toLowerCase().trim();
-        const searchPromises = [];
-        if (sources.includes('contacts')) {
-            const contactsPromise = admin.firestore()
-                .collection('contacts')
-                .where('userId', '==', userId)
-                .get()
-                .then(snapshot => {
-                return snapshot.docs
-                    .map(doc => (Object.assign({ id: doc.id }, doc.data())))
-                    .filter(contact => Array.isArray(contact.keywords) &&
-                    contact.keywords.some((k) => typeof k === 'string' && k.toLowerCase().includes(searchTerm)))
-                    .map(contact => (Object.assign(Object.assign({}, contact), { resultType: 'Contact' })));
-            });
-            searchPromises.push(contactsPromise);
-        }
-        if (sources.includes('files')) {
-            const filesPromise = admin.firestore()
-                .collection('files')
-                .where('userId', '==', userId)
-                .get()
-                .then(snapshot => {
-                return snapshot.docs
-                    .map(doc => (Object.assign({ id: doc.id }, doc.data())))
-                    .filter(file => Array.isArray(file.keywords) &&
-                    file.keywords.some((k) => typeof k === 'string' && k.toLowerCase().includes(searchTerm)))
-                    .map(file => (Object.assign(Object.assign({}, file), { resultType: 'File' })));
-            });
-            searchPromises.push(filesPromise);
-        }
-        const resultsArrays = await Promise.all(searchPromises);
-        const results = resultsArrays.flat();
-        return { results };
+        yield admin.auth().updateUser(uid, updatePayload);
+        console.log(`Successfully updated user: ${uid}`);
+        return { success: true, message: `User ${uid} updated successfully.` };
     }
     catch (error) {
-        console.error("[Search Function Error]", error);
-        throw new functions.https.HttpsError('internal', error.message || 'An unexpected server error occurred.');
+        console.error(`Failed to update user ${uid}:`, error);
+        const isPermissionError = (error.code === 'auth/insufficient-permission' || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (error.code === 'auth/user-not-found') {
+            throw new functions.https.HttpsError('not-found', `The user with UID "${uid}" does not exist.`);
+        }
+        if (isPermissionError) {
+            throw new functions.https.HttpsError('permission-denied', "The backend service account does not have permission to update user accounts. Please grant the 'Firebase Authentication Admin' role to your function's service account. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions.");
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
     }
-});
+}));
+exports.uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
+    }
+    const { fileName, fileBuffer, contentType } = data;
+    if (!fileName || !fileBuffer || !contentType) {
+        throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
+    }
+    try {
+        const base64Data = fileBuffer.split(';base64,').pop();
+        if (!base64Data) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+        }
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        const fileExtension = fileName.split('.').pop() || '';
+        const baseName = fileName.substring(0, fileName.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+        const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
+        const filePath = `siteimages/${finalFileName}`;
+        const bucket = storage.bucket();
+        const file = bucket.file(filePath);
+        yield file.save(imageBuffer, {
+            metadata: {
+                contentType: contentType,
+                cacheControl: 'public, max-age=31536000',
+            },
+        });
+        yield file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        const docId = finalFileName.replace(`.${fileExtension}`, '');
+        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+        yield db.collection('siteImages').doc(docId).set({
+            url: publicUrl,
+            storagePath: filePath,
+            hint: hint,
+            uploadedBy: context.auth.uid,
+            createdAt: new Date(),
+        });
+        return { success: true, message: "Image uploaded successfully!", id: docId };
+    }
+    catch (error) {
+        console.error("Error uploading site image:", error);
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isPermissionError) {
+            throw new functions.https.HttpsError("permission-denied", "The backend service account does not have permission to write files to Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions.");
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
+    }
+}));
+exports.deleteSiteImage = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to delete images.");
+    }
+    const { imageId, storagePath } = data;
+    if (!imageId || !storagePath) {
+        throw new functions.https.HttpsError('invalid-argument', 'Image ID and storage path are required.');
+    }
+    try {
+        yield db.collection('siteImages').doc(imageId).delete();
+        const bucket = storage.bucket();
+        const file = bucket.file(storagePath);
+        yield file.delete();
+        return { success: true, message: 'Image deleted successfully.' };
+    }
+    catch (error) {
+        console.error("Error deleting site image:", error);
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isPermissionError) {
+            throw new functions.https.HttpsError("permission-denied", "The backend service account does not have permission to delete files from Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions.");
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
+    }
+}));
 // --- Backup Functions ---
-exports.triggerFirestoreBackup = functions.https.onCall(async (data, context) => {
+exports.triggerFirestoreBackup = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -81,7 +150,7 @@ exports.triggerFirestoreBackup = functions.https.onCall(async (data, context) =>
     const outputUriPrefix = `${bucketName}/firestore/${timestamp}`;
     try {
         console.log(`Starting Firestore export to: ${outputUriPrefix}`);
-        const [response] = await firestoreClient.exportDocuments({
+        const [response] = yield firestoreClient.exportDocuments({
             name: databaseName,
             outputUriPrefix: outputUriPrefix,
             collectionIds: [], // Export all collections
@@ -93,8 +162,8 @@ exports.triggerFirestoreBackup = functions.https.onCall(async (data, context) =>
         console.error("Firestore backup failed:", error);
         throw new functions.https.HttpsError('internal', `Firestore backup failed: ${error.message}`);
     }
-});
-exports.triggerAuthBackup = functions.https.onCall(async (data, context) => {
+}));
+exports.triggerAuthBackup = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -108,21 +177,21 @@ exports.triggerAuthBackup = functions.https.onCall(async (data, context) => {
     const destination = `auth/auth_export_${timestamp}.json`;
     try {
         const bucket = storage.bucket(bucketName);
-        const [exists] = await bucket.exists();
+        const [exists] = yield bucket.exists();
         if (!exists) {
             console.log(`Backup bucket ${bucketName} does not exist, creating it.`);
-            await bucket.create();
+            yield bucket.create();
             console.log(`Bucket ${bucketName} created.`);
         }
         const users = [];
         let nextPageToken;
         do {
-            const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
+            const listUsersResult = yield admin.auth().listUsers(1000, nextPageToken);
             listUsersResult.users.forEach(userRecord => users.push(userRecord));
             nextPageToken = listUsersResult.pageToken;
         } while (nextPageToken);
         const file = bucket.file(destination);
-        await file.save(JSON.stringify(users.map(u => u.toJSON()), null, 2), {
+        yield file.save(JSON.stringify(users.map(u => u.toJSON()), null, 2), {
             contentType: 'application/json'
         });
         console.log(`Auth export successful. ${users.length} users exported to gs://${bucketName}/${destination}.`);
@@ -132,10 +201,10 @@ exports.triggerAuthBackup = functions.https.onCall(async (data, context) => {
         console.error("Auth backup failed:", error);
         throw new functions.https.HttpsError('internal', `Auth backup failed: ${error.message}`);
     }
-});
+}));
 exports.onFeedbackCreated = functions.firestore
     .document('feedback/{feedbackId}')
-    .onCreate(async (snap, context) => {
+    .onCreate((snap, context) => __awaiter(void 0, void 0, void 0, function* () {
     const feedbackData = snap.data();
     if (!feedbackData) {
         console.log('No data associated with the feedback submission event.');
@@ -148,7 +217,7 @@ exports.onFeedbackCreated = functions.firestore
     }
     try {
         // Fetch the user's profile to get their email address.
-        const userRecord = await admin.auth().getUser(userId);
+        const userRecord = yield admin.auth().getUser(userId);
         const recipientEmail = userRecord.email;
         if (!recipientEmail) {
             console.log(`User ${userId} does not have an email address. Cannot send notification.`);
@@ -169,7 +238,7 @@ exports.onFeedbackCreated = functions.firestore
       `;
         // In a real application, you would use a service like the "Trigger Email" Firebase Extension.
         // This function adds a document to the 'mail' collection, which that extension would then process.
-        await admin.firestore().collection('mail').add({
+        yield db.collection('mail').add({
             to: recipientEmail,
             message: {
                 subject: emailSubject,
@@ -181,5 +250,5 @@ exports.onFeedbackCreated = functions.firestore
     catch (error) {
         console.error('Error in onFeedbackCreated function:', error);
     }
-});
+}));
 //# sourceMappingURL=index.js.map

@@ -19,6 +19,45 @@ const db = admin.firestore();
 const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
 
+export const updateUserAuth = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to update a user.");
+    }
+    const { uid, email, password } = data;
+    if (!uid) {
+        throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a "uid" for the user to be updated.');
+    }
+    const updatePayload: { email?: string; password?: string } = {};
+    if (email) updatePayload.email = email;
+    if (password) updatePayload.password = password;
+
+    if (Object.keys(updatePayload).length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Either "email" or "password" must be provided for the update.');
+    }
+
+    try {
+        await admin.auth().updateUser(uid, updatePayload);
+        console.log(`Successfully updated user: ${uid}`);
+        return { success: true, message: `User ${uid} updated successfully.` };
+    } catch (error: any) {
+        console.error(`Failed to update user ${uid}:`, error);
+        
+        const isPermissionError = (error.code === 'auth/insufficient-permission' || (error.message && error.message.toLowerCase().includes('permission denied')));
+
+        if (error.code === 'auth/user-not-found') {
+             throw new functions.https.HttpsError('not-found', `The user with UID "${uid}" does not exist.`);
+        }
+        
+        if (isPermissionError) {
+             throw new functions.https.HttpsError(
+                'permission-denied',
+                "The backend service account does not have permission to update user accounts. Please grant the 'Firebase Authentication Admin' role to your function's service account. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions."
+            );
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
+    }
+});
+
 export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");

@@ -1,14 +1,12 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import imageData from '@/app/lib/placeholder-images.json';
 import { useSiteImages } from '@/hooks/use-site-images';
-import { useAuth } from '@/context/auth-context';
-import { LoaderCircle, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ReplaceImageDialog } from '@/components/images/ReplaceImageDialog';
+import { LoaderCircle } from 'lucide-react';
 
 type ImageId = keyof typeof imageData;
 
@@ -20,9 +18,6 @@ interface ImagePlaceholderProps {
 
 export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: ImagePlaceholderProps) {
   const { images, isLoading: isLoadingImages } = useSiteImages();
-  const { user } = useAuth();
-  
-  const [isReplaceDialogOpen, setIsReplaceDialogOpen] = useState(false);
 
   const placeholderInfo = imageData[id];
   const firestoreImage = images[id];
@@ -39,10 +34,9 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   }
 
   return (
-    <>
       <div
         className={cn(
-          'relative w-full h-full bg-muted rounded-lg group overflow-hidden',
+          'relative w-full h-full bg-muted rounded-lg overflow-hidden',
           className
         )}
         data-ai-hint={hint}
@@ -60,22 +54,6 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
               <LoaderCircle className="h-6 w-6 animate-spin text-white" />
           </div>
         )}
-        {user && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button size="icon" className="h-8 w-8" onClick={() => setIsReplaceDialogOpen(true)}>
-              <Pencil className="h-4 w-4" />
-              <span className="sr-only">Replace image</span>
-            </Button>
-          </div>
-        )}
       </div>
-      {user && (
-        <ReplaceImageDialog 
-          isOpen={isReplaceDialogOpen}
-          onOpenChange={setIsReplaceDialogOpen}
-          imageToReplaceId={id}
-        />
-      )}
-    </>
   );
 }

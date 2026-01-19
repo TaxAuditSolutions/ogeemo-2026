@@ -17,7 +17,6 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, uploadString, getDownloadURL } from 'firebase/storage';
-import { getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 import { initializeFirebase } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
@@ -36,12 +35,6 @@ async function getDb() {
 async function getAppStorage() {
     const { storage } = await initializeFirebase();
     return storage;
-}
-
-async function getFunctionsService(): Promise<Functions> {
-    const { functions } = await initializeFirebase();
-    if (!functions) throw new Error("Firebase Functions not initialized.");
-    return functions;
 }
 
 const docToFile = (doc: any): FileItem => ({ 
@@ -395,74 +388,4 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 // It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
-}
-
-function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-            const result = reader.result as string;
-            // The result looks like "data:image/jpeg;base64,LzlqLzRBQ...". We need to remove the prefix.
-            const base64 = result.split(',')[1];
-            resolve(base64);
-        };
-        reader.onerror = error => reject(error);
-    });
-}
-
-export async function uploadSiteImage(userId: string, file: File): Promise<{ url: string; docId: string }> {
-  const functions = await getFunctionsService();
-  
-  const base64Buffer = await fileToBase64(file);
-
-  const uploadFunction = httpsCallable(functions, 'uploadSiteImage');
-  
-  const result = await uploadFunction({
-    fileBuffer: base64Buffer,
-    fileName: file.name,
-    contentType: file.type,
-  });
-
-  return result.data as { url: string; docId: string };
-}
-
-export async function updateSiteImage(targetImageId: string, newImageData: { url: string, hint: string }): Promise<void> {
-  const db = await getDb();
-  const imageDocRef = doc(db, 'siteImages', targetImageId);
-  await updateDoc(imageDocRef, {
-      url: newImageData.url,
-      hint: newImageData.hint,
-      updatedAt: new Date(),
-  });
-}
-
-
-export async function deleteSiteImage(imageId: string): Promise<void> {
-  const db = await getDb();
-  const storage = await getAppStorage();
-
-  const imageDocRef = doc(db, 'siteImages', imageId);
-  const docSnap = await getDoc(imageDocRef);
-
-  if (!docSnap.exists()) {
-    console.warn(`Firestore document for image ID ${imageId} not found. Cannot delete from storage.`);
-    return;
-  }
-  
-  const imageData = docSnap.data();
-  const storagePath = imageData.storagePath;
-
-  if (storagePath) {
-    const fileRef = storageRef(storage, storagePath);
-    try {
-        await deleteObject(fileRef);
-    } catch (error: any) {
-        if (error.code !== 'storage/object-not-found') {
-            throw error;
-        }
-    }
-  }
-
-  await deleteDoc(imageDocRef);
 }

@@ -11,10 +11,9 @@ service firebase.storage {
     }
 
     // Read is public to allow anyone to see the website images.
-    // Write access is allowed for any authenticated user.
+    // Write access will be handled by a secure backend function.
     match /siteimages/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null;
     }
   }
 }

@@ -21,45 +21,6 @@ const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
 
 
-export const uploadSiteImage = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
-  }
-
-  const { fileBuffer, fileName, contentType } = data;
-
-  if (!fileBuffer || !fileName || !contentType) {
-    throw new functions.https.HttpsError('invalid-argument', 'File buffer, name, and content type are required.');
-  }
-
-  const bucket = storage.bucket();
-  const filePath = `siteimages/${Date.now()}-${fileName}`;
-  const file = bucket.file(filePath);
-  const buffer = Buffer.from(fileBuffer, 'base64');
-
-  await file.save(buffer, {
-    metadata: {
-      contentType: contentType,
-      cacheControl: 'public, max-age=31536000',
-    },
-    public: true,
-  });
-
-  const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-  
-  const docId = fileName.split('.')[0].toLowerCase().replace(/[\s_]+/g, '-');
-
-  await db.collection('siteImages').doc(docId).set({
-    url: publicUrl,
-    hint: fileName.split('.')[0].replace(/-/g, ' '),
-    storagePath: filePath,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-
-  return { url: publicUrl, docId };
-});
-
-
 // --- Backup Functions ---
 
 export const triggerFirestoreBackup = functions.https.onCall(async (data, context) => {

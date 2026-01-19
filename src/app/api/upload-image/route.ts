@@ -1,2 +1,2 @@
-// This file has been cleared to remove the failed image upload functionality.
-// A new approach will be implemented.
+// This API route is obsolete and has been removed.
+// Image uploads are now handled by a secure Firebase Cloud Function.

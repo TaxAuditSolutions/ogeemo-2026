@@ -46,7 +46,7 @@ const docToFile = (doc: any): FileItem => ({
 const generateKeywords = (name: string): string[] => {
     const keywords = new Set<string>();
     const lowerCaseName = name.toLowerCase();
-    keywords.add(lowerCaseName);
+    keywords.add(lowerCaseValue);
     lowerCaseName.split(/[\s-._]+/).forEach(part => {
         if (part) keywords.add(part);
     });
@@ -388,29 +388,6 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 // It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
-}
-
-export async function uploadSiteImage(userId: string, file: File): Promise<void> {
-  const db = await getDb();
-  const storage = await getAppStorage();
-
-  const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-  const storagePath = `siteimages/${uniqueFileName}`;
-  const fileRef = storageRef(storage, storagePath);
-
-  await uploadBytes(fileRef, file);
-  
-  const downloadUrl = await getDownloadURL(fileRef);
-
-  const imageDocRef = doc(db, 'siteImages', uniqueFileName);
-  const hint = file.name.split('.')[0].replace(/[_-]/g, ' ');
-
-  await setDoc(imageDocRef, {
-    url: downloadUrl,
-    hint: hint,
-    createdAt: new Date(),
-    storagePath: storagePath,
-  });
 }
 
 export async function updateSiteImage(targetImageId: string, newImageData: { url: string, hint: string }): Promise<void> {

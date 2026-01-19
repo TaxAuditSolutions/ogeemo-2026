@@ -16,7 +16,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ogeemo-firebase.firebasestorage.app",
+        hostname: "firebasestorage.googleapis.com",
         port: "",
         pathname: "/**",
       },

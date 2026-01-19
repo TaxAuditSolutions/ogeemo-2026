@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LoaderCircle, Check } from 'lucide-react';
+import { LoaderCircle, Check, Upload } from 'lucide-react';
 import Image from 'next/image';
-import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
+import { useSiteImages } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { updateSiteImage } from '@/services/file-service';
+import { updateSiteImage, uploadSiteImage } from '@/services/file-service';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { useAuth } from '@/context/auth-context';
 
 interface ReplaceImageDialogProps {
   isOpen: boolean;
@@ -23,7 +25,9 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageToReplaceId }: R
     const { images, isLoading: isLoadingImages } = useSiteImages();
     const [selectedImage, setSelectedImage] = useState<{ id: string; url: string; hint: string } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     useEffect(() => {
         if (isOpen) {
@@ -49,13 +53,51 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageToReplaceId }: R
         }
     };
     
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            toast({ variant: 'destructive', title: 'Invalid File', description: 'Please upload an image file.' });
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            await uploadSiteImage(user.uid, file);
+            toast({ title: 'Upload Successful', description: `"${file.name}" has been added to your library.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+            setIsUploading(false);
+            if (event.target) {
+                event.target.value = '';
+            }
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>Replace Image</DialogTitle>
-                    <DialogDescription>Select a new image from your library to replace the current one.</DialogDescription>
+                    <DialogDescription>Select a new image from your library, or upload a new one.</DialogDescription>
                 </DialogHeader>
+                <div className="flex justify-end border-b pb-4">
+                    <Input id="image-upload-input" type="file" className="hidden" onChange={handleFileChange} disabled={isUploading} accept="image/*" />
+                    <Button asChild>
+                        <Label htmlFor="image-upload-input" className="cursor-pointer">
+                            {isUploading ? (
+                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Upload className="mr-2 h-4 w-4" />
+                            )}
+                            {isUploading ? 'Uploading...' : 'Upload New Image'}
+                        </Label>
+                    </Button>
+                </div>
                 <ScrollArea className="h-96 my-4">
                     {isLoadingImages ? (
                         <div className="flex items-center justify-center h-full"><LoaderCircle className="h-8 w-8 animate-spin" /></div>

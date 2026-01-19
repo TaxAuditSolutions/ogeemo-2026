@@ -42,7 +42,17 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
         return { success: true, message: `User ${uid} updated successfully.` };
     } catch (error: any) {
         console.error("Error updating user auth:", error);
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to update user.');
+        
+        // Specific check for permission errors from the Admin SDK
+        if (error.code === 'permission-denied' || error.code === 'app/service-account-not-found') {
+            throw new functions.https.HttpsError(
+                'permission-denied',
+                "The backend service account does not have permission to update user authentication details. Please grant the 'Firebase Authentication Admin' role to your function's service account in the Google Cloud IAM console."
+            );
+        }
+
+        // Fallback for other errors
+        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
     }
 });
 

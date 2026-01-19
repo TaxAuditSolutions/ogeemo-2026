@@ -10,6 +10,7 @@ import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { LoaderCircle, Pencil } from 'lucide-react';
 import { Button } from './button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 type ImageId = keyof typeof imageData;
 
@@ -60,12 +61,21 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
         )}
         {user && (
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button asChild size="icon" className="h-8 w-8">
-                    <Link href={`/settings/site-images?highlight=${id}`}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Replace Image</span>
-                    </Link>
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild size="icon" className="h-8 w-8">
+                          <Link href={`/settings/site-images?replace=${id}`}>
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Replace Image</span>
+                          </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Replace Image</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
             </div>
         )}
       </div>

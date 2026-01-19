@@ -2,11 +2,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
+import { LoaderCircle, Trash2, Image as ImageIcon, Copy, CheckCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
@@ -17,9 +18,17 @@ export function SiteImagesManager() {
     const { db } = useFirebase();
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isReplacing, setIsReplacing] = useState(false);
+    
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
+    const [imageToReplaceWith, setImageToReplaceWith] = useState<{ id: string; image: SiteImage } | null>(null);
+    
+    const replacementTargetId = searchParams.get('replace');
 
     const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
         if (!user || !db) {
@@ -47,8 +56,8 @@ export function SiteImagesManager() {
             reader.onloadend = async () => {
                 const dataUrl = reader.result as string;
 
-                if (dataUrl.length > 1024 * 1024) { // ~1MB Firestore document limit
-                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 1MB.' });
+                if (dataUrl.length > 2 * 1024 * 1024) { // Increased limit to ~2MB for flexibility
+                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 2MB.' });
                     setIsUploading(false);
                     return;
                 }
@@ -57,22 +66,22 @@ export function SiteImagesManager() {
                 const docId = `${Date.now()}-${hint.replace(/\s+/g, '-')}`;
 
                 await setDoc(doc(db, 'siteImages', docId), {
-                    url: dataUrl, // Save the Data URL directly
-                    storagePath: `firestore-data-url/${docId}`, // Placeholder path, not used for storage
+                    url: dataUrl,
+                    storagePath: `firestore-data-url/${docId}`,
                     hint,
                     uploadedBy: user.uid,
                     createdAt: new Date(),
                 });
 
                 toast({ title: 'Upload Successful', description: `${imageFile!.name} has been added.` });
-                loadImages();
-                setIsUploading(false);
+                loadImages(); // This will trigger a re-render with the new image
             };
             reader.readAsDataURL(imageFile);
 
         } catch (error: any) {
             console.error("Client-side data URL error:", error);
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
             setIsUploading(false);
         }
     };
@@ -93,10 +102,51 @@ export function SiteImagesManager() {
             setIsDeleting(false);
         }
     };
+    
+    const handleConfirmReplacement = async () => {
+        if (!imageToReplaceWith || !replacementTargetId || !user || !db) return;
+
+        setIsReplacing(true);
+        try {
+            const sourceImage = imageToReplaceWith.image;
+            const targetImageRef = doc(db, 'siteImages', replacementTargetId);
+
+            await setDoc(targetImageRef, {
+                url: sourceImage.url,
+                hint: sourceImage.hint,
+                storagePath: sourceImage.storagePath,
+                uploadedBy: user.uid,
+                createdAt: new Date(),
+            }, { merge: true });
+
+            toast({
+                title: "Image Replaced",
+                description: `The '${replacementTargetId}' image has been updated.`
+            });
+            router.push('/website'); // Go back to the website to see the change
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Replacement Failed', description: error.message });
+        } finally {
+            setIsReplacing(false);
+            setImageToReplaceWith(null);
+        }
+    };
 
 
     return (
         <>
+            {replacementTargetId && (
+                <Card className="mb-6 bg-primary/10 border-primary">
+                    <CardHeader className="text-center">
+                        <CardTitle>Selection Mode</CardTitle>
+                        <CardDescription>Select an image from your library below to replace the "{replacementTargetId}" image.</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="justify-center">
+                        <Button variant="outline" onClick={() => router.push('/website')}>Cancel Replacement</Button>
+                    </CardFooter>
+                </Card>
+            )}
+            
             <Card>
                 <CardHeader>
                     <CardTitle>Add New Image</CardTitle>
@@ -140,13 +190,19 @@ export function SiteImagesManager() {
                                 <div key={id} className="group relative aspect-square overflow-hidden rounded-lg">
                                     <img src={image.url} alt={image.hint || 'Site image'} className="h-full w-full object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            onClick={() => setImageToDelete({ id, storagePath: image.storagePath })}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        {replacementTargetId ? (
+                                            <Button size="sm" onClick={() => setImageToReplaceWith({id, image})}>
+                                                <CheckCircle className="mr-2 h-4 w-4" /> Select
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                onClick={() => setImageToDelete({ id, storagePath: image.storagePath })}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -168,6 +224,24 @@ export function SiteImagesManager() {
                         <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
                            {isDeleting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={!!imageToReplaceWith} onOpenChange={() => setImageToReplaceWith(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Replacement</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will replace the "{replacementTargetId}" image with your selection. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmReplacement} disabled={isReplacing}>
+                           {isReplacing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                           Replace Image
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

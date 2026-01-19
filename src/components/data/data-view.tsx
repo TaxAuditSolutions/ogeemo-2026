@@ -1,3 +1,4 @@
+
 'use client';
 
 import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Pencil, KeyRound } from "lucide-react";
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
+import { ChangePasswordDialog } from "./change-password-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { getUsers, deleteUserProfile, type UserProfile, updateUserAuth } from '@/services/user-profile-service';
@@ -53,6 +55,9 @@ export function UserListView() {
 
   const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
+
 
   const loadUsers = useCallback(async () => {
     if (!user) {
@@ -95,6 +100,12 @@ export function UserListView() {
         setUserToDelete(null);
     }
   };
+
+  const handleChangePassword = (user: UserProfile) => {
+    setUserForPasswordChange(user);
+    setIsChangePasswordOpen(true);
+  };
+
 
   return (
     <>
@@ -167,7 +178,10 @@ export function UserListView() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onSelect={() => handleEdit(userProfile)}>
-                                <Pencil className="mr-2 h-4 w-4"/> Edit
+                                <Pencil className="mr-2 h-4 w-4"/> Edit Profile
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => handleChangePassword(userProfile)}>
+                                <KeyRound className="mr-2 h-4 w-4"/> Change Password
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleDelete(userProfile)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4"/> Delete
@@ -199,6 +213,12 @@ export function UserListView() {
         }}
         onUserAdded={loadUsers}
         userToEdit={userToEdit}
+      />
+      <ChangePasswordDialog
+        isOpen={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        user={userForPasswordChange}
+        onPasswordChanged={loadUsers}
       />
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>

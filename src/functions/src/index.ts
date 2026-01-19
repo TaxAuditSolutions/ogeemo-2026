@@ -44,7 +44,6 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
         const finalFileName = `${Date.now()}-${sanitizedBaseName}.webp`;
         const filePath = `siteimages/${finalFileName}`;
 
-        // Process the image with sharp
         const processedBuffer = await sharp(imageBuffer)
             .resize(1200) // Resize to a max width of 1200px
             .webp({ quality: 80 }) // Convert to WebP format for better performance
@@ -60,7 +59,6 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             },
         });
         
-        // Make the file public and construct the URL
         await file.makePublic();
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
@@ -78,7 +76,13 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
         return { success: true, message: "Image uploaded successfully!", id: docId };
 
     } catch (error: any) {
-        console.error("Error uploading image:", error);
+        console.error("Full error object:", JSON.stringify(error, null, 2));
+         if (error.code === 7 || (error.message && error.message.includes('permission'))) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The server function lacks permission to write to storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console."
+            );
+        }
         throw new functions.https.HttpsError("internal", error.message || "Failed to upload image.");
     }
 });
@@ -95,17 +99,22 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
     }
     
     try {
-        // Delete from Firestore
         await db.collection('siteImages').doc(imageId).delete();
         
-        // Delete from Storage
         const bucket = storage.bucket();
         const file = bucket.file(storagePath);
         await file.delete();
         
         return { success: true, message: 'Image deleted successfully.' };
     } catch (error: any) {
-        console.error("Error deleting image:", error);
+        console.error("Full error object:", JSON.stringify(error, null, 2));
+        // Check for specific gRPC permission denied error code (7)
+        if (error.code === 7 || (error.message && error.message.includes('permission'))) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The server function lacks permission to delete from storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console."
+            );
+        }
         throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
     }
 });

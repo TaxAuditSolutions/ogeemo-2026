@@ -1,3 +1,4 @@
+'use server';
 
 // This environment variable MUST be set before any other Firebase modules are loaded.
 // It is crucial for the gRPC client used by the Admin SDK to work correctly in
@@ -18,6 +19,33 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
+
+export const updateUserAuth = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to update a user.");
+    }
+
+    const { uid, email, password } = data;
+    if (!uid) {
+        throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a "uid".');
+    }
+    
+    const updatePayload: { email?: string; password?: string } = {};
+    if (email) updatePayload.email = email;
+    if (password) updatePayload.password = password;
+
+    if (Object.keys(updatePayload).length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Either "email" or "password" must be provided.');
+    }
+    
+    try {
+        await admin.auth().updateUser(uid, updatePayload);
+        return { success: true, message: `User ${uid} updated successfully.` };
+    } catch (error: any) {
+        console.error("Error updating user auth:", error);
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to update user.');
+    }
+});
 
 
 // --- Backup Functions ---

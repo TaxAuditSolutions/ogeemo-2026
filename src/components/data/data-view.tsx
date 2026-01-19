@@ -1,7 +1,6 @@
-
 'use client';
 
-import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Pencil } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Pencil, KeyRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +39,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AddUserDialog } from "./add-user-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getUsers, deleteUserProfile, type UserProfile } from "@/services/user-profile-service";
+import { getUsers, deleteUserProfile, type UserProfile, updateUserAuth } from '@/services/user-profile-service';
 import { format } from "date-fns";
 import Link from 'next/link';
 

@@ -1,8 +1,8 @@
-
 'use client';
 
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -198,6 +198,13 @@ export function updateUserProfile(
     }
   });
 }
+
+export async function updateUserAuth(uid: string, data: { email?: string; password?: string }): Promise<void> {
+    const { functions } = await initializeFirebase();
+    const updateUserAuthFn = httpsCallable(functions, 'updateUserAuth');
+    await updateUserAuthFn({ uid, ...data });
+}
+
 
 export function deleteUserProfile(userId: string): Promise<void> {
     return new Promise(async (resolve, reject) => {

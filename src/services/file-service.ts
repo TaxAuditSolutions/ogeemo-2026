@@ -395,7 +395,7 @@ export async function uploadSiteImage(userId: string, file: File): Promise<void>
   const storage = await getAppStorage();
 
   const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-  const storagePath = `siteImages/${uniqueFileName}`;
+  const storagePath = `siteimages/${uniqueFileName}`;
   const fileRef = storageRef(storage, storagePath);
 
   await uploadBytes(fileRef, file);

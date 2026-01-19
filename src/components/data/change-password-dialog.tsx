@@ -57,12 +57,18 @@ export function ChangePasswordDialog({ isOpen, onOpenChange, user, onPasswordCha
     }
     setIsSaving(true);
     try {
-        await updateUserAuth(user.id, { password: values.password });
+        const result = await updateUserAuth(user.id, { password: values.password });
+        console.log('Password update function returned successfully with result:', result);
         toast({ title: 'Password Updated', description: `The password for ${user.displayName} has been changed.` });
         onPasswordChanged();
         onOpenChange(false);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message || "An unknown error occurred." });
+        console.error('Password update failed. Full error object:', error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Update Failed', 
+            description: `Code: ${error.code || 'N/A'}. Message: ${error.message || 'An unknown error occurred.'}. Details: ${JSON.stringify(error.details)}` 
+        });
     } finally {
         setIsSaving(false);
     }

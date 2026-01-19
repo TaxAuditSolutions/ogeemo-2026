@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
@@ -199,10 +200,11 @@ export function updateUserProfile(
   });
 }
 
-export async function updateUserAuth(uid: string, data: { email?: string; password?: string }): Promise<void> {
+export async function updateUserAuth(uid: string, data: { email?: string; password?: string }): Promise<any> {
     const { functions } = await initializeFirebase();
     const updateUserAuthFn = httpsCallable(functions, 'updateUserAuth');
-    await updateUserAuthFn({ uid, ...data });
+    const result = await updateUserAuthFn({ uid, ...data });
+    return result.data;
 }
 
 

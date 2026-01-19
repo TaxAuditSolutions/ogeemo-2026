@@ -11,7 +11,7 @@ service firebase.storage {
     }
 
     // Read is public to allow anyone to see the website images.
-    // Write access will be handled by a secure backend function.
+    // Writes are now handled by a secure backend function.
     match /siteimages/{allPaths=**} {
       allow read;
     }

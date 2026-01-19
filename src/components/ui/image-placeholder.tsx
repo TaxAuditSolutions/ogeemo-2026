@@ -3,10 +3,13 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import imageData from '@/app/lib/placeholder-images.json';
 import { useSiteImages } from '@/hooks/use-site-images';
-import { LoaderCircle } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { LoaderCircle, Pencil } from 'lucide-react';
+import { Button } from './button';
 
 type ImageId = keyof typeof imageData;
 
@@ -18,6 +21,7 @@ interface ImagePlaceholderProps {
 
 export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: ImagePlaceholderProps) {
   const { images, isLoading: isLoadingImages } = useSiteImages();
+  const { user } = useAuth(); // Check if user is logged in
 
   const placeholderInfo = imageData[id];
   const firestoreImage = images[id];
@@ -27,7 +31,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   
   if (!src) {
       return (
-          <div className={cn("bg-destructive text-destructive-foreground p-2 rounded-md flex items-center justify-center", className)}>
+          <div className={cn("bg-destructive text-destructive-foreground p-2 rounded-lg flex items-center justify-center", className)}>
               <p>Error: Image source for "{id}" not found.</p>
           </div>
       );
@@ -36,7 +40,7 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
   return (
       <div
         className={cn(
-          'relative w-full h-full bg-muted rounded-lg overflow-hidden',
+          'relative w-full h-full bg-muted rounded-lg overflow-hidden group',
           className
         )}
         data-ai-hint={hint}
@@ -53,6 +57,16 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <LoaderCircle className="h-6 w-6 animate-spin text-white" />
           </div>
+        )}
+        {user && (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button asChild size="icon" className="h-8 w-8">
+                    <Link href={`/settings/site-images?highlight=${id}`}>
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Replace Image</span>
+                    </Link>
+                </Button>
+            </div>
         )}
       </div>
   );

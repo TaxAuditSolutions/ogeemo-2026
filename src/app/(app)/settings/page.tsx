@@ -14,6 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -123,6 +124,7 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-6">
              <PlanningRitualsCard />
+             <SiteImagesSettingsCard />
           </div>
         </div>
       </form>

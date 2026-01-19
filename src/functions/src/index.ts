@@ -8,6 +8,8 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
+import * as sharp from 'sharp';
+import * as path from 'path';
 
 
 // Initialize the Firebase Admin SDK.
@@ -20,6 +22,92 @@ const db = admin.firestore();
 const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
 
+export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
+    }
+    
+    const { fileName, fileBuffer } = data;
+    if (!fileName || !fileBuffer) {
+        throw new functions.https.HttpsError('invalid-argument', 'File name and buffer are required.');
+    }
+
+    try {
+        const base64Data = fileBuffer.split(';base64,').pop();
+        if (!base64Data) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+        }
+        
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        const sanitizedFileName = `${Date.now()}-${path.parse(fileName).name.replace(/[^a-zA-Z0-9._-]/g, '')}.webp`;
+        const filePath = `siteimages/${sanitizedFileName}`;
+
+        // Process the image with sharp
+        const processedBuffer = await sharp(imageBuffer)
+            .resize(1200) // Resize to a max width of 1200px
+            .webp({ quality: 80 }) // Convert to WebP format for better performance
+            .toBuffer();
+
+        const bucket = storage.bucket();
+        const file = bucket.file(filePath);
+
+        await file.save(processedBuffer, {
+            metadata: {
+                contentType: 'image/webp',
+                cacheControl: 'public, max-age=31536000',
+            },
+        });
+
+        const [publicUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: '03-09-2491'
+        });
+
+        // Use the sanitized file name without extension as the document ID
+        const docId = path.parse(sanitizedFileName).name;
+
+        await db.collection('siteImages').doc(docId).set({
+            url: publicUrl,
+            storagePath: filePath,
+            hint: path.parse(fileName).name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim(), // a simple hint for AI
+            uploadedBy: context.auth.uid,
+            createdAt: new Date(),
+        });
+        
+        return { success: true, message: "Image uploaded successfully!", id: docId };
+
+    } catch (error: any) {
+        console.error("Error uploading image:", error);
+        throw new functions.https.HttpsError("internal", error.message || "Failed to upload image.");
+    }
+});
+
+
+export const deleteSiteImage = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to delete images.");
+    }
+    
+    const { imageId, storagePath } = data;
+    if (!imageId || !storagePath) {
+        throw new functions.https.HttpsError('invalid-argument', 'Image ID and storage path are required.');
+    }
+    
+    try {
+        // Delete from Firestore
+        await db.collection('siteImages').doc(imageId).delete();
+        
+        // Delete from Storage
+        const bucket = storage.bucket();
+        const file = bucket.file(storagePath);
+        await file.delete();
+        
+        return { success: true, message: 'Image deleted successfully.' };
+    } catch (error: any) {
+        console.error("Error deleting image:", error);
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
+    }
+});
 
 // --- Backup Functions ---
 

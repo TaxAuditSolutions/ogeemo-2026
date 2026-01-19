@@ -6,9 +6,7 @@ import { useSiteImages } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { LoaderCircle, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { LoaderCircle, Upload, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { httpsCallable } from 'firebase/functions';
 import { useFirebase } from '@/firebase';
@@ -21,9 +19,23 @@ export function SiteImagesManager() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
+        const items = event.clipboardData.items;
+        let imageFile: File | null = null;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                imageFile = items[i].getAsFile();
+                break;
+            }
+        }
+
+        if (!imageFile) {
+            toast({ variant: 'destructive', title: 'Paste Error', description: 'No image found on the clipboard.' });
+            return;
+        }
+        
+        const file = imageFile;
 
         if (!functions) {
             toast({ variant: 'destructive', title: 'Error', description: 'Firebase Functions not initialized.' });
@@ -39,7 +51,7 @@ export function SiteImagesManager() {
             try {
                 const uploadSiteImage = httpsCallable(functions, 'uploadSiteImage');
                 await uploadSiteImage({
-                    fileName: file.name,
+                    fileName: file.name || `pasted-image-${Date.now()}.png`,
                     fileBuffer: base64File,
                 });
                 toast({ title: 'Upload Successful', description: `${file.name} has been added to your library.` });
@@ -53,7 +65,7 @@ export function SiteImagesManager() {
         };
         reader.onerror = (error) => {
             console.error("File reader error:", error);
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the selected file.' });
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the pasted image.' });
             setIsUploading(false);
         };
     };
@@ -79,17 +91,27 @@ export function SiteImagesManager() {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Upload New Image</CardTitle>
-                    <CardDescription>Upload a new image to your site's media library.</CardDescription>
+                    <CardTitle>Add New Image</CardTitle>
+                    <CardDescription>Paste an image directly into the area below to upload it.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="picture" className="sr-only">Picture</Label>
-                        <Input id="picture" type="file" onChange={handleFileChange} disabled={isUploading} accept="image/*" />
-                        <Button onClick={() => document.getElementById('picture')?.click()} disabled={isUploading}>
-                            {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                            {isUploading ? 'Uploading...' : 'Upload'}
-                        </Button>
+                    <div 
+                        onPaste={handlePaste}
+                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80"
+                        tabIndex={0}
+                    >
+                       {isUploading ? (
+                           <div className="flex flex-col items-center gap-2">
+                               <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                               <p className="text-sm text-muted-foreground">Uploading...</p>
+                           </div>
+                       ) : (
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Copy className="w-10 h-10 mb-3 text-gray-400" />
+                                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to focus, then paste</span></p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">(Ctrl+V or Cmd+V)</p>
+                            </div>
+                       )}
                     </div>
                 </CardContent>
             </Card>

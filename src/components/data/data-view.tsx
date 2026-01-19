@@ -115,12 +115,9 @@ export function UserListView() {
             <div>
               <CardTitle>Users</CardTitle>
               <CardDescription>
-                A list of users with access to this application.
+                A list of users who have registered with this application.
               </CardDescription>
             </div>
-            <Button onClick={() => { setUserToEdit(null); setIsAddUserDialogOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" /> Add User
-            </Button>
           </CardHeader>
           <CardContent>
             <Table>

@@ -9,8 +9,6 @@ import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
 import * as sharp from 'sharp';
-import * as path from 'path';
-
 
 // Initialize the Firebase Admin SDK.
 if (!admin.apps.length) {
@@ -39,8 +37,12 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
         }
         
         const imageBuffer = Buffer.from(base64Data, 'base64');
-        const sanitizedFileName = `${Date.now()}-${path.parse(fileName).name.replace(/[^a-zA-Z0-9._-]/g, '')}.webp`;
-        const filePath = `siteimages/${sanitizedFileName}`;
+        
+        const fileExtension = fileName.split('.').pop() || '';
+        const baseName = fileName.substring(0, fileName.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+        const finalFileName = `${Date.now()}-${sanitizedBaseName}.webp`;
+        const filePath = `siteimages/${finalFileName}`;
 
         // Process the image with sharp
         const processedBuffer = await sharp(imageBuffer)
@@ -57,19 +59,18 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
                 cacheControl: 'public, max-age=31536000',
             },
         });
-
-        const [publicUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: '03-09-2491'
-        });
-
-        // Use the sanitized file name without extension as the document ID
-        const docId = path.parse(sanitizedFileName).name;
+        
+        // Make the file public and construct the URL
+        await file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        
+        const docId = finalFileName.replace('.webp', '');
+        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
 
         await db.collection('siteImages').doc(docId).set({
             url: publicUrl,
             storagePath: filePath,
-            hint: path.parse(fileName).name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim(), // a simple hint for AI
+            hint: hint,
             uploadedBy: context.auth.uid,
             createdAt: new Date(),
         });

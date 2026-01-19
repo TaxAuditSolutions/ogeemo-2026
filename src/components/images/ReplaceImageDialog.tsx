@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +24,12 @@ export function ReplaceImageDialog({ isOpen, onOpenChange, imageToReplaceId }: R
     const [selectedImage, setSelectedImage] = useState<{ id: string; url: string; hint: string } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedImage(null);
+        }
+    }, [isOpen]);
 
     const handleSave = async () => {
         if (!imageToReplaceId || !selectedImage) {

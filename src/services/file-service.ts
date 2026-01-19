@@ -296,9 +296,6 @@ export async function saveEmailForContact(userId: string, contactName: string, e
 }
 
 export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
-    const db = await getDb();
-    const storage = await getAppStorage();
-
     const folder = await findOrCreateFileFolder(userId, 'Archived Ideas');
 
     const content = `
@@ -311,29 +308,7 @@ ${description || 'No description provided.'}
 *Archived on: ${new Date().toISOString()}*
     `.trim();
     
-    const fileBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-
-    const newDocRef = doc(collection(db, FILES_COLLECTION));
-    const fileId = newDocRef.id;
-
-    const storagePath = `userFiles/${userId}/${folder.id}/${fileId}.txt`;
-    const fileRef = storageRef(storage, storagePath);
-    await uploadBytes(fileRef, fileBlob);
-
-    const newFileRecord: FileItem = {
-        id: fileId,
-        name: `Archived Idea - ${title}`,
-        type: 'text/plain',
-        size: fileBlob.size,
-        modifiedAt: new Date(),
-        folderId: folder.id,
-        userId,
-        storagePath,
-        keywords: generateKeywords(`Archived Idea - ${title}`),
-    };
-    
-    await setDoc(doc(db, FILES_COLLECTION, fileId), newFileRecord);
-    return newFileRecord;
+    return addTextFileClient(userId, folder.id, `Archived Idea - ${title}.txt`, content);
 }
 
 export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promise<FileItem> {
@@ -433,11 +408,21 @@ export async function uploadSiteImage(userId: string, file: File): Promise<void>
   await setDoc(imageDocRef, {
     url: downloadUrl,
     hint: hint,
-    userId: userId,
     createdAt: new Date(),
     storagePath: storagePath,
   });
 }
+
+export async function updateSiteImage(targetImageId: string, newImageData: { url: string, hint: string }): Promise<void> {
+  const db = await getDb();
+  const imageDocRef = doc(db, 'siteImages', targetImageId);
+  await updateDoc(imageDocRef, {
+      url: newImageData.url,
+      hint: newImageData.hint,
+      updatedAt: new Date(),
+  });
+}
+
 
 export async function deleteSiteImage(imageId: string): Promise<void> {
   const db = await getDb();

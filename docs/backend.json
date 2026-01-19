@@ -442,39 +442,6 @@
       },
       "required": ["reporterName", "topic", "type", "feedback", "date"]
     },
-    "BlogPost": {
-      "title": "Blog Post",
-      "description": "Represents a single blog post entry.",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "slug": { "type": "string", "description": "URL-friendly version of the title." },
-        "content": { "type": "string", "description": "The main content of the blog post in HTML or Markdown." },
-        "excerpt": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "authorId": { "type": "string" },
-        "authorName": { "type": "string" },
-        "publishedAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["draft", "published"] },
-        "allowComments": { "type": "boolean" },
-        "category": { "type": "string" }
-      },
-      "required": ["title", "slug", "content", "authorId", "status"]
-    },
-    "BlogComment": {
-      "title": "Blog Comment",
-      "description": "A comment on a blog post.",
-      "type": "object",
-      "properties": {
-        "postId": { "type": "string" },
-        "postAuthorId": { "type": "string" },
-        "authorName": { "type": "string" },
-        "content": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] }
-      },
-      "required": ["postId", "postAuthorId", "authorName", "content", "createdAt", "status"]
-    },
     "SiteImage": {
       "title": "Site Image",
       "description": "Stores URLs for globally used site images like heroes and logos.",
@@ -601,14 +568,6 @@
     "/feedback/{feedbackId}": {
       "schema": { "$ref": "#/entities/Feedback" },
       "description": "Stores user feedback submissions."
-    },
-    "/blogPosts/{postId}": {
-      "schema": { "$ref": "#/entities/BlogPost" },
-      "description": "Collection of all blog posts."
-    },
-    "/blogPosts/{postId}/comments/{commentId}": {
-      "schema": { "$ref": "#/entities/BlogComment" },
-      "description": "Sub-collection of comments for a specific blog post."
     },
     "/siteImages/{imageId}": {
       "schema": { "$ref": "#/entities/SiteImage" },

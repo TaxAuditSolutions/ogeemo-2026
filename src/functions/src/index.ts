@@ -1,4 +1,3 @@
-
 // This environment variable MUST be set before any other Firebase modules are loaded.
 // It is crucial for the gRPC client used by the Admin SDK to work correctly in
 // modern Node.js environments, avoiding low-level SSL DECODER errors.

@@ -120,20 +120,6 @@ service cloud.firestore {
     match /suppliers/{supplierId} {
       allow read, write: if isOwner(resource.data.userId);
     }
-
-    match /blogPosts/{postId} {
-      allow read: if true;
-      allow write: if isOwner(resource.data.authorId);
-
-      match /comments/{commentId} {
-        allow create: if request.resource.data.keys().hasAll(['postId', 'postAuthorId', 'authorName', 'content', 'createdAt', 'status'])
-                      && request.resource.data.status == 'pending'
-                      && request.resource.data.authorName.size() < 50
-                      && request.resource.data.content.size() < 1500;
-        allow read: if resource.data.status == 'approved' || isOwner(get(/databases/$(database)/documents/blogPosts/$(postId)).data.authorId);
-        allow update, delete: if isOwner(get(/databases/$(database)/documents/blogPosts/$(postId)).data.authorId);
-      }
-    }
     
     match /siteImages/{imageId} {
       allow read: if true;

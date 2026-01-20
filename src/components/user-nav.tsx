@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Lock } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,12 @@ export function UserNav() {
                 <Link href="/settings">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
+                </Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem asChild>
+                <Link href="/change-password">
+                    <Lock className="mr-2 h-4 w-4" />
+                    <span>Change Password</span>
                 </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>

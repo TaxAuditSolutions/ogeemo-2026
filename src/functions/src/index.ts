@@ -90,7 +90,8 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             imageBuffer = Buffer.from(base64Data, 'base64');
             originalHint = fileName;
         } else {
-            // If not a data URL, assume it's a storage URL that needs to be fetched
+            // This case might not be used if the client always sends a data URL,
+            // but it's good to have as a fallback.
             const url = new URL(fileBuffer);
             const response = await fetch(url.toString());
             if (!response.ok) {
@@ -101,7 +102,7 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             originalHint = fileName;
         }
         
-        const fileExtension = originalHint.split('.').pop() || 'png';
+        const fileExtension = originalHint.split('.').pop()?.toLowerCase() || 'png';
         const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
         const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
         const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
@@ -130,7 +131,7 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             hint: hint,
             uploadedBy: context.auth.uid,
             createdAt: new Date(),
-        });
+        }, { merge: true });
         
         return { success: true, message: "Image processed successfully!", id: docId };
 

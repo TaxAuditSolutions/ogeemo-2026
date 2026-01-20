@@ -7,7 +7,7 @@ import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Trash2, Copy, CheckCircle } from 'lucide-react';
+import { LoaderCircle, Trash2, CheckCircle, FileUp } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
 
@@ -25,42 +25,30 @@ function SiteImagesManagerContent() {
     const [imageToReplace, setImageToReplace] = useState<{ id: string; image: SiteImage } | null>(null);
     const [isReplacing, setIsReplacing] = useState(false);
 
-    const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
-        const items = event.clipboardData.items;
-        let imageFile: File | null = null;
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                imageFile = items[i].getAsFile();
-                break;
-            }
-        }
-
-        if (!imageFile) {
-            toast({ variant: 'destructive', title: 'Paste Error', description: 'No image found on the clipboard.' });
+    const handleFileUpload = async (file: File | null) => {
+        if (!file) {
+            toast({ variant: 'destructive', title: 'No file selected.' });
             return;
         }
-        
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 5MB.' });
+            return;
+        }
+
         setIsUploading(true);
         const reader = new FileReader();
         
         reader.onerror = () => {
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the image file from clipboard.' });
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the image file.' });
             setIsUploading(false);
         };
 
         reader.onloadend = async () => {
             try {
                 const dataUrl = reader.result as string;
-
-                if (dataUrl.length > 5 * 1024 * 1024) {
-                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 5MB.' });
-                    setIsUploading(false);
-                    return;
-                }
-                
-                await uploadSiteImageClient(imageFile!.name, dataUrl, imageFile!.type);
-
-                toast({ title: 'Upload Successful', description: `${imageFile!.name} has been added.` });
+                await uploadSiteImageClient(file.name, dataUrl, file.type);
+                toast({ title: 'Upload Successful', description: `${file.name} has been added.` });
                 loadImages();
             } catch (error: any) {
                 console.error("Error calling uploadSiteImage cloud function:", error);
@@ -70,8 +58,14 @@ function SiteImagesManagerContent() {
             }
         };
 
-        reader.readAsDataURL(imageFile);
+        reader.readAsDataURL(file);
     };
+
+    const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        handleFileUpload(file || null);
+    };
+
 
     const handleDelete = async () => {
         if (!imageToDelete) return;
@@ -95,20 +89,32 @@ function SiteImagesManagerContent() {
         setIsReplacing(true);
         try {
             const { image } = imageToReplace;
-            await uploadSiteImageClient(
-                image.hint || 'replacement.png',
-                image.url,
-                'image/png', // Assume png for now, or detect mime type
-                replacementTargetId
-            );
-            toast({
-                title: "Image Replaced",
-                description: `The '${replacementTargetId}' image has been updated successfully.`
-            });
-            router.push('/website');
+            
+            // We need to fetch the image data to upload it again under the new ID.
+            const response = await fetch(image.url);
+            if (!response.ok) throw new Error("Could not fetch the selected image data.");
+            const blob = await response.blob();
+
+            const reader = new FileReader();
+            reader.onerror = () => { throw new Error("Could not read image data for replacement.") };
+            reader.onloadend = async () => {
+                const dataUrl = reader.result as string;
+                 await uploadSiteImageClient(
+                    image.hint || 'replacement.png',
+                    dataUrl,
+                    blob.type,
+                    replacementTargetId
+                );
+                toast({
+                    title: "Image Replaced",
+                    description: `The '${replacementTargetId}' image has been updated successfully.`
+                });
+                router.push('/website'); // Go back to the website to see the change
+            };
+            reader.readAsDataURL(blob);
+
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Replacement Failed', description: error.message });
-        } finally {
             setIsReplacing(false);
             setImageToReplace(null);
         }
@@ -131,13 +137,12 @@ function SiteImagesManagerContent() {
             <Card>
                 <CardHeader>
                     <CardTitle>Add New Image</CardTitle>
-                    <CardDescription>Paste an image directly into the area below to upload it.</CardDescription>
+                    <CardDescription>Choose a file from your computer to upload.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div 
-                        onPaste={handlePaste}
                         className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80"
-                        tabIndex={0}
+                        onClick={() => document.getElementById('file-upload-input')?.click()}
                     >
                        {isUploading ? (
                            <div className="flex flex-col items-center gap-2">
@@ -146,11 +151,12 @@ function SiteImagesManagerContent() {
                            </div>
                        ) : (
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Copy className="w-10 h-10 mb-3 text-gray-400" />
-                                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to focus, then paste</span></p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">(Ctrl+V or Cmd+V)</p>
+                                <FileUp className="w-10 h-10 mb-3 text-gray-400" />
+                                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload</span></p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
                             </div>
                        )}
+                       <input id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
                     </div>
                 </CardContent>
             </Card>

@@ -9,14 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { LoaderCircle, Trash2, Image as ImageIcon, Copy, CheckCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { useAuth } from '@/context/auth-context';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
 
 export function SiteImagesManager() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
-    const { db } = useFirebase();
-    const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -31,11 +27,6 @@ export function SiteImagesManager() {
     const replacementTargetId = searchParams.get('replace');
 
     const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
-        if (!user || !db) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-            return;
-        }
-
         const items = event.clipboardData.items;
         let imageFile: File | null = null;
         for (let i = 0; i < items.length; i++) {
@@ -51,48 +42,45 @@ export function SiteImagesManager() {
         }
         
         setIsUploading(true);
-        try {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
+        const reader = new FileReader();
+        
+        reader.onerror = () => {
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the image file from clipboard.' });
+            setIsUploading(false);
+        };
+
+        reader.onloadend = async () => {
+            try {
                 const dataUrl = reader.result as string;
 
-                if (dataUrl.length > 2 * 1024 * 1024) { // Increased limit to ~2MB for flexibility
-                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 2MB.' });
+                if (dataUrl.length > 5 * 1024 * 1024) { // 5MB limit for cloud function
+                    toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 5MB.' });
                     setIsUploading(false);
                     return;
                 }
-
-                const hint = imageFile!.name.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
-                const docId = `${Date.now()}-${hint.replace(/\s+/g, '-')}`;
-
-                await setDoc(doc(db, 'siteImages', docId), {
-                    url: dataUrl,
-                    storagePath: `firestore-data-url/${docId}`,
-                    hint,
-                    uploadedBy: user.uid,
-                    createdAt: new Date(),
-                });
+                
+                // Call the service function which invokes the Cloud Function
+                await uploadSiteImageClient(imageFile!.name, dataUrl, imageFile!.type);
 
                 toast({ title: 'Upload Successful', description: `${imageFile!.name} has been added.` });
-                loadImages(); // This will trigger a re-render with the new image
-            };
-            reader.readAsDataURL(imageFile);
+                loadImages();
+            } catch (error: any) {
+                console.error("Error calling uploadSiteImage cloud function:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+            } finally {
+                setIsUploading(false);
+            }
+        };
 
-        } catch (error: any) {
-            console.error("Client-side data URL error:", error);
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
-            setIsUploading(false);
-        }
+        reader.readAsDataURL(imageFile);
     };
 
     const handleDelete = async () => {
-        if (!imageToDelete || !db) return;
+        if (!imageToDelete) return;
         
         setIsDeleting(true);
         try {
-            await deleteDoc(doc(db, 'siteImages', imageToDelete.id));
-            
+            await deleteSiteImageClient(imageToDelete.id, imageToDelete.storagePath);
             toast({ title: 'Image Deleted' });
             setImageToDelete(null);
             loadImages();
@@ -104,26 +92,24 @@ export function SiteImagesManager() {
     };
     
     const handleConfirmReplacement = async () => {
-        if (!imageToReplaceWith || !replacementTargetId || !user || !db) return;
+        if (!imageToReplaceWith || !replacementTargetId) return;
 
         setIsReplacing(true);
         try {
-            const sourceImage = imageToReplaceWith.image;
-            const targetImageRef = doc(db, 'siteImages', replacementTargetId);
-
-            await setDoc(targetImageRef, {
-                url: sourceImage.url,
-                hint: sourceImage.hint,
-                storagePath: sourceImage.storagePath,
-                uploadedBy: user.uid,
-                createdAt: new Date(),
-            }, { merge: true });
+            // Re-use the upload function logic, but tell it which document to replace.
+            const { image } = imageToReplaceWith;
+            await uploadSiteImageClient(
+                image.hint || 'replacement.png', // fileName
+                image.url, // fileBuffer (as dataURL or existing storage URL)
+                'image/png', // contentType
+                replacementTargetId // Pass the ID of the document to replace
+            );
 
             toast({
                 title: "Image Replaced",
                 description: `The '${replacementTargetId}' image has been updated.`
             });
-            router.push('/website'); // Go back to the website to see the change
+            router.push('/website');
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Replacement Failed', description: error.message });
         } finally {

@@ -23,6 +23,7 @@ import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 
 const FILES_COLLECTION = 'files';
@@ -388,4 +389,18 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 // It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
+}
+
+export async function uploadSiteImageClient(fileName: string, fileBuffer: string, contentType: string, docIdToReplace?: string): Promise<{ success: boolean; message: string; id: string; }> {
+    const { functions } = await initializeFirebase();
+    const uploadFn = httpsCallable(functions, 'uploadSiteImage');
+    const result = await uploadFn({ fileName, fileBuffer, contentType, docIdToReplace });
+    return result.data as { success: boolean; message: string; id: string; };
+}
+
+export async function deleteSiteImageClient(imageId: string, storagePath: string): Promise<{ success: boolean; message: string; }> {
+    const { functions } = await initializeFirebase();
+    const deleteFn = httpsCallable(functions, 'deleteSiteImage');
+    const result = await deleteFn({ imageId, storagePath });
+    return result.data as { success: boolean; message: string; };
 }

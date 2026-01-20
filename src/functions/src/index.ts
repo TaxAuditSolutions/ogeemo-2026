@@ -43,7 +43,7 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
     // 4. Core Logic with Error Handling
     try {
         await admin.auth().updateUser(uid, updatePayload);
-        console.log(`Successfully updated user: ${uid}`);
+        console.log(`Successfully updated user ${uid}`);
         return { success: true, message: `User ${uid} updated successfully.` };
     } catch (error: any) {
         console.error(`Failed to update user ${uid}:`, error);
@@ -72,21 +72,37 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
         throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
     }
     
-    const { fileName, fileBuffer, contentType } = data;
+    const { fileName, fileBuffer, contentType, docIdToReplace } = data;
     if (!fileName || !fileBuffer || !contentType) {
         throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
     }
 
     try {
-        const base64Data = fileBuffer.split(';base64,').pop();
-        if (!base64Data) {
-            throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+        const isDataUrl = fileBuffer.startsWith('data:');
+        let imageBuffer: Buffer;
+        let originalHint: string;
+
+        if (isDataUrl) {
+            const base64Data = fileBuffer.split(';base64,').pop();
+            if (!base64Data) {
+                throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+            }
+            imageBuffer = Buffer.from(base64Data, 'base64');
+            originalHint = fileName;
+        } else {
+            // If not a data URL, assume it's a storage URL that needs to be fetched
+            const url = new URL(fileBuffer);
+            const response = await fetch(url.toString());
+            if (!response.ok) {
+                throw new functions.https.HttpsError('internal', `Failed to fetch image from URL: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            imageBuffer = Buffer.from(arrayBuffer);
+            originalHint = fileName;
         }
         
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-        
-        const fileExtension = fileName.split('.').pop() || '';
-        const baseName = fileName.substring(0, fileName.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+        const fileExtension = originalHint.split('.').pop() || 'png';
+        const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
         const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
         const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
         const filePath = `siteimages/${finalFileName}`;
@@ -105,7 +121,7 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
         await file.makePublic();
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
-        const docId = finalFileName.replace(`.${fileExtension}`, '');
+        const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
         const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
 
         await db.collection('siteImages').doc(docId).set({
@@ -116,7 +132,7 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             createdAt: new Date(),
         });
         
-        return { success: true, message: "Image uploaded successfully!", id: docId };
+        return { success: true, message: "Image processed successfully!", id: docId };
 
     } catch (error: any) {
         console.error("Error uploading site image:", error);

@@ -1,11 +1,10 @@
-
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onFeedbackCreated = exports.triggerAuthBackup = exports.triggerFirestoreBackup = exports.deleteSiteImage = exports.uploadSiteImage = exports.updateUserAuth = void 0;
 // This environment variable MUST be set before any other Firebase modules are loaded.
 // It is crucial for the gRPC client used by the Admin SDK to work correctly in
 // modern Node.js environments, avoiding low-level SSL DECODER errors.
-process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES ?? 'HIGH+ECDSA';
+process.env.GRPC_SSL_CIPHER_SUITES = process.env.GRPC_SSL_CIPHER_SUITES !== null && process.env.GRPC_SSL_CIPHER_SUITES !== void 0 ? process.env.GRPC_SSL_CIPHER_SUITES : 'HIGH+ECDSA';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.onFeedbackCreated = exports.triggerAuthBackup = exports.triggerFirestoreBackup = exports.updateUserAuth = void 0;
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const firestore_1 = require("@google-cloud/firestore");
@@ -55,96 +54,7 @@ exports.updateUserAuth = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
     }
 });
-exports.uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
-    }
-    const { fileName, fileBuffer, contentType, docIdToReplace } = data;
-    if (!fileName || !fileBuffer || !contentType) {
-        throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
-    }
-    try {
-        const isDataUrl = fileBuffer.startsWith('data:');
-        let imageBuffer;
-        let originalHint;
-        if (isDataUrl) {
-            const base64Data = fileBuffer.split(';base64,').pop();
-            if (!base64Data) {
-                throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
-            }
-            imageBuffer = Buffer.from(base64Data, 'base64');
-            originalHint = fileName;
-        }
-        else {
-            // If not a data URL, assume it's a storage URL that needs to be fetched
-            const url = new URL(fileBuffer);
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new functions.https.HttpsError('internal', `Failed to fetch image from URL: ${response.statusText}`);
-            }
-            const arrayBuffer = await response.arrayBuffer();
-            imageBuffer = Buffer.from(arrayBuffer);
-            originalHint = fileName;
-        }
-        const fileExtension = originalHint.split('.').pop() || 'png';
-        const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
-        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
-        const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
-        const filePath = `siteimages/${finalFileName}`;
-        const bucket = storage.bucket();
-        const file = bucket.file(filePath);
-        await file.save(imageBuffer, {
-            metadata: {
-                contentType: contentType,
-                cacheControl: 'public, max-age=31536000',
-            },
-        });
-        await file.makePublic();
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-        const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
-        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
-        await db.collection('siteImages').doc(docId).set({
-            url: publicUrl,
-            storagePath: filePath,
-            hint: hint,
-            uploadedBy: context.auth.uid,
-            createdAt: new Date(),
-        });
-        return { success: true, message: "Image processed successfully!", id: docId };
-    }
-    catch (error) {
-        console.error("Error uploading site image:", error);
-        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
-        if (isPermissionError) {
-            throw new functions.https.HttpsError("permission-denied", "The backend service account does not have permission to write files to Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions.");
-        }
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
-    }
-});
-exports.deleteSiteImage = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to delete images.");
-    }
-    const { imageId, storagePath } = data;
-    if (!imageId || !storagePath) {
-        throw new functions.https.HttpsError('invalid-argument', 'Image ID and storage path are required.');
-    }
-    try {
-        await db.collection('siteImages').doc(imageId).delete();
-        const bucket = storage.bucket();
-        const file = bucket.file(storagePath);
-        await file.delete();
-        return { success: true, message: 'Image deleted successfully.' };
-    }
-    catch (error) {
-        console.error("Error deleting site image:", error);
-        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
-        if (isPermissionError) {
-            throw new functions.https.HttpsError("permission-denied", "The backend service account does not have permission to delete files from Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions.");
-        }
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
-    }
-});
+// --- Backup Functions ---
 exports.triggerFirestoreBackup = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, Suspense } from 'react';
@@ -9,13 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { LoaderCircle, Trash2, CheckCircle, FileUp } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
+import { uploadSiteImage, deleteSiteImage } from '@/services/file-service';
+import { useAuth } from '@/context/auth-context';
 
 function SiteImagesManagerContent() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
     const { toast } = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { user } = useAuth();
     
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -26,8 +27,8 @@ function SiteImagesManagerContent() {
     const [isReplacing, setIsReplacing] = useState(false);
 
     const handleFileUpload = async (file: File | null) => {
-        if (!file) {
-            toast({ variant: 'destructive', title: 'No file selected.' });
+        if (!file || !user) {
+            toast({ variant: 'destructive', title: 'No file selected or not logged in.' });
             return;
         }
 
@@ -37,28 +38,16 @@ function SiteImagesManagerContent() {
         }
 
         setIsUploading(true);
-        const reader = new FileReader();
-        
-        reader.onerror = () => {
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the image file.' });
+        try {
+            await uploadSiteImage(file, user.uid);
+            toast({ title: 'Upload Successful', description: `${file.name} has been added.` });
+            loadImages();
+        } catch (error: any) {
+            console.error("Error uploading site image:", error);
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
             setIsUploading(false);
-        };
-
-        reader.onloadend = async () => {
-            try {
-                const dataUrl = reader.result as string;
-                await uploadSiteImageClient(file.name, dataUrl, file.type);
-                toast({ title: 'Upload Successful', description: `${file.name} has been added.` });
-                loadImages();
-            } catch (error: any) {
-                console.error("Error calling uploadSiteImage cloud function:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            } finally {
-                setIsUploading(false);
-            }
-        };
-
-        reader.readAsDataURL(file);
+        }
     };
 
     const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,13 +55,12 @@ function SiteImagesManagerContent() {
         handleFileUpload(file || null);
     };
 
-
     const handleDelete = async () => {
         if (!imageToDelete) return;
         
         setIsDeleting(true);
         try {
-            await deleteSiteImageClient(imageToDelete.id, imageToDelete.storagePath);
+            await deleteSiteImage(imageToDelete.id, imageToDelete.storagePath);
             toast({ title: 'Image Deleted' });
             setImageToDelete(null);
             loadImages();
@@ -84,37 +72,26 @@ function SiteImagesManagerContent() {
     };
     
     const handleConfirmReplacement = async () => {
-        if (!imageToReplace || !replacementTargetId) return;
+        if (!imageToReplace || !replacementTargetId || !user) return;
 
         setIsReplacing(true);
         try {
             const { image } = imageToReplace;
-            
-            // We need to fetch the image data to upload it again under the new ID.
             const response = await fetch(image.url);
             if (!response.ok) throw new Error("Could not fetch the selected image data.");
             const blob = await response.blob();
-
-            const reader = new FileReader();
-            reader.onerror = () => { throw new Error("Could not read image data for replacement.") };
-            reader.onloadend = async () => {
-                const dataUrl = reader.result as string;
-                 await uploadSiteImageClient(
-                    image.hint || 'replacement.png',
-                    dataUrl,
-                    blob.type,
-                    replacementTargetId
-                );
-                toast({
-                    title: "Image Replaced",
-                    description: `The '${replacementTargetId}' image has been updated successfully.`
-                });
-                router.push('/website'); // Go back to the website to see the change
-            };
-            reader.readAsDataURL(blob);
-
+            const file = new File([blob], image.hint || 'replacement.png', { type: blob.type });
+            
+            await uploadSiteImage(file, user.uid, replacementTargetId);
+            
+            toast({
+                title: "Image Replaced",
+                description: `The '${replacementTargetId}' image has been updated successfully.`
+            });
+            router.push('/website'); 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Replacement Failed', description: error.message });
+        } finally {
             setIsReplacing(false);
             setImageToReplace(null);
         }

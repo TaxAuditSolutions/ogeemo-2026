@@ -16,15 +16,13 @@ import {
     getDoc,
     setDoc,
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, getDownloadURL } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
 
 const FILES_COLLECTION = 'files';
 export const SITE_IMAGES_FOLDER_ID = 'folder-site-images';
@@ -62,44 +60,6 @@ export async function getFiles(userId?: string): Promise<FileItem[]> {
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFile);
 }
-
-// NOTE: This function is now deprecated for server-side use. 
-// It is kept for potential client-side-only scenarios.
-// Server Actions should use getAdminFileContentFromStorage from lib/firebase-admin.ts
-export async function getClientFileContentFromStorage(auth: Auth, storagePath: string): Promise<string> {
-    if (!storagePath) {
-        console.warn("Storage path is empty, returning empty content.");
-        return '';
-    }
-
-    return new Promise(async (resolve, reject) => {
-        // Wait for auth state to be confirmed
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            unsubscribe(); // We only need this once
-            if (user) {
-                try {
-                    const storage = await getAppStorage();
-                    const contentRef = storageRef(storage, storagePath);
-                    const bytes = await getBytes(contentRef);
-                    const textDecoder = new TextDecoder('utf-8');
-                    resolve(textDecoder.decode(bytes));
-                } catch (error: any) {
-                    console.error(`Failed to fetch content from ${storagePath}:`, error);
-                    if (error.code === 'storage/object-not-found') {
-                         reject(new Error(`File content not found in storage at path: ${storagePath}. It may have been deleted or not yet created.`));
-                    } else if (error.code === 'storage/unauthorized') {
-                         reject(new Error(`You do not have permission to access this file.`));
-                    } else {
-                         reject(new Error(`Failed to retrieve file content: ${error.message}`));
-                    }
-                }
-            } else {
-                reject(new Error("Authentication required to access file content."));
-            }
-        });
-    });
-}
-
 
 export async function getFileById(fileId: string): Promise<FileItem | null> {
     const db = await getDb();
@@ -297,7 +257,7 @@ export async function saveEmailForContact(userId: string, contactName: string, e
 }
 
 export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
-    const folder = await findOrCreateFileFolder(userId, 'Archived Ideas');
+    const folder = await findOrCreateGenericFolder(userId, 'Archived Ideas', 'fileManagerFolders');
 
     const content = `
 # ${title}
@@ -313,7 +273,7 @@ ${description || 'No description provided.'}
 }
 
 export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promise<FileItem> {
-    const folder = await findOrCreateFileFolder(userId, 'Archived Tasks');
+    const folder = await findOrCreateGenericFolder(userId, 'Archived Tasks', 'fileManagerFolders');
 
     const content = `
 # ${task.title}
@@ -335,7 +295,6 @@ export async function addFileFromDataUrl(
 ): Promise<FileItem> {
     const storage = await getAppStorage();
     
-    // Convert data URL to Blob
     const response = await fetch(dataUrl);
     const blob = await response.blob();
 
@@ -357,7 +316,6 @@ export async function addFileFromDataUrl(
     return addFileRecord(newFileRecord);
 }
 
-// Kept for specific file deletions, but folder deletion is handled by deleteFolders
 export async function deleteFiles(fileIds: string[]): Promise<void> {
     const db = await getDb();
     const storage = await getAppStorage();
@@ -375,7 +333,6 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
                 } catch (error: any) {
                     if (error.code !== 'storage/object-not-found') {
                         console.error(`Failed to delete file from storage: ${fileData.storagePath}`, error);
-                        // Do not throw, allow Firestore deletion to proceed.
                     }
                 }
             }
@@ -385,22 +342,56 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
     
     await batch.commit();
 }
-// This function has been deprecated and its functionality moved to `file-manager-folders.ts`
-// It is kept here to avoid breaking imports but should not be used.
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
 }
 
-export async function uploadSiteImageClient(fileName: string, fileBuffer: string, contentType: string, docIdToReplace?: string): Promise<{ success: boolean; message: string; id: string; }> {
-    const { functions } = await initializeFirebase();
-    const uploadFn = httpsCallable(functions, 'uploadSiteImage');
-    const result = await uploadFn({ fileName, fileBuffer, contentType, docIdToReplace });
-    return result.data as { success: boolean; message: string; id: string; };
+export async function uploadSiteImage(file: File, userId: string, docIdToReplace?: string): Promise<void> {
+    const storage = await getAppStorage();
+    const db = await getDb();
+
+    const fileName = file.name;
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'png';
+    const baseName = fileName.substring(0, fileName.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+    const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+    const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
+    const filePath = `siteimages/${finalFileName}`;
+    
+    const fileRef = storageRef(storage, filePath);
+    
+    await uploadBytes(fileRef, file, {
+        cacheControl: 'public, max-age=31536000',
+    });
+
+    const publicUrl = await getDownloadURL(fileRef);
+    
+    const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
+    const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+    
+    const docRef = doc(db, 'siteImages', docId);
+    await setDoc(docRef, {
+        url: publicUrl,
+        storagePath: filePath,
+        hint: hint,
+        uploadedBy: userId,
+        createdAt: new Date(),
+    }, { merge: true });
 }
 
-export async function deleteSiteImageClient(imageId: string, storagePath: string): Promise<{ success: boolean; message: string; }> {
-    const { functions } = await initializeFirebase();
-    const deleteFn = httpsCallable(functions, 'deleteSiteImage');
-    const result = await deleteFn({ imageId, storagePath });
-    return result.data as { success: boolean; message: string; };
+export async function deleteSiteImage(imageId: string, storagePath: string): Promise<void> {
+    const storage = await getAppStorage();
+    const db = await getDb();
+    
+    if (storagePath) {
+        const fileRef = storageRef(storage, storagePath);
+        await deleteObject(fileRef).catch(error => {
+            if (error.code !== 'storage/object-not-found') {
+                throw error;
+            }
+            console.warn(`File not found in storage at path: ${storagePath}. It might have been already deleted.`);
+        });
+    }
+
+    const docRef = doc(db, 'siteImages', imageId);
+    await deleteDoc(docRef);
 }

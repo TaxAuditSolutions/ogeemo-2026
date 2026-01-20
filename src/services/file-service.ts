@@ -361,6 +361,9 @@ export async function uploadSiteImage(file: File, userId: string, docIdToReplace
     
     await uploadBytes(fileRef, file, {
         cacheControl: 'public, max-age=31536000',
+        customMetadata: {
+            uploadedBy: userId,
+        }
     });
 
     const publicUrl = await getDownloadURL(fileRef);

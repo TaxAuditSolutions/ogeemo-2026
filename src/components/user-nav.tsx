@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { LogOut, User as UserIcon, Lock } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
@@ -15,9 +16,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getUserProfile } from '@/services/user-profile-service';
 
 export function UserNav() {
   const { user, logout } = useAuth();
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set a default name immediately, then fetch the more accurate one.
+    if (user) {
+      setDisplayName(user.displayName);
+      getUserProfile(user.uid).then(profile => {
+        if (profile?.displayName) {
+          setDisplayName(profile.displayName);
+        }
+      });
+    }
+  }, [user]);
 
   if (!user) {
     return null;
@@ -25,8 +40,15 @@ export function UserNav() {
   
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
-    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   };
+
+  const nameToDisplay = displayName || user.displayName;
 
   return (
     <DropdownMenu>
@@ -35,16 +57,16 @@ export function UserNav() {
                 <Avatar className="h-9 w-9">
                     <AvatarImage
                         src={user.photoURL || undefined}
-                        alt={user.displayName || 'User avatar'}
+                        alt={nameToDisplay || 'User avatar'}
                     />
-                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(nameToDisplay)}</AvatarFallback>
                 </Avatar>
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
+              <p className="text-sm font-medium leading-none">{nameToDisplay || "User"}</p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user.email}
               </p>

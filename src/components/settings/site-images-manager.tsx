@@ -19,12 +19,12 @@ export function SiteImagesManager() {
     
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isReplacing, setIsReplacing] = useState(false);
     
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
-    const [imageToReplaceWith, setImageToReplaceWith] = useState<{ id: string; image: SiteImage } | null>(null);
+    const [imageToReplace, setImageToReplace] = useState<{ id: string; image: SiteImage } | null>(null);
     
     const replacementTargetId = searchParams.get('replace');
+    const [isReplacing, setIsReplacing] = useState(false);
 
     const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
         const items = event.clipboardData.items;
@@ -53,13 +53,12 @@ export function SiteImagesManager() {
             try {
                 const dataUrl = reader.result as string;
 
-                if (dataUrl.length > 5 * 1024 * 1024) { // 5MB limit for cloud function
+                if (dataUrl.length > 5 * 1024 * 1024) {
                     toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 5MB.' });
                     setIsUploading(false);
                     return;
                 }
                 
-                // Call the service function which invokes the Cloud Function
                 await uploadSiteImageClient(imageFile!.name, dataUrl, imageFile!.type);
 
                 toast({ title: 'Upload Successful', description: `${imageFile!.name} has been added.` });
@@ -92,32 +91,29 @@ export function SiteImagesManager() {
     };
     
     const handleConfirmReplacement = async () => {
-        if (!imageToReplaceWith || !replacementTargetId) return;
+        if (!imageToReplace || !replacementTargetId) return;
 
         setIsReplacing(true);
         try {
-            // Re-use the upload function logic, but tell it which document to replace.
-            const { image } = imageToReplaceWith;
+            const { image } = imageToReplace;
             await uploadSiteImageClient(
-                image.hint || 'replacement.png', // fileName
-                image.url, // fileBuffer (as dataURL or existing storage URL)
-                'image/png', // contentType
-                replacementTargetId // Pass the ID of the document to replace
+                image.hint || 'replacement.png',
+                image.url,
+                'image/png',
+                replacementTargetId
             );
-
             toast({
                 title: "Image Replaced",
-                description: `The '${replacementTargetId}' image has been updated.`
+                description: `The '${replacementTargetId}' image has been updated successfully.`
             });
             router.push('/website');
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Replacement Failed', description: error.message });
         } finally {
             setIsReplacing(false);
-            setImageToReplaceWith(null);
+            setImageToReplace(null);
         }
     };
-
 
     return (
         <>
@@ -177,7 +173,7 @@ export function SiteImagesManager() {
                                     <img src={image.url} alt={image.hint || 'Site image'} className="h-full w-full object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         {replacementTargetId ? (
-                                            <Button size="sm" onClick={() => setImageToReplaceWith({id, image})}>
+                                            <Button size="sm" onClick={() => setImageToReplace({id, image})}>
                                                 <CheckCircle className="mr-2 h-4 w-4" /> Select
                                             </Button>
                                         ) : (
@@ -215,7 +211,7 @@ export function SiteImagesManager() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={!!imageToReplaceWith} onOpenChange={() => setImageToReplaceWith(null)}>
+            <AlertDialog open={!!imageToReplace} onOpenChange={() => setImageToReplace(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Replacement</AlertDialogTitle>
@@ -233,5 +229,5 @@ export function SiteImagesManager() {
                 </AlertDialogContent>
             </AlertDialog>
         </>
-    )
+    );
 }

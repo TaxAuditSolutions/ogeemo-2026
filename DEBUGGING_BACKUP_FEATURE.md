@@ -1,12 +1,14 @@
+
 # How to Fix "Internal" Server Errors
 
 This guide provides precise, command-line steps to resolve the vague "internal" errors that can occur when using server-side features. These errors are almost always caused by missing cloud permissions for the function's service account, not by a bug in the application code itself.
 
-This document covers two known issues that present as an "internal" error:
+This document covers three known issues that present as an "internal" error:
 1.  **Image Upload Failure:** When uploading a replacement image for the website.
 2.  **Backup Feature Failure:** When triggering a Firestore or Auth backup.
+3.  **Password Update Failure:** When trying to change a user's password.
 
-The solution for both is often the same: granting the correct roles to the service account. Please follow the steps below carefully.
+The solution for all of these is often the same: granting the correct roles to the service account. Please follow the steps below carefully.
 
 ---
 ## **Update:** Specific Command-Line Fixes
@@ -17,7 +19,7 @@ Thanks to further analysis from Workspace Gemini, we now have a precise, command
 
 ### 1. Identify the Exact Service Account
 
-First, we need to know exactly which "identity" the function is using, as it might not be the default one. This command will work for both the backup and image upload functions. You can use either function name (`triggerFirestoreBackup` or `uploadSiteImage`).
+First, we need to know exactly which "identity" the function is using, as it might not be the default one. This command will work for any of the functions (`triggerFirestoreBackup`, `uploadSiteImage`, `updateUserAuth`).
 
 ```bash
 gcloud functions describe triggerFirestoreBackup --region=[YOUR_REGION] --format="value(serviceConfig.serviceAccountEmail)"
@@ -28,10 +30,18 @@ This command will output the service account email (let's call it `SA_EMAIL`).
 
 ### 2. Grant Required Roles
 
-Once you have the `SA_EMAIL`, ensure it has the necessary roles to perform its tasks.
+Once you have the `SA_EMAIL`, ensure it has the necessary roles to perform its tasks. Run the commands relevant to the feature that is failing.
+
+**For the Password Update Feature:**
+This role is required for the `updateUserAuth` function to modify user accounts.
+```bash
+gcloud projects add-iam-policy-binding [PROJECT_ID] \
+    --member="serviceAccount:SA_EMAIL" \
+    --role="roles/firebaseauth.admin"
+```
 
 **For the Backup Feature:**
-
+This role is required for the `triggerFirestoreBackup` function.
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --member="serviceAccount:SA_EMAIL" \
@@ -39,7 +49,7 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 ```
 
 **For Both Image Upload and Backups:**
-
+This role is required for writing files to the Cloud Storage bucket.
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --member="serviceAccount:SA_EMAIL" \

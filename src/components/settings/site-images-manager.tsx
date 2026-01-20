@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -128,7 +127,7 @@ export function SiteImagesManager() {
                         <CardDescription>Select an image from your library below to replace the "{replacementTargetId}" image.</CardDescription>
                     </CardHeader>
                     <CardFooter className="justify-center">
-                        <Button variant="outline" onClick={() => router.push('/website')}>Cancel Replacement</Button>
+                        <Button variant="outline" onClick={() => router.push('/settings/site-images')}>Cancel Replacement</Button>
                     </CardFooter>
                 </Card>
             )}

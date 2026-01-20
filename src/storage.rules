@@ -10,12 +10,15 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Site images are publically readable and were handled by a Cloud Function.
-    // This functionality has been moved to a data URL scheme within Firestore,
-    // so this storage rule is no longer necessary.
-    // The path is left here as a comment for historical reference.
-    // match /siteimages/{allPaths=**} {
-    //   allow read;
-    // }
+    // Rules for site-wide images in the /siteimages path.
+    match /siteimages/{allPaths=**} {
+      // Anyone can read public site images.
+      allow read;
+      
+      // Only authenticated users can upload or delete images.
+      // The actual logic is handled by a secured Cloud Function, but this
+      // rule provides an additional layer of security.
+      allow write: if request.auth != null;
+    }
   }
 }

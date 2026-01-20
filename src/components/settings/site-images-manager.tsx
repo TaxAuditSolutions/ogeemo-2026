@@ -1,17 +1,17 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Trash2, Image as ImageIcon, Copy, CheckCircle } from 'lucide-react';
+import { LoaderCircle, Trash2, Copy, CheckCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
 
-export function SiteImagesManager() {
+function SiteImagesManagerContent() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
     const { toast } = useToast();
     const router = useRouter();
@@ -19,11 +19,10 @@ export function SiteImagesManager() {
     
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
-    const [imageToReplace, setImageToReplace] = useState<{ id: string; image: SiteImage } | null>(null);
     
     const replacementTargetId = searchParams.get('replace');
+    const [imageToReplace, setImageToReplace] = useState<{ id: string; image: SiteImage } | null>(null);
     const [isReplacing, setIsReplacing] = useState(false);
 
     const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -99,7 +98,7 @@ export function SiteImagesManager() {
             await uploadSiteImageClient(
                 image.hint || 'replacement.png',
                 image.url,
-                'image/png',
+                'image/png', // Assume png for now, or detect mime type
                 replacementTargetId
             );
             toast({
@@ -229,5 +228,13 @@ export function SiteImagesManager() {
                 </AlertDialogContent>
             </AlertDialog>
         </>
+    );
+}
+
+export function SiteImagesManager() {
+    return (
+        <Suspense fallback={<div className="flex h-64 items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin" /></div>}>
+            <SiteImagesManagerContent />
+        </Suspense>
     );
 }

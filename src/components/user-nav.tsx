@@ -39,13 +39,12 @@ export function UserNav() {
   }
   
   const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length > 1) {
+        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : 'U';
   };
 
   const nameToDisplay = displayName || user.displayName;

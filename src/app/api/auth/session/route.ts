@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         const { idToken } = await req.json();
         if (!idToken) {
             console.log('Session API error: ID token is required.');
-            return new NextResponse(JSON.stringify({ error: 'ID token is required.' }), { status: 400 });
+            return NextResponse.json({ error: 'ID token is required.' }, { status: 400 });
         }
         
         console.log('Creating session cookie...');
@@ -28,14 +28,14 @@ export async function POST(req: NextRequest) {
         };
 
         console.log('Setting cookie on response with options:', options);
-        const response = new NextResponse(JSON.stringify({ status: 'success' }), { status: 200 });
+        const response = NextResponse.json({ status: 'success' }, { status: 200 });
         response.cookies.set(options);
         
         return response;
 
     } catch (error: any) {
         console.error('Error creating session cookie:', error);
-        return new NextResponse(JSON.stringify({ error: 'Unauthorized', details: error.message }), { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized', details: error.message }, { status: 401 });
     }
 }
 
@@ -49,11 +49,11 @@ export async function DELETE(req: NextRequest) {
             path: '/',
         };
         console.log('Deleting cookie with options:', options)
-        const response = new NextResponse(JSON.stringify({ status: 'success' }), { status: 200 });
+        const response = NextResponse.json({ status: 'success' }, { status: 200 });
         response.cookies.set(options)
         return response;
     } catch (error: any) {
          console.error('Error deleting session cookie:', error);
-        return new NextResponse(JSON.stringify({ error: 'Internal Server Error', details: error.message }), { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }

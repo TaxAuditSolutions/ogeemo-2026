@@ -515,23 +515,8 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
   { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
   { label: 'Contacts', icon: Contact, href: '/contacts' },
   { label: 'Projects', icon: Briefcase, href: '/projects' },
-  { label: 'Task & Event Mngr', icon: BrainCircuit, href: '/master-mind'},
+  { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
 ];
-
-async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
-    const db = await getDb();
-    const docRef = doc(db, collectionName, userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        const chips = (data.chips || []).filter(Boolean).map(docToActionChip);
-        // Ensure position exists if it doesn't, then sort
-        return chips
-            .map((chip: any, index: number) => ({ ...chip, position: chip.position ?? index }))
-            .sort((a: any, b: any) => a.position - b.position);
-    }
-    return [];
-}
 
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = await getDb();
@@ -544,6 +529,21 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     await setDoc(docRef, { chips: chipsToSave }, { merge: true });
 }
 
+async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
+    const db = await getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        const chips = (data.chips || []).filter(Boolean).map(docToActionChip);
+        return chips
+            .map((chip: any, index: number) => ({ ...chip, position: chip.position ?? index }))
+            .sort((a: any, b: any) => a.position - b.position);
+    }
+    return [];
+}
+
+
 export async function getActionChips(userId: string, type: ChipMenuType = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap = {
         dashboard: ACTION_CHIPS_COLLECTION,
@@ -552,25 +552,25 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
     };
     const collectionName = collectionNameMap[type];
 
-    const defaultSourceMap = {
-        dashboard: defaultChips,
-        accounting: accountingMenuItems.slice(0, 4),
-        hr: hrMenuItems,
-    };
-    const defaultSource = defaultSourceMap[type];
-    
-    const chips = await getChipsFromCollection(userId, collectionName);
-    if (chips.length === 0) {
-        const docRef = doc(await getDb(), collectionName, userId);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-            const chipsToSave = defaultSource.map(c => ({...c, id: `default-${c.label}`, userId}));
-            await updateChipsInCollection(userId, collectionName, chipsToSave);
-            return chipsToSave;
-        }
+    const db = await getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+        const defaultSourceMap = {
+            dashboard: defaultChips,
+            accounting: accountingMenuItems.slice(0, 4),
+            hr: hrMenuItems,
+        };
+        const defaultSource = defaultSourceMap[type];
+        const chipsToSave = defaultSource.map(c => ({...c, id: `default-${c.label}`, userId}));
+        await updateChipsInCollection(userId, collectionName, chipsToSave);
+        return chipsToSave;
     }
-    return chips;
+    
+    return getChipsFromCollection(userId, collectionName);
 }
+
 
 export async function getAvailableActionChips(userId: string, type: ChipMenuType = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap = {
@@ -579,6 +579,30 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type];
+
+    const db = await getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+
+    const userActionChips = await getActionChips(userId, type);
+    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
+
+    if (!docSnap.exists()) {
+        const defaultSourceMap = {
+            dashboard: allMenuItems,
+            accounting: accountingMenuItems,
+            hr: hrMenuItems,
+        };
+        const defaultSource = defaultSourceMap[type];
+        const chipsToSave = defaultSource
+            .filter(item => !usedHrefs.has(item.href))
+            .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+        
+        await updateChipsInCollection(userId, collectionName, chipsToSave);
+        return chipsToSave;
+    }
+
+    const customAvailable = await getChipsFromCollection(userId, collectionName);
     
     const defaultSourceMap = {
         dashboard: allMenuItems,
@@ -586,27 +610,24 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
         hr: hrMenuItems,
     };
     const defaultSource = defaultSourceMap[type];
-
-    const chips = await getChipsFromCollection(userId, collectionName);
-    const userActionChips = await getActionChips(userId, type);
-    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
     
     const defaultAvailable = defaultSource
         .filter(item => !usedHrefs.has(item.href))
         .map(item => ({ ...item, id: `default-${item.href}`, userId }));
-        
-    const customAvailable = chips.filter(c => !usedHrefs.has(typeof c.href === 'string' ? c.href : c.href.pathname));
-    
+
     const combined = [...customAvailable];
     const customHrefs = new Set(customAvailable.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
+
     defaultAvailable.forEach(item => {
-        if (!customHrefs.has(item.href)) {
+        const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
+        if (!customHrefs.has(hrefString)) {
             combined.push(item);
         }
     });
 
-    return combined;
+    return combined.sort((a,b) => a.label.localeCompare(b.label));
 }
+
 
 export async function updateActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
     const collectionNameMap = {

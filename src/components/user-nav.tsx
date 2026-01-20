@@ -40,11 +40,20 @@ export function UserNav() {
   
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
-    const parts = name.trim().split(/\s+/).filter(Boolean);
+    // Use a simple space split which is more reliable.
+    const parts = name.trim().split(' ').filter(Boolean);
+    
     if (parts.length > 1) {
+        // For names like "Dan White", this will correctly return "DW"
         return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
-    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : 'U';
+    
+    // Fallback for single names
+    if (parts[0]) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+
+    return 'U';
   };
 
   const nameToDisplay = displayName || user.displayName;

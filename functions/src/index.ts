@@ -62,7 +62,13 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
         }
 
         // 6. Generic Fallback Error
-        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+            stack: error.stack
+        };
+        throw new functions.https.HttpsError('internal', `Update failed: ${errorMessage}`, errorDetails);
     }
 });
 

@@ -144,13 +144,28 @@ export const importFromGoogleDrive = functions.runWith({ memory: '1GB', timeoutS
 
     } catch (error: any) {
         console.error("Error importing from Google Drive:", error);
+
+        // Check for Google Drive API specific errors
         if (error.code === 404) {
-          throw new functions.https.HttpsError('not-found', 'The file could not be found on Google Drive. Please check the URL and sharing permissions.');
+            throw new functions.https.HttpsError('not-found', 'The file could not be found on Google Drive. Please check the URL and sharing permissions.');
         }
-        if (error.code === 403) {
-          throw new functions.https.HttpsError('permission-denied', 'The service account does not have permission to access this Google Drive file. Ensure the file is shared appropriately.');
+        if (error.code === 403 && error.message && error.message.toLowerCase().includes('drive')) {
+            throw new functions.https.HttpsError('permission-denied', 'The service account does not have permission to access this Google Drive file. Ensure the file is shared appropriately.');
         }
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to import from Google Drive.');
+        
+        // Check for Cloud Storage permission errors
+        const isStoragePermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isStoragePermissionError) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The backend service account does not have permission to write files to Cloud Storage. Please grant the 'Storage Admin' role to your function's service account. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions."
+            );
+        }
+        
+        // Generic fallback
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = { message: errorMessage, code: error.code };
+        throw new functions.https.HttpsError('internal', `Import failed: ${errorMessage}`, errorDetails);
     }
 });
 

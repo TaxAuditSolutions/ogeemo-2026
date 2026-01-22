@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -63,6 +64,7 @@ export default function ImageManagerPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
   const pickerApiLoaded = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
   const { user, getGoogleAccessToken } = useAuth();
@@ -109,11 +111,9 @@ export default function ImageManagerPage() {
   
   const createPicker = (accessToken: string) => {
     const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    const GOOGLE_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
     const missingVars = [];
     if (!GOOGLE_API_KEY) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
-    if (!GOOGLE_APP_ID) missingVars.push('NEXT_PUBLIC_GOOGLE_CLIENT_ID');
 
     if (!user || missingVars.length > 0) {
       toast({
@@ -131,7 +131,6 @@ export default function ImageManagerPage() {
       .addView(view)
       .setOAuthToken(accessToken)
       .setDeveloperKey(GOOGLE_API_KEY)
-      .setAppId(GOOGLE_APP_ID)
       .setCallback(async (data: google.picker.ResponseObject) => {
         if (data.action === google.picker.Action.PICKED) {
           const doc = data.docs[0];
@@ -204,6 +203,52 @@ export default function ImageManagerPage() {
   };
 
 
+  const handlePaste = (event: React.ClipboardEvent) => {
+    const items = event.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          setPastedImage(file);
+          setPreviewUrl(URL.createObjectURL(file));
+          break;
+        }
+      }
+    }
+  };
+  
+  const handleSave = async () => {
+    if (!pastedImage || !user) {
+      toast({ variant: 'destructive', title: 'No image to save' });
+      return;
+    }
+    
+    setIsUploading(true);
+    setStatus('Saving image...');
+    try {
+      await uploadSiteImage(pastedImage, user.uid);
+      toast({ title: 'Image Saved', description: 'Your pasted image has been added to the library.' });
+      setPastedImage(null);
+      setPreviewUrl(null);
+      loadImages(); // Refresh the library view
+    } catch (error: any) {
+      console.error("Save image error:", error);
+      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+      setIsUploading(false);
+      setStatus('');
+    }
+  };
+
+  const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPastedImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+
   return (
     <>
     <div className="p-4 sm:p-6 space-y-6">
@@ -229,12 +274,15 @@ export default function ImageManagerPage() {
         <CardHeader>
           <CardTitle>Add New Image</CardTitle>
           <CardDescription>
-            Click to import an image from your Google Drive.
+            Click to import an image from your Google Drive, or paste an image from your clipboard into the box below.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent 
+          onPaste={handlePaste} 
+          className="space-y-4"
+        >
           <div 
-            onClick={handleImportFromGoogleDrive}
+            onClick={() => fileInputRef.current?.click()}
             className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80"
           >
            {isUploading ? (
@@ -242,17 +290,45 @@ export default function ImageManagerPage() {
                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                    <p className="text-sm text-muted-foreground">{status}</p>
                </div>
+           ) : previewUrl ? (
+                <div className="relative w-full h-full">
+                    <img src={previewUrl} alt="Pasted content" className="w-full h-full object-contain" />
+                     <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPastedImage(null);
+                          setPreviewUrl(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                </div>
            ) : (
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <FileUp className="w-10 h-10 mb-3 text-gray-400" />
                   <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold">Click to import from Google Drive</span>
+                      <span className="font-semibold">Click to upload or paste image</span>
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
                 </div>
            )}
+           <input ref={fileInputRef} id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
           </div>
+          {previewUrl && (
+             <div className="flex justify-end">
+                  <Button onClick={handleSave} disabled={isUploading}>
+                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Image
+                  </Button>
+              </div>
+          )}
         </CardContent>
+         <CardFooter>
+            <Button variant="secondary" onClick={handleImportFromGoogleDrive}>Import from Google Drive</Button>
+        </CardFooter>
       </Card>
 
       <Card>
@@ -331,4 +407,6 @@ export default function ImageManagerPage() {
     </>
   );
 }
+    
+
     

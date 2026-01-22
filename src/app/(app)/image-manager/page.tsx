@@ -24,7 +24,6 @@ declare global {
         addView(view: any): this;
         setOAuthToken(token: string): this;
         setDeveloperKey(key: string): this;
-        setAppId(id: string): this;
         setCallback(callback: (data: any) => void): this;
         build(): Picker;
       }
@@ -110,16 +109,11 @@ export default function ImageManagerPage() {
   };
   
   const createPicker = (accessToken: string) => {
-    const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-    const missingVars = [];
-    if (!GOOGLE_API_KEY) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
-
-    if (!user || missingVars.length > 0) {
+    if (!user) {
       toast({
         variant: "destructive",
-        title: "Configuration Error",
-        description: `The following environment variables are missing: ${missingVars.join(', ')}. Please contact support.`,
+        title: "Authentication Error",
+        description: "You must be logged in to use this feature.",
       });
       return;
     }
@@ -130,7 +124,6 @@ export default function ImageManagerPage() {
     const picker = new window.google.picker.PickerBuilder()
       .addView(view)
       .setOAuthToken(accessToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
       .setCallback(async (data: google.picker.ResponseObject) => {
         if (data.action === google.picker.Action.PICKED) {
           const doc = data.docs[0];

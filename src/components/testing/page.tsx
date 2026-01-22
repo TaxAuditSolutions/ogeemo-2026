@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -145,21 +144,20 @@ export default function TestingPage() {
   };
   
   const createPicker = (accessToken: string) => {
-    const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    const GOOGLE_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
-    if (!user || !GOOGLE_API_KEY || !GOOGLE_APP_ID) {
-      toast({ variant: 'destructive', title: 'Configuration Error', description: 'Missing Google API configuration.' });
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to use this feature.",
+      });
       return;
     }
 
     const picker = new window.google.picker.PickerBuilder()
       .addView(window.google.picker.ViewId.DOCS)
       .setOAuthToken(accessToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
-      .setAppId(GOOGLE_APP_ID)
       .setCallback(async (data: google.picker.ResponseObject) => {
-        if (data.action === google.picker.Action.PICKED) {
+        if (data.action === window.google.picker.Action.PICKED) {
           const doc = data.docs[0];
           
           if (!gdriveFolder) {
@@ -255,3 +253,5 @@ export default function TestingPage() {
       </div>
   );
 }
+
+    

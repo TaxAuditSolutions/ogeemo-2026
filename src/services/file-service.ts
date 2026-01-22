@@ -393,11 +393,11 @@ export async function uploadSiteImage(fileOrUrl: File | string, userId: string, 
     }
 }
 
-export async function importFromGoogleDriveUrl(fileUrl: string, docIdToReplace?: string): Promise<any> {
+export async function importFromGoogleDriveUrl(fileUrl: string, accessToken: string, docIdToReplace?: string): Promise<any> {
     const functions = getFunctionsService();
     const importFn = httpsCallable(functions, 'importFromGoogleDrive');
     try {
-        const result = await importFn({ fileUrl, docIdToReplace });
+        const result = await importFn({ fileUrl, accessToken, docIdToReplace });
         return result.data;
     } catch (error: any) {
         console.error("Error calling importFromGoogleDrive function:", error);

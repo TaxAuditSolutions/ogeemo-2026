@@ -83,9 +83,9 @@ export const importFromGoogleDrive = functions.runWith({ memory: '1GB', timeoutS
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
     }
-    const { fileUrl, docIdToReplace } = data;
-    if (!fileUrl) {
-        throw new functions.https.HttpsError('invalid-argument', 'Google Drive file URL is required.');
+    const { fileUrl, accessToken, docIdToReplace } = data;
+    if (!fileUrl || !accessToken) {
+        throw new functions.https.HttpsError('invalid-argument', 'Google Drive file URL and access token are required.');
     }
 
     try {
@@ -94,11 +94,9 @@ export const importFromGoogleDrive = functions.runWith({ memory: '1GB', timeoutS
             throw new functions.https.HttpsError('invalid-argument', 'Could not extract a valid File ID from the URL. Please ensure you are using a valid Google Drive file link.');
         }
 
-        const auth = new google.auth.GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
-        const authClient = await auth.getClient();
-        const drive = google.drive({ version: 'v3', auth: authClient });
+        const auth = new google.auth.OAuth2();
+        auth.setCredentials({ access_token: accessToken });
+        const drive = google.drive({ version: 'v3', auth });
 
         const fileMetadata = await drive.files.get({
             fileId: fileId,

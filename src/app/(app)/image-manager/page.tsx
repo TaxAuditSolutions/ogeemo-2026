@@ -4,7 +4,7 @@
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { SettingsPageHeader } from "@/components/settings/settings-page-header";
-import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle, ExternalLink, Link as LinkIcon, Upload } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -28,7 +28,7 @@ export default function ImageManagerPage() {
   const [isImporting, setIsImporting] = useState(false);
 
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, getGoogleAccessToken } = useAuth();
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
   
   const searchParams = useSearchParams();
@@ -81,7 +81,11 @@ export default function ImageManagerPage() {
     }
     setIsImporting(true);
     try {
-        const result = await importFromGoogleDriveUrl(gdriveUrl, replacementTargetId || undefined);
+        const accessToken = await getGoogleAccessToken();
+        if (!accessToken) {
+            throw new Error("Could not get Google access token. Please ensure you are signed in with Google.");
+        }
+        const result = await importFromGoogleDriveUrl(gdriveUrl, accessToken, replacementTargetId || undefined);
         toast({ title: 'Import Successful', description: result.message });
         setGdriveUrl('');
         loadImages(); 
@@ -260,7 +264,7 @@ export default function ImageManagerPage() {
                     disabled={isImporting}
                 />
                 <Button onClick={handleImportFromDrive} disabled={isImporting}>
-                    {isImporting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                    {isImporting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                     Import
                 </Button>
             </div>

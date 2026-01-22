@@ -77,12 +77,9 @@ function SiteImagesManagerContent() {
         setIsReplacing(true);
         try {
             const { image } = imageToReplace;
-            const response = await fetch(image.url);
-            if (!response.ok) throw new Error("Could not fetch the selected image data.");
-            const blob = await response.blob();
-            const file = new File([blob], image.hint || 'replacement.png', { type: blob.type });
             
-            await uploadSiteImage(file, user.uid, replacementTargetId);
+            // This now calls the secure Cloud Function via the file service
+            await uploadSiteImage(image.url, user.uid, replacementTargetId);
             
             toast({
                 title: "Image Replaced",

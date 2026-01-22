@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -22,28 +21,40 @@ export default function ImageManagerPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
+  
+  const handleFileUpload = async (file: File | null) => {
+    if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        variant: 'destructive',
+        title: 'Image too large',
+        description: 'Please use an image smaller than 5MB.',
+      });
+      return;
+    }
+    setPastedImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+  
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
     const items = event.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         const file = items[i].getAsFile();
         if (file) {
-          if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            toast({
-              variant: 'destructive',
-              title: 'Image too large',
-              description: 'Please paste an image smaller than 5MB.',
-            });
-            return;
-          }
-          setPastedImage(file);
-          setPreviewUrl(URL.createObjectURL(file));
+          handleFileUpload(file);
           break;
         }
       }
     }
   };
+
+  const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    handleFileUpload(file || null);
+  };
+
 
   const clearPastedImage = () => {
     setPastedImage(null);
@@ -66,7 +77,7 @@ export default function ImageManagerPage() {
         clearPastedImage();
         loadImages(); // Refresh the library view
     } catch (error: any) {
-        console.error("Error saving pasted image:", error);
+        console.error("Error saving image:", error);
         const description = error.details ? `${error.message} Details: ${JSON.stringify(error.details)}` : error.message;
         toast({ variant: 'destructive', title: 'Save Failed', description });
     } finally {
@@ -105,7 +116,7 @@ export default function ImageManagerPage() {
         <CardHeader>
           <CardTitle>Add New Image</CardTitle>
           <CardDescription>
-            Paste an image into the area below to add it to your library.
+            Paste an image into the area below or click to upload a file.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,6 +124,7 @@ export default function ImageManagerPage() {
             onPaste={handlePaste}
             className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative"
             tabIndex={0}
+            onClick={() => document.getElementById('file-upload-input')?.click()}
           >
             {previewUrl ? (
                 <>
@@ -125,11 +137,12 @@ export default function ImageManagerPage() {
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <FileUp className="w-10 h-10 mb-3 text-gray-400" />
                   <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-semibold">Paste an image here</span>
+                    <span className="font-semibold">Click to upload</span> or paste an image
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
                 </div>
             )}
+            <input id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
           </div>
         </CardContent>
         <CardFooter>

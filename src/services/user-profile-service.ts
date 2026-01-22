@@ -2,20 +2,20 @@
 'use client';
 
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
-import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFirebaseServices } from '@/firebase';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
-import firebaseConfig from '@/lib/config';
+
 
 // --- Firebase Initialization (Self-contained) ---
 function getDb() {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    return getFirestore(app);
+    const { db } = getFirebaseServices();
+    return db;
 }
 
 function getFunctionsService() {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    return getFunctions(app);
+    const { functions } = getFirebaseServices();
+    return functions;
 }
 
 

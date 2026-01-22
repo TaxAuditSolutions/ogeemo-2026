@@ -16,9 +16,9 @@ import {
   getDoc,
   setDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
-import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, ListPlus, FileInput, Activity, Wrench, Users } from 'lucide-react';
+import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ListPlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { addMinutes } from 'date-fns';
 import { allMenuItems } from '@/lib/menu-items';
@@ -41,8 +41,8 @@ const HR_QUICK_NAV_ITEMS_COLLECTION = 'hrQuickNavItems';
 const AVAILABLE_HR_NAV_ITEMS_COLLECTION = 'availableHrNavItems';
 
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -123,14 +123,14 @@ const docToActionChip = (chipData: any): ActionChipData => {
 
 // --- Folder Functions ---
 export async function getProjectFolders(userId: string): Promise<ProjectFolder[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFolder);
 }
 
 export async function addProjectFolder(folderData: Omit<ProjectFolder, 'id'>): Promise<ProjectFolder> {
-  const db = await getDb();
+  const db = getDb();
   const dataToSave = {
     ...folderData,
     parentId: folderData.parentId || null,
@@ -143,14 +143,14 @@ export async function addProjectFolder(folderData: Omit<ProjectFolder, 'id'>): P
 // --- Project Functions ---
 
 export async function getProjects(userId: string): Promise<Project[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToProject).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
-    const db = await getDb();
+    const db = getDb();
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     const projectSnap = await getDoc(projectRef);
     if (projectSnap.exists()) {
@@ -160,7 +160,7 @@ export async function getProjectById(projectId: string): Promise<Project | null>
 }
 
 export async function addProject(projectData: Omit<Project, 'id'>): Promise<Project> {
-    const db = await getDb();
+    const db = getDb();
 
     // Ensure optional fields that are undefined are converted to null for Firestore
     const dataToSave = {
@@ -187,7 +187,7 @@ export async function addProjectWithTasks(
   projectData: Omit<Project, 'id' | 'createdAt'>,
   tasksData: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]
 ): Promise<Project> {
-  const db = await getDb();
+  const db = getDb();
   const batch = writeBatch(db);
 
   const projectRef = doc(collection(db, PROJECTS_COLLECTION));
@@ -209,13 +209,13 @@ export async function addProjectWithTasks(
 }
 
 export async function updateProject(projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     await updateDoc(projectRef, projectData);
 }
 
 export async function updateProjectWithTasks(userId: string, projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
 
@@ -275,7 +275,7 @@ export async function updateProjectWithTasks(userId: string, projectId: string, 
 
 
 export async function deleteProject(projectId: string, taskIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
 
     taskIds.forEach(taskId => {
@@ -290,7 +290,7 @@ export async function deleteProject(projectId: string, taskIds: string[]): Promi
 }
 
 export async function deleteProjects(projectIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
 
     for (const projectId of projectIds) {
@@ -311,14 +311,14 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
 
 // --- Task/Event Functions ---
 export async function getTasksForProject(projectId: string): Promise<TaskEvent[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, TASKS_COLLECTION), where("projectId", "==", projectId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToTask);
 }
 
 export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
-    const db = await getDb();
+    const db = getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
     if (taskSnap.exists()) {
@@ -328,14 +328,14 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
 }
 
 export async function getTasksForUser(userId: string): Promise<TaskEvent[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTask);
 }
 
 export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
-    const db = await getDb();
+    const db = getDb();
     const dataToSave = {
         ...taskData,
         start: taskData.start || null,
@@ -377,7 +377,7 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
 
 
 export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEvent, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     
     // Ensure that if projectId is explicitly passed as undefined, it gets set to null.
@@ -391,7 +391,7 @@ export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEven
 }
 
 export async function updateTaskPositions(tasksToUpdate: { id: string; position: number; status: TaskStatus }[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     tasksToUpdate.forEach(task => {
         const taskRef = doc(db, TASKS_COLLECTION, task.id);
@@ -402,7 +402,7 @@ export async function updateTaskPositions(tasksToUpdate: { id: string; position:
 
 
 export async function deleteTask(taskId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
 
@@ -425,7 +425,7 @@ export async function deleteTask(taskId: string): Promise<void> {
 
 export async function deleteTasks(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     taskIds.forEach(id => {
         const taskRef = doc(db, TASKS_COLLECTION, id);
@@ -435,7 +435,7 @@ export async function deleteTasks(taskIds: string[]): Promise<void> {
 }
 
 export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (todoIds.length === 0) return;
     const batch = writeBatch(db);
     const status = completed ? 'done' : 'todo';
@@ -448,7 +448,7 @@ export async function updateTodosStatus(todoIds: string[], completed: boolean): 
 
 
 export async function deleteAllTasksForUser(userId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
@@ -465,7 +465,7 @@ export async function deleteAllTasksForUser(userId: string): Promise<void> {
 }
 
 export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     const q = query(
         collection(db, TASKS_COLLECTION), 
@@ -483,26 +483,26 @@ export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'w
 // --- Template Functions ---
 
 export async function getProjectTemplates(userId: string): Promise<ProjectTemplate[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, TEMPLATES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTemplate);
 }
 
 export async function addProjectTemplate(templateData: Omit<ProjectTemplate, 'id'>): Promise<ProjectTemplate> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = await addDoc(collection(db, TEMPLATES_COLLECTION), templateData);
     return { id: docRef.id, ...templateData };
 }
 
 export async function updateProjectTemplate(templateId: string, templateData: Partial<Omit<ProjectTemplate, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
     await updateDoc(templateRef, templateData);
 }
 
 export async function deleteProjectTemplate(templateId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
     await deleteDoc(templateRef);
 }
@@ -519,7 +519,7 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
 ];
 
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const chipsToSave = chips.filter(Boolean).map((chip, index) => {
         const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
@@ -530,7 +530,7 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
 }
 
 async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -552,7 +552,7 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
     };
     const collectionName = collectionNameMap[type];
 
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
 
@@ -580,7 +580,7 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
     };
     const collectionName = collectionNameMap[type];
 
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
 
@@ -692,7 +692,7 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 }
 
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
   // Setting an empty array to the 'chips' field effectively deletes all items.
   await setDoc(docRef, { chips: [] }, { merge: true });
@@ -706,7 +706,7 @@ export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 
     hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
   };
   const collectionName = collectionNameMap[type];
-  const db = await getDb();
+  const db = getDb();
   const docRef = doc(db, collectionName, chipData.userId);
   const docSnap = await getDoc(docRef);
 

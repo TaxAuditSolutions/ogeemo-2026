@@ -13,7 +13,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -29,8 +29,8 @@ export interface Action {
 
 const CRM_ACTIONS_COLLECTION = 'crmActions';
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   return db;
 }
 
@@ -40,7 +40,7 @@ const docToAction = (doc: any): Action => ({
 } as Action);
 
 export async function getAllCrmActions(userId: string): Promise<Action[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(
     collection(db, CRM_ACTIONS_COLLECTION),
     where('userId', '==', userId)
@@ -51,7 +51,7 @@ export async function getAllCrmActions(userId: string): Promise<Action[]> {
 
 
 export async function getActionsForLead(userId: string, leadName: string): Promise<Action[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(
     collection(db, CRM_ACTIONS_COLLECTION),
     where('userId', '==', userId),
@@ -63,7 +63,7 @@ export async function getActionsForLead(userId: string, leadName: string): Promi
 
 export function addAction(data: Omit<Action, 'id'>): Promise<Action> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const collectionRef = collection(db, CRM_ACTIONS_COLLECTION);
     
     addDoc(collectionRef, data)
@@ -82,7 +82,7 @@ export function addAction(data: Omit<Action, 'id'>): Promise<Action> {
 
 export function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
     
     updateDoc(docRef, data)
@@ -101,7 +101,7 @@ export function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'user
 
 export function deleteAction(id: string): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
     
     deleteDoc(docRef)
@@ -119,7 +119,7 @@ export function deleteAction(id: string): Promise<void> {
 
 export function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
     updates.forEach(update => {
         const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);

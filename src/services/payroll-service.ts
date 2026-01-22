@@ -14,7 +14,7 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { type Worker, mockWorkers } from '@/data/payroll';
 import { addExpenseTransaction } from './accounting-service';
 import { getRemittances as getPayrollRemittances, addRemittance } from './payroll-service';
@@ -27,8 +27,8 @@ const TIME_LOGS_COLLECTION = 'timeLogs';
 const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
 
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -67,7 +67,7 @@ const docToWorker = (doc: any): Worker => {
 };
 
 export async function getWorkers(userId: string): Promise<Worker[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
 
@@ -90,23 +90,23 @@ export async function getEmployees(userId: string): Promise<Worker[]> {
 
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = await addDoc(collection(db, WORKERS_COLLECTION), data);
     return { id: docRef.id, ...data };
 }
 
 export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await updateDoc(doc(db, WORKERS_COLLECTION, id), data);
 }
 
 export async function deleteWorker(id: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await deleteDoc(doc(db, WORKERS_COLLECTION, id));
 }
 
 export async function deleteWorkers(workerIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (workerIds.length === 0) return;
     const batch = writeBatch(db);
     workerIds.forEach(id => {
@@ -118,7 +118,7 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
 
 
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
 
     // Reassign Time Logs
@@ -158,19 +158,19 @@ export interface PayrollRemittance {
 const docToRemittance = (doc: any): PayrollRemittance => ({ id: doc.id, ...doc.data() } as PayrollRemittance);
 
 export async function getRemittances(userId: string): Promise<PayrollRemittance[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, REMITTANCES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToRemittance).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
 }
 
 export async function updateRemittance(id: string, data: Partial<Omit<PayrollRemittance, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await updateDoc(doc(db, REMITTANCES_COLLECTION, id), data);
 }
 
 export async function deleteRemittance(id: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await deleteDoc(doc(db, REMITTANCES_COLLECTION, id));
 }
 
@@ -197,7 +197,7 @@ interface SavePayrollRunData {
 }
 
 export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const batch = writeBatch(db);
 
     // 1. Create the main payroll run document

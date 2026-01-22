@@ -17,7 +17,7 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, getDownloadURL } from 'firebase/storage';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
@@ -27,12 +27,12 @@ import { fetchFileContent } from '@/app/actions/file-actions';
 const FILES_COLLECTION = 'files';
 export const SITE_IMAGES_FOLDER_ID = 'folder-site-images';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
-async function getAppStorage() {
-    const { storage } = await initializeFirebase();
+function getAppStorage() {
+    const { storage } = getFirebaseServices();
     return storage;
 }
 
@@ -55,14 +55,14 @@ const generateKeywords = (name: string): string[] => {
 
 // --- File functions ---
 export async function getFiles(userId?: string): Promise<FileItem[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = userId ? query(collection(db, FILES_COLLECTION), where("userId", "==", userId)) : collection(db, FILES_COLLECTION);
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFile);
 }
 
 export async function getFileById(fileId: string): Promise<FileItem | null> {
-    const db = await getDb();
+    const db = getDb();
     const fileRef = doc(db, FILES_COLLECTION, fileId);
     const fileSnap = await getDoc(fileRef);
     if (!fileSnap.exists()) {
@@ -82,14 +82,14 @@ export async function getFileById(fileId: string): Promise<FileItem | null> {
 
 
 export async function getFilesForFolder(userId: string, folderId: string): Promise<FileItem[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, FILES_COLLECTION), where("userId", "==", userId), where("folderId", "==", folderId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFile);
 }
 
 export async function addFileRecord(fileData: Omit<FileItem, 'id'>): Promise<FileItem> {
-    const db = await getDb();
+    const db = getDb();
     const dataWithKeywords = { ...fileData, keywords: generateKeywords(fileData.name) };
     const docRef = await addDoc(collection(db, FILES_COLLECTION), dataWithKeywords);
     return { id: docRef.id, ...dataWithKeywords };
@@ -108,7 +108,7 @@ export async function addFile(formData: FormData): Promise<FileItem> {
         folderId = '';
     }
 
-    const storage = await getAppStorage();
+    const storage = getAppStorage();
     const storagePath = `userFiles/${userId}/${folderId || 'unfiled'}/${Date.now()}-${file.name}`;
     const fileRef = storageRef(storage, storagePath);
     
@@ -128,7 +128,7 @@ export async function addFile(formData: FormData): Promise<FileItem> {
 }
 
 export async function updateFile(fileId: string, data: Partial<Omit<FileItem, 'id' | 'userId' | 'content'>> & { content?: string, keywords?: string[] }): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const fileRef = doc(db, FILES_COLLECTION, fileId);
 
     const fileSnap = await getDoc(fileRef);
@@ -143,7 +143,7 @@ export async function updateFile(fileId: string, data: Partial<Omit<FileItem, 'i
 
     // If content is being updated, upload it to storage first.
     if (typeof data.content === 'string') {
-        const storage = await getAppStorage();
+        const storage = getAppStorage();
         
         // Use a consistent storage path based on the file ID to ensure overwrites
         const storagePath = `userFiles/${existingFileData.userId}/${fileId}.txt`;
@@ -167,8 +167,8 @@ export async function updateFile(fileId: string, data: Partial<Omit<FileItem, 'i
 
 
 export async function addTextFileClient(userId: string, folderId: string, fileName: string, content: string = ''): Promise<FileItem> {
-    const db = await getDb();
-    const storage = await getAppStorage();
+    const db = getDb();
+    const storage = getAppStorage();
 
     const newDocRef = doc(collection(db, FILES_COLLECTION));
     const fileId = newDocRef.id;
@@ -199,8 +199,8 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
 
 
 export async function saveEmailForContact(userId: string, contactName: string, email: { to: string, from: string, subject: string; body: string; sourceLink?: string; }): Promise<FileItem> {
-    const db = await getDb();
-    const storage = await getAppStorage();
+    const db = getDb();
+    const storage = getAppStorage();
 
     // 1. Find or create a folder for the contact
     const contactFolder = await findOrCreateGenericFolder(userId, contactName, 'fileManagerFolders');
@@ -293,7 +293,7 @@ ${task.description || 'No description provided.'}
 export async function addFileFromDataUrl(
     { dataUrl, fileName, userId, folderId }: { dataUrl: string; fileName: string; userId: string; folderId: string; }
 ): Promise<FileItem> {
-    const storage = await getAppStorage();
+    const storage = getAppStorage();
     
     const response = await fetch(dataUrl);
     const blob = await response.blob();
@@ -317,8 +317,8 @@ export async function addFileFromDataUrl(
 }
 
 export async function deleteFiles(fileIds: string[]): Promise<void> {
-    const db = await getDb();
-    const storage = await getAppStorage();
+    const db = getDb();
+    const storage = getAppStorage();
     const batch = writeBatch(db);
 
     for (const fileId of fileIds) {
@@ -347,8 +347,8 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
 }
 
 export async function uploadSiteImage(file: File, userId: string, docIdToReplace?: string): Promise<void> {
-    const storage = await getAppStorage();
-    const db = await getDb();
+    const storage = getAppStorage();
+    const db = getDb();
 
     const fileName = file.name;
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'png';
@@ -382,8 +382,8 @@ export async function uploadSiteImage(file: File, userId: string, docIdToReplace
 }
 
 export async function deleteSiteImage(imageId: string, storagePath: string): Promise<void> {
-    const storage = await getAppStorage();
-    const db = await getDb();
+    const storage = getAppStorage();
+    const db = getDb();
     
     if (storagePath) {
         const fileRef = storageRef(storage, storagePath);

@@ -13,7 +13,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 
 export interface Industry {
   id: string;
@@ -24,8 +24,8 @@ export interface Industry {
 
 const INDUSTRIES_COLLECTION = 'industries';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -38,14 +38,14 @@ const docToIndustry = (doc: any): Industry => {
 };
 
 export async function getIndustries(userId: string): Promise<Industry[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, INDUSTRIES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToIndustry);
 }
 
 export async function addIndustry(industryData: Omit<Industry, 'id'>): Promise<Industry> {
-    const db = await getDb();
+    const db = getDb();
     
     let finalCode = industryData.code?.trim();
 
@@ -69,14 +69,13 @@ export async function addIndustry(industryData: Omit<Industry, 'id'>): Promise<I
 }
 
 export async function updateIndustry(industryId: string, data: Partial<Omit<Industry, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, INDUSTRIES_COLLECTION, industryId);
     await updateDoc(docRef, data);
 }
 
 export async function deleteIndustry(industryId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, INDUSTRIES_COLLECTION, industryId);
     await deleteDoc(docRef);
 }
-    

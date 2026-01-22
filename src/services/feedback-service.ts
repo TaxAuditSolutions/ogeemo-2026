@@ -8,7 +8,7 @@ import {
   getDocs,
   query,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 
 export interface FeedbackData {
   id?: string;
@@ -22,8 +22,8 @@ export interface FeedbackData {
 
 const FEEDBACK_COLLECTION = 'feedback';
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   if (!db) {
     throw new Error('Firestore is not initialized');
   }
@@ -40,13 +40,13 @@ const docToFeedback = (doc: any): FeedbackData => {
 
 
 export async function submitFeedback(data: Omit<FeedbackData, 'id'>): Promise<{ success: true }> {
-    const db = await getDb();
+    const db = getDb();
     await addDoc(collection(db, FEEDBACK_COLLECTION), data);
     return { success: true };
 }
 
 export async function getFeedback(): Promise<FeedbackData[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, FEEDBACK_COLLECTION));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToFeedback).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());

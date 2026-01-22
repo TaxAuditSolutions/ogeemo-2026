@@ -15,7 +15,7 @@ import {
     Timestamp,
     getDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import type { Contact } from '@/data/contacts';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -32,8 +32,8 @@ interface ClientAccount {
 }
 
 // --- Helper Functions ---
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -68,7 +68,7 @@ const generateKeywords = (name: string, email: string, businessName?: string): s
 
 // --- Client Account Function (New) ---
 async function createClientAccount(userId: string, contactId: string, contactName: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where("contactId", "==", contactId), where("userId", "==", userId));
     const existingAccount = await getDocs(q);
 
@@ -95,14 +95,14 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToContact);
 }
 
 export async function getContactById(contactId: string): Promise<Contact | null> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, CONTACTS_COLLECTION, contactId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -114,7 +114,7 @@ export async function getContactById(contactId: string): Promise<Contact | null>
 
 export function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const collectionRef = collection(db, CONTACTS_COLLECTION);
     const dataToSave = {
       ...contactData,
@@ -145,7 +145,7 @@ export function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
 
 export function updateContact(contactId: string, contactData: Partial<Omit<Contact, 'id' | 'userId'>>): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
 
         const dataToUpdate: {[key: string]: any} = { ...contactData };
@@ -178,7 +178,7 @@ export function updateContact(contactId: string, contactData: Partial<Omit<Conta
 
 export function deleteContacts(contactIds: string[]): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         if (contactIds.length === 0) {
             resolve();
             return;
@@ -216,7 +216,7 @@ export function deleteContacts(contactIds: string[]): Promise<void> {
 
 export function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
         
         deleteDoc(sourceRef)
@@ -234,7 +234,7 @@ export function mergeContacts(sourceContactId: string, masterContactId: string):
 
 
 export async function findOrCreateFolder(userId: string, folderName: string): Promise<FolderData> {
-    const db = await getDb();
+    const db = getDb();
     const FOLDERS_COLLECTION = 'contactFolders';
     const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
     const snapshot = await getDocs(q);

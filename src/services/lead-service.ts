@@ -14,7 +14,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -34,22 +34,22 @@ export interface Lead {
 
 const LEADS_COLLECTION = 'leads';
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   return db;
 }
 
 const docToLead = (doc: any): Lead => ({ id: doc.id, ...doc.data() } as Lead);
 
 export async function getLeads(userId: string): Promise<Lead[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, LEADS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToLead);
 }
 
 export async function getLeadById(leadId: string): Promise<Lead | null> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, LEADS_COLLECTION, leadId);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docToLead(docSnap) : null;
@@ -57,7 +57,7 @@ export async function getLeadById(leadId: string): Promise<Lead | null> {
 
 export function addLead(data: Omit<Lead, 'id'>): Promise<Lead> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const collectionRef = collection(db, LEADS_COLLECTION);
     addDoc(collectionRef, data)
         .then(docRef => resolve({ id: docRef.id, ...data }))
@@ -75,7 +75,7 @@ export function addLead(data: Omit<Lead, 'id'>): Promise<Lead> {
 
 export function updateLead(id: string, data: Partial<Omit<Lead, 'id' | 'userId'>>): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, LEADS_COLLECTION, id);
     updateDoc(docRef, data)
         .then(resolve)
@@ -93,7 +93,7 @@ export function updateLead(id: string, data: Partial<Omit<Lead, 'id' | 'userId'>
 
 export function deleteLead(id: string): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, LEADS_COLLECTION, id);
     deleteDoc(docRef)
         .then(resolve)

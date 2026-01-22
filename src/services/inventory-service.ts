@@ -16,7 +16,7 @@ import {
   writeBatch,
   setDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { t2125IncomeCategories } from '@/data/standard-expense-categories';
 
 export interface Item {
@@ -54,8 +54,8 @@ const ITEMS_COLLECTION = 'inventoryItems';
 const LOGS_COLLECTION = 'inventoryLogs';
 
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -77,19 +77,19 @@ const docToLog = (doc: any): InventoryLog => ({
 
 
 async function addInventoryLog(logData: Omit<InventoryLog, 'id'>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await addDoc(collection(db, LOGS_COLLECTION), logData);
 }
 
 export async function getInventoryItems(userId: string): Promise<Item[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, ITEMS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToItem).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function getInventoryItemById(itemId: string): Promise<Item | null> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, ITEMS_COLLECTION, itemId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -99,7 +99,7 @@ export async function getInventoryItemById(itemId: string): Promise<Item | null>
 }
 
 export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
-  const db = await getDb();
+  const db = getDb();
   const docRef = await addDoc(collection(db, ITEMS_COLLECTION), data);
   
   if (data.stockQuantity > 0) {
@@ -119,7 +119,7 @@ export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
 }
 
 export async function updateInventoryItem(id: string, data: Partial<Omit<Item, 'id' | 'userId'>>, logInfo: { reason: InventoryLogReason, notes?: string }): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   const docRef = doc(db, ITEMS_COLLECTION, id);
 
   if (data.stockQuantity !== undefined) {
@@ -145,14 +145,14 @@ export async function updateInventoryItem(id: string, data: Partial<Omit<Item, '
 }
 
 export async function deleteInventoryItem(id: string): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   const docRef = doc(db, ITEMS_COLLECTION, id);
   await deleteDoc(docRef);
   // Note: Logs are kept for historical records for now.
 }
 
 export async function deleteInventoryItems(itemIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (itemIds.length === 0) return;
     const batch = writeBatch(db);
     itemIds.forEach(id => {
@@ -164,7 +164,7 @@ export async function deleteInventoryItems(itemIds: string[]): Promise<void> {
 
 
 export async function getInventoryLogs(userId: string): Promise<InventoryLog[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, LOGS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToLog).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -175,7 +175,7 @@ export async function processSaleTransaction(
   saleItems: { itemId: string; quantitySold: number }[],
   saleDetails: { subtotal: number; taxTotal: number; grandTotal: number }
 ): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   const batch = writeBatch(db);
 
   for (const saleItem of saleItems) {

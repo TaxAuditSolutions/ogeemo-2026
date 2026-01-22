@@ -14,7 +14,7 @@ import {
   deleteDoc,
   getDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { getContactById } from '@/services/contact-service';
 
 const SUPPLIERS_COLLECTION = 'suppliers';
@@ -28,8 +28,8 @@ export interface Supplier {
   userId: string;
 }
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   return db;
 }
 
@@ -39,25 +39,25 @@ const docToSupplier = (doc: any): Supplier => ({
 } as Supplier);
 
 export async function getSuppliers(userId: string): Promise<Supplier[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, SUPPLIERS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function addSupplier(data: Omit<Supplier, 'id'>): Promise<Supplier> {
-  const db = await getDb();
+  const db = getDb();
   const docRef = await addDoc(collection(db, SUPPLIERS_COLLECTION), data);
   return { id: docRef.id, ...data };
 }
 
 export async function updateSupplier(id: string, data: Partial<Omit<Supplier, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await updateDoc(doc(db, SUPPLIERS_COLLECTION, id), data);
 }
 
 export async function deleteSupplier(id: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await deleteDoc(doc(db, SUPPLIERS_COLLECTION, id));
 }
 
@@ -68,7 +68,7 @@ export async function deleteSupplier(id: string): Promise<void> {
  * The supplier ID will match the contact ID.
  */
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<Supplier> {
-  const db = await getDb();
+  const db = getDb();
   const supplierRef = doc(db, SUPPLIERS_COLLECTION, contactId);
   
   const supplierSnap = await getDoc(supplierRef);

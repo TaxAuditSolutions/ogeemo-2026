@@ -11,7 +11,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 
 export interface TestFolder {
   id: string;
@@ -23,8 +23,8 @@ export interface TestFolder {
 
 const TEST_FOLDERS_COLLECTION = 'testFolders';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -40,14 +40,14 @@ const docToTestFolder = (doc: any): TestFolder => {
 };
 
 export async function getTestFolders(userId: string): Promise<TestFolder[]> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, TEST_FOLDERS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTestFolder).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function addTestFolder(folderData: Omit<TestFolder, 'id' | 'createdAt'>): Promise<TestFolder> {
-    const db = await getDb();
+    const db = getDb();
     const dataToSave = {
         ...folderData,
         createdAt: new Date(),

@@ -14,15 +14,15 @@ import {
     writeBatch,
     Timestamp 
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import type { FolderItem } from '@/data/files';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 const FOLDERS_COLLECTION = 'contactFolders';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -34,7 +34,7 @@ const docToFolder = (doc: any): FolderItem => ({
 
 
 export async function getFolders(userId: string): Promise<FolderItem[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFolder);
@@ -42,7 +42,7 @@ export async function getFolders(userId: string): Promise<FolderItem[]> {
 
 export function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const collectionRef = collection(db, FOLDERS_COLLECTION);
         const dataToSave = {
             ...folderData,
@@ -69,7 +69,7 @@ export function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Pro
 
 export function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
 
         updateDoc(folderRef, folderData)
@@ -88,7 +88,7 @@ export function updateFolder(folderId: string, folderData: Partial<Omit<FolderIt
 
 export function deleteFolders(folderIds: string[]): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         if (folderIds.length === 0) {
             resolve();
             return;

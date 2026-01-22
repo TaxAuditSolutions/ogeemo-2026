@@ -15,7 +15,7 @@ import {
   deleteDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -33,8 +33,8 @@ export interface TimeLog {
 
 const TIME_LOGS_COLLECTION = 'timeLogs';
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   return db;
 }
 
@@ -50,7 +50,7 @@ const docToTimeLog = (doc: any): TimeLog => {
 };
 
 export async function getTimeLogs(userId: string): Promise<TimeLog[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, TIME_LOGS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToTimeLog).sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
@@ -58,7 +58,7 @@ export async function getTimeLogs(userId: string): Promise<TimeLog[]> {
 
 export function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
   return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const collectionRef = collection(db, TIME_LOGS_COLLECTION);
     const dataToSave = {
         ...data,
@@ -80,7 +80,7 @@ export function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
 
 export function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id' | 'userId'>>): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const docRef = doc(db, TIME_LOGS_COLLECTION, id);
         updateDoc(docRef, data)
             .then(resolve)
@@ -98,7 +98,7 @@ export function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id' | 'us
 
 export function deleteTimeLog(id: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const docRef = doc(db, TIME_LOGS_COLLECTION, id);
         deleteDoc(docRef)
             .then(resolve)
@@ -119,7 +119,7 @@ export function updateTimeLogsStatus(logIds: string[], status: TimeLog['status']
             resolve();
             return;
         }
-        const db = await getDb();
+        const db = getDb();
         const batch = writeBatch(db);
         logIds.forEach(id => {
             const docRef = doc(db, TIME_LOGS_COLLECTION, id);

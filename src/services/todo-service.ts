@@ -14,15 +14,15 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { archiveTaskAsFile } from './file-service';
 
 
 const TASKS_COLLECTION = 'tasks';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -38,7 +38,7 @@ const docToTodo = (doc: any): TaskEvent => {
 
 
 export async function getTodos(userId: string): Promise<TaskEvent[]> {
-    const db = await getDb();
+    const db = getDb();
     // A "To-Do" is now defined as any task not assigned to a project.
     const q = query(
         collection(db, TASKS_COLLECTION), 
@@ -51,7 +51,7 @@ export async function getTodos(userId: string): Promise<TaskEvent[]> {
 }
 
 export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
-    const db = await getDb();
+    const db = getDb();
     // Ensure it's treated as a general "to-do" by not having a project ID
     const dataToSave = {
         ...todoData,
@@ -65,18 +65,18 @@ export async function addTodo(todoData: Omit<TaskEvent, 'id'>): Promise<TaskEven
 }
 
 export async function updateTodo(todoId: string, dataToUpdate: Partial<Omit<TaskEvent, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const todoRef = doc(db, TASKS_COLLECTION, todoId);
     await updateDoc(todoRef, dataToUpdate);
 }
 
 export async function deleteTodo(todoId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     await deleteDoc(doc(db, TASKS_COLLECTION, todoId));
 }
 
 export async function deleteTodos(todoIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (todoIds.length === 0) return;
     const batch = writeBatch(db);
     todoIds.forEach(id => {
@@ -99,7 +99,7 @@ export async function archiveTodos(userId: string, tasksToArchive: TaskEvent[]):
 }
 
 export async function updateTodoPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
-  const db = await getDb();
+  const db = getDb();
   const batch = writeBatch(db);
   updates.forEach(update => {
     const docRef = doc(db, TASKS_COLLECTION, update.id);
@@ -109,7 +109,7 @@ export async function updateTodoPositions(updates: { id: string; position: numbe
 }
 
 export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (todoIds.length === 0) return;
     const batch = writeBatch(db);
     const status = completed ? 'done' : 'todo';

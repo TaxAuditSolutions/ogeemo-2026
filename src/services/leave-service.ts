@@ -12,7 +12,7 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -34,8 +34,8 @@ export interface LeaveRequest {
 
 const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -48,7 +48,7 @@ const docToLeaveRequest = (doc: any): LeaveRequest => {
 };
 
 export async function getLeaveRequests(userId: string): Promise<LeaveRequest[]> {
-    const db = await getDb();
+    const db = getDb();
     // For admins, we fetch all requests under their user ID.
     // For workers, security rules will limit this to only their own requests.
     const q = query(collection(db, LEAVE_REQUESTS_COLLECTION), where("userId", "==", userId));
@@ -58,7 +58,7 @@ export async function getLeaveRequests(userId: string): Promise<LeaveRequest[]> 
 
 export function addLeaveRequest(data: Omit<LeaveRequest, 'id'>): Promise<LeaveRequest> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const collectionRef = collection(db, LEAVE_REQUESTS_COLLECTION);
         addDoc(collectionRef, data)
             .then(docRef => resolve({ id: docRef.id, ...data }))
@@ -76,7 +76,7 @@ export function addLeaveRequest(data: Omit<LeaveRequest, 'id'>): Promise<LeaveRe
 
 export function updateLeaveRequest(id: string, data: Partial<Omit<LeaveRequest, 'id' | 'userId' | 'workerId'>>): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const db = await getDb();
+        const db = getDb();
         const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, id);
         updateDoc(docRef, data)
             .then(resolve)

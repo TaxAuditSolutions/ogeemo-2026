@@ -14,13 +14,13 @@ import {
     writeBatch,
     Timestamp 
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import type { FolderItem } from '@/data/files';
 
 const FOLDERS_COLLECTION = 'fileManagerFolders';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
+function getDb() {
+    const { db } = getFirebaseServices();
     return db;
 }
 
@@ -32,14 +32,14 @@ const docToFolder = (doc: any): FolderItem => ({
 
 
 export async function getFolders(userId: string): Promise<FolderItem[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFolder);
 }
 
 export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
-  const db = await getDb();
+  const db = getDb();
   const dataToSave = {
     ...folderData,
     parentId: folderData.parentId || null,
@@ -50,7 +50,7 @@ export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>
 }
 
 export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
     await updateDoc(folderRef, folderData);
 }
@@ -58,7 +58,7 @@ export async function updateFolder(folderId: string, folderData: Partial<Omit<Fo
 // NOTE: This delete function is simplified to only delete folders from the new collection.
 // It will not affect files.
 export async function deleteFolders(folderIds: string[]): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     if (folderIds.length === 0) return;
     const batch = writeBatch(db);
 
@@ -72,7 +72,7 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 
 
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
-    const db = await getDb();
+    const db = getDb();
     const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
@@ -82,4 +82,3 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
     return { id: docRef.id, ...newFolderData };
 }
-

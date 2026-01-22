@@ -16,7 +16,7 @@ import {
   writeBatch,
   getDoc,
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 import { mockBlogPosts } from '@/data/blog-posts';
 
 export interface BlogPost {
@@ -51,8 +51,8 @@ export interface BlogCommentWithPost extends BlogComment {
 const POSTS_COLLECTION = 'blogPosts';
 const COMMENTS_COLLECTION = 'comments';
 
-async function getDb() {
-  const { db } = await initializeFirebase();
+function getDb() {
+  const { db } = getFirebaseServices();
   return db;
 }
 
@@ -67,7 +67,7 @@ const docToComment = (doc: any): BlogComment => ({
 } as BlogComment);
 
 export async function getPosts(authorId?: string): Promise<BlogPost[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, POSTS_COLLECTION), where("status", "==", "published"));
   let snapshot = await getDocs(q);
 
@@ -88,7 +88,7 @@ export async function getPosts(authorId?: string): Promise<BlogPost[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, POSTS_COLLECTION), where("slug", "==", slug));
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
@@ -98,7 +98,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
 }
 
 export async function getApprovedComments(postId: string): Promise<BlogComment[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(
     collection(db, POSTS_COLLECTION, postId, COMMENTS_COLLECTION),
     where("status", "==", "approved")
@@ -113,7 +113,7 @@ export async function addComment(data: {
   authorName: string;
   content: string;
 }): Promise<BlogComment> {
-  const db = await getDb();
+  const db = getDb();
   const commentData = {
     ...data,
     createdAt: new Date().toISOString(),
@@ -127,7 +127,7 @@ export async function addComment(data: {
 }
 
 export async function getPendingComments(authorId: string): Promise<BlogCommentWithPost[]> {
-  const db = await getDb();
+  const db = getDb();
   
   // 1. Get all posts for the author
   const postsQuery = query(collection(db, POSTS_COLLECTION), where('authorId', '==', authorId));
@@ -163,13 +163,13 @@ export async function getPendingComments(authorId: string): Promise<BlogCommentW
 }
 
 export async function updateCommentStatus(postId: string, commentId: string, status: 'approved' | 'rejected'): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const commentRef = doc(db, POSTS_COLLECTION, postId, COMMENTS_COLLECTION, commentId);
     await updateDoc(commentRef, { status });
 }
 
 export async function deleteComment(postId: string, commentId: string): Promise<void> {
-    const db = await getDb();
+    const db = getDb();
     const commentRef = doc(db, POSTS_COLLECTION, postId, COMMENTS_COLLECTION, commentId);
     await deleteDoc(commentRef);
 }

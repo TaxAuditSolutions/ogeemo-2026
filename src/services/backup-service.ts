@@ -2,10 +2,10 @@
 'use client';
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { initializeFirebase } from '@/firebase';
+import { getFirebaseServices } from '@/firebase';
 
 async function getFunctionsService() {
-    const { functions } = await initializeFirebase();
+    const { functions } = getFirebaseServices();
     return functions;
 }
 

@@ -15,7 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
     findOrCreateFileFolder,
     getFilesForFolder,
-    addFileRecord
+    addFileRecord,
+    importFromGoogleDriveUrl
 } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -25,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { FolderItem } from '@/data/files';
+import { Input } from '@/components/ui/input';
+import { Link as LinkIcon } from 'lucide-react';
 
 const GDRIVE_FILES_FOLDER_NAME = "Gdrive files";
 
@@ -32,7 +35,9 @@ export default function TestingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [gdriveFolder, setGdriveFolder] = useState<FolderItem | null>(null);
   const [filesInGdriveFolder, setFilesInGdriveFolder] = useState<FileItem[]>([]);
-  
+  const [gdriveUrl, setGdriveUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -66,12 +71,26 @@ export default function TestingPage() {
 
   
   const handleOpenApp = (file: FileItem) => {
-      if (!file.name) {
-          toast({ variant: 'destructive', title: 'File name missing', description: 'Cannot search for a file without a name.' });
-          return;
-      }
-      const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(file.name)}`;
-      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+      const url = `https://docs.google.com/document/d/${file.googleFileId}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+  };
+  
+   const handleImportFromDrive = async () => {
+    if (!gdriveUrl.trim()) {
+        toast({ variant: 'destructive', title: 'URL required', description: 'Please paste a Google Drive file URL.' });
+        return;
+    }
+    setIsImporting(true);
+    try {
+        const result = await importFromGoogleDriveUrl(gdriveUrl);
+        toast({ title: 'Import Successful', description: result.message });
+        setGdriveUrl('');
+        loadInitialData();
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
+    } finally {
+        setIsImporting(false);
+    }
   };
 
   if (isLoading) {
@@ -93,12 +112,19 @@ export default function TestingPage() {
             <CardHeader>
                 <CardTitle>{gdriveFolder?.name || "Gdrive files"}</CardTitle>
                 <CardDescription>This folder will contain references to your Google Drive files.</CardDescription>
-                <div className="pt-2">
-                    <Button asChild>
-                        <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">
-                            Open Google Drive
-                        </a>
-                    </Button>
+                 <div className="pt-2">
+                    <div className="flex w-full items-center space-x-2">
+                        <Input
+                            placeholder="Paste Google Drive file URL here..."
+                            value={gdriveUrl}
+                            onChange={(e) => setGdriveUrl(e.target.value)}
+                            disabled={isImporting}
+                        />
+                        <Button onClick={handleImportFromDrive} disabled={isImporting}>
+                            {isImporting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                            Import
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -132,5 +158,3 @@ export default function TestingPage() {
       </div>
   );
 }
-
-    

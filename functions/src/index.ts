@@ -8,6 +8,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
+import { google } from 'googleapis';
 
 // Initialize the Firebase Admin SDK.
 if (!admin.apps.length) {
@@ -18,6 +19,12 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
+
+function extractFileIdFromUrl(url: string): string | null {
+    const regex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
 
 export const updateUserAuth = functions.https.onCall(async (data, context) => {
     // 1. Authentication Check
@@ -72,6 +79,84 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
     }
 });
 
+export const importFromGoogleDrive = functions.runWith({ memory: '1GB', timeoutSeconds: 120 }).https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
+    }
+    const { fileUrl, docIdToReplace } = data;
+    if (!fileUrl) {
+        throw new functions.https.HttpsError('invalid-argument', 'Google Drive file URL is required.');
+    }
+
+    try {
+        const fileId = extractFileIdFromUrl(fileUrl);
+        if (!fileId) {
+            throw new functions.https.HttpsError('invalid-argument', 'Could not extract a valid File ID from the URL. Please ensure you are using a valid Google Drive file link.');
+        }
+
+        const auth = new google.auth.GoogleAuth({
+            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+        });
+        const authClient = await auth.getClient();
+        const drive = google.drive({ version: 'v3', auth: authClient });
+
+        const fileMetadata = await drive.files.get({
+            fileId: fileId,
+            fields: 'name, mimeType',
+        });
+        
+        const fileName = fileMetadata.data.name || 'imported-from-gdrive.jpg';
+        const mimeType = fileMetadata.data.mimeType || 'application/octet-stream';
+
+        if (!mimeType.startsWith('image/')) {
+            throw new functions.https.HttpsError('invalid-argument', 'The provided link does not point to a valid image file.');
+        }
+
+        const fileResponse = await drive.files.get(
+            { fileId: fileId, alt: 'media' },
+            { responseType: 'arraybuffer' }
+        );
+
+        const imageBuffer = Buffer.from(fileResponse.data as any);
+
+        const bucket = storage.bucket();
+        const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `siteimages/${Date.now()}-${sanitizedFileName}`;
+        const file = bucket.file(filePath);
+
+        await file.save(imageBuffer, {
+            metadata: { contentType: mimeType, cacheControl: 'public, max-age=31536000' },
+        });
+
+        await file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        
+        const docId = docIdToReplace || fileId;
+        const hint = fileName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+
+        await db.collection('siteImages').doc(docId).set({
+            url: publicUrl,
+            storagePath: filePath,
+            hint: hint,
+            uploadedBy: context.auth.uid,
+            createdAt: new Date(),
+        }, { merge: true });
+
+        return { success: true, message: "Image imported successfully!", id: docId };
+
+    } catch (error: any) {
+        console.error("Error importing from Google Drive:", error);
+        if (error.code === 404) {
+          throw new functions.https.HttpsError('not-found', 'The file could not be found on Google Drive. Please check the URL and sharing permissions.');
+        }
+        if (error.code === 403) {
+          throw new functions.https.HttpsError('permission-denied', 'The service account does not have permission to access this Google Drive file. Ensure the file is shared appropriately.');
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to import from Google Drive.');
+    }
+});
+
+
 export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
@@ -95,8 +180,6 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             imageBuffer = Buffer.from(base64Data, 'base64');
             originalHint = fileName;
         } else {
-            // This case might not be used if the client always sends a data URL,
-            // but it's good to have as a fallback.
             const url = new URL(fileBuffer);
             const response = await fetch(url.toString());
             if (!response.ok) {

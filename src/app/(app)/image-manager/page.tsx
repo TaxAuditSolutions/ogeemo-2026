@@ -4,15 +4,16 @@
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { SettingsPageHeader } from "@/components/settings/settings-page-header";
-import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle, ExternalLink } from "lucide-react";
+import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImage, deleteSiteImage } from '@/services/file-service';
+import { uploadSiteImage, deleteSiteImage, importFromGoogleDriveUrl } from '@/services/file-service';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { SiteImage } from '@/hooks/use-site-images';
+import { Input } from '@/components/ui/input';
 
 export default function ImageManagerPage() {
   const [pastedImage, setPastedImage] = useState<File | null>(null);
@@ -23,6 +24,9 @@ export default function ImageManagerPage() {
   const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [gdriveUrl, setGdriveUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -70,6 +74,27 @@ export default function ImageManagerPage() {
     }
   };
 
+  const handleImportFromDrive = async () => {
+    if (!gdriveUrl.trim()) {
+        toast({ variant: 'destructive', title: 'URL required', description: 'Please paste a Google Drive file URL.' });
+        return;
+    }
+    setIsImporting(true);
+    try {
+        const result = await importFromGoogleDriveUrl(gdriveUrl, replacementTargetId || undefined);
+        toast({ title: 'Import Successful', description: result.message });
+        setGdriveUrl('');
+        loadImages(); 
+        if (replacementTargetId) {
+            router.push('/website');
+        }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
+    } finally {
+        setIsImporting(false);
+    }
+  };
+
 
   const handlePaste = (event: React.ClipboardEvent) => {
     const items = event.clipboardData.items;
@@ -111,8 +136,31 @@ export default function ImageManagerPage() {
   const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setPastedImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      handleFileUpload(file);
+    }
+  };
+  
+  const handleFileUpload = async (file: File | null) => {
+    if (!file || !user) {
+        toast({ variant: 'destructive', title: 'No file selected or not logged in.' });
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({ variant: 'destructive', title: 'Image too large', description: 'Please use an image smaller than 5MB.' });
+        return;
+    }
+
+    setIsUploading(true);
+    try {
+        await uploadSiteImage(file, user.uid);
+        toast({ title: 'Upload Successful', description: `${file.name} has been added.` });
+        loadImages();
+    } catch (error: any) {
+        console.error("Error uploading site image:", error);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+        setIsUploading(false);
     }
   };
 
@@ -140,7 +188,7 @@ export default function ImageManagerPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add New Image</CardTitle>
+          <CardTitle>Add New Image from Your Computer</CardTitle>
           <CardDescription>
             Click the box below to upload an image from your computer, or paste an image directly into the box.
           </CardDescription>
@@ -156,7 +204,7 @@ export default function ImageManagerPage() {
            {isUploading ? (
                <div className="flex flex-col items-center gap-2">
                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                   <p className="text-sm text-muted-foreground">{status}</p>
+                   <p className="text-sm text-muted-foreground">{status || 'Uploading...'}</p>
                </div>
            ) : previewUrl ? (
                 <div className="relative w-full h-full">
@@ -194,14 +242,31 @@ export default function ImageManagerPage() {
               </div>
           )}
         </CardContent>
-         <CardFooter>
-            <Button variant="secondary" asChild>
-                <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">
-                    Open Google Drive
-                </a>
-            </Button>
-        </CardFooter>
       </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Import from Google Drive</CardTitle>
+          <CardDescription>
+            Go to Google Drive, get a shareable link for your image (ensure it's accessible), and paste it below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex w-full items-center space-x-2">
+                <Input
+                    placeholder="Paste Google Drive file URL here..."
+                    value={gdriveUrl}
+                    onChange={(e) => setGdriveUrl(e.target.value)}
+                    disabled={isImporting}
+                />
+                <Button onClick={handleImportFromDrive} disabled={isImporting}>
+                    {isImporting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                    Import
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>
@@ -279,8 +344,3 @@ export default function ImageManagerPage() {
     </>
   );
 }
-    
-
-    
-
-    

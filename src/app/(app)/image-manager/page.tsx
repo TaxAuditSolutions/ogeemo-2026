@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { SettingsPageHeader } from "@/components/settings/settings-page-header";
 import { FileUp, X, LoaderCircle, Save, Trash2 } from "lucide-react";
@@ -17,6 +17,8 @@ export default function ImageManagerPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -53,6 +55,8 @@ export default function ImageManagerPage() {
   const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     handleFileUpload(file || null);
+    // Reset the input value to allow uploading the same file again
+    event.target.value = '';
   };
 
 
@@ -124,25 +128,34 @@ export default function ImageManagerPage() {
             onPaste={handlePaste}
             className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative"
             tabIndex={0}
-            onClick={() => document.getElementById('file-upload-input')?.click()}
+            onClick={() => fileInputRef.current?.click()}
           >
             {previewUrl ? (
                 <>
                     <img src={previewUrl} alt="Pasted preview" className="max-h-full max-w-full object-contain rounded-md" />
-                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 bg-background/50 hover:bg-background/80" onClick={clearPastedImage}>
+                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 bg-background/50 hover:bg-background/80" onClick={(e) => { e.stopPropagation(); clearPastedImage(); }}>
                         <X className="h-4 w-4" />
                     </Button>
                 </>
             ) : (
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <FileUp className="w-10 h-10 mb-3 text-gray-400" />
-                  <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-semibold">Click to upload</span> or paste an image
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                  {isUploading ? (
+                      <>
+                        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
+                      </>
+                  ) : (
+                      <>
+                        <FileUp className="w-10 h-10 mb-3 text-gray-400" />
+                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold">Click to upload</span> or paste an image
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                      </>
+                  )}
                 </div>
             )}
-            <input id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
           </div>
         </CardContent>
         <CardFooter>

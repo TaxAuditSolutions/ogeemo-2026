@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -42,6 +43,10 @@ declare global {
       }
       class Picker {
         setVisible(visible: boolean): void;
+      }
+      class View {
+        constructor(viewId: any);
+        setMimeTypes(mimeTypes: string): this;
       }
       const ViewId: {
         DOCS: any;
@@ -154,7 +159,7 @@ export default function TestingPage() {
       .setDeveloperKey(GOOGLE_API_KEY)
       .setAppId(GOOGLE_APP_ID)
       .setCallback(async (data: google.picker.ResponseObject) => {
-        if (data.action === window.google.picker.Action.PICKED) {
+        if (data.action === google.picker.Action.PICKED) {
           const doc = data.docs[0];
           
           if (!gdriveFolder) {

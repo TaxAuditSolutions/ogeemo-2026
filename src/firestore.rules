@@ -14,87 +14,90 @@ service cloud.firestore {
     }
     
     match /contacts/{contactId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /invoices/{invoiceId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
-    match /invoiceLineItems/{itemId} {
-      allow read, write: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
-    }
-    
     match /serviceItems/{itemId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /taxTypes/{typeId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /incomeTransactions/{transactionId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /expenseTransactions/{transactionId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /payableBills/{billId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /payrollRuns/{runId} {
-      allow read, write: if isOwner(resource.data.userId);
-    }
-
-    match /payrollRuns/{runId}/details/{detailId} {
-      allow read, write: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /payrollRemittances/{remittanceId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /assets/{assetId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /equityTransactions/{transactionId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /companies/{companyId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /expenseCategories/{categoryId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /incomeCategories/{categoryId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /industries/{industryId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /leaveRequests/{leaveRequestId} {
-      // Workers can create and read their own requests.
       allow create: if isOwner(request.resource.data.workerId);
       allow read: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
-      // Only the main user (admin) can update (approve/deny) requests.
       allow update: if isOwner(resource.data.userId);
     }
 
     match /timeLogs/{timeLogId} {
-      // Worker can create their own time log.
       allow create: if isOwner(request.resource.data.workerId);
-      // Worker can read and update their own time logs. Admin can read all.
-      allow read, update: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
-
+      allow read, update, delete: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
+      
       match /locations/{locationId} {
         allow create: if isOwner(request.resource.data.workerId);
         allow read: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
@@ -102,23 +105,46 @@ service cloud.firestore {
     }
     
     match /leads/{leadId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /projectTemplates/{templateId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /inventoryItems/{itemId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /inventoryLogs/{logId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
     match /suppliers/{supplierId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /invoiceLineItems/{itemId} {
+      allow read, update, delete: if isOwner(get(/databases/$(database)/documents/invoices/$(resource.data.invoiceId)).data.userId);
+      allow create: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
+    }
+    
+    match /payrollRuns/{runId}/details/{detailId} {
+        allow read, create, update, delete: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
+    }
+    
+    match /siteImages/{imageId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /feedback/{feedbackId} {
+      allow read, write: if request.auth != null;
     }
 
     // Fallback rule for any other path

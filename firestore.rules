@@ -13,8 +13,6 @@ service cloud.firestore {
       allow create: if request.auth != null;
     }
     
-    // --- Collections with simple ownership ---
-
     match /contacts/{contactId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
@@ -148,7 +146,7 @@ service cloud.firestore {
     }
     
     match /payrollRuns/{runId}/details/{detailId} {
-        allow read, write: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
+        allow read, create, update, delete: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
     }
 
     match /leaveRequests/{leaveRequestId} {

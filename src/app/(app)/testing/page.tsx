@@ -43,6 +43,10 @@ declare global {
       class Picker {
         setVisible(visible: boolean): void;
       }
+      class View {
+        constructor(viewId: any);
+        setMimeTypes(mimeTypes: string): this;
+      }
       const ViewId: {
         DOCS: any;
       };
@@ -141,10 +145,16 @@ export default function TestingPage() {
   
   const createPicker = (accessToken: string) => {
     const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    const GOOGLE_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-    if (!user || !GOOGLE_API_KEY || !GOOGLE_APP_ID) {
-      toast({ variant: 'destructive', title: 'Configuration Error', description: 'Missing Google API configuration.' });
+    const missingVars = [];
+    if (!GOOGLE_API_KEY) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+
+    if (!user || missingVars.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Error",
+        description: `The following environment variables are missing: ${missingVars.join(', ')}. Please contact support.`,
+      });
       return;
     }
 
@@ -152,7 +162,6 @@ export default function TestingPage() {
       .addView(window.google.picker.ViewId.DOCS)
       .setOAuthToken(accessToken)
       .setDeveloperKey(GOOGLE_API_KEY)
-      .setAppId(GOOGLE_APP_ID)
       .setCallback(async (data: google.picker.ResponseObject) => {
         if (data.action === window.google.picker.Action.PICKED) {
           const doc = data.docs[0];
@@ -250,3 +259,5 @@ export default function TestingPage() {
       </div>
   );
 }
+
+    

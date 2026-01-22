@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, Suspense } from 'react';
@@ -23,7 +24,7 @@ function SiteImagesManagerContent() {
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
     
     const replacementTargetId = searchParams.get('replace');
-    const [imageToReplace, setImageToReplace] = useState<{ id: string; image: SiteImage } | null>(null);
+    const [imageToReplace, setImageToReplace] = useState<{id: string; image: SiteImage } | null>(null);
     const [isReplacing, setIsReplacing] = useState(false);
 
     const handleFileUpload = async (file: File | null) => {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -58,25 +57,6 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <LoaderCircle className="h-6 w-6 animate-spin text-white" />
           </div>
-        )}
-        {user && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button asChild size="icon" className="h-8 w-8">
-                          <Link href={`/settings/site-images?replace=${id}`}>
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Replace Image</span>
-                          </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Replace Image</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-            </div>
         )}
       </div>
   );

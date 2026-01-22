@@ -72,6 +72,125 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
     }
 });
 
+export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
+    }
+    
+    const { fileName, fileBuffer, contentType, docIdToReplace } = data;
+    if (!fileName || !fileBuffer || !contentType) {
+        throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
+    }
+
+    try {
+        const isDataUrl = fileBuffer.startsWith('data:');
+        let imageBuffer: Buffer;
+        let originalHint: string;
+
+        if (isDataUrl) {
+            const base64Data = fileBuffer.split(';base64,').pop();
+            if (!base64Data) {
+                throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+            }
+            imageBuffer = Buffer.from(base64Data, 'base64');
+            originalHint = fileName;
+        } else {
+            // This case might not be used if the client always sends a data URL,
+            // but it's good to have as a fallback.
+            const url = new URL(fileBuffer);
+            const response = await fetch(url.toString());
+            if (!response.ok) {
+                throw new functions.https.HttpsError('internal', `Failed to fetch image from URL: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            imageBuffer = Buffer.from(arrayBuffer);
+            originalHint = fileName;
+        }
+        
+        const fileExtension = originalHint.split('.').pop()?.toLowerCase() || 'png';
+        const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+        const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
+        const filePath = `siteimages/${finalFileName}`;
+
+
+        const bucket = storage.bucket();
+        const file = bucket.file(filePath);
+
+        await file.save(imageBuffer, {
+            metadata: {
+                contentType: contentType,
+                cacheControl: 'public, max-age=31536000',
+            },
+        });
+        
+        await file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        
+        const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
+        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+
+        await db.collection('siteImages').doc(docId).set({
+            url: publicUrl,
+            storagePath: filePath,
+            hint: hint,
+            uploadedBy: context.auth.uid,
+            createdAt: new Date(),
+        }, { merge: true });
+        
+        return { success: true, message: "Image processed successfully!", id: docId };
+
+    } catch (error: any) {
+        console.error("Error uploading site image:", error);
+        
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        
+        if (isPermissionError) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The backend service account does not have permission to write files to Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions."
+            );
+        }
+        
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
+    }
+});
+
+
+export const deleteSiteImage = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to delete images.");
+    }
+    
+    const { imageId, storagePath } = data;
+    if (!imageId || !storagePath) {
+        throw new functions.https.HttpsError('invalid-argument', 'Image ID and storage path are required.');
+    }
+    
+    try {
+        await db.collection('siteImages').doc(imageId).delete();
+        
+        const bucket = storage.bucket();
+        const file = bucket.file(storagePath);
+        await file.delete();
+        
+        return { success: true, message: 'Image deleted successfully.' };
+    } catch (error: any) {
+        console.error("Error deleting site image:", error);
+        
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        
+        if (isPermissionError) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The backend service account does not have permission to delete files from Cloud Storage. Please grant the 'Storage Admin' role to your function's service account in the Google Cloud IAM console. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions."
+            );
+        }
+        
+        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
+    }
+});
+
 // --- Backup Functions ---
 
 export const triggerFirestoreBackup = functions.https.onCall(async (data, context) => {

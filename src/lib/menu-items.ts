@@ -52,6 +52,7 @@ import {
   Globe,
   MessageCircleQuestion,
   Search,
+  Image,
 } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -81,6 +82,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/user-list", label: "User List", icon: Users2 },
   { href: "/tools/image-generator", label: "Image Generator", icon: Wand2 },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/image-manager", label: "Image Manager", icon: Image },
   { href: "/backup", label: "Backups", icon: DatabaseBackup },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
@@ -98,4 +100,3 @@ export const allMenuItems: MenuItem[] = [
   ...accountingMenuItems,
   ...hrMenuItems,
 ];
-

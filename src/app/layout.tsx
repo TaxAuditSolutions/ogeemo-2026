@@ -6,7 +6,6 @@ import { LoadingProvider } from '@/context/loading-context';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import "./globals.css";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 // Re-compilation trigger comment
 
@@ -32,14 +31,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(fontBody.variable, fontHeadline.variable, fontOrbitron.variable, "font-body")}>
-        <FirebaseClientProvider>
-          <AuthProvider>
-            <LoadingProvider>
-              {children}
-              <Toaster />
-            </LoadingProvider>
-          </AuthProvider>
-        </FirebaseClientProvider>
+        <AuthProvider>
+          <LoadingProvider>
+            {children}
+            <Toaster />
+          </LoadingProvider>
+        </AuthProvider>
       </body>
     </html>
   );

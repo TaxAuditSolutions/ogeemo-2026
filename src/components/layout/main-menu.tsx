@@ -13,7 +13,6 @@ import { Button } from '../ui/button';
 import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, Users2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, getUserProfile } from '@/services/user-profile-service';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
 import { ActionChipMenu } from './ActionChipMenu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -50,16 +49,15 @@ export function MainMenu() {
   }, []);
   
   const refreshMenuOrder = useCallback(async () => {
-    if (user) {
-        const profile = await getUserProfile(user.uid);
-        const savedOrder = profile?.preferences?.menuOrder;
+    if (user && preferences?.menuOrder) {
+        const savedOrder = preferences.menuOrder;
         if (savedOrder && savedOrder.length > 0) {
             setMenuItems(sortMenuItems(savedOrder));
         } else {
             setMenuItems([...allMenuItems].sort((a, b) => a.label.localeCompare(b.label)));
         }
     }
-  }, [user, sortMenuItems]);
+  }, [user, preferences, sortMenuItems]);
 
   useEffect(() => {
     refreshMenuOrder();
@@ -107,12 +105,7 @@ export function MainMenu() {
     if (!user) return;
     try {
         const orderToSave = menuItems.map(item => item.href);
-        const profile = await getUserProfile(user.uid);
-        await updateUserProfile(user.uid, user.email || '', {
-            ...profile,
-            preferences: { ...profile?.preferences, menuOrder: orderToSave }
-        });
-
+        updatePreferences({ menuOrder: orderToSave });
         toast({
             title: "Menu Order Saved",
             description: "Your new menu order has been saved."

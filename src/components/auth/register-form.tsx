@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -7,7 +8,7 @@ import { z } from 'zod';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
+import { useAuth } from '@/context/auth-context';
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -15,7 +16,7 @@ const registerSchema = z.object({
 });
 
 export function RegisterForm() {
-  const { auth } = useFirebase();
+  const { auth } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof registerSchema>>({

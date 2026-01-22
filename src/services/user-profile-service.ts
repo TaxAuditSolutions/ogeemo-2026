@@ -2,11 +2,22 @@
 'use client';
 
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import firebaseConfig from '@/lib/config';
+
+// --- Firebase Initialization (Self-contained) ---
+function getDb() {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    return getFirestore(app);
+}
+
+function getFunctionsService() {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    return getFunctions(app);
+}
+
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
@@ -67,11 +78,6 @@ export interface UserProfile {
 
 const PROFILES_COLLECTION = 'users';
 
-async function getDb() {
-    const { db } = await initializeFirebase();
-    return db;
-}
-
 const defaultPreferences: UserProfile['preferences'] = {
     showDictationButton: true,
     showDashboardFrame: true,
@@ -94,14 +100,14 @@ const docToUserProfile = (doc: any): UserProfile => {
 };
 
 export async function getUsers(): Promise<UserProfile[]> {
-  const db = await getDb();
+  const db = getDb();
   const q = query(collection(db, PROFILES_COLLECTION));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToUserProfile);
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
 
@@ -129,99 +135,86 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     }
 }
 
-export function updateUserProfile(
+export async function updateUserProfile(
     userId: string, 
     email: string,
     data: Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    const db = await getDb();
+    const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    const docSnap = await getDoc(docRef);
+    
+    try {
+        const docSnap = await getDoc(docRef);
 
-    const dataWithTimestamp: { [key: string]: any } = {
-        ...data,
-        updatedAt: serverTimestamp(),
-    };
+        const dataWithTimestamp: { [key: string]: any } = {
+            ...data,
+            updatedAt: serverTimestamp(),
+        };
 
-    if (docSnap.exists()) {
-        const existingData = docSnap.data();
-        
-        if (data.preferences) {
-            const existingPrefs = existingData.preferences || {};
-            dataWithTimestamp.preferences = {
-                ...existingPrefs,
-                ...data.preferences,
-                planningRituals: {
-                    ...existingPrefs.planningRituals,
-                    ...(data.preferences.planningRituals || {}),
-                },
-            };
-        }
-        
-        if (data.businessAddress) {
-            const existingAddress = existingData.businessAddress || {};
-            dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
-        }
-        
-        if (data.homeAddress) {
-            const existingAddress = existingData.homeAddress || {};
-            dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
-        }
+        if (docSnap.exists()) {
+            const existingData = docSnap.data();
+            
+            if (data.preferences) {
+                const existingPrefs = existingData.preferences || {};
+                dataWithTimestamp.preferences = {
+                    ...existingPrefs,
+                    ...data.preferences,
+                    planningRituals: {
+                        ...existingPrefs.planningRituals,
+                        ...(data.preferences.planningRituals || {}),
+                    },
+                };
+            }
+            
+            if (data.businessAddress) {
+                const existingAddress = existingData.businessAddress || {};
+                dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
+            }
+            
+            if (data.homeAddress) {
+                const existingAddress = existingData.homeAddress || {};
+                dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
+            }
 
-        updateDoc(docRef, dataWithTimestamp)
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: dataWithTimestamp,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    } else {
-        dataWithTimestamp.email = email;
-        dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-        
-        setDoc(docRef, dataWithTimestamp)
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'create',
-                    requestResourceData: dataWithTimestamp,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
+            await updateDoc(docRef, dataWithTimestamp);
+        } else {
+            dataWithTimestamp.email = email;
+            dataWithTimestamp.createdAt = serverTimestamp();
+            dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
+            
+            await setDoc(docRef, dataWithTimestamp);
+        }
+    } catch (error: any) {
+        console.error(`Error updating user profile (${docRef.path}):`, {
+            operation: 'update/set',
+            path: docRef.path,
+            requestData: data,
+            error,
+        });
+        throw error;
     }
-  });
 }
 
 export async function updateUserAuth(uid: string, data: { email?: string; password?: string }): Promise<any> {
-    const { functions } = await initializeFirebase();
+    const functions = getFunctionsService();
     const updateUserAuthFn = httpsCallable(functions, 'updateUserAuth');
-    const result = await updateUserAuthFn({ uid, ...data });
-    return result.data;
+    try {
+        const result = await updateUserAuthFn({ uid, ...data });
+        return result.data;
+    } catch (error: any) {
+        console.error(`Error calling updateUserAuth function for UID ${uid}:`, error);
+        throw error;
+    }
 }
 
 
-export function deleteUserProfile(userId: string): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        const db = await getDb();
-        const docRef = doc(db, PROFILES_COLLECTION, userId);
-        
-        deleteDoc(docRef)
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    });
+export async function deleteUserProfile(userId: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, PROFILES_COLLECTION, userId);
+    try {
+        await deleteDoc(docRef);
+    } catch (error: any) {
+        console.error(`Error deleting user profile (${docRef.path}):`, error);
+        throw error;
+    }
 }

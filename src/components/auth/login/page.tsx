@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import LoadingModal from "@/components/ui/loading-modal";
 import { Logo } from "@/components/logo";
-import { useFirebase } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -39,8 +38,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const { toast } = useToast();
-  const { signInWithGoogle } = useAuth(); // Get services from context
-  const { auth } = useFirebase();
+  const { signInWithGoogle, auth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({

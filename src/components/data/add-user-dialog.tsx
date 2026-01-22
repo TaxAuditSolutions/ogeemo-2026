@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,7 +26,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { updateUserProfile, updateUserAuth, type UserProfile } from '@/services/user-profile-service';
 import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
@@ -49,7 +49,7 @@ interface AddUserDialogProps {
 export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }: AddUserDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { auth } = useFirebase();
+  const { auth } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<UserFormData>({

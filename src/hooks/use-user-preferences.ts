@@ -25,7 +25,13 @@ export function useUserPreferences() {
             try {
                 const profile = await getUserProfile(user.uid);
                 // Merge fetched preferences with defaults to ensure all keys are present
-                setPreferences({ ...defaultPreferences, ...(profile?.preferences || {}) });
+                const planningRituals = {
+                  ...defaultPreferences.planningRituals,
+                  ...profile?.preferences?.planningRituals,
+                  daily: { ...defaultPreferences.planningRituals?.daily, ...profile?.preferences?.planningRituals?.daily },
+                  weekly: { ...defaultPreferences.planningRituals?.weekly, ...profile?.preferences?.planningRituals?.weekly },
+                }
+                setPreferences({ ...defaultPreferences, ...(profile?.preferences || {}), planningRituals });
             } catch (error) {
                 console.error("Failed to load user preferences:", error);
                 // Set default preferences on error

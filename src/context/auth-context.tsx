@@ -4,15 +4,15 @@
 import type { User, Auth } from 'firebase/auth';
 import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { useFirebase } from '@/firebase/provider';
+import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import LoadingModal from '@/components/ui/loading-modal';
+import { getFirebaseServices } from '@/firebase';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   accessToken: string | null;
-  auth: Auth | null; // Provide the auth object
+  auth: Auth; 
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   getGoogleAccessToken: () => Promise<string | null>;
@@ -38,7 +38,6 @@ const marketingPaths = [
 ];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -46,25 +45,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   
-  useEffect(() => {
-    if (!auth) {
-        setIsAuthLoading(true);
-        return;
-    };
+  const { auth: firebaseAuth } = getFirebaseServices();
 
-    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+  useEffect(() => {
+    setPersistence(firebaseAuth, browserLocalPersistence).catch((error) => {
+        console.error("Firebase persistence error:", error);
+    });
+
+    const unsubscribe = firebaseAuth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
         const token = sessionStorage.getItem('google_access_token');
         setAccessToken(token);
         const idToken = await currentUser.getIdToken();
+        // This creates the server-side session cookie
         await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
       } else {
+        // Clear everything on sign out
         setAccessToken(null);
         sessionStorage.removeItem('google_access_token');
         await fetch('/api/auth/session', { method: 'DELETE' });
@@ -73,20 +75,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [firebaseAuth]);
 
 
   useEffect(() => {
     if (!isAuthLoading) {
-      const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
+      const isPublicPath = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/login' || pathname === '/register';
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
-      // If the user is authenticated, only redirect them away from the login/register pages.
       if (user && isPublicPath) {
         router.push('/action-manager');
       }
 
-      // If the user is not authenticated and on a protected page, redirect them to login.
       if (!user && !isPublicPath && !isMarketingPath) {
         router.push('/login');
       }
@@ -94,20 +94,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthLoading, pathname, router]);
   
   const signInWithGoogle = useCallback(async () => {
-    if (!auth) {
-        throw new Error("Firebase is not initialized.");
-    }
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file'); 
     provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
     
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(firebaseAuth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (credential?.accessToken) {
         sessionStorage.setItem('google_access_token', credential.accessToken);
         setAccessToken(credential.accessToken);
     }
-  }, [auth]);
+  }, [firebaseAuth]);
 
   const getGoogleAccessToken = useCallback(async (): Promise<string | null> => {
     const storedToken = sessionStorage.getItem('google_access_token');
@@ -126,19 +123,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const logout = useCallback(async () => {
-    if (auth) {
-      // Clear the server session, sign out of firebase, then clear local state and redirect.
-      // This more imperative flow ensures all state is cleared before navigation.
       await fetch('/api/auth/session', { method: 'DELETE' });
-      await signOut(auth);
+      await signOut(firebaseAuth);
       setUser(null);
       setAccessToken(null);
       sessionStorage.removeItem('google_access_token');
       router.push('/login');
-    }
-  }, [auth, router]);
+  }, [router, firebaseAuth]);
 
-  const value = { user, isLoading: isAuthLoading, accessToken, auth, logout, signInWithGoogle, getGoogleAccessToken };
+  const value = { user, isLoading: isAuthLoading, accessToken, auth: firebaseAuth, logout, signInWithGoogle, getGoogleAccessToken };
   
   return (
     <AuthContext.Provider value={value}>

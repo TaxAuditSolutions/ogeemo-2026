@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -66,7 +67,8 @@ export default function ImageManagerPage() {
         loadImages(); // Refresh the library view
     } catch (error: any) {
         console.error("Error saving pasted image:", error);
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        const description = error.details ? `${error.message} Details: ${JSON.stringify(error.details)}` : error.message;
+        toast({ variant: 'destructive', title: 'Save Failed', description });
     } finally {
         setIsUploading(false);
     }
@@ -82,7 +84,8 @@ export default function ImageManagerPage() {
         setImageToDelete(null);
         loadImages();
     } catch (error: any) {
-         toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+         const description = error.details ? `${error.message} Details: ${JSON.stringify(error.details)}` : error.message;
+         toast({ variant: 'destructive', title: 'Delete Failed', description });
     } finally {
         setIsDeleting(false);
     }

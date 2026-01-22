@@ -152,7 +152,12 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             );
         }
         
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+        };
+        throw new functions.https.HttpsError('internal', `Upload failed: ${errorMessage}`, errorDetails);
     }
 });
 
@@ -187,7 +192,12 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
             );
         }
         
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+        };
+        throw new functions.https.HttpsError('internal', `Delete failed: ${errorMessage}`, errorDetails);
     }
 });
 

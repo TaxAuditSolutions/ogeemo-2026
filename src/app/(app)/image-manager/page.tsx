@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { SettingsPageHeader } from "@/components/settings/settings-page-header";
-import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle } from "lucide-react";
+import { FileUp, X, LoaderCircle, Save, Trash2, CheckCircle, ExternalLink } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -111,8 +111,16 @@ export default function ImageManagerPage() {
     const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
     const GOOGLE_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-    if (!user || !GOOGLE_API_KEY || !GOOGLE_APP_ID) {
-      toast({ variant: 'destructive', title: 'Configuration Error', description: 'Missing Google API configuration.' });
+    const missingVars = [];
+    if (!GOOGLE_API_KEY) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+    if (!GOOGLE_APP_ID) missingVars.push('NEXT_PUBLIC_GOOGLE_CLIENT_ID');
+
+    if (!user || missingVars.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Error",
+        description: `The following environment variables are missing: ${missingVars.join(', ')}. Please contact support.`,
+      });
       return;
     }
 
@@ -168,7 +176,7 @@ export default function ImageManagerPage() {
         setImageToDelete(null);
         loadImages();
     } catch (error: any) {
-         const description = error.details ? `${error.message} Details: ${JSON.stringify(error.details)}` : error.message;
+         const description = (error as any).details ? `${(error as any).message} Details: ${JSON.stringify((error as any).details)}` : (error as any).message;
          toast({ variant: 'destructive', title: 'Delete Failed', description });
     } finally {
         setIsDeleting(false);
@@ -323,3 +331,4 @@ export default function ImageManagerPage() {
     </>
   );
 }
+    

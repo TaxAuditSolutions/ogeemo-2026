@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -86,7 +85,7 @@ export function GoogleIntegrationView() {
                         </CardDescription>
                          <div className="absolute top-4 right-4">
                             <Button asChild variant="ghost" size="icon">
-                                <Link href="/file-manager">
+                                <Link href="/document-manager">
                                     <X className="h-5 w-5" />
                                     <span className="sr-only">Back to Document Manager</span>
                                 </Link>
@@ -126,3 +125,4 @@ export function GoogleIntegrationView() {
         </div>
     );
 }
+    

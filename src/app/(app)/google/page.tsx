@@ -1,3 +1,4 @@
+'use client';
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
@@ -19,3 +20,4 @@ const GoogleIntegrationView = dynamic(
 export default function GooglePage() {
   return <GoogleIntegrationView />;
 }
+    

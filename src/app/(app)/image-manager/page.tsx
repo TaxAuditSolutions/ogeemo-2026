@@ -14,47 +14,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { SiteImage } from '@/hooks/use-site-images';
 
-declare global {
-  interface Window {
-    gapi: any;
-  }
-  namespace google {
-    namespace picker {
-      class PickerBuilder {
-        addView(view: any): this;
-        setOAuthToken(token: string): this;
-        setDeveloperKey(key: string): this;
-        setCallback(callback: (data: any) => void): this;
-        build(): Picker;
-      }
-      class Picker {
-        setVisible(visible: boolean): void;
-      }
-      class View {
-        constructor(viewId: any);
-        setMimeTypes(mimeTypes: string): this;
-      }
-      const ViewId: {
-        DOCS: any;
-      };
-      const Action: {
-        PICKED: any;
-      };
-      interface ResponseObject {
-        action: any;
-        docs: DocumentObject[];
-      }
-      interface DocumentObject {
-        id: string;
-        name: string;
-        mimeType: string;
-        url: string;
-        sizeBytes?: number;
-      }
-    }
-  }
-}
-
 export default function ImageManagerPage() {
   const [pastedImage, setPastedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -62,11 +21,10 @@ export default function ImageManagerPage() {
   const [status, setStatus] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
-  const pickerApiLoaded = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
-  const { user, getGoogleAccessToken } = useAuth();
+  const { user } = useAuth();
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
   
   const searchParams = useSearchParams();
@@ -74,89 +32,6 @@ export default function ImageManagerPage() {
   const replacementTargetId = searchParams.get('replace');
   const [imageToReplace, setImageToReplace] = useState<{id: string; image: SiteImage } | null>(null);
   const [isReplacing, setIsReplacing] = useState(false);
-
-  const handleImportFromGoogleDrive = async () => {
-    if (!user) return;
-    try {
-        const accessToken = await getGoogleAccessToken();
-        if (!accessToken) {
-            throw new Error("Could not get Google access token.");
-        }
-        loadPickerApi(() => createPicker(accessToken));
-    } catch (error: any) {
-         toast({
-            variant: "destructive",
-            title: "Import Failed",
-            description: error.message || "Could not initiate import process.",
-        });
-    }
-  };
-
-  const loadPickerApi = (callback: () => void) => {
-      if (pickerApiLoaded.current) {
-          callback();
-          return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = () => {
-          window.gapi.load('picker', { 'callback': () => {
-              pickerApiLoaded.current = true;
-              callback();
-          }});
-      };
-      document.body.appendChild(script);
-  };
-  
-  const createPicker = (accessToken: string) => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to use this feature.",
-      });
-      return;
-    }
-
-    const view = new google.picker.View(google.picker.ViewId.DOCS);
-    view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
-
-    const picker = new window.google.picker.PickerBuilder()
-      .addView(view)
-      .setOAuthToken(accessToken)
-      .setCallback(async (data: google.picker.ResponseObject) => {
-        if (data.action === google.picker.Action.PICKED) {
-          const doc = data.docs[0];
-          setIsUploading(true);
-          setStatus('Downloading from Google Drive...');
-          try {
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`, {
-              headers: { Authorization: `Bearer ${accessToken}` }
-            });
-
-            if (!response.ok) {
-              throw new Error('Failed to download file from Google Drive.');
-            }
-
-            const blob = await response.blob();
-            const file = new File([blob], doc.name, { type: doc.mimeType });
-            
-            setStatus('Uploading to site library...');
-            await uploadSiteImage(file, user.uid);
-
-            toast({ title: 'Image Imported', description: `"${doc.name}" has been added to your library.` });
-            loadImages();
-          } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
-          } finally {
-            setIsUploading(false);
-            setStatus('');
-          }
-        }
-      })
-      .build();
-    picker.setVisible(true);
-  };
   
   const handleDelete = async () => {
     if (!imageToDelete) return;
@@ -267,7 +142,7 @@ export default function ImageManagerPage() {
         <CardHeader>
           <CardTitle>Add New Image</CardTitle>
           <CardDescription>
-            Click to import an image from your Google Drive, or paste an image from your clipboard into the box below.
+            Click the box below to upload an image from your computer, or paste an image directly into the box.
           </CardDescription>
         </CardHeader>
         <CardContent 
@@ -320,7 +195,11 @@ export default function ImageManagerPage() {
           )}
         </CardContent>
          <CardFooter>
-            <Button variant="secondary" onClick={handleImportFromGoogleDrive}>Import from Google Drive</Button>
+            <Button variant="secondary" asChild>
+                <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">
+                    Open Google Drive
+                </a>
+            </Button>
         </CardFooter>
       </Card>
 

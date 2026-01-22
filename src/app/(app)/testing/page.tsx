@@ -26,59 +26,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { FolderItem } from '@/data/files';
 
-declare global {
-  interface Window {
-    gapi: any;
-  }
-  namespace google {
-    namespace picker {
-      class PickerBuilder {
-        addView(view: any): this;
-        setOAuthToken(token: string): this;
-        setDeveloperKey(key: string): this;
-        setAppId(id: string): this;
-        setCallback(callback: (data: any) => void): this;
-        build(): Picker;
-      }
-      class Picker {
-        setVisible(visible: boolean): void;
-      }
-      class View {
-        constructor(viewId: any);
-        setMimeTypes(mimeTypes: string): this;
-      }
-      const ViewId: {
-        DOCS: any;
-      };
-      const Action: {
-        PICKED: any;
-      };
-      interface ResponseObject {
-        action: any;
-        docs: DocumentObject[];
-      }
-      interface DocumentObject {
-        id: string;
-        name: string;
-        mimeType: string;
-        url: string;
-        sizeBytes?: number;
-      }
-    }
-  }
-}
-
-
 const GDRIVE_FILES_FOLDER_NAME = "Gdrive files";
-
 
 export default function TestingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [gdriveFolder, setGdriveFolder] = useState<FolderItem | null>(null);
   const [filesInGdriveFolder, setFilesInGdriveFolder] = useState<FileItem[]>([]);
-  const pickerApiLoaded = useRef(false);
-
-  const { user, getGoogleAccessToken } = useAuth();
+  
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const loadInitialData = useCallback(async () => {
@@ -109,92 +64,6 @@ export default function TestingPage() {
     loadInitialData();
   }, [loadInitialData]);
 
-  const handleImportClick = async () => {
-      if (!user) return;
-      
-      try {
-          const accessToken = await getGoogleAccessToken();
-          if (!accessToken) {
-              throw new Error("Could not get Google access token.");
-          }
-          loadPickerApi(() => createPicker(accessToken));
-      } catch (error: any) {
-           toast({
-              variant: "destructive",
-              title: "Import Failed",
-              description: error.message || "Could not initiate import process.",
-          });
-      }
-  };
-
-  const loadPickerApi = (callback: () => void) => {
-      if (pickerApiLoaded.current) {
-          callback();
-          return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = () => {
-          window.gapi.load('picker', { 'callback': () => {
-              pickerApiLoaded.current = true;
-              callback();
-          }});
-      };
-      document.body.appendChild(script);
-  };
-  
-  const createPicker = (accessToken: string) => {
-    const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-    const missingVars = [];
-    if (!GOOGLE_API_KEY) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
-
-    if (!user || missingVars.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Configuration Error",
-        description: `The following environment variables are missing: ${missingVars.join(', ')}. Please contact support.`,
-      });
-      return;
-    }
-
-    const picker = new window.google.picker.PickerBuilder()
-      .addView(window.google.picker.ViewId.DOCS)
-      .setOAuthToken(accessToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
-      .setCallback(async (data: google.picker.ResponseObject) => {
-        if (data.action === window.google.picker.Action.PICKED) {
-          const doc = data.docs[0];
-          
-          if (!gdriveFolder) {
-              toast({ variant: 'destructive', title: 'Error', description: 'Could not find the Gdrive folder to save the file reference.' });
-              return;
-          }
-          
-          try {
-              const newFileRecord: Omit<FileItem, 'id'> = {
-                  name: doc.name,
-                  type: doc.mimeType,
-                  size: doc.sizeBytes || 0,
-                  modifiedAt: new Date(),
-                  folderId: gdriveFolder.id,
-                  userId: user!.uid,
-                  storagePath: `gdrive/${doc.id}`, // Placeholder storage path for GDrive files
-                  googleFileId: doc.id,
-              };
-
-              const savedFile = await addFileRecord(newFileRecord);
-              setFilesInGdriveFolder(prev => [...prev, savedFile]);
-              toast({ title: 'File Imported', description: `A reference to "${doc.name}" has been saved.` });
-
-          } catch (error: any) {
-              toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-          }
-        }
-      })
-      .build();
-    picker.setVisible(true);
-  };
   
   const handleOpenApp = (file: FileItem) => {
       if (!file.name) {
@@ -225,7 +94,11 @@ export default function TestingPage() {
                 <CardTitle>{gdriveFolder?.name || "Gdrive files"}</CardTitle>
                 <CardDescription>This folder will contain references to your Google Drive files.</CardDescription>
                 <div className="pt-2">
-                    <Button onClick={handleImportClick} disabled={isLoading}>Import Files</Button>
+                    <Button asChild>
+                        <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">
+                            Open Google Drive
+                        </a>
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>

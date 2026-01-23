@@ -59,7 +59,8 @@ function SiteImagesManagerContent() {
             }
         } catch (error: any) {
             console.error("Error uploading site image:", error);
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+            const description = (error as any).details ? `${(error as any).message} Details: ${JSON.stringify((error as any).details)}` : (error as any).message;
+            toast({ variant: 'destructive', title: 'Upload Failed', description });
         } finally {
             setIsUploading(false);
             setPreviewUrl(null);
@@ -103,7 +104,8 @@ function SiteImagesManagerContent() {
             setImageToDelete(null);
             loadImages();
         } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+             const description = (error as any).details ? `${(error as any).message} Details: ${JSON.stringify((error as any).details)}` : (error as any).message;
+             toast({ variant: 'destructive', title: 'Delete Failed', description });
         } finally {
             setIsDeleting(false);
         }
@@ -225,7 +227,7 @@ function SiteImagesManagerContent() {
                                             <Button
                                                 variant="destructive"
                                                 size="icon"
-                                                onClick={() => setImageToDelete({ id, storagePath: image.storagePath })}
+                                                onClick={() => setImageToDelete({ id, image.storagePath })}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -284,3 +286,5 @@ export function SiteImagesManager() {
         </Suspense>
     );
 }
+
+    

@@ -8,6 +8,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { v1 as firestore_v1 } from "@google-cloud/firestore";
 import { getStorage } from "firebase-admin/storage";
+import { google } from 'googleapis';
 
 // Initialize the Firebase Admin SDK.
 if (!admin.apps.length) {
@@ -18,6 +19,12 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const storage = getStorage();
 const firestoreClient = new firestore_v1.FirestoreAdminClient();
+
+function extractFileIdFromUrl(url: string): string | null {
+    const regex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
 
 export const updateUserAuth = functions.https.onCall(async (data, context) => {
     // 1. Authentication Check
@@ -62,68 +69,68 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
         }
 
         // 6. Generic Fallback Error
-        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred while updating the user.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+            stack: error.stack
+        };
+        throw new functions.https.HttpsError('internal', `Update failed: ${errorMessage}`, errorDetails);
     }
 });
 
-
-export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
+export const importFromGoogleDrive = functions.runWith({ memory: '1GB', timeoutSeconds: 120 }).https.onCall(async (data, context) => {
     if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
     }
-    
-    const { fileName, fileBuffer, contentType, docIdToReplace } = data;
-    if (!fileName || !fileBuffer || !contentType) {
-        throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
+    const { fileUrl, accessToken, docIdToReplace } = data;
+    if (!fileUrl || !accessToken) {
+        throw new functions.https.HttpsError('invalid-argument', 'Google Drive file URL and access token are required.');
     }
 
     try {
-        const isDataUrl = fileBuffer.startsWith('data:');
-        let imageBuffer: Buffer;
-        let originalHint: string;
-
-        if (isDataUrl) {
-            const base64Data = fileBuffer.split(';base64,').pop();
-            if (!base64Data) {
-                throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
-            }
-            imageBuffer = Buffer.from(base64Data, 'base64');
-            originalHint = fileName;
-        } else {
-            // This case might not be used if the client always sends a data URL,
-            // but it's good to have as a fallback.
-            const url = new URL(fileBuffer);
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new functions.https.HttpsError('internal', `Failed to fetch image from URL: ${response.statusText}`);
-            }
-            const arrayBuffer = await response.arrayBuffer();
-            imageBuffer = Buffer.from(arrayBuffer);
-            originalHint = fileName;
+        const fileId = extractFileIdFromUrl(fileUrl);
+        if (!fileId) {
+            throw new functions.https.HttpsError('invalid-argument', 'Could not extract a valid File ID from the URL. Please ensure you are using a valid Google Drive file link.');
         }
-        
-        const fileExtension = originalHint.split('.').pop()?.toLowerCase() || 'png';
-        const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
-        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
-        const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
-        const filePath = `siteimages/${finalFileName}`;
 
+        const auth = new google.auth.OAuth2();
+        auth.setCredentials({ access_token: accessToken });
+        const drive = google.drive({ version: 'v3', auth });
+
+        const fileMetadata = await drive.files.get({
+            fileId: fileId,
+            fields: 'name, mimeType',
+        });
+        
+        const fileName = fileMetadata.data.name || 'imported-from-gdrive.jpg';
+        const mimeType = fileMetadata.data.mimeType || 'application/octet-stream';
+
+        if (!mimeType.startsWith('image/')) {
+            throw new functions.https.HttpsError('invalid-argument', 'The provided link does not point to a valid image file.');
+        }
+
+        const fileResponse = await drive.files.get(
+            { fileId: fileId, alt: 'media' },
+            { responseType: 'arraybuffer' }
+        );
+
+        const imageBuffer = Buffer.from(fileResponse.data as any);
 
         const bucket = storage.bucket();
+        const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `siteimages/${Date.now()}-${sanitizedFileName}`;
         const file = bucket.file(filePath);
 
         await file.save(imageBuffer, {
-            metadata: {
-                contentType: contentType,
-                cacheControl: 'public, max-age=31536000',
-            },
+            metadata: { contentType: mimeType, cacheControl: 'public, max-age=31536000' },
         });
-        
+
         await file.makePublic();
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
-        const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
-        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+        const docId = docIdToReplace || fileId;
+        const hint = fileName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
 
         await db.collection('siteImages').doc(docId).set({
             url: publicUrl,
@@ -132,12 +139,128 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             uploadedBy: context.auth.uid,
             createdAt: new Date(),
         }, { merge: true });
+
+        return { success: true, message: "Image imported successfully!", id: docId };
+
+    } catch (error: any) {
+        console.error("Error importing from Google Drive:", error);
+
+        // Check for Google Drive API specific errors
+        if (error.code === 404) {
+            throw new functions.https.HttpsError('not-found', 'The file could not be found on Google Drive. Please check the URL and sharing permissions.');
+        }
+        if (error.code === 403 && error.message && error.message.toLowerCase().includes('drive')) {
+            throw new functions.https.HttpsError('permission-denied', 'The service account does not have permission to access this Google Drive file. Ensure the file is shared appropriately.');
+        }
+        
+        // Check for Cloud Storage permission errors
+        const isStoragePermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isStoragePermissionError) {
+             throw new functions.https.HttpsError(
+                "permission-denied", 
+                "The backend service account does not have permission to write files to Cloud Storage. Please grant the 'Storage Admin' role to your function's service account. Refer to DEBUGGING_BACKUP_FEATURE.md for detailed instructions."
+            );
+        }
+        
+        // Generic fallback
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = { message: errorMessage, code: error.code };
+        throw new functions.https.HttpsError('internal', `Import failed: ${errorMessage}`, errorDetails);
+    }
+});
+
+
+export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall(async (data, context) => {
+    console.log("uploadSiteImage function started.");
+    
+    if (!context.auth) {
+        console.error("Authentication check failed: No context.auth");
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in to upload images.");
+    }
+    console.log(`Authenticated user: ${context.auth.uid}`);
+    
+    const { fileName, fileBuffer, contentType, docIdToReplace } = data;
+    console.log(`Received data: fileName=${fileName}, contentType=${contentType}, docIdToReplace=${docIdToReplace}`);
+
+    if (!fileName || !fileBuffer || !contentType) {
+        console.error("Argument validation failed: Missing required data.");
+        throw new functions.https.HttpsError('invalid-argument', 'File name, buffer, and content type are required.');
+    }
+
+    try {
+        console.log("Processing image buffer...");
+        const isDataUrl = fileBuffer.startsWith('data:');
+        let imageBuffer: Buffer;
+        let originalHint: string;
+
+        if (isDataUrl) {
+            const base64Data = fileBuffer.split(';base64,').pop();
+            if (!base64Data) {
+                console.error("Invalid data URL format.");
+                throw new functions.https.HttpsError('invalid-argument', 'Invalid base64 data.');
+            }
+            imageBuffer = Buffer.from(base64Data, 'base64');
+            originalHint = fileName;
+        } else {
+            console.log(`Fetching image from URL: ${fileBuffer}`);
+            const url = new URL(fileBuffer);
+            const response = await fetch(url.toString());
+            if (!response.ok) {
+                 console.error(`Failed to fetch image from URL: ${response.statusText}`);
+                throw new functions.https.HttpsError('internal', `Failed to fetch image from URL: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            imageBuffer = Buffer.from(arrayBuffer);
+            originalHint = fileName;
+        }
+        console.log("Image buffer processed successfully.");
+        
+        const fileExtension = originalHint.split('.').pop()?.toLowerCase() || 'png';
+        const baseName = originalHint.substring(0, originalHint.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+        const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
+        const filePath = `siteimages/${finalFileName}`;
+        console.log(`Generated file path: ${filePath}`);
+
+
+        const bucket = storage.bucket();
+        const file = bucket.file(filePath);
+
+        console.log("Attempting to save file to Cloud Storage...");
+        await file.save(imageBuffer, {
+            metadata: {
+                contentType: contentType,
+                cacheControl: 'public, max-age=31536000',
+            },
+        });
+        console.log("File saved successfully to Cloud Storage.");
+        
+        console.log("Making file public...");
+        await file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        console.log(`File public URL: ${publicUrl}`);
+        
+        const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
+        const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+        console.log(`Preparing to write to Firestore. docId=${docId}`);
+
+        await db.collection('siteImages').doc(docId).set({
+            url: publicUrl,
+            storagePath: filePath,
+            hint: hint,
+            uploadedBy: context.auth.uid,
+            createdAt: new Date(),
+        }, { merge: true });
+        console.log("Firestore document written successfully.");
         
         return { success: true, message: "Image processed successfully!", id: docId };
 
     } catch (error: any) {
-        console.error("Error uploading site image:", error);
-        
+        console.error("!!!!!!!!!! CAUGHT ERROR in uploadSiteImage !!!!!!!!!!");
+        console.error("Error Code:", error.code);
+        console.error("Error Message:", error.message);
+        console.error("Full Error Object:", JSON.stringify(error, null, 2));
+
         const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
         
         if (isPermissionError) {
@@ -147,7 +270,12 @@ export const uploadSiteImage = functions.runWith({ memory: '1GB' }).https.onCall
             );
         }
         
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to upload image.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+        };
+        throw new functions.https.HttpsError('internal', `Upload failed: ${errorMessage}`, errorDetails);
     }
 });
 
@@ -171,7 +299,10 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
         
         return { success: true, message: 'Image deleted successfully.' };
     } catch (error: any) {
-        console.error("Error deleting site image:", error);
+        console.error("!!!!!!!!!! CAUGHT ERROR in deleteSiteImage !!!!!!!!!!");
+        console.error("Error Code:", error.code);
+        console.error("Error Message:", error.message);
+        console.error("Full Error Object:", JSON.stringify(error, null, 2));
         
         const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
         
@@ -182,7 +313,12 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
             );
         }
         
-        throw new functions.https.HttpsError('internal', error.message || 'Failed to delete image.');
+        const errorMessage = error.message || 'An unexpected error occurred';
+        const errorDetails = {
+            message: errorMessage,
+            code: error.code,
+        };
+        throw new functions.https.HttpsError('internal', `Delete failed: ${errorMessage}`, errorDetails);
     }
 });
 
@@ -322,3 +458,5 @@ export const onFeedbackCreated = functions.firestore
       console.error('Error in onFeedbackCreated function:', error);
     }
   });
+
+    

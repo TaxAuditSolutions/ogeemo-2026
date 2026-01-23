@@ -7,12 +7,10 @@ import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Trash2, CheckCircle, FileUp, Save, X, Upload } from 'lucide-react';
+import { LoaderCircle, Trash2, CheckCircle, FileUp, Save, X } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { uploadSiteImage, deleteSiteImage } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
-import { Input } from '../ui/input';
-
 
 function SiteImagesManagerContent() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -59,12 +57,15 @@ function SiteImagesManagerContent() {
             }
         } catch (error: any) {
             console.error("Error uploading site image:", error);
-            const description = (error as any).details ? `${(error as any).message} Details: ${JSON.stringify((error as any).details)}` : (error as any).message;
+            const description = error.message || 'An unknown error occurred during upload.';
             toast({ variant: 'destructive', title: 'Upload Failed', description });
         } finally {
             setIsUploading(false);
             setPreviewUrl(null);
             setPastedImage(null);
+            if(fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
     
@@ -104,7 +105,7 @@ function SiteImagesManagerContent() {
             setImageToDelete(null);
             loadImages();
         } catch (error: any) {
-             const description = (error as any).details ? `${(error as any).message} Details: ${JSON.stringify((error as any).details)}` : (error as any).message;
+             const description = error.message || 'An unknown error occurred.';
              toast({ variant: 'destructive', title: 'Delete Failed', description });
         } finally {
             setIsDeleting(false);
@@ -176,6 +177,7 @@ function SiteImagesManagerContent() {
                                 e.stopPropagation();
                                 setPastedImage(null);
                                 setPreviewUrl(null);
+                                if(fileInputRef.current) fileInputRef.current.value = "";
                                 }}
                             >
                                 <X className="h-4 w-4" />

@@ -16,14 +16,13 @@ import {
     getDoc,
     setDoc,
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, deleteObject, getBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, deleteObject, getDownloadURL } from 'firebase/storage';
 import { getFirebaseServices } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const FILES_COLLECTION = 'files';
 export const SITE_IMAGES_FOLDER_ID = 'folder-site-images';
@@ -35,11 +34,6 @@ function getDb() {
 function getAppStorage() {
     const { storage } = getFirebaseServices();
     return storage;
-}
-
-function getFunctionsService() {
-    const { functions } = getFirebaseServices();
-    return functions;
 }
 
 const docToFile = (doc: any): FileItem => ({ 
@@ -353,66 +347,62 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
 }
 
 export async function uploadSiteImage(fileOrUrl: File | string, userId: string, docIdToReplace?: string): Promise<void> {
-    const functions = getFunctionsService();
-    const uploadFn = httpsCallable(functions, 'uploadSiteImage');
+    const storage = getAppStorage();
+    const db = getDb();
 
-    let fileBuffer: string;
+    let fileBlob: Blob;
     let fileName: string;
-    let contentType: string;
-
-    if (typeof fileOrUrl === 'string') {
-        // It's a URL from an existing image in the library
-        fileBuffer = fileOrUrl;
-        // We'll extract a hint for the name. This is imperfect but better than nothing.
+    
+    if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('data:')) {
+        const response = await fetch(fileOrUrl);
+        fileBlob = await response.blob();
+        fileName = 'pasted-image.png';
+    } else if (typeof fileOrUrl === 'string') {
+        const response = await fetch(fileOrUrl);
+        fileBlob = await response.blob();
         const urlParts = fileOrUrl.split('/');
         fileName = urlParts[urlParts.length - 1] || 'replacement.png';
-        // Content type for URLs is tricky, we make a best guess or let the backend handle it.
-        contentType = 'image/png'; // Default
     } else {
-        // It's a File object from an upload
+        fileBlob = fileOrUrl;
         fileName = fileOrUrl.name;
-        contentType = fileOrUrl.type;
-        fileBuffer = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(fileOrUrl);
-        });
     }
 
-    try {
-        await uploadFn({
-            fileName,
-            fileBuffer,
-            contentType,
-            docIdToReplace,
-        });
-    } catch (error: any) {
-        console.error("Error calling uploadSiteImage function:", error);
-        throw error;
-    }
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'png';
+    const baseName = fileName.substring(0, fileName.length - (fileExtension.length ? fileExtension.length + 1 : 0));
+    const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9._-]/g, '');
+    const finalFileName = `${Date.now()}-${sanitizedBaseName}.${fileExtension}`;
+    const filePath = `siteimages/${finalFileName}`;
+    
+    const fileStorageRef = storageRef(storage, filePath);
+    const uploadResult = await uploadBytes(fileStorageRef, fileBlob);
+    const publicUrl = await getDownloadURL(uploadResult.ref);
+    
+    const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');
+    const hint = baseName.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+    
+    const docRef = doc(db, 'siteImages', docId);
+    await setDoc(docRef, {
+        url: publicUrl,
+        storagePath: filePath,
+        hint: hint,
+        uploadedBy: userId,
+        createdAt: new Date(),
+    }, { merge: true });
 }
-
-export async function importFromGoogleDriveUrl(fileUrl: string, accessToken: string, docIdToReplace?: string): Promise<any> {
-    const functions = getFunctionsService();
-    const importFn = httpsCallable(functions, 'importFromGoogleDrive');
-    try {
-        const result = await importFn({ fileUrl, accessToken, docIdToReplace });
-        return result.data;
-    } catch (error: any) {
-        console.error("Error calling importFromGoogleDrive function:", error);
-        throw error;
-    }
-}
-
 
 export async function deleteSiteImage(imageId: string, storagePath: string): Promise<void> {
-    const functions = getFunctionsService();
-    const deleteFn = httpsCallable(functions, 'deleteSiteImage');
+    const storage = getAppStorage();
+    const db = getDb();
+    
+    const fileStorageRef = storageRef(storage, storagePath);
     try {
-        await deleteFn({ imageId, storagePath });
+        await deleteObject(fileStorageRef);
     } catch (error: any) {
-        console.error("Error calling deleteSiteImage function:", error);
-        throw error;
+        if (error.code !== 'storage/object-not-found') {
+            throw error;
+        }
     }
+
+    const docRef = doc(db, 'siteImages', imageId);
+    await deleteDoc(docRef);
 }

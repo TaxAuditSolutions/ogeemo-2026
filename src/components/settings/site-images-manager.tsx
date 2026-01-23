@@ -1,16 +1,18 @@
 
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSiteImages, type SiteImage } from '@/hooks/use-site-images';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Trash2, CheckCircle, FileUp } from 'lucide-react';
+import { LoaderCircle, Trash2, CheckCircle, FileUp, Save, X, Upload } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { uploadSiteImage, deleteSiteImage } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
+import { Input } from '../ui/input';
+
 
 function SiteImagesManagerContent() {
     const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -19,9 +21,12 @@ function SiteImagesManagerContent() {
     const searchParams = useSearchParams();
     const { user } = useAuth();
     
+    const [pastedImage, setPastedImage] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const replacementTargetId = searchParams.get('replace');
     const [imageToReplace, setImageToReplace] = useState<{id: string; image: SiteImage } | null>(null);
@@ -40,21 +45,53 @@ function SiteImagesManagerContent() {
 
         setIsUploading(true);
         try {
-            await uploadSiteImage(file, user.uid);
-            toast({ title: 'Upload Successful', description: `${file.name} has been added.` });
+            await uploadSiteImage(file, user.uid, replacementTargetId || undefined);
+            
+            const successMessage = replacementTargetId 
+                ? `The '${replacementTargetId}' image has been updated.`
+                : `${file.name} has been added.`;
+                
+            toast({ title: 'Upload Successful', description: successMessage });
             loadImages();
+
+            if (replacementTargetId) {
+                router.push('/website');
+            }
         } catch (error: any) {
             console.error("Error uploading site image:", error);
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
         } finally {
             setIsUploading(false);
+            setPreviewUrl(null);
+            setPastedImage(null);
+        }
+    };
+    
+    const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setPreviewUrl(URL.createObjectURL(file));
+            setPastedImage(file);
+        }
+    };
+    
+    const handlePaste = (event: React.ClipboardEvent) => {
+        const items = event.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+                setPastedImage(file);
+                setPreviewUrl(URL.createObjectURL(file));
+                break;
+            }
+            }
         }
     };
 
-    const handleFileSelectFromInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        handleFileUpload(file || null);
-    };
+    const handleSavePastedImage = () => {
+        handleFileUpload(pastedImage);
+    }
 
     const handleDelete = async () => {
         if (!imageToDelete) return;
@@ -77,10 +114,7 @@ function SiteImagesManagerContent() {
 
         setIsReplacing(true);
         try {
-            const { image } = imageToReplace;
-            
-            // This now calls the secure Cloud Function via the file service
-            await uploadSiteImage(image.url, user.uid, replacementTargetId);
+            await uploadSiteImage(imageToReplace.image.url, user.uid, replacementTargetId);
             
             toast({
                 title: "Image Replaced",
@@ -111,28 +145,59 @@ function SiteImagesManagerContent() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Add New Image</CardTitle>
-                    <CardDescription>Choose a file from your computer to upload.</CardDescription>
+                <CardTitle>Add New Image from Your Computer</CardTitle>
+                <CardDescription>
+                    Click the box below to upload an image, or paste an image directly into the box.
+                </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div 
-                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80"
-                        onClick={() => document.getElementById('file-upload-input')?.click()}
-                    >
-                       {isUploading ? (
-                           <div className="flex flex-col items-center gap-2">
-                               <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                               <p className="text-sm text-muted-foreground">Uploading...</p>
-                           </div>
-                       ) : (
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <FileUp className="w-10 h-10 mb-3 text-gray-400" />
-                                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload</span></p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
-                            </div>
-                       )}
-                       <input id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
+                <CardContent 
+                    onPaste={handlePaste} 
+                    className="space-y-4"
+                >
+                <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80"
+                >
+                {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Uploading...</p>
                     </div>
+                ) : previewUrl ? (
+                        <div className="relative w-full h-full">
+                            <img src={previewUrl} alt="Pasted content" className="w-full h-full object-contain" />
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2 h-7 w-7"
+                                onClick={(e) => {
+                                e.stopPropagation();
+                                setPastedImage(null);
+                                setPreviewUrl(null);
+                                }}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                ) : (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <FileUp className="w-10 h-10 mb-3 text-gray-400" />
+                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold">Click to upload or paste image</span>
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                        </div>
+                )}
+                <input ref={fileInputRef} id="file-upload-input" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileSelectFromInput} />
+                </div>
+                {previewUrl && (
+                    <div className="flex justify-end">
+                        <Button onClick={handleSavePastedImage} disabled={isUploading}>
+                            {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save Image
+                        </Button>
+                    </div>
+                )}
                 </CardContent>
             </Card>
 

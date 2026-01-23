@@ -352,18 +352,22 @@ export async function uploadSiteImage(fileOrUrl: File | string, userId: string, 
 
     let fileBlob: Blob;
     let fileName: string;
+    let contentType: string;
     
     if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('data:')) {
         const response = await fetch(fileOrUrl);
         fileBlob = await response.blob();
+        contentType = fileBlob.type;
         fileName = 'pasted-image.png';
     } else if (typeof fileOrUrl === 'string') {
         const response = await fetch(fileOrUrl);
         fileBlob = await response.blob();
+        contentType = fileBlob.type;
         const urlParts = fileOrUrl.split('/');
         fileName = urlParts[urlParts.length - 1] || 'replacement.png';
     } else {
         fileBlob = fileOrUrl;
+        contentType = fileOrUrl.type;
         fileName = fileOrUrl.name;
     }
 
@@ -374,7 +378,7 @@ export async function uploadSiteImage(fileOrUrl: File | string, userId: string, 
     const filePath = `siteimages/${finalFileName}`;
     
     const fileStorageRef = storageRef(storage, filePath);
-    const uploadResult = await uploadBytes(fileStorageRef, fileBlob);
+    const uploadResult = await uploadBytes(fileStorageRef, fileBlob, { contentType });
     const publicUrl = await getDownloadURL(uploadResult.ref);
     
     const docId = docIdToReplace || finalFileName.replace(`.${fileExtension}`, '');

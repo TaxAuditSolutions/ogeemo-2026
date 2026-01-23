@@ -25,7 +25,7 @@ import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
 
 const FILES_COLLECTION = 'files';
-export const SITE_IMAGES_FOLDER_ID = 'folder-site-images';
+const SITE_IMAGES_COLLECTION = 'siteImages';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -344,4 +344,43 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
 }
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
+}
+
+export async function uploadSiteImage({
+  userId,
+  file,
+  imageId,
+  hint,
+}: {
+  userId: string;
+  file: File;
+  imageId: string;
+  hint: string;
+}): Promise<void> {
+  if (!userId) {
+    throw new Error('User must be authenticated to upload images.');
+  }
+
+  const storage = getAppStorage();
+  const db = getDb();
+
+  // 1. Define storage path. This creates a predictable path based on imageId.
+  const storagePath = `siteimages/${imageId}/${file.name}`;
+  const fileRef = storageRef(storage, storagePath);
+
+  // 2. Upload file to Firebase Storage
+  await uploadBytes(fileRef, file);
+
+  // 3. Get the public download URL
+  const downloadURL = await getDownloadURL(fileRef);
+
+  // 4. Save metadata to Firestore
+  const docRef = doc(db, SITE_IMAGES_COLLECTION, imageId);
+  await setDoc(docRef, {
+    url: downloadURL,
+    storagePath: storagePath,
+    hint: hint,
+    updatedAt: new Date(),
+    updatedBy: userId,
+  }, { merge: true });
 }

@@ -135,25 +135,34 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
     const storagePath = `siteimages/${imageId}/${fileName}`;
     const file = bucket.file(storagePath);
     
-    await file.save(imageBuffer, {
-        metadata: { contentType: mimeType },
-    });
+    try {
+        await file.save(imageBuffer, {
+            metadata: { contentType: mimeType },
+        });
 
-    const [downloadURL] = await file.getSignedUrl({
-        action: 'read',
-        expires: '03-09-2491'
-    });
+        const [downloadURL] = await file.getSignedUrl({
+            action: 'read',
+            expires: '03-09-2491'
+        });
 
-    const docRef = db.collection('siteImages').doc(imageId);
-    await docRef.set({
-        url: downloadURL,
-        storagePath: storagePath,
-        hint: hint || '',
-        updatedAt: new Date(),
-        updatedBy: userId,
-    }, { merge: true });
+        const docRef = db.collection('siteImages').doc(imageId);
+        await docRef.set({
+            url: downloadURL,
+            storagePath: storagePath,
+            hint: hint || '',
+            updatedAt: new Date(),
+            updatedBy: userId,
+        }, { merge: true });
 
-    return { success: true, message: 'Image uploaded successfully.' };
+        return { success: true, message: 'Image uploaded successfully.' };
+    } catch (error: any) {
+        console.error(`[uploadSiteImage] Error for user ${userId}:`, error);
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isPermissionError) {
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks permission to upload files. Please grant 'Storage Admin' role. See FIXING_IMAGE_UPLOAD.md.");
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred during upload.');
+    }
 });
 
 export const replaceSiteImage = functions.https.onCall(async (data, context) => {
@@ -173,18 +182,27 @@ export const replaceSiteImage = functions.https.onCall(async (data, context) => 
     const base64EncodedImageString = fileDataUrl.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
     
-    await file.save(imageBuffer, { metadata: { contentType: mimeType } });
-    
-    const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '03-09-2491' });
+    try {
+        await file.save(imageBuffer, { metadata: { contentType: mimeType } });
+        
+        const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '03-09-2491' });
 
-    const docRef = db.collection('siteImages').doc(imageId);
-    await docRef.update({
-        url: downloadURL,
-        updatedAt: new Date(),
-        updatedBy: context.auth.uid,
-    });
+        const docRef = db.collection('siteImages').doc(imageId);
+        await docRef.update({
+            url: downloadURL,
+            updatedAt: new Date(),
+            updatedBy: context.auth.uid,
+        });
 
-    return { success: true, message: 'Image replaced successfully.' };
+        return { success: true, message: 'Image replaced successfully.' };
+    } catch (error: any) {
+        console.error(`[replaceSiteImage] Error for user ${context.auth.uid}:`, error);
+        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
+        if (isPermissionError) {
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks permission to upload files. Please grant 'Storage Admin' role. See FIXING_IMAGE_UPLOAD.md.");
+        }
+        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred during replacement.');
+    }
 });
 
 
@@ -268,4 +286,5 @@ export const onFeedbackCreated = functions.firestore
       console.error('Error in onFeedbackCreated function:', error);
     }
   });
+
 

@@ -5,36 +5,56 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import imageData from '@/app/lib/placeholder-images.json';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Image as ImageIcon } from 'lucide-react';
+import imageData from '@/app/lib/placeholder-images.json'; // Keep for hints
 
 type ImageId = keyof typeof imageData;
 
 interface ImagePlaceholderProps {
   id: ImageId;
   className?: string;
-  'data-ai-hint'?: string;
 }
 
-export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: ImagePlaceholderProps) {
+export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
   const { images, isLoading: isLoadingImages } = useSiteImages();
-  const { user } = useAuth(); // Check if user is logged in
+  const { user } = useAuth();
 
-  const placeholderInfo = imageData[id];
   const firestoreImage = images[id];
-
-  const src = firestoreImage?.url || placeholderInfo?.src;
-  const hint = dataAiHint || firestoreImage?.hint || placeholderInfo?.hint;
+  const placeholderInfo = imageData[id];
   
-  if (!src) {
-      return (
-          <div className={cn("bg-destructive text-destructive-foreground p-2 rounded-lg flex items-center justify-center", className)}>
-              <p>Error: Image source for "{id}" not found.</p>
-          </div>
-      );
-  }
+  const src = firestoreImage?.url;
+  const hint = firestoreImage?.hint || placeholderInfo?.hint;
+  
+  const content = () => {
+    if (isLoadingImages) {
+        return (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <LoaderCircle className="h-6 w-6 animate-spin text-white" />
+            </div>
+        );
+    }
+    if (src) {
+        return (
+            <Image
+                src={src}
+                alt={hint || 'Site image'}
+                fill
+                className="object-cover"
+                priority
+                key={src} // Force re-render if src changes
+            />
+        );
+    }
+    // If no image is found in Firestore, show a generic placeholder.
+    return (
+        <div className="flex flex-col items-center justify-center h-full w-full bg-muted/50 text-muted-foreground">
+            <ImageIcon className="h-8 w-8" />
+            <p className="text-xs mt-2 text-center">No image set for '{id}'</p>
+        </div>
+    );
+  };
 
   return (
       <div
@@ -44,29 +64,17 @@ export function ImagePlaceholder({ id, className, 'data-ai-hint': dataAiHint }: 
         )}
         data-ai-hint={hint}
       >
-        <Image
-          src={src}
-          alt={hint || 'Placeholder image'}
-          fill
-          className="object-cover"
-          priority
-          key={src}
-        />
+        {content()}
         {user && (
           <Link
             href={`/settings/site-images?replace=${id}`}
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
             aria-label={`Edit ${id} image`}
           >
             <div className="bg-white text-black px-4 py-2 rounded-md font-semibold">
               Edit
             </div>
           </Link>
-        )}
-        {isLoadingImages && (
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <LoaderCircle className="h-6 w-6 animate-spin text-white" />
-          </div>
         )}
       </div>
   );

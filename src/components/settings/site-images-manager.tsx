@@ -215,19 +215,19 @@ function SiteImagesManagerContent() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {Object.entries(images).map(([id, image]) => (
-                                <div key={id} className="group relative aspect-square overflow-hidden rounded-lg">
-                                    <img src={image.url} alt={image.hint || 'Site image'} className="h-full w-full object-cover" />
+                            {Object.entries(images).map(([imageId, imageObj]) => (
+                                <div key={imageId} className="group relative aspect-square overflow-hidden rounded-lg">
+                                    <img src={imageObj.url} alt={imageObj.hint || 'Site image'} className="h-full w-full object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         {replacementTargetId ? (
-                                            <Button size="sm" onClick={() => setImageToReplace({id, image})}>
+                                            <Button size="sm" onClick={() => setImageToReplace({id: imageId, image: imageObj})}>
                                                 <CheckCircle className="mr-2 h-4 w-4" /> Select
                                             </Button>
                                         ) : (
                                             <Button
                                                 variant="destructive"
                                                 size="icon"
-                                                onClick={() => setImageToDelete({ id, image.storagePath })}
+                                                onClick={() => setImageToDelete({ id: imageId, storagePath: imageObj.storagePath })}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -286,5 +286,3 @@ export function SiteImagesManager() {
         </Suspense>
     );
 }
-
-    

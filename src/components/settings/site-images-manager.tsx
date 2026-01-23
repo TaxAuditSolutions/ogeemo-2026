@@ -28,11 +28,14 @@ type ImageId = keyof typeof imageData;
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
-  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // State for new image upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [newImageId, setNewImageId] = useState('');
 
+  // State for replacement and deletion
   const [imageToReplace, setImageToReplace] = useState<{ id: string; file: File; previewUrl: string } | null>(null);
   const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
   
@@ -46,51 +49,47 @@ export function SiteImagesManager() {
     if (file) {
       setSelectedFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
+      reader.onloadend = () => setPreviewUrl(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
   
   const handleSaveNewImage = async () => {
-    if (!selectedFile || !newImageId.trim() || !user) {
-        toast({
-            variant: 'destructive',
-            title: 'Missing Information',
-            description: 'Please select a file and provide a unique ID for the new image.',
-        });
+    if (!selectedFile || !newImageId.trim()) {
+        toast({ variant: 'destructive', title: 'Missing Information' });
         return;
     }
     
     if (allImageKeys.includes(newImageId as any) || images[newImageId]) {
-        toast({
-            variant: 'destructive',
-            title: 'ID Already Exists',
-            description: 'This ID is already in use. Please choose a unique one.',
-        });
+        toast({ variant: 'destructive', title: 'ID Already Exists' });
         return;
     }
 
-    setIsUploading(true);
+    setIsProcessing(true);
     try {
-        await uploadSiteImage({
-            userId: user.uid,
-            file: selectedFile,
-            imageId: newImageId.trim(),
-            hint: 'User uploaded image',
-        });
-        toast({ title: 'Upload Successful', description: `Image "${newImageId.trim()}" has been added.` });
-        
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setNewImageId('');
-        loadImages();
-
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedFile);
+        reader.onload = async () => {
+            const fileDataUrl = reader.result as string;
+            await uploadSiteImage({
+                fileDataUrl,
+                fileName: selectedFile.name,
+                imageId: newImageId.trim(),
+                hint: 'User uploaded image',
+            });
+            toast({ title: 'Upload Successful' });
+            setSelectedFile(null);
+            setPreviewUrl(null);
+            setNewImageId('');
+            loadImages();
+            setIsProcessing(false);
+        };
+        reader.onerror = (error) => {
+            throw new Error('Failed to read file.');
+        };
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-    } finally {
-        setIsUploading(false);
+        setIsProcessing(false);
     }
   };
 
@@ -103,9 +102,7 @@ export function SiteImagesManager() {
       const file = target.files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          setImageToReplace({ id, file, previewUrl: reader.result as string });
-        };
+        reader.onloadend = () => setImageToReplace({ id, file, previewUrl: reader.result as string });
         reader.readAsDataURL(file);
       }
     };
@@ -117,32 +114,37 @@ export function SiteImagesManager() {
     
     const existingImage = images[imageToReplace.id];
     if (!existingImage?.storagePath) {
-        toast({ variant: 'destructive', title: 'Cannot Replace', description: 'The original image storage path could not be found.' });
+        toast({ variant: 'destructive', title: 'Cannot Replace', description: 'Original image storage path not found.' });
         return;
     }
 
-    setIsUploading(true);
+    setIsProcessing(true);
     try {
-        await replaceSiteImage({
-            userId: user.uid,
-            file: imageToReplace.file,
-            imageId: imageToReplace.id,
-            storagePathToOverwrite: existingImage.storagePath,
-        });
-        toast({ title: 'Image Replaced' });
-        setImageToReplace(null);
-        loadImages();
+        const reader = new FileReader();
+        reader.readAsDataURL(imageToReplace.file);
+        reader.onload = async () => {
+            const fileDataUrl = reader.result as string;
+            await replaceSiteImage({
+                fileDataUrl,
+                fileName: imageToReplace.file.name,
+                imageId: imageToReplace.id,
+                storagePathToOverwrite: existingImage.storagePath,
+            });
+            toast({ title: 'Image Replaced' });
+            setImageToReplace(null);
+            loadImages();
+            setIsProcessing(false);
+        };
+        reader.onerror = () => { throw new Error('Failed to read file for replacement.') };
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Replace Failed', description: error.message });
-    } finally {
-        setIsUploading(false);
+        setIsProcessing(false);
     }
   };
 
   const handleConfirmDelete = async () => {
-    if (!imageToDelete || !user) return;
-
-    setIsUploading(true);
+    if (!imageToDelete) return;
+    setIsProcessing(true);
     try {
       await deleteSiteImage({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
       toast({ title: 'Image Deleted' });
@@ -151,7 +153,7 @@ export function SiteImagesManager() {
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
-      setIsUploading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -170,45 +172,28 @@ export function SiteImagesManager() {
         <Card>
             <CardHeader>
                 <CardTitle>Add New Site Image</CardTitle>
-                <CardDescription>
-                Upload a new image to your library. It will then be available to use throughout your site.
-                </CardDescription>
+                <CardDescription>Upload a new image to your library.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                  <div className="space-y-2">
                     <Label htmlFor="new-image-id">New Image ID</Label>
-                    <Input 
-                        id="new-image-id"
-                        placeholder="e.g., 'about-page-hero'"
-                        value={newImageId}
-                        onChange={(e) => setNewImageId(e.target.value)}
-                        disabled={isUploading}
-                    />
-                     <p className="text-xs text-muted-foreground">A unique, descriptive ID (e.g., 'contact-hero'). No spaces or special characters.</p>
+                    <Input id="new-image-id" placeholder="e.g., 'about-hero'" value={newImageId} onChange={(e) => setNewImageId(e.target.value)} disabled={isProcessing} />
+                     <p className="text-xs text-muted-foreground">Unique ID (no spaces).</p>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="file-upload">Image File</Label>
-                    <Input 
-                        id="file-upload" 
-                        type="file" 
-                        accept="image/png, image/jpeg, image/gif, image/webp"
-                        onChange={handleFileChange}
-                        disabled={isUploading}
-                    />
+                    <Input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} disabled={isProcessing} />
                 </div>
                 {previewUrl && (
                     <div className="md:col-span-2 flex flex-col items-center gap-4">
-                        <p className="text-sm font-medium">Image Preview:</p>
-                        <div className="w-full max-w-sm aspect-video relative">
-                            <img src={previewUrl} alt="Preview of selected file" className="rounded-md object-contain w-full h-full" />
-                        </div>
+                        <div className="w-full max-w-sm aspect-video relative"><img src={previewUrl} alt="Preview" className="rounded-md object-contain w-full h-full" /></div>
                     </div>
                 )}
             </CardContent>
             <CardFooter>
-                <Button onClick={handleSaveNewImage} disabled={isUploading || !selectedFile || !newImageId.trim()}>
-                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {isUploading ? 'Uploading...' : 'Save New Image'}
+                <Button onClick={handleSaveNewImage} disabled={isProcessing || !selectedFile || !newImageId.trim()}>
+                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {isProcessing ? 'Uploading...' : 'Save New Image'}
                 </Button>
             </CardFooter>
         </Card>
@@ -216,9 +201,7 @@ export function SiteImagesManager() {
         <Card>
           <CardHeader>
             <CardTitle>Current Image Library</CardTitle>
-            <CardDescription>
-              These are the images currently available for your site. Hover to edit or delete.
-            </CardDescription>
+            <CardDescription>These are the images available for your site.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -227,46 +210,26 @@ export function SiteImagesManager() {
                 return (
                   <div key={key} className="space-y-2 group relative">
                     <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}><Edit className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                    <div className="aspect-video w-full">
-                        <ImagePlaceholder id={key} className="rounded-lg h-full w-full" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium">{key}</p>
-                      <p className="text-xs text-muted-foreground">{imageData[key]?.hint || ''}</p>
-                    </div>
+                    <ImagePlaceholder id={key} className="rounded-lg" />
+                    <div className="text-center"><p className="text-sm font-medium">{key}</p></div>
                   </div>
                 );
               })}
-              {Object.keys(images)
-                .filter(key => !allImageKeys.includes(key as any))
-                .map(key => {
-                    const image = images[key];
-                    return (
-                        <div key={key} className="space-y-2 group relative">
-                             <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div className="aspect-video w-full">
-                                <ImagePlaceholder id={key as ImageId} className="rounded-lg h-full w-full" />
-                            </div>
-                            <div className="text-center">
-                            <p className="text-sm font-medium">{key}</p>
-                            <p className="text-xs text-muted-foreground">{images[key]?.hint || 'User uploaded'}</p>
-                            </div>
+              {Object.keys(images).filter(key => !allImageKeys.includes(key as any)).map(key => {
+                const image = images[key];
+                return (
+                    <div key={key} className="space-y-2 group relative">
+                         <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}><Edit className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
-                    )
+                        <ImagePlaceholder id={key as ImageId} className="rounded-lg" />
+                        <div className="text-center"><p className="text-sm font-medium">{key}</p></div>
+                    </div>
+                )
               })}
             </div>
           </CardContent>
@@ -274,45 +237,23 @@ export function SiteImagesManager() {
     </div>
     <AlertDialog open={!!imageToReplace} onOpenChange={() => setImageToReplace(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Replace Image?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Are you sure you want to replace the image for "{imageToReplace?.id}"? This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-             {imageToReplace?.previewUrl && (
-                <div className="my-4 flex justify-center">
-                    <img src={imageToReplace.previewUrl} alt="New image preview" className="rounded-md max-h-60 object-contain"/>
-                </div>
-            )}
+            <AlertDialogHeader><AlertDialogTitle>Replace Image?</AlertDialogTitle><AlertDialogDescription>Replace the image for "{imageToReplace?.id}"? This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+             {imageToReplace?.previewUrl && (<div className="my-4 flex justify-center"><img src={imageToReplace.previewUrl} alt="Preview" className="rounded-md max-h-60 object-contain"/></div>)}
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmReplace}>
-                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : null}
-                    Replace
-                </AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmReplace}>{isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : null} Replace</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={!!imageToDelete} onOpenChange={() => setImageToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Delete Image?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Are you sure you want to permanently delete the image "{imageToDelete?.id}"? This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Delete Image?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{imageToDelete?.id}"? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-                    {isUploading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : null}
-                    Delete
-                </AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">{isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : null} Delete</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
     </>
   );
 }
-
-    

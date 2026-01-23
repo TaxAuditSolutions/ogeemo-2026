@@ -357,24 +357,15 @@ export async function uploadSiteImage({
   imageId: string;
   hint: string;
 }): Promise<void> {
-  if (!userId) {
-    throw new Error('User must be authenticated to upload images.');
-  }
-
   const storage = getAppStorage();
   const db = getDb();
-
-  // 1. Define storage path. This creates a predictable path based on imageId.
+  
   const storagePath = `siteimages/${imageId}/${file.name}`;
   const fileRef = storageRef(storage, storagePath);
 
-  // 2. Upload file to Firebase Storage
   await uploadBytes(fileRef, file);
-
-  // 3. Get the public download URL
   const downloadURL = await getDownloadURL(fileRef);
 
-  // 4. Save metadata to Firestore
   const docRef = doc(db, SITE_IMAGES_COLLECTION, imageId);
   await setDoc(docRef, {
     url: downloadURL,
@@ -384,3 +375,57 @@ export async function uploadSiteImage({
     updatedBy: userId,
   }, { merge: true });
 }
+
+export async function replaceSiteImage({
+  userId,
+  file,
+  imageId,
+  storagePathToOverwrite,
+}: {
+  userId: string;
+  file: File;
+  imageId: string;
+  storagePathToOverwrite: string;
+}): Promise<void> {
+  const storage = getAppStorage();
+  const db = getDb();
+
+  const fileRef = storageRef(storage, storagePathToOverwrite);
+  await uploadBytes(fileRef, file);
+
+  const downloadURL = await getDownloadURL(fileRef);
+
+  const docRef = doc(db, SITE_IMAGES_COLLECTION, imageId);
+  await updateDoc(docRef, {
+    url: downloadURL,
+    updatedAt: new Date(),
+    updatedBy: userId,
+  });
+}
+
+export async function deleteSiteImage({
+  imageId,
+  storagePath,
+}: {
+  imageId: string;
+  storagePath: string;
+}): Promise<void> {
+  const storage = getAppStorage();
+  const db = getDb();
+  
+  if (storagePath) {
+    const fileRef = storageRef(storage, storagePath);
+    try {
+      await deleteObject(fileRef);
+    } catch (error: any) {
+      if (error.code !== 'storage/object-not-found') {
+        throw error;
+      }
+    }
+  }
+
+  const docRef = doc(db, SITE_IMAGES_COLLECTION, imageId);
+  await deleteDoc(docRef);
+}
+
+    

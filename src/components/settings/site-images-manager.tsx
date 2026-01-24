@@ -21,9 +21,7 @@ import { LoaderCircle, Image as ImageIcon, Upload, Save, Edit, Trash2 } from 'lu
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImageClient, replaceSiteImage, deleteSiteImage } from '@/services/file-service';
-import { getFirestore, doc, deleteDoc } from 'firebase/firestore'; // Direct imports for fallback
-import { getFirebaseServices } from '@/firebase';
+import { uploadSiteImage, replaceSiteImage, deleteSiteImage } from '@/services/file-service';
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -55,27 +53,39 @@ export function SiteImagesManager() {
   
   const handleSaveNewImage = async () => {
     if (!selectedFile || !newImageId.trim()) {
-        toast({ variant: 'destructive', title: 'Missing Information' });
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide both an Image ID and a file.' });
         return;
     }
     
     if (images[newImageId]) {
-        toast({ variant: 'destructive', title: 'ID Already Exists' });
+        toast({ variant: 'destructive', title: 'ID Already Exists', description: 'Please choose a unique ID for the new image.' });
         return;
     }
 
     setIsProcessing(true);
     try {
-        await uploadSiteImageClient(selectedFile, newImageId.trim(), 'User uploaded image');
-        
-        toast({ title: 'Upload Successful' });
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setNewImageId('');
-        loadImages();
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedFile);
+        reader.onload = async () => {
+            const fileDataUrl = reader.result as string;
+            await uploadSiteImage({
+                fileDataUrl,
+                fileName: selectedFile.name,
+                imageId: newImageId.trim(),
+                hint: 'User uploaded image' // Placeholder hint
+            });
+            toast({ title: 'Upload Successful' });
+            setSelectedFile(null);
+            setPreviewUrl(null);
+            setNewImageId('');
+            loadImages(); // Refresh the list
+            setIsProcessing(false);
+        };
+        reader.onerror = () => {
+            throw new Error('Failed to read file for upload.');
+        };
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-    } finally {
         setIsProcessing(false);
     }
   };
@@ -132,35 +142,17 @@ export function SiteImagesManager() {
   const handleConfirmDelete = async () => {
     if (!imageToDelete) return;
     setIsProcessing(true);
-    
-    // Attempt 1: Standard Delete (Cloud Function)
     try {
       await deleteSiteImage({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
       toast({ title: 'Image Deleted' });
       setImageToDelete(null);
       loadImages();
     } catch (error: any) {
-      console.warn("Standard delete failed, attempting force delete...", error);
-      
-      // Attempt 2: Fallback Force Delete (Direct Firestore)
-      // This handles cases where the storagePath is invalid or the Cloud Function errors out.
-      try {
-        const { db } = getFirebaseServices();
-        const docRef = doc(db, 'siteImages', imageToDelete.id);
-        await deleteDoc(docRef);
-        
-        toast({ title: 'Image Deleted (Forced)', description: 'Removed broken database record.' });
-        setImageToDelete(null);
-        loadImages();
-      } catch (forceError: any) {
-        console.error("Force delete also failed", forceError);
-        toast({ variant: 'destructive', title: 'Delete Failed', description: forceError.message });
-      }
+      toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
       setIsProcessing(false);
     }
   };
-
 
   if (isLoadingImages) {
     return (
@@ -218,11 +210,13 @@ export function SiteImagesManager() {
                     const image = images[key];
                     return (
                     <div key={key} className="space-y-2 group relative">
+                        <div className="aspect-video w-full">
+                            <ImagePlaceholder id={key} className="rounded-lg" />
+                        </div>
                         <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}><Edit className="h-4 w-4" /></Button>
                             <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
-                        <ImagePlaceholder id={key} className="rounded-lg" />
                         <div className="text-center"><p className="text-sm font-medium">{key}</p></div>
                     </div>
                     );

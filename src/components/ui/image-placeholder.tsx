@@ -37,7 +37,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
                 src={src}
                 alt={hint || 'Site image'}
                 fill
-                className="object-cover"
+                className="object-contain"
                 priority
                 key={src} // Force re-render if src changes
             />

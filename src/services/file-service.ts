@@ -17,6 +17,7 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirebaseServices } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
@@ -130,7 +131,7 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
 
 
 export async function saveEmailForContact(userId: string, contactName: string, email: { to: string, from: string, subject: string; body: string; sourceLink?: string; }): Promise<FileItem> {
-    const contactFolder = await findOrCreateGenericFolder(userId, contactName, 'fileManagerFolders');
+    const contactFolder = await findOrCreateGenericFolder(userId, contactName);
     if (!contactFolder) {
         throw new Error("Could not find or create a folder for the contact.");
     }
@@ -151,12 +152,12 @@ export async function saveEmailForContact(userId: string, contactName: string, e
 }
 
 export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
-    const folder = await findOrCreateGenericFolder(userId, 'Archived Ideas', 'fileManagerFolders');
+    const folder = await findOrCreateGenericFolder(userId, 'Archived Ideas');
     return addTextFileClient(userId, folder.id, `Archived Idea - ${title}.txt`);
 }
 
 export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promise<FileItem> {
-    const folder = await findOrCreateGenericFolder(userId, 'Archived Tasks', 'fileManagerFolders');
+    const folder = await findOrCreateGenericFolder(userId, 'Archived Tasks');
     return addTextFileClient(userId, folder.id, `Archived Task - ${task.title}.txt`);
 }
 
@@ -170,7 +171,7 @@ export async function deleteFiles(fileIds: string[]): Promise<void> {
     await batch.commit();
 }
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
-    return findOrCreateGenericFolder(userId, folderName, 'fileManagerFolders');
+    return findOrCreateGenericFolder(userId, folderName);
 }
 
 // --- NEW SITE IMAGE FUNCTIONS (CALLING CLOUD FUNCTIONS) ---
@@ -181,13 +182,36 @@ export async function uploadSiteImage(data: { fileDataUrl: string, fileName: str
     return func(data);
 }
 
+// Client-side alternative to uploadSiteImage
+export async function uploadSiteImageClient(file: File, imageId: string, hint: string): Promise<void> {
+    const { storage, db, auth } = getFirebaseServices();
+    if (!auth.currentUser) throw new Error("User must be logged in.");
+
+    const storagePath = `siteimages/${imageId}/${file.name}`;
+    const storageRef = ref(storage, storagePath);
+    
+    // Upload file
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+
+    // Update Firestore
+    await setDoc(doc(db, 'siteImages', imageId), {
+        url: downloadURL,
+        storagePath: storagePath,
+        hint: hint,
+        updatedAt: new Date(),
+        updatedBy: auth.currentUser.uid
+    }, { merge: true });
+}
+
+
 export async function replaceSiteImage(data: { fileDataUrl: string, fileName: string, imageId: string; storagePathToOverwrite: string; }): Promise<any> {
     const functions = getFunctionsService();
     const func = httpsCallable(functions, 'replaceSiteImage');
     return func(data);
 }
 
-export async function deleteSiteImage(data: { imageId: string; storagePath: string; }): Promise<any> {
+export async function deleteSiteImage(data: { imageId: string; storagePath?: string; }): Promise<any> {
     const functions = getFunctionsService();
     const func = httpsCallable(functions, 'deleteSiteImage');
     return func(data);

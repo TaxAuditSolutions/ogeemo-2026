@@ -8,12 +8,9 @@ import { cn } from '@/lib/utils';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { LoaderCircle, Image as ImageIcon } from 'lucide-react';
-import imageData from '@/app/lib/placeholder-images.json'; // Keep for hints
-
-type ImageId = keyof typeof imageData;
 
 interface ImagePlaceholderProps {
-  id: ImageId;
+  id: string;
   className?: string;
 }
 
@@ -22,10 +19,9 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
   const { user } = useAuth();
 
   const firestoreImage = images[id];
-  const placeholderInfo = imageData[id];
   
   const src = firestoreImage?.url;
-  const hint = firestoreImage?.hint || placeholderInfo?.hint;
+  const hint = firestoreImage?.hint;
   
   const content = () => {
     if (isLoadingImages) {

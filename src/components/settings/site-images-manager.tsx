@@ -19,12 +19,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoaderCircle, Image as ImageIcon, Upload, Save, Edit, Trash2 } from 'lucide-react';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
-import imageData from '@/app/lib/placeholder-images.json';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImage, replaceSiteImage, deleteSiteImage } from '@/services/file-service';
-
-type ImageId = keyof typeof imageData;
+import { uploadSiteImageClient, replaceSiteImage, deleteSiteImage } from '@/services/file-service';
+import { getFirestore, doc, deleteDoc } from 'firebase/firestore'; // Direct imports for fallback
+import { getFirebaseServices } from '@/firebase';
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -37,12 +36,12 @@ export function SiteImagesManager() {
 
   // State for replacement and deletion
   const [imageToReplace, setImageToReplace] = useState<{ id: string; file: File; previewUrl: string } | null>(null);
-  const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string } | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath?: string } | null>(null);
   
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const allImageKeys = Object.keys(imageData) as (keyof typeof imageData)[];
+  const allImageKeys = Object.keys(images);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -60,35 +59,23 @@ export function SiteImagesManager() {
         return;
     }
     
-    if (allImageKeys.includes(newImageId as any) || images[newImageId]) {
+    if (images[newImageId]) {
         toast({ variant: 'destructive', title: 'ID Already Exists' });
         return;
     }
 
     setIsProcessing(true);
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(selectedFile);
-        reader.onload = async () => {
-            const fileDataUrl = reader.result as string;
-            await uploadSiteImage({
-                fileDataUrl,
-                fileName: selectedFile.name,
-                imageId: newImageId.trim(),
-                hint: 'User uploaded image',
-            });
-            toast({ title: 'Upload Successful' });
-            setSelectedFile(null);
-            setPreviewUrl(null);
-            setNewImageId('');
-            loadImages();
-            setIsProcessing(false);
-        };
-        reader.onerror = (error) => {
-            throw new Error('Failed to read file.');
-        };
+        await uploadSiteImageClient(selectedFile, newImageId.trim(), 'User uploaded image');
+        
+        toast({ title: 'Upload Successful' });
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setNewImageId('');
+        loadImages();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
         setIsProcessing(false);
     }
   };
@@ -145,13 +132,30 @@ export function SiteImagesManager() {
   const handleConfirmDelete = async () => {
     if (!imageToDelete) return;
     setIsProcessing(true);
+    
+    // Attempt 1: Standard Delete (Cloud Function)
     try {
       await deleteSiteImage({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
       toast({ title: 'Image Deleted' });
       setImageToDelete(null);
       loadImages();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+      console.warn("Standard delete failed, attempting force delete...", error);
+      
+      // Attempt 2: Fallback Force Delete (Direct Firestore)
+      // This handles cases where the storagePath is invalid or the Cloud Function errors out.
+      try {
+        const { db } = getFirebaseServices();
+        const docRef = doc(db, 'siteImages', imageToDelete.id);
+        await deleteDoc(docRef);
+        
+        toast({ title: 'Image Deleted (Forced)', description: 'Removed broken database record.' });
+        setImageToDelete(null);
+        loadImages();
+      } catch (forceError: any) {
+        console.error("Force delete also failed", forceError);
+        toast({ variant: 'destructive', title: 'Delete Failed', description: forceError.message });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -204,34 +208,27 @@ export function SiteImagesManager() {
             <CardDescription>These are the images available for your site.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {allImageKeys.map((key) => {
-                const image = images[key];
-                return (
-                  <div key={key} className="space-y-2 group relative">
-                    <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}><Edit className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                    <ImagePlaceholder id={key} className="rounded-lg" />
-                    <div className="text-center"><p className="text-sm font-medium">{key}</p></div>
-                  </div>
-                );
-              })}
-              {Object.keys(images).filter(key => !allImageKeys.includes(key as any)).map(key => {
-                const image = images[key];
-                return (
+            {allImageKeys.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                    No images found. Upload one to get started.
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {allImageKeys.map((key) => {
+                    const image = images[key];
+                    return (
                     <div key={key} className="space-y-2 group relative">
-                         <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleReplaceClick(key)}><Edit className="h-4 w-4" /></Button>
                             <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => setImageToDelete({ id: key, storagePath: image?.storagePath })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
-                        <ImagePlaceholder id={key as ImageId} className="rounded-lg" />
+                        <ImagePlaceholder id={key} className="rounded-lg" />
                         <div className="text-center"><p className="text-sm font-medium">{key}</p></div>
                     </div>
-                )
-              })}
-            </div>
+                    );
+                })}
+                </div>
+            )}
           </CardContent>
         </Card>
     </div>

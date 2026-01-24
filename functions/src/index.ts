@@ -112,7 +112,7 @@ export const triggerAuthBackup = functions.https.onCall(async (data, context) =>
 });
 
 
-// --- IMAGE UPLOAD FUNCTIONS (NEW) ---
+// --- IMAGE UPLOAD FUNCTIONS (NEW ARCHITECTURE) ---
 
 export const uploadSiteImage = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
@@ -120,7 +120,6 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
     }
 
     const { fileDataUrl, imageId, hint, fileName } = data;
-
     if (!fileDataUrl || !imageId || !fileName) {
         throw new functions.https.HttpsError('invalid-argument', 'Missing required data.');
     }
@@ -136,32 +135,29 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
     const file = bucket.file(storagePath);
     
     try {
+        // Save the file and make it publicly readable
         await file.save(imageBuffer, {
             metadata: { contentType: mimeType },
+            public: true,
         });
 
-        const [downloadURL] = await file.getSignedUrl({
-            action: 'read',
-            expires: '03-09-2491'
-        });
+        // Construct the public URL manually
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
 
         const docRef = db.collection('siteImages').doc(imageId);
         await docRef.set({
-            url: downloadURL,
+            url: publicUrl,
             storagePath: storagePath,
             hint: hint || '',
             updatedAt: new Date(),
             updatedBy: userId,
         }, { merge: true });
 
-        return { success: true, message: 'Image uploaded successfully.' };
+        return { success: true, message: 'Image uploaded successfully.', url: publicUrl };
     } catch (error: any) {
         console.error(`[uploadSiteImage] Error for user ${userId}:`, JSON.stringify(error, null, 2));
         if (error.code === 403 || error.message?.includes('permission denied')) {
-            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
-        }
-        if (error.message?.includes('iam.serviceAccountTokenCreator')) {
-             throw new functions.https.HttpsError('permission-denied', "The service account is missing the 'Service Account Token Creator' role, which is required to create public URLs for images. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions to write files. Please grant 'Storage Admin' or 'Storage Object Creator' role. See FIXING_IMAGE_UPLOAD.md for instructions.");
         }
         throw new functions.https.HttpsError('internal', 'An unexpected server error occurred during upload. Check the function logs in the Google Cloud console for more details.');
     }
@@ -185,25 +181,26 @@ export const replaceSiteImage = functions.https.onCall(async (data, context) => 
     const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
     
     try {
-        await file.save(imageBuffer, { metadata: { contentType: mimeType } });
+        await file.save(imageBuffer, {
+            metadata: { contentType: mimeType },
+            public: true,
+        });
         
-        const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '03-09-2491' });
+        // Construct the public URL manually
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePathToOverwrite}`;
 
         const docRef = db.collection('siteImages').doc(imageId);
         await docRef.update({
-            url: downloadURL,
+            url: publicUrl,
             updatedAt: new Date(),
             updatedBy: context.auth.uid,
         });
 
-        return { success: true, message: 'Image replaced successfully.' };
+        return { success: true, message: 'Image replaced successfully.', url: publicUrl };
     } catch (error: any) {
         console.error(`[replaceSiteImage] Error for user ${context.auth.uid}:`, JSON.stringify(error, null, 2));
         if (error.code === 403 || error.message?.includes('permission denied')) {
-            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
-        }
-         if (error.message?.includes('iam.serviceAccountTokenCreator')) {
-             throw new functions.https.HttpsError('permission-denied', "The service account is missing the 'Service Account Token Creator' role, which is required to create public URLs for images. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions to write files. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
         }
         throw new functions.https.HttpsError('internal', 'An unexpected server error occurred during replacement. Check the function logs in the Google Cloud console for more details.');
     }
@@ -216,7 +213,6 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
     }
 
     const { imageId, storagePath } = data;
-    // Allow deletion even if storagePath is missing (cleans up broken records)
     if (!imageId) {
         throw new functions.https.HttpsError('invalid-argument', 'Missing required data: imageId.');
     }
@@ -228,13 +224,11 @@ export const deleteSiteImage = functions.https.onCall(async (data, context) => {
         } catch (error: any) {
             if (error.code !== 404) { // Ignore 'Not Found' errors
                 console.error(`Failed to delete from storage at ${storagePath}:`, error);
-                // We continue to delete the document to unblock the user
             }
         }
     }
 
     await db.collection('siteImages').doc(imageId).delete();
-
     return { success: true, message: 'Image deleted successfully.' };
 });
 
@@ -256,7 +250,6 @@ export const onFeedbackCreated = functions.firestore
     }
 
     try {
-      // Fetch the user's profile to get their email address.
       const userRecord = await admin.auth().getUser(userId);
       const recipientEmail = userRecord.email;
 

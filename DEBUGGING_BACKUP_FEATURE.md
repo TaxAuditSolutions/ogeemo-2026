@@ -53,14 +53,6 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --role="roles/storage.admin"
 ```
 
-**For Creating Public Image URLs (`uploadSiteImage`, `replaceSiteImage`):**
-This is a critical, often-missed permission required for generating the public download links for images.
-```bash
-gcloud projects add-iam-policy-binding [PROJECT_ID] \
-    --member="serviceAccount:SA_EMAIL" \
-    --role="roles/iam.serviceAccountTokenCreator"
-```
-
 ### 3. Enable the "Hidden" Export API (For Backups Only)
 
 This is a very common cause of "internal" errors for the backup feature. The managed export service must be explicitly enabled for the project.

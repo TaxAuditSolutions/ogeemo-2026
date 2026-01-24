@@ -3,7 +3,7 @@
 
 This guide provides the precise, command-line steps to resolve the vague "internal" server errors that occur when uploading or managing site images. These errors are caused by missing cloud permissions for the function's service account, not by a bug in the application code itself.
 
-The solution is to grant the correct IAM roles to the service account that runs your Cloud Functions.
+The solution is to grant the correct IAM role to the service account that runs your Cloud Functions.
 
 ---
 
@@ -20,12 +20,12 @@ gcloud functions describe uploadSiteImage --region=[YOUR_REGION] --format="value
 
 This command will output the service account email. Copy this email for the next step.
 
-### Step 2: Grant the Required Roles
+### Step 2: Grant the Required Role
 
-Now, run the following commands, replacing `[PROJECT_ID]` with your Google Cloud Project ID and `[SA_EMAIL]` with the email address you copied in step 1.
+Now, run the following command, replacing `[PROJECT_ID]` with your Google Cloud Project ID and `[SA_EMAIL]` with the email address you copied in step 1.
 
-**Command 1: Grant Storage Admin Role**
-This role allows the function to read, write, and delete files in your project's Cloud Storage bucket.
+**Grant Storage Admin Role**
+This role allows the function to read, write, and delete files in your project's Cloud Storage bucket, and to make them public.
 
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] \
@@ -33,17 +33,8 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
     --role="roles/storage.admin"
 ```
 
-**Command 2: Grant Service Account Token Creator Role**
-This is a critical, often-missed permission. It allows the function to create a publicly accessible signed URL for the image after it has been uploaded. Without this role, the function will fail with an "internal" error.
-
-```bash
-gcloud projects add-iam-policy-binding [PROJECT_ID] \
-    --member="serviceAccount:[SA_EMAIL]" \
-    --role="roles/iam.serviceAccountTokenCreator"
-```
-
 ### Step 3: Try Again
 
-After running **both** commands successfully, please return to the Ogeemo app and try uploading or replacing an image again. The "internal" error should now be resolved, and the operation will succeed.
+After running the command successfully, please return to the Ogeemo app and try uploading or replacing an image again. The "internal" error should now be resolved, and the operation will succeed.
 
 This is the definitive fix for the permission issue we have been facing.

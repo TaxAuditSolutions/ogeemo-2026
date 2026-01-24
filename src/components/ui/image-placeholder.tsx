@@ -19,7 +19,7 @@ import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { uploadSiteImage, replaceSiteImage } from '@/services/file-service';
-import { LoaderCircle, Image as ImageIcon, ClipboardPaste } from 'lucide-react';
+import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit } from 'lucide-react';
 
 interface ImagePlaceholderProps {
   id: string;
@@ -33,8 +33,11 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [pastedImage, setPastedImage] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [isReplaceChoiceDialogOpen, setIsReplaceChoiceDialogOpen] = useState(false);
+
 
   const handlePasteFromClipboard = useCallback(async () => {
+    setIsReplaceChoiceDialogOpen(false); // Close choice dialog
     if (!navigator.clipboard?.read) {
       toast({
         variant: 'destructive',
@@ -52,7 +55,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
         toast({
           variant: 'destructive',
           title: 'No Image Found',
-          description: 'No image was found on your clipboard to paste.',
+          description: 'No image was found on the clipboard. Try right-clicking an image and selecting "Copy Image", then try pasting again.',
         });
         return;
       }
@@ -76,6 +79,25 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
       });
     }
   }, [toast]);
+  
+  const handleUploadFromComputer = useCallback(() => {
+    setIsReplaceChoiceDialogOpen(false); // Close choice dialog
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPastedImage({ file, previewUrl: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+  }, []);
 
   const handleConfirmReplace = useCallback(async () => {
     if (!pastedImage || !user) return;
@@ -104,7 +126,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
             toast({ title: 'Image Replaced', description: `The image for "${id}" has been updated.` });
         }
         
-        loadImages(); // Manually trigger a refresh of the image data
+        loadImages();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
     } finally {
@@ -133,7 +155,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
                 fill
                 className="object-contain"
                 priority
-                key={src} // Add key to force re-render on src change
+                key={src}
             />
         );
     }
@@ -155,10 +177,10 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
               size="icon"
               variant="secondary"
               className="h-8 w-8"
-              onClick={handlePasteFromClipboard}
-              title="Paste to replace image"
+              onClick={() => setIsReplaceChoiceDialogOpen(true)}
+              title="Replace image"
             >
-              <ClipboardPaste className="h-4 w-4" />
+              <Edit className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -169,12 +191,36 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
         )}
       </div>
 
+      <AlertDialog open={isReplaceChoiceDialogOpen} onOpenChange={setIsReplaceChoiceDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>How would you like to replace this image?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    You can paste an image from your clipboard or upload a new file from your computer.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4">
+                <Button variant="outline" onClick={handlePasteFromClipboard}>
+                    <ClipboardPaste className="mr-2 h-4 w-4" />
+                    Paste from Clipboard
+                </Button>
+                <Button variant="outline" onClick={handleUploadFromComputer}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload from Computer
+                </Button>
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!pastedImage} onOpenChange={() => setPastedImage(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Replace Image?</AlertDialogTitle>
+                <AlertDialogTitle>Confirm Replacement</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Do you want to replace the image for "{id}" with the image you just pasted? This action cannot be undone.
+                    Do you want to replace the image for "{id}" with the image below? This action cannot be undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             {pastedImage?.previewUrl && (

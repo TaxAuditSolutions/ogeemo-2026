@@ -1,3 +1,4 @@
+
 # How to Fix "Internal" Server Errors
 
 This guide provides precise, command-line steps to resolve the vague "internal" errors that can occur when using server-side features like backups or image uploads. These errors are almost always caused by missing cloud permissions for the function's service account, not by a bug in the application code itself.

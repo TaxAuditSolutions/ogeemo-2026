@@ -1,3 +1,4 @@
+
 # How to Fix Image Upload "Internal" Server Errors
 
 This guide provides the precise, command-line steps to resolve the vague "internal" server errors that occur when uploading or managing site images. These errors are caused by missing cloud permissions for the function's service account, not by a bug in the application code itself.

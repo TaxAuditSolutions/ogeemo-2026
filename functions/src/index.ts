@@ -44,7 +44,7 @@ export const updateUserAuth = functions.https.onCall(async (data, context) => {
         console.error(`Failed to update user ${uid}:`, error);
         const isPermissionError = (error.code === 'auth/insufficient-permission' || (error.message && error.message.toLowerCase().includes('permission denied')));
         if (isPermissionError) {
-             throw new functions.https.HttpsError('permission-denied', "The backend service account does not have permission to update user accounts. Please grant the 'Firebase Authentication Admin' role.");
+             throw new functions.https.HttpsError('permission-denied', "The backend service account does not have permission to update user accounts. Please grant the 'Firebase Authentication Admin' role. See DEBUGGING_BACKUP_FEATURE.md for instructions.");
         }
         throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred.');
     }
@@ -74,7 +74,7 @@ export const triggerFirestoreBackup = functions.https.onCall(async (data, contex
     return { message: "Firestore backup process initiated.", operationName: response.name };
   } catch (error: any) {
     console.error("Firestore backup failed:", error);
-    throw new functions.https.HttpsError('internal', `Firestore backup failed: ${error.message}`);
+    throw new functions.https.HttpsError('internal', `Firestore backup failed. See DEBUGGING_BACKUP_FEATURE.md for potential permission fixes. Error: ${error.message}`);
   }
 });
 
@@ -107,7 +107,7 @@ export const triggerAuthBackup = functions.https.onCall(async (data, context) =>
     return { message: `Successfully exported ${users.length} users.`, destination: `gs://${bucketName}/${destination}` };
   } catch (error: any) {
     console.error("Auth backup failed:", error);
-    throw new functions.https.HttpsError('internal', `Auth backup failed: ${error.message}`);
+    throw new functions.https.HttpsError('internal', `Auth backup failed. See DEBUGGING_BACKUP_FEATURE.md for potential permission fixes. Error: ${error.message}`);
   }
 });
 
@@ -156,12 +156,14 @@ export const uploadSiteImage = functions.https.onCall(async (data, context) => {
 
         return { success: true, message: 'Image uploaded successfully.' };
     } catch (error: any) {
-        console.error(`[uploadSiteImage] Error for user ${userId}:`, error);
-        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
-        if (isPermissionError) {
-            throw new functions.https.HttpsError('permission-denied', "The service account lacks permission to upload files. Please grant 'Storage Admin' role. See FIXING_IMAGE_UPLOAD.md.");
+        console.error(`[uploadSiteImage] Error for user ${userId}:`, JSON.stringify(error, null, 2));
+        if (error.code === 403 || error.message?.includes('permission denied')) {
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
         }
-        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred during upload.');
+        if (error.message?.includes('iam.serviceAccountTokenCreator')) {
+             throw new functions.https.HttpsError('permission-denied', "The service account is missing the 'Service Account Token Creator' role, which is required to create public URLs for images. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
+        }
+        throw new functions.https.HttpsError('internal', 'An unexpected server error occurred during upload. Check the function logs in the Google Cloud console for more details.');
     }
 });
 
@@ -196,12 +198,14 @@ export const replaceSiteImage = functions.https.onCall(async (data, context) => 
 
         return { success: true, message: 'Image replaced successfully.' };
     } catch (error: any) {
-        console.error(`[replaceSiteImage] Error for user ${context.auth.uid}:`, error);
-        const isPermissionError = (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission denied')));
-        if (isPermissionError) {
-            throw new functions.https.HttpsError('permission-denied', "The service account lacks permission to upload files. Please grant 'Storage Admin' role. See FIXING_IMAGE_UPLOAD.md.");
+        console.error(`[replaceSiteImage] Error for user ${context.auth.uid}:`, JSON.stringify(error, null, 2));
+        if (error.code === 403 || error.message?.includes('permission denied')) {
+            throw new functions.https.HttpsError('permission-denied', "The service account lacks Storage permissions. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
         }
-        throw new functions.https.HttpsError('internal', error.message || 'An unexpected error occurred during replacement.');
+         if (error.message?.includes('iam.serviceAccountTokenCreator')) {
+             throw new functions.https.HttpsError('permission-denied', "The service account is missing the 'Service Account Token Creator' role, which is required to create public URLs for images. Please see FIXING_IMAGE_UPLOAD.md for instructions.");
+        }
+        throw new functions.https.HttpsError('internal', 'An unexpected server error occurred during replacement. Check the function logs in the Google Cloud console for more details.');
     }
 });
 

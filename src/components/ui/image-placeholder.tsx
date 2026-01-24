@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback } from 'react';
@@ -17,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { replaceSiteImage } from '@/services/file-service';
+import { uploadSiteImage, replaceSiteImage } from '@/services/file-service';
 import { LoaderCircle, Image as ImageIcon, ClipboardPaste } from 'lucide-react';
 
 interface ImagePlaceholderProps {
@@ -79,31 +80,33 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
   const handleConfirmReplace = useCallback(async () => {
     if (!pastedImage || !user) return;
     
-    const existingImage = images[id];
-    if (!existingImage?.storagePath) {
-        toast({ variant: 'destructive', title: 'Cannot Replace', description: 'Original image storage path not found. This image may need to be re-uploaded.' });
-        setPastedImage(null);
-        return;
-    }
-
     setIsProcessing(true);
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(pastedImage.file);
-        reader.onload = async () => {
-            const fileDataUrl = reader.result as string;
+        const existingImage = images[id];
+
+        if (!existingImage || !existingImage.storagePath) {
+            // This is an old image record. Perform an upload instead of a replace to fix it.
+            await uploadSiteImage({
+                fileDataUrl: pastedImage.previewUrl,
+                fileName: pastedImage.file.name,
+                imageId: id,
+                hint: existingImage?.hint || ''
+            });
+            toast({ title: 'Image Uploaded', description: `A new image has been uploaded for "${id}".` });
+        } else {
+            // This is a normal replacement for a modern image record.
             await replaceSiteImage({
-                fileDataUrl,
+                fileDataUrl: pastedImage.previewUrl,
                 fileName: pastedImage.file.name,
                 imageId: id,
                 storagePathToOverwrite: existingImage.storagePath,
             });
             toast({ title: 'Image Replaced', description: `The image for "${id}" has been updated.` });
-            loadImages(); // Manually trigger a refresh
-        };
-        reader.onerror = () => { throw new Error('Failed to read pasted file for upload.') };
+        }
+        
+        loadImages(); // Manually trigger a refresh of the image data
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Replace Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
     } finally {
         setIsProcessing(false);
         setPastedImage(null);
@@ -130,7 +133,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
                 fill
                 className="object-contain"
                 priority
-                key={src}
+                key={src} // Add key to force re-render on src change
             />
         );
     }

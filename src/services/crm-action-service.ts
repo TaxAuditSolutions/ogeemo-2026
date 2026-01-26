@@ -14,8 +14,6 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export interface Action {
   id: string;
@@ -61,81 +59,31 @@ export async function getActionsForLead(userId: string, leadName: string): Promi
   return snapshot.docs.map(docToAction).sort((a, b) => a.position - b.position);
 }
 
-export function addAction(data: Omit<Action, 'id'>): Promise<Action> {
-  return new Promise(async (resolve, reject) => {
+export async function addAction(data: Omit<Action, 'id'>): Promise<Action> {
     const db = getDb();
     const collectionRef = collection(db, CRM_ACTIONS_COLLECTION);
-    
-    addDoc(collectionRef, data)
-      .then(docRef => resolve({ id: docRef.id, ...data }))
-      .catch(serverError => {
-        const permissionError = new FirestorePermissionError({
-            path: collectionRef.path,
-            operation: 'create',
-            requestResourceData: data,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        reject(serverError);
-      });
-  });
+    const docRef = await addDoc(collectionRef, data);
+    return { id: docRef.id, ...data };
 }
 
-export function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
     const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
-    
-    updateDoc(docRef, data)
-      .then(resolve)
-      .catch(serverError => {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'update',
-            requestResourceData: data,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        reject(serverError);
-      });
-  });
+    await updateDoc(docRef, data);
 }
 
-export function deleteAction(id: string): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function deleteAction(id: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
-    
-    deleteDoc(docRef)
-      .then(resolve)
-      .catch(serverError => {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        reject(serverError);
-      });
-  });
+    await deleteDoc(docRef);
 }
 
-export function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
     updates.forEach(update => {
         const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);
         batch.update(docRef, { position: update.position, status: update.status });
     });
-    
-    batch.commit()
-      .then(resolve)
-      .catch(serverError => {
-        const permissionError = new FirestorePermissionError({
-            path: CRM_ACTIONS_COLLECTION,
-            operation: 'update',
-            requestResourceData: { batch: updates },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        reject(serverError);
-      });
-  });
+    await batch.commit();
 }

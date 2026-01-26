@@ -15,8 +15,6 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export type LeadStatus = 'Unscheduled Leads' | 'Scheduled Leads' | 'Completed Leads';
 
@@ -55,55 +53,20 @@ export async function getLeadById(leadId: string): Promise<Lead | null> {
     return docSnap.exists() ? docToLead(docSnap) : null;
 }
 
-export function addLead(data: Omit<Lead, 'id'>): Promise<Lead> {
-  return new Promise(async (resolve, reject) => {
+export async function addLead(data: Omit<Lead, 'id'>): Promise<Lead> {
     const db = getDb();
-    const collectionRef = collection(db, LEADS_COLLECTION);
-    addDoc(collectionRef, data)
-        .then(docRef => resolve({ id: docRef.id, ...data }))
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: collectionRef.path,
-                operation: 'create',
-                requestResourceData: data,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            reject(serverError);
-        });
-  });
+    const docRef = await addDoc(collection(db, LEADS_COLLECTION), data);
+    return { id: docRef.id, ...data };
 }
 
-export function updateLead(id: string, data: Partial<Omit<Lead, 'id' | 'userId'>>): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function updateLead(id: string, data: Partial<Omit<Lead, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
     const docRef = doc(db, LEADS_COLLECTION, id);
-    updateDoc(docRef, data)
-        .then(resolve)
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'update',
-                requestResourceData: data,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            reject(serverError);
-        });
-  });
+    await updateDoc(docRef, data);
 }
 
-export function deleteLead(id: string): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function deleteLead(id: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, LEADS_COLLECTION, id);
-    deleteDoc(docRef)
-        .then(resolve)
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            reject(serverError);
-        });
-  });
+    await deleteDoc(docRef);
 }

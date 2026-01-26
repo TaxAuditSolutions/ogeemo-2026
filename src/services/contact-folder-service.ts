@@ -16,8 +16,6 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import type { FolderItem } from '@/data/files';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const FOLDERS_COLLECTION = 'contactFolders';
 
@@ -40,76 +38,32 @@ export async function getFolders(userId: string): Promise<FolderItem[]> {
   return snapshot.docs.map(docToFolder);
 }
 
-export function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
-    return new Promise(async (resolve, reject) => {
-        const db = getDb();
-        const collectionRef = collection(db, FOLDERS_COLLECTION);
-        const dataToSave = {
-            ...folderData,
-            parentId: folderData.parentId || null,
-            createdAt: new Date(),
-        };
-
-        addDoc(collectionRef, dataToSave)
-            .then(docRef => {
-                const newFolder = { id: docRef.id, ...dataToSave };
-                resolve(newFolder);
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: collectionRef.path,
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    });
+export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
+  const db = getDb();
+  const dataToSave = {
+    ...folderData,
+    parentId: folderData.parentId || null,
+    createdAt: new Date(),
+  };
+  const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
+  return { id: docRef.id, ...dataToSave };
 }
 
-export function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        const db = getDb();
-        const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
-
-        updateDoc(folderRef, folderData)
-            .then(() => resolve())
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: folderRef.path,
-                    operation: 'update',
-                    requestResourceData: folderData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    });
+export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
+    const db = getDb();
+    const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
+    await updateDoc(folderRef, folderData);
 }
 
-export function deleteFolders(folderIds: string[]): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        const db = getDb();
-        if (folderIds.length === 0) {
-            resolve();
-            return;
-        }
-        const batch = writeBatch(db);
+export async function deleteFolders(folderIds: string[]): Promise<void> {
+    const db = getDb();
+    if (folderIds.length === 0) return;
+    const batch = writeBatch(db);
 
-        folderIds.forEach(id => {
-            const folderRef = doc(db, FOLDERS_COLLECTION, id);
-            batch.delete(folderRef);
-        });
-
-        batch.commit()
-            .then(() => resolve())
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: `batch delete on ${FOLDERS_COLLECTION}`,
-                    operation: 'delete',
-                    requestResourceData: { ids: folderIds },
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
+    folderIds.forEach(id => {
+        const folderRef = doc(db, FOLDERS_COLLECTION, id);
+        batch.delete(folderRef);
     });
+
+    await batch.commit();
 }

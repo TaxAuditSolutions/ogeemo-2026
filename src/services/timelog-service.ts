@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -16,8 +15,6 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export interface TimeLog {
   id: string;
@@ -56,86 +53,39 @@ export async function getTimeLogs(userId: string): Promise<TimeLog[]> {
   return snapshot.docs.map(docToTimeLog).sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
 }
 
-export function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
-  return new Promise(async (resolve, reject) => {
+export async function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
     const db = getDb();
     const collectionRef = collection(db, TIME_LOGS_COLLECTION);
     const dataToSave = {
         ...data,
         status: data.status || 'unprocessed',
     };
-    addDoc(collectionRef, dataToSave)
-        .then(docRef => resolve({ id: docRef.id, ...dataToSave }))
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: collectionRef.path,
-                operation: 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            reject(serverError);
-        });
-  });
+    const docRef = await addDoc(collectionRef, dataToSave);
+    return { id: docRef.id, ...dataToSave };
 }
 
-export function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id' | 'userId'>>): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        const db = getDb();
+export async function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id' | 'userId'>>): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, TIME_LOGS_COLLECTION, id);
+    await updateDoc(docRef, data);
+}
+
+export async function deleteTimeLog(id: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, TIME_LOGS_COLLECTION, id);
+    await deleteDoc(docRef);
+}
+
+export async function updateTimeLogsStatus(logIds: string[], status: TimeLog['status']): Promise<void> {
+    if (logIds.length === 0) {
+        return;
+    }
+    const db = getDb();
+    const batch = writeBatch(db);
+    logIds.forEach(id => {
         const docRef = doc(db, TIME_LOGS_COLLECTION, id);
-        updateDoc(docRef, data)
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: data,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
+        batch.update(docRef, { status: status });
     });
-}
-
-export function deleteTimeLog(id: string): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        const db = getDb();
-        const docRef = doc(db, TIME_LOGS_COLLECTION, id);
-        deleteDoc(docRef)
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    });
-}
-
-export function updateTimeLogsStatus(logIds: string[], status: TimeLog['status']): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        if (logIds.length === 0) {
-            resolve();
-            return;
-        }
-        const db = getDb();
-        const batch = writeBatch(db);
-        logIds.forEach(id => {
-            const docRef = doc(db, TIME_LOGS_COLLECTION, id);
-            batch.update(docRef, { status: status });
-        });
-        
-        batch.commit()
-            .then(resolve)
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: TIME_LOGS_COLLECTION,
-                    operation: 'update',
-                    requestResourceData: { ids: logIds, newStatus: status }
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                reject(serverError);
-            });
-    });
+    
+    await batch.commit();
 }

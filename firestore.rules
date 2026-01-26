@@ -14,17 +14,20 @@ service cloud.firestore {
     }
 
     match /contactFolders/{folderId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
     
     match /contacts/{contactId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
     
     match /clientAccounts/{accountId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
     
@@ -79,7 +82,8 @@ service cloud.firestore {
     }
     
     match /companies/{companyId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
 
@@ -94,7 +98,8 @@ service cloud.firestore {
     }
     
     match /industries/{industryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
     

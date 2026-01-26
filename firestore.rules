@@ -14,21 +14,18 @@ service cloud.firestore {
     }
 
     match /contactFolders/{folderId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /contacts/{contactId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /clientAccounts/{accountId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /invoices/{invoiceId} {
@@ -82,9 +79,8 @@ service cloud.firestore {
     }
     
     match /companies/{companyId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
     }
 
     match /expenseCategories/{categoryId} {
@@ -98,9 +94,8 @@ service cloud.firestore {
     }
     
     match /industries/{industryId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /loans/{loanId} {
@@ -245,5 +240,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

@@ -34,7 +34,8 @@ const docToFolder = (doc: any): FolderData => ({
 
 export async function getFolders(userId: string): Promise<FolderData[]> {
   const db = getDb();
-  // The orderBy('userId') is a trick to help Firestore use its default indexes more effectively when combined with a 'where' clause on the same field.
+  // Adding orderBy on the same field as the where clause is a common pattern
+  // to ensure Firestore can use its default indexes efficiently.
   const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
   // Client-side sort to ensure alphabetical order for display

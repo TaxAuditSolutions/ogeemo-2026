@@ -85,7 +85,8 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
-  // The orderBy('userId') is a trick to help Firestore use its default indexes more effectively when combined with a 'where' clause on the same field.
+  // Adding orderBy on the same field as the where clause is a common pattern
+  // to ensure Firestore can use its default indexes efficiently.
   const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
   // Client-side sort to ensure alphabetical order for display

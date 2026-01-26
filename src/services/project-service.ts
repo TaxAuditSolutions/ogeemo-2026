@@ -15,6 +15,7 @@ import {
   Timestamp,
   getDoc,
   setDoc,
+  orderBy,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
@@ -151,7 +152,7 @@ export async function addProjectFolder(folderData: Omit<ProjectFolder, 'id'>): P
 
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
-  const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
+  const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToProject).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 }

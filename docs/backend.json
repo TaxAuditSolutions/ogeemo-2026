@@ -544,6 +544,10 @@
       "schema": { "$ref": "#/entities/Industry" },
       "description": "Stores user-defined custom industries."
     },
+    "/loans/{loanId}": {
+      "schema": { "$ref": "#/entities/Loan" },
+      "description": "Collection of all loans (payable and receivable)."
+    },
     "/leaveRequests/{leaveRequestId}": {
         "schema": { "$ref": "#/entities/LeaveRequest" },
         "description": "Stores worker time off and leave requests."
@@ -590,3 +594,5 @@
     }
   }
 }
+
+    

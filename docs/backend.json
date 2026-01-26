@@ -25,6 +25,17 @@
         },
         "required": ["name", "userId"]
     },
+    "ContactFolder": {
+        "title": "Contact Folder",
+        "description": "A folder to organize contacts.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "parentId": { "type": "string" },
+            "userId": { "type": "string" }
+        },
+        "required": ["name", "userId"]
+    },
     "Invoice": {
         "title": "Invoice",
         "description": "Represents an invoice for a client.",
@@ -464,6 +475,10 @@
     "/contacts/{contactId}": {
         "schema": { "$ref": "#/entities/Contact" },
         "description": "Collection of all contacts."
+    },
+    "/contactFolders/{folderId}": {
+      "schema": { "$ref": "#/entities/ContactFolder" },
+      "description": "Collection of all contact folders."
     },
     "/invoices/{invoiceId}": {
         "schema": { "$ref": "#/entities/Invoice" },

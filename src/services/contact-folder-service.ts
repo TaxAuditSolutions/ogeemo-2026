@@ -12,7 +12,8 @@ import {
     query, 
     where, 
     writeBatch,
-    Timestamp 
+    Timestamp,
+    orderBy,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import type { FolderItem } from '@/data/files';
@@ -33,7 +34,7 @@ const docToFolder = (doc: any): FolderItem => ({
 
 export async function getFolders(userId: string): Promise<FolderItem[]> {
   const db = getDb();
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
+  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), orderBy("name"));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToFolder);
 }

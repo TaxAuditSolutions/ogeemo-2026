@@ -16,7 +16,7 @@ import {
     orderBy,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import type { FolderItem } from '@/data/files';
+import type { FolderData } from '@/data/files';
 
 const FOLDERS_COLLECTION = 'contactFolders';
 
@@ -25,21 +25,23 @@ function getDb() {
     return db;
 }
 
-const docToFolder = (doc: any): FolderItem => ({ 
+const docToFolder = (doc: any): FolderData => ({ 
     id: doc.id, 
     ...doc.data(),
     createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
-} as FolderItem);
+} as FolderData);
 
 
-export async function getFolders(userId: string): Promise<FolderItem[]> {
+export async function getFolders(userId: string): Promise<FolderData[]> {
   const db = getDb();
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), orderBy("name"));
+  // The orderBy('userId') is a trick to help Firestore use its default indexes more effectively when combined with a 'where' clause on the same field.
+  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFolder);
+  // Client-side sort to ensure alphabetical order for display
+  return snapshot.docs.map(docToFolder).sort((a,b) => a.name.localeCompare(b.name));
 }
 
-export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
+export async function addFolder(folderData: Omit<FolderData, 'id' | 'createdAt'>): Promise<FolderData> {
   const db = getDb();
   const dataToSave = {
     ...folderData,
@@ -50,7 +52,7 @@ export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>
   return { id: docRef.id, ...dataToSave };
 }
 
-export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
+export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderData, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
     const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
     await updateDoc(folderRef, folderData);

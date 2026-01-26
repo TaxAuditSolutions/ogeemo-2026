@@ -85,9 +85,11 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
-  const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), orderBy("name"));
+  // The orderBy('userId') is a trick to help Firestore use its default indexes more effectively when combined with a 'where' clause on the same field.
+  const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToContact);
+  // Client-side sort to ensure alphabetical order for display
+  return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function getContactById(contactId: string): Promise<Contact | null> {

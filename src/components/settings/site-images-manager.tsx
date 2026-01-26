@@ -21,7 +21,7 @@ import { LoaderCircle, Image as ImageIcon, Upload, Save, Edit, Trash2 } from 'lu
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImage, replaceSiteImage, deleteSiteImage } from '@/services/file-service';
+import { uploadSiteImageClient, deleteSiteImage } from '@/services/file-service';
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -64,27 +64,16 @@ export function SiteImagesManager() {
 
     setIsProcessing(true);
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(selectedFile);
-        reader.onload = async () => {
-            const fileDataUrl = reader.result as string;
-            await uploadSiteImage({
-                fileDataUrl,
-                fileName: selectedFile.name,
-                imageId: newImageId.trim(),
-                hint: 'User uploaded image' // Placeholder hint
-            });
-            toast({ title: 'Upload Successful' });
-            setSelectedFile(null);
-            setPreviewUrl(null);
-            setNewImageId('');
-            loadImages(); // Refresh the list
-            setIsProcessing(false);
-        };
-        reader.onerror = () => {
-            throw new Error('Failed to read file for upload.');
-        };
+        await uploadSiteImageClient(selectedFile, newImageId.trim(), 'User uploaded image');
+        
+        toast({ title: 'Upload Successful' });
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setNewImageId('');
+        loadImages(); // Refresh the list
+        setIsProcessing(false);
     } catch (error: any) {
+        console.error("Upload failed:", error);
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
         setIsProcessing(false);
     }
@@ -110,30 +99,18 @@ export function SiteImagesManager() {
     if (!imageToReplace || !user) return;
     
     const existingImage = images[imageToReplace.id];
-    if (!existingImage?.storagePath) {
-        toast({ variant: 'destructive', title: 'Cannot Replace', description: 'Original image storage path not found.' });
-        return;
-    }
-
+    
     setIsProcessing(true);
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(imageToReplace.file);
-        reader.onload = async () => {
-            const fileDataUrl = reader.result as string;
-            await replaceSiteImage({
-                fileDataUrl,
-                fileName: imageToReplace.file.name,
-                imageId: imageToReplace.id,
-                storagePathToOverwrite: existingImage.storagePath,
-            });
-            toast({ title: 'Image Replaced' });
-            setImageToReplace(null);
-            loadImages();
-            setIsProcessing(false);
-        };
-        reader.onerror = () => { throw new Error('Failed to read file for replacement.') };
+        // Use client-side upload to overwrite/update the image for this ID
+        await uploadSiteImageClient(imageToReplace.file, imageToReplace.id, existingImage?.hint || '');
+        
+        toast({ title: 'Image Replaced' });
+        setImageToReplace(null);
+        loadImages();
+        setIsProcessing(false);
     } catch (error: any) {
+        console.error("Replace failed:", error);
         toast({ variant: 'destructive', title: 'Replace Failed', description: error.message });
         setIsProcessing(false);
     }

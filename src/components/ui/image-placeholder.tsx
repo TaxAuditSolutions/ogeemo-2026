@@ -13,13 +13,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { uploadSiteImage, replaceSiteImage } from '@/services/file-service';
-import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit } from 'lucide-react';
+import { uploadSiteImageClient, updateSiteImageLink } from '@/services/file-service';
+import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit, Check } from 'lucide-react';
 
 interface ImagePlaceholderProps {
   id: string;
@@ -33,11 +42,14 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [pastedImage, setPastedImage] = useState<{ file: File; previewUrl: string } | null>(null);
-  const [isReplaceChoiceDialogOpen, setIsReplaceChoiceDialogOpen] = useState(false);
+  
+  // New state for Library Dialog
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [selectedLibraryImageId, setSelectedLibraryImageId] = useState<string | null>(null);
 
 
   const handlePasteFromClipboard = useCallback(async () => {
-    setIsReplaceChoiceDialogOpen(false); // Close choice dialog
+    setIsLibraryOpen(false); 
     if (!navigator.clipboard?.read) {
       toast({
         variant: 'destructive',
@@ -81,7 +93,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
   }, [toast]);
   
   const handleUploadFromComputer = useCallback(() => {
-    setIsReplaceChoiceDialogOpen(false); // Close choice dialog
+    setIsLibraryOpen(false);
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -104,36 +116,41 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
     
     setIsProcessing(true);
     try {
-        const existingImage = images[id];
-
-        if (!existingImage || !existingImage.storagePath) {
-            // This is an old image record. Perform an upload instead of a replace to fix it.
-            await uploadSiteImage({
-                fileDataUrl: pastedImage.previewUrl,
-                fileName: pastedImage.file.name,
-                imageId: id,
-                hint: existingImage?.hint || ''
-            });
-            toast({ title: 'Image Uploaded', description: `A new image has been uploaded for "${id}".` });
-        } else {
-            // This is a normal replacement for a modern image record.
-            await replaceSiteImage({
-                fileDataUrl: pastedImage.previewUrl,
-                fileName: pastedImage.file.name,
-                imageId: id,
-                storagePathToOverwrite: existingImage.storagePath,
-            });
-            toast({ title: 'Image Replaced', description: `The image for "${id}" has been updated.` });
-        }
+        // Use client-side upload instead of cloud function to avoid payload limits and cold starts
+        await uploadSiteImageClient(pastedImage.file, id, '');
         
+        toast({ title: 'Image Uploaded', description: `A new image has been uploaded for "${id}".` });
         loadImages();
     } catch (error: any) {
+        console.error("Upload failed:", error);
         toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
     } finally {
         setIsProcessing(false);
         setPastedImage(null);
     }
-  }, [pastedImage, user, images, id, toast, loadImages]);
+  }, [pastedImage, user, id, toast, loadImages]);
+
+  const handleLibrarySelect = async () => {
+      if (!selectedLibraryImageId || !user) return;
+      
+      const selectedImage = images[selectedLibraryImageId];
+      if (!selectedImage) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Selected image not found.' });
+          return;
+      }
+
+      setIsProcessing(true);
+      try {
+          await updateSiteImageLink(id, selectedImage);
+          toast({ title: 'Image Linked', description: `This placeholder now uses the image from "${selectedLibraryImageId}".` });
+          setIsLibraryOpen(false);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
+      } finally {
+          setIsProcessing(false);
+      }
+  };
+
 
   const firestoreImage = images[id];
   const src = firestoreImage?.url;
@@ -177,7 +194,10 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
               size="icon"
               variant="secondary"
               className="h-8 w-8"
-              onClick={() => setIsReplaceChoiceDialogOpen(true)}
+              onClick={() => {
+                  setSelectedLibraryImageId(null);
+                  setIsLibraryOpen(true);
+              }}
               title="Replace image"
             >
               <Edit className="h-4 w-4" />
@@ -191,36 +211,67 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
         )}
       </div>
 
-      <AlertDialog open={isReplaceChoiceDialogOpen} onOpenChange={setIsReplaceChoiceDialogOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>How would you like to replace this image?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    You can paste an image from your clipboard or upload a new file from your computer.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-                <Button variant="outline" onClick={handlePasteFromClipboard}>
-                    <ClipboardPaste className="mr-2 h-4 w-4" />
+      <Dialog open={isLibraryOpen} onOpenChange={setIsLibraryOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 gap-0">
+            <DialogHeader className="px-4 py-3 border-b shrink-0">
+                <DialogTitle>Select Image</DialogTitle>
+                <DialogDescription className="hidden sm:block">
+                    Choose an image from the library or upload a new one.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b shrink-0">
+                <Button variant="outline" size="sm" onClick={handlePasteFromClipboard} className="h-8">
+                    <ClipboardPaste className="mr-2 h-3.5 w-3.5" />
                     Paste from Clipboard
                 </Button>
-                <Button variant="outline" onClick={handleUploadFromComputer}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload from Computer
+                <Button variant="outline" size="sm" onClick={handleUploadFromComputer} className="h-8">
+                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    Upload
                 </Button>
             </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+            <ScrollArea className="flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+                    {Object.entries(images).map(([key, img]) => (
+                        <div 
+                            key={key} 
+                            className={cn(
+                                "group relative aspect-video cursor-pointer rounded-lg border-2 overflow-hidden transition-all",
+                                selectedLibraryImageId === key ? "border-primary ring-2 ring-primary ring-offset-2" : "border-transparent hover:border-primary/50"
+                            )}
+                            onClick={() => setSelectedLibraryImageId(key)}
+                        >
+                            <Image src={img.url} alt={img.hint} fill className="object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="text-white text-xs font-medium bg-black/50 px-2 py-1 rounded truncate max-w-[90%]">{key}</span>
+                            </div>
+                            {selectedLibraryImageId === key && (
+                                <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
+                                    <Check className="h-3 w-3" />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
+
+            <DialogFooter className="px-4 py-3 border-t bg-muted/10 shrink-0">
+                <Button variant="outline" onClick={() => setIsLibraryOpen(false)} size="sm">Cancel</Button>
+                <Button onClick={handleLibrarySelect} disabled={!selectedLibraryImageId || isProcessing} size="sm">
+                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Select Image
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!pastedImage} onOpenChange={() => setPastedImage(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Replacement</AlertDialogTitle>
+                <AlertDialogTitle>Confirm Upload</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Do you want to replace the image for "{id}" with the image below? This action cannot be undone.
+                    Do you want to upload this image to "{id}"? This will overwrite the current content if it is not linked to another image.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             {pastedImage?.previewUrl && (
@@ -230,7 +281,7 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
             )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmReplace}>Replace</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmReplace}>Upload & Replace</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

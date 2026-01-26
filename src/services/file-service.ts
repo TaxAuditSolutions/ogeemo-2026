@@ -216,3 +216,16 @@ export async function deleteSiteImage(data: { imageId: string; storagePath?: str
     const func = httpsCallable(functions, 'deleteSiteImage');
     return func(data);
 }
+
+export async function updateSiteImageLink(imageId: string, sourceImage: { url: string, storagePath: string, hint?: string }): Promise<void> {
+    const { db, auth } = getFirebaseServices();
+    if (!auth.currentUser) throw new Error("Unauthorized");
+
+    await setDoc(doc(db, 'siteImages', imageId), {
+        url: sourceImage.url,
+        storagePath: sourceImage.storagePath,
+        hint: sourceImage.hint || '',
+        updatedAt: new Date(),
+        updatedBy: auth.currentUser.uid
+    }, { merge: true });
+}

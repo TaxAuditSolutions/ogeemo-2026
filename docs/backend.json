@@ -36,6 +36,17 @@
         },
         "required": ["name", "userId"]
     },
+    "ClientAccount": {
+        "title": "Client Account",
+        "description": "Represents a client's account within the system, linked to a contact.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "contactId": { "type": "string" },
+            "userId": { "type": "string" }
+        },
+        "required": ["name", "contactId", "userId"]
+    },
     "Invoice": {
         "title": "Invoice",
         "description": "Represents an invoice for a client.",
@@ -480,6 +491,10 @@
       "schema": { "$ref": "#/entities/ContactFolder" },
       "description": "Collection of all contact folders."
     },
+    "/clientAccounts/{accountId}": {
+        "schema": { "$ref": "#/entities/ClientAccount" },
+        "description": "Collection of client account records."
+    },
     "/invoices/{invoiceId}": {
         "schema": { "$ref": "#/entities/Invoice" },
         "description": "Collection of all invoices."
@@ -594,3 +609,5 @@
     }
   }
 }
+
+    

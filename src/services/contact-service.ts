@@ -144,15 +144,6 @@ export async function deleteContacts(contactIds: string[]): Promise<void> {
     if (contactIds.length === 0) return;
     const batch = writeBatch(db);
     
-    for (let i = 0; i < contactIds.length; i += 30) {
-      const chunk = contactIds.slice(i, i + 30);
-      const accountsQuery = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where('contactId', 'in', chunk));
-      const accountsSnapshot = await getDocs(accountsQuery);
-      accountsSnapshot.forEach(accountDoc => {
-          batch.delete(accountDoc.ref);
-      });
-    }
-    
     contactIds.forEach(id => {
         const contactRef = doc(db, CONTACTS_COLLECTION, id);
         batch.delete(contactRef);
@@ -188,3 +179,5 @@ export async function findOrCreateFolder(userId: string, folderName: string): Pr
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
     return { id: docRef.id, ...newFolderData };
 }
+
+    

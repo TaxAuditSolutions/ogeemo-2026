@@ -76,7 +76,8 @@ service cloud.firestore {
     }
     
     match /companies/{companyId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.query.userId == request.auth.uid;
       allow create: if isOwner(request.resource.data.userId);
     }
 
@@ -91,7 +92,8 @@ service cloud.firestore {
     }
     
     match /industries/{industryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.query.userId == request.auth.uid;
       allow create: if isOwner(request.resource.data.userId);
     }
     
@@ -237,5 +239,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

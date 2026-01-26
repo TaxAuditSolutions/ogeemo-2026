@@ -147,42 +147,43 @@ export function ContactsView() {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  useEffect(() => {
-    async function loadData() {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const [fetchedFolders, fetchedContacts, fetchedCompanies, fetchedIndustries] = await Promise.all([
-                getFolders(user.uid),
-                getContacts(user.uid),
-                getCompanies(user.uid),
-                getIndustries(user.uid),
-            ]);
-            setFolders(fetchedFolders);
-            setContacts(fetchedContacts);
-            setCompanies(fetchedCompanies);
-            setCustomIndustries(fetchedIndustries);
-
-            const rootFolder = fetchedFolders.find(f => !f.parentId);
-            if(rootFolder) {
-              setExpandedFolders(new Set([rootFolder.id]));
-            }
-        } catch (error: any) {
-            console.error("Failed to load contact data:", error);
-            toast({
-                variant: "destructive",
-                title: "Failed to load data",
-                description: error.message || "Could not retrieve contacts and folders from the database.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
+  const loadData = useCallback(async () => {
+    if (!user) {
+        setIsLoading(false);
+        return;
     }
+    setIsLoading(true);
+    try {
+        const [fetchedFolders, fetchedContacts, fetchedCompanies, fetchedIndustries] = await Promise.all([
+            getFolders(user.uid),
+            getContacts(user.uid),
+            getCompanies(user.uid),
+            getIndustries(user.uid),
+        ]);
+        setFolders(fetchedFolders);
+        setContacts(fetchedContacts);
+        setCompanies(fetchedCompanies);
+        setCustomIndustries(fetchedIndustries);
+
+        const rootFolder = fetchedFolders.find(f => !f.parentId);
+        if(rootFolder) {
+          setExpandedFolders(new Set([rootFolder.id]));
+        }
+    } catch (error: any) {
+        console.error("Failed to load contact data:", error);
+        toast({
+            variant: "destructive",
+            title: "Failed to load data",
+            description: error.message || "Could not retrieve contacts and folders from the database.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
     loadData();
-  }, [toast, user]);
+  }, [loadData]);
 
   const selectedFolder = useMemo(
     () => folders.find((f) => f && f.id === selectedFolderId),
@@ -506,20 +507,13 @@ export function ContactsView() {
   return (
     <>
       <div className="flex flex-col h-full">
-        <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
+        <header className="text-center py-4 sm:py-6 px-4 sm:px-6">
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Contact Hub
+            Ogeemo Contact Manager
           </h1>
           <p className="text-muted-foreground">
             Manage your contacts and client relationships
           </p>
-          <div className="absolute top-4 right-4">
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/action-manager" aria-label="Close">
-                    <X className="h-5 w-5" />
-                </Link>
-            </Button>
-          </div>
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
@@ -560,7 +554,7 @@ export function ContactsView() {
                            </Button>
                         )}
                         <Button onClick={handleNewContactClick} disabled={selectedFolderId === 'all'}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Contact
+                            <Plus className="mr-2 h-4 w-4" /> New Contact
                         </Button>
                       </div>
                   </div>
@@ -570,8 +564,8 @@ export function ContactsView() {
                               <TableRow>
                                   <TableHead className="w-[50px]">
                                     <Checkbox
-                                      onCheckedChange={() => handleToggleSelectAll()}
-                                      checked={displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length}
+                                      onCheckedChange={handleToggleSelectAll}
+                                      checked={allVisibleSelected}
                                       aria-label="Select all contacts"
                                     />
                                   </TableHead>

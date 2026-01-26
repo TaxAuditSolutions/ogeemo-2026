@@ -40,6 +40,13 @@ const AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION = 'availableAccountingNavItems';
 const HR_QUICK_NAV_ITEMS_COLLECTION = 'hrQuickNavItems';
 const AVAILABLE_HR_NAV_ITEMS_COLLECTION = 'availableHrNavItems';
 
+const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
+  { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
+  { label: 'Contacts', icon: Contact, href: '/contacts' },
+  { label: 'Projects', icon: Briefcase, href: '/projects/all' },
+  { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
+];
+
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -511,13 +518,6 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
 // --- Action Chip Functions ---
 type ChipMenuType = 'dashboard' | 'accounting' | 'hr';
 
-const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
-  { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
-  { label: 'Contacts', icon: Contact, href: '/contacts' },
-  { label: 'Projects', icon: Briefcase, href: '/projects' },
-  { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
-];
-
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
@@ -563,9 +563,7 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
             hr: hrMenuItems,
         };
         const defaultSource = defaultSourceMap[type];
-        const chipsToSave = defaultSource.map(c => ({...c, id: `default-${c.label}`, userId}));
-        await updateChipsInCollection(userId, collectionName, chipsToSave);
-        return chipsToSave;
+        return defaultSource.map((c, index) => ({...c, id: `default-${c.label}-${index}`, userId}));
     }
     
     return getChipsFromCollection(userId, collectionName);
@@ -594,14 +592,14 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
             hr: hrMenuItems,
         };
         const defaultSource = defaultSourceMap[type];
-        const chipsToSave = defaultSource
-            .filter(item => !usedHrefs.has(item.href))
+        return defaultSource
+            .filter(item => {
+                const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
+                return !usedHrefs.has(hrefString);
+            })
             .map(item => ({ ...item, id: `default-${item.href}`, userId }));
-        
-        await updateChipsInCollection(userId, collectionName, chipsToSave);
-        return chipsToSave;
     }
-
+    
     const customAvailable = await getChipsFromCollection(userId, collectionName);
     
     const defaultSourceMap = {
@@ -612,7 +610,10 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
     const defaultSource = defaultSourceMap[type];
     
     const defaultAvailable = defaultSource
-        .filter(item => !usedHrefs.has(item.href))
+        .filter(item => {
+            const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
+            return !usedHrefs.has(hrefString);
+        })
         .map(item => ({ ...item, id: `default-${item.href}`, userId }));
 
     const combined = [...customAvailable];

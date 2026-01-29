@@ -1,13 +1,7 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
+import { ImageGeneratorView } from '@/components/tools/image-generator-view';
 
-export default function DeprecatedImageGeneratorPage() {
-  useEffect(() => {
-    // This page is deprecated. Redirecting to the main Image Manager.
-    redirect('/image-manager');
-  }, []);
-
-  return null; // Return null while the redirect is processed.
+export default function ImageGeneratorPage() {
+  return <ImageGeneratorView />;
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -65,6 +64,7 @@ import { getContacts, getFolders, addContact } from '@/services/contact-service'
 import { saveEmailForContact } from '@/services/file-service';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { cn } from '@/lib/utils';
+import { generateImage } from '@/ai/flows/image-generation-flow';
 
 const OgeemoChatDialog = dynamic(() => import('@/components/ogeemail/ogeemo-chat-dialog'), {
   loading: () => <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-white" /></div>,
@@ -308,18 +308,8 @@ export function ComposeEmailView() {
     setIsGeneratingImage(true);
     setGeneratedImageUrl(null);
     try {
-      const response = await fetch('/api/genkit/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: imagePrompt })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'The API returned an error.');
-      }
-
-      const result = await response.json();
+      // Use the server action directly
+      const result = await generateImage({ prompt: imagePrompt });
       setGeneratedImageUrl(result.imageUrl);
     } catch (error: any) {
       console.error("Image generation UI error:", error);
@@ -537,5 +527,3 @@ export function ComposeEmailView() {
     </div>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An image generation AI flow using Google's Imagen model.
@@ -8,6 +7,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { getCurrentUserId } from '@/app/actions';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt to generate an image from.'),
@@ -19,7 +19,15 @@ const GenerateImageOutputSchema = z.object({
 });
 type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
 
+/**
+ * Generates an image based on a text prompt.
+ * Verifies that the user is authenticated before proceeding.
+ */
 export async function generateImage(input: GenerateImageInput): Promise<GenerateImageOutput> {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    throw new Error('Unauthorized: You must be logged in to generate images.');
+  }
   return generateImageFlow(input);
 }
 

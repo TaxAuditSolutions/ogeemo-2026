@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Sparkles, Download, Wand2, X, Image as ImageIcon, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { generateImage } from '@/ai/flows/image-generation-flow';
 
 export function ImageGeneratorView() {
   const [prompt, setPrompt] = useState('');
@@ -22,18 +23,8 @@ export function ImageGeneratorView() {
     setGeneratedImageUrl(null);
 
     try {
-      const response = await fetch('/api/genkit/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'The API returned an error.');
-      }
-
-      const result = await response.json();
+      // Call the server action directly instead of using a fetch request
+      const result = await generateImage({ prompt: prompt.trim() });
       setGeneratedImageUrl(result.imageUrl);
       toast({ title: 'Image Generated Successfully!' });
     } catch (error: any) {

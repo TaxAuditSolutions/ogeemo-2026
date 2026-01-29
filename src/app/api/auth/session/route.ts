@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase-admin';
 
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
             value: sessionCookie,
             maxAge: expiresIn / 1000,
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: req.nextUrl.protocol === 'https:',
             path: '/',
             sameSite: 'lax' as const,
         };

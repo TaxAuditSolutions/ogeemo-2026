@@ -9,7 +9,9 @@ import { cookies } from 'next/headers';
  * This is the recommended pattern for accessing user identity in Server Components and API Routes.
  */
 export async function getCurrentUserId(): Promise<string | null> {
-    const sessionCookie = cookies().get('session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    
     if (!sessionCookie) {
         console.log("Server Action: No session cookie found.");
         return null;
@@ -21,7 +23,7 @@ export async function getCurrentUserId(): Promise<string | null> {
     } catch (error) {
         console.error('Server Action: Error verifying session cookie:', error);
         // Clear the invalid cookie
-        cookies().delete('session');
+        cookieStore.delete('session');
         return null;
     }
 }

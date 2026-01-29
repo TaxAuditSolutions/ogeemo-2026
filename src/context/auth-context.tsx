@@ -1,11 +1,9 @@
-
 'use client';
 
 import type { User, Auth } from 'firebase/auth';
 import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import LoadingModal from '@/components/ui/loading-modal';
 import { getFirebaseServices } from '@/firebase';
 
 interface AuthContextType {
@@ -59,17 +57,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = sessionStorage.getItem('google_access_token');
         setAccessToken(token);
         const idToken = await currentUser.getIdToken();
-        // This creates the server-side session cookie
-        await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-        });
+        
+        // This creates the server-side session cookie. 
+        // We catch errors to avoid blocking the UI if session creation is slow.
+        try {
+            await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+            });
+        } catch (e) {
+            console.error("Auth: Failed to synchronize session cookie.", e);
+        }
       } else {
         // Clear everything on sign out
         setAccessToken(null);
         sessionStorage.removeItem('google_access_token');
-        await fetch('/api/auth/session', { method: 'DELETE' });
+        fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       }
       setIsAuthLoading(false);
     });
@@ -123,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const logout = useCallback(async () => {
-      await fetch('/api/auth/session', { method: 'DELETE' });
+      await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       await signOut(firebaseAuth);
       setUser(null);
       setAccessToken(null);

@@ -8,7 +8,9 @@ import { cookies } from 'next/headers';
  * A server action to securely fetch the content of a file from Firebase Storage.
  */
 export async function fetchFileContent(fileId: string): Promise<{ content?: string; error?: string }> {
-    const sessionCookie = cookies().get('session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    
     if (!sessionCookie) {
         return { error: 'Authentication required. Please log in.' };
     }

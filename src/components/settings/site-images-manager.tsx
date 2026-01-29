@@ -21,7 +21,7 @@ import { LoaderCircle, Image as ImageIcon, Upload, Save, Edit, Trash2 } from 'lu
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImageClient, deleteSiteImage } from '@/services/file-service';
+import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();
@@ -120,11 +120,12 @@ export function SiteImagesManager() {
     if (!imageToDelete) return;
     setIsProcessing(true);
     try {
-      await deleteSiteImage({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
+      await deleteSiteImageClient({ imageId: imageToDelete.id, storagePath: imageToDelete.storagePath });
       toast({ title: 'Image Deleted' });
       setImageToDelete(null);
       loadImages();
     } catch (error: any) {
+      console.error("Delete failed:", error);
       toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
       setIsProcessing(false);

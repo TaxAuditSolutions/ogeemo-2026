@@ -17,7 +17,7 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { getFirebaseServices } from '@/firebase';
 import type { FileItem, FolderItem } from '@/data/files';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
@@ -215,6 +215,29 @@ export async function deleteSiteImage(data: { imageId: string; storagePath?: str
     const functions = getFunctionsService();
     const func = httpsCallable(functions, 'deleteSiteImage');
     return func(data);
+}
+
+export async function deleteSiteImageClient(data: { imageId: string; storagePath?: string; }): Promise<void> {
+    const { storage, db, auth } = getFirebaseServices();
+    if (!auth.currentUser) throw new Error("User must be logged in.");
+
+    const { imageId, storagePath } = data;
+
+    // Delete from Storage if path exists
+    if (storagePath) {
+        try {
+            const storageRef = ref(storage, storagePath);
+            await deleteObject(storageRef);
+        } catch (error: any) {
+             if (error.code !== 'storage/object-not-found') {
+                 console.error("Error deleting file from storage:", error);
+                 // We continue to delete the firestore doc even if storage delete fails (unless it's a permission error that implies we shouldn't)
+             }
+        }
+    }
+
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'siteImages', imageId));
 }
 
 export async function updateSiteImageLink(imageId: string, sourceImage: { url: string, storagePath: string, hint?: string }): Promise<void> {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Pencil, KeyRound } from "lucide-react";
@@ -129,6 +128,9 @@ export function UserListView() {
                 A list of users who have registered with this application.
               </CardDescription>
             </div>
+            <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add User
+            </Button>
           </CardHeader>
           <CardContent>
             <Table>

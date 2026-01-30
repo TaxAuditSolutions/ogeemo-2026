@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -92,6 +91,8 @@ const CALENDAR_DAY_COUNT_KEY = 'calendarDayCount';
 const CALENDAR_START_HOUR_KEY = 'calendarStartHour';
 const CALENDAR_END_HOUR_KEY = 'calendarEndHour';
 const CALENDAR_SLOTS_CONFIG_KEY = 'calendarSlotsConfig';
+
+const dayOptions = [1, 2, 3, 4, 5, 7];
 
 const isAllDayEvent = (event: Event): boolean => {
   if (!event.start || !event.end) return false;
@@ -392,10 +393,6 @@ export function CalendarView() {
       const startTimeString = date.toISOString();
       router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
   };
-
-  if (!isClient) {
-    return <CalendarSkeleton />;
-  }
 
   return (
     <>

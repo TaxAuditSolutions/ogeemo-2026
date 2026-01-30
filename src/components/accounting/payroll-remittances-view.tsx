@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 import {
   DollarSign,
   FileText,
@@ -65,6 +65,23 @@ const emptyRemittanceForm = {
     payPeriodEnd: '',
     dueDate: '',
     amount: '',
+};
+
+const DatePicker = ({ value, onChange }: { value: string, onChange: (date: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {value ? format(parseISO(value), 'PPP') : <span>Pick a date</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <CustomCalendar mode="single" selected={value ? parseISO(value) : undefined} onSelect={(date) => { if(date) onChange(format(date, 'yyyy-MM-dd')); setIsOpen(false); }} initialFocus />
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 export function PayrollRemittancesView() {
@@ -170,23 +187,6 @@ export function PayrollRemittancesView() {
     } finally {
         setRemittanceToDelete(null);
     }
-  };
-
-  const DatePicker = ({ value, onChange }: { value: string, onChange: (date: string) => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {value ? format(parseISO(value), 'PPP') : <span>Pick a date</span>}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
-          <CustomCalendar mode="single" selected={value ? parseISO(value) : undefined} onSelect={(date) => { if(date) onChange(format(date, 'yyyy-MM-dd')); setIsOpen(false); }} initialFocus />
-        </PopoverContent>
-      </Popover>
-    );
   };
 
   return (

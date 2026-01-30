@@ -93,6 +93,11 @@ const CALENDAR_START_HOUR_KEY = 'calendarStartHour';
 const CALENDAR_END_HOUR_KEY = 'calendarEndHour';
 const CALENDAR_SLOTS_CONFIG_KEY = 'calendarSlotsConfig';
 
+const isAllDayEvent = (event: Event): boolean => {
+  if (!event.start || !event.end) return false;
+  return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
+};
+
 const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDrop: (item: Event) => void, children: React.ReactNode, onClick: () => void }) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.EVENT,
@@ -114,6 +119,71 @@ const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDro
     );
 };
 
+interface TimeSlotProps {
+  date: Date;
+  hour: number;
+  slot: number;
+  slotsPerHour: number;
+  allEvents: Event[];
+  onDrop: (item: Event, date: Date, hour: number, slot: number) => void;
+  onEdit: (event: Event) => void;
+  onDelete: (event: Event) => void;
+  onToggleComplete: (event: Event) => void;
+  router: any;
+}
+
+const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, onDelete, onToggleComplete, router }: TimeSlotProps) => {
+  const slotDuration = 60 / slotsPerHour;
+  const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
+  const slotEndTime = addMinutes(slotStartTime, slotDuration - 1);
+  
+  const slotEvents = allEvents.filter(event => 
+      event.start && event.isScheduled && !isAllDayEvent(event) && isWithinInterval(new Date(event.start), { start: slotStartTime, end: slotEndTime })
+  );
+
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+      accept: ItemTypes.EVENT,
+      drop: (item: Event) => onDrop(item, date, hour, slot),
+      collect: (monitor) => ({
+          isOver: monitor.isOver(),
+          canDrop: monitor.canDrop(),
+      }),
+  }), [date, hour, slot, slotsPerHour, onDrop]);
+  
+  const handleSlotClick = () => {
+      const calculatedEndTime = addMinutes(slotStartTime, slotDuration);
+      const startTimeString = slotStartTime.toISOString();
+      const endTimeString = calculatedEndTime.toISOString();
+      router.push(`/master-mind?start=${startTimeString}&end=${endTimeString}`);
+  };
+
+  return (
+    <div
+      ref={drop}
+      className={cn(
+          "relative h-full flex items-start p-1 gap-1 group", 
+          isOver && canDrop && "bg-primary/20",
+          slot < slotsPerHour - 1 && "border-b border-b-gray-200"
+      )}
+    >
+      <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20" onClick={handleSlotClick}>
+          <Plus className="h-5 w-5"/>
+      </Button>
+      <div className="flex-1 flex flex-col gap-1 w-full h-full">
+        {slotEvents.map(event => (
+          <CalendarEvent
+            key={event.id}
+            event={event}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onToggleComplete={onToggleComplete}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function CalendarView() {
   const [isClient, setIsClient] = React.useState(false);
   const [currentDate, setCurrentDate] = React.useState<Date>(new Date());
@@ -123,9 +193,7 @@ export function CalendarView() {
   const [startHour, setStartHour] = React.useState(0);
   const [endHour, setEndHour] = React.useState(23);
 
-  const [filteredProject, setFilteredProject] = React.useState<Project | null>(
-    null
-  );
+  const [filteredProject, setFilteredProject] = React.useState<Project | null>(null);
   const [eventToDelete, setEventToDelete] = React.useState<Event | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   const [slotsConfig, setSlotsConfig] = React.useState<Record<number, number>>({});
@@ -138,8 +206,6 @@ export function CalendarView() {
   React.useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const dayOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 
   const loadEvents = React.useCallback(async () => {
     if (!user) {
@@ -273,7 +339,7 @@ export function CalendarView() {
 
   const hoursToDisplay = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   
-  const handleDrop = async (item: Event, date: Date, hour: number, slot: number) => {
+  const handleDrop = useCallback(async (item: Event, date: Date, hour: number, slot: number) => {
       const slotsPerHour = slotsConfig[hour] || 1;
       const slotDuration = 60 / slotsPerHour;
       const newStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
@@ -288,7 +354,7 @@ export function CalendarView() {
           console.error("Failed to update event time:", error);
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new time.'});
       }
-  };
+  }, [slotsConfig, loadEvents, toast]);
 
   const handleAllDayDrop = async (item: Event, date: Date) => {
     if (!item.id) return;
@@ -299,8 +365,8 @@ export function CalendarView() {
             start: newStart, 
             end: newEnd, 
             isScheduled: true,
-            type: item.type, // Preserve existing type
-            ritualType: item.ritualType, // Preserve existing ritualType
+            type: (item as any).type,
+            ritualType: (item as any).ritualType,
         };
         await updateTask(item.id, updatePayload);
         toast({ title: "Event Updated", description: `"${item.title}" is now an all-day event for ${format(newStart, 'PPP')}.`});
@@ -311,67 +377,6 @@ export function CalendarView() {
     }
   };
   
-  const isAllDayEvent = (event: Event): boolean => {
-    if (!event.start || !event.end) return false;
-    return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
-  };
-  
-  if (!isClient) {
-    return <CalendarSkeleton />;
-  }
-  
-  const TimeSlot = ({ date, hour, slot, slotsPerHour }: { date: Date; hour: number; slot: number, slotsPerHour: number }) => {
-    const slotDuration = 60 / slotsPerHour;
-    const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
-    const slotEndTime = addMinutes(slotStartTime, slotDuration -1);
-    
-    const slotEvents = allEvents.filter(event => 
-        event.start && event.isScheduled && !isAllDayEvent(event) && isWithinInterval(new Date(event.start), { start: slotStartTime, end: slotEndTime })
-    );
-
-    const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: ItemTypes.EVENT,
-        drop: (item: Event) => handleDrop(item, date, hour, slot),
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-            canDrop: monitor.canDrop(),
-        }),
-    }));
-    
-    const handleSlotClick = () => {
-        const calculatedEndTime = addMinutes(slotStartTime, slotDuration);
-        const startTimeString = slotStartTime.toISOString();
-        const endTimeString = calculatedEndTime.toISOString();
-        router.push(`/master-mind?start=${startTimeString}&end=${endTimeString}`);
-    };
-
-    return (
-      <div
-        ref={drop}
-        className={cn(
-            "relative h-full flex items-start p-1 gap-1 group", 
-            isOver && canDrop && "bg-primary/20",
-            slot < slotsPerHour - 1 && "border-b border-b-gray-200"
-        )}
-      >
-        <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20" onClick={handleSlotClick}>
-            <Plus className="h-5 w-5"/>
-        </Button>
-        <div className="flex-1 flex flex-col gap-1 w-full h-full">
-          {slotEvents.map(event => (
-            <CalendarEvent
-              key={event.id}
-              event={event}
-              onEdit={handleEditEvent}
-              onDelete={setEventToDelete}
-              onToggleComplete={handleToggleComplete}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   const getEventsForDay = (date: Date) => {
     const dayStart = startOfDay(date);
     const dayEnd = addDays(dayStart, 1);
@@ -387,6 +392,10 @@ export function CalendarView() {
       const startTimeString = date.toISOString();
       router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
   };
+
+  if (!isClient) {
+    return <CalendarSkeleton />;
+  }
 
   return (
     <>
@@ -620,7 +629,6 @@ export function CalendarView() {
           <ScrollArea className="flex-1 border-t-0">
             {hoursToDisplay.map((hour, hourIndex) => {
                 const slotsPerHour = slotsConfig[hour] || 1;
-                const slotDuration = 60 / slotsPerHour;
                 return (
                     <div key={hour} className="flex border-b border-black">
                         <div className="w-[5rem] flex-shrink-0 border-r-black border-r flex items-center justify-center p-1">
@@ -651,7 +659,19 @@ export function CalendarView() {
                                     }}
                                 >
                                     {Array.from({ length: slotsPerHour }).map((_, slot) => (
-                                        <TimeSlot key={slot} date={date} hour={hour} slot={slot} slotsPerHour={slotsPerHour} />
+                                        <TimeSlot 
+                                          key={slot} 
+                                          date={date} 
+                                          hour={hour} 
+                                          slot={slot} 
+                                          slotsPerHour={slotsPerHour} 
+                                          allEvents={allEvents}
+                                          onDrop={handleDrop}
+                                          onEdit={handleEditEvent}
+                                          onDelete={setEventToDelete}
+                                          onToggleComplete={handleToggleComplete}
+                                          router={router}
+                                        />
                                     ))}
                                 </div>
                             ))}

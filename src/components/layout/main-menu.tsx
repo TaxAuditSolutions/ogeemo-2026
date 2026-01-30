@@ -7,10 +7,9 @@ import { usePathname } from "next/navigation";
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { UserNav } from '../user-nav';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, Users2 } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
@@ -27,14 +26,77 @@ const groupedMenuItems = {
     Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup', '/tools/image-generator'] },
 };
 
-// This component is now memoized to prevent re-rendering when its props (item, isActive) don't change.
-const MemoizedDraggableMenuItem = React.memo(DraggableMenuItem);
+const GroupedMenuView = ({ pathname }: { pathname: string }) => (
+  <Accordion type="multiple" className="w-full space-y-1">
+    {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
+      const CategoryIcon = groupData.icon;
+      const groupItems = groupData.items
+        .map(href => allMenuItems.find(item => item.href === href))
+        .filter(Boolean) as MenuItem[];
+
+      return (
+        <AccordionItem value={groupName} key={groupName} className="border-b-0">
+          <AccordionTrigger className="p-0 hover:no-underline">
+              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
+                  <CategoryIcon className="h-4 w-4" />
+                  {groupName}
+              </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-1 pl-4">
+              <div className="space-y-1">
+              {groupItems.map(item => (
+                  <DraggableMenuItem
+                      key={item.href}
+                      item={item}
+                      index={-1}
+                      isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
+                      moveMenuItem={() => {}}
+                      isDraggable={false}
+                      isCompact={true}
+                  />
+              ))}
+              </div>
+          </AccordionContent>
+        </AccordionItem>
+      );
+    })}
+     <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
+          <AccordionTrigger className="p-0 hover:no-underline">
+              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
+                  <Wand2 className="h-4 w-4" />
+                  Google Apps
+              </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-1 pl-4">
+              <div className="space-y-1">
+              {allGoogleApps.map(app => {
+                  const AppIcon = app.icon;
+                  return (
+                      <Button
+                          key={app.href}
+                          asChild
+                          variant="ghost"
+                          className="w-full justify-start gap-3 h-9 text-sm"
+                      >
+                          <a href={app.href} target="_blank" rel="noopener noreferrer">
+                              <AppIcon className="h-4 w-4" />
+                              <span>{app.name}</span>
+                              <ExternalLink className="ml-auto h-3 w-3" />
+                          </a>
+                      </Button>
+                  );
+              })}
+              </div>
+          </AccordionContent>
+        </AccordionItem>
+  </Accordion>
+);
 
 export function MainMenu() {
   const pathname = usePathname();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(allMenuItems);
   const [actionChips, setActionChips] = useState<ActionChipData[]>([]);
-  const { preferences, isLoading: isLoadingPreferences, updatePreferences, loadPreferences } = useUserPreferences();
+  const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
   const { user } = useAuth();
   const { toast } = useToast();
   const { view, setView } = useSidebarView();
@@ -84,12 +146,9 @@ export function MainMenu() {
 
   useEffect(() => {
     loadChips();
-    
-    // Listen for custom event to reload chips if they are changed on another page
     const handleChipsUpdate = () => loadChips();
     window.addEventListener('chipsUpdated', handleChipsUpdate);
     return () => window.removeEventListener('chipsUpdated', handleChipsUpdate);
-
   }, [loadChips]);
 
   const moveMenuItem = useCallback((dragIndex: number, hoverIndex: number) => {
@@ -122,72 +181,6 @@ export function MainMenu() {
       description: `Your sidebar will now open to the "${view === 'dashboard' ? 'Favorite Actions' : view === 'fullMenu' ? 'Full Menu' : 'Groups'}" view.`,
     });
   };
-
-  const renderGroupedView = () => (
-    <Accordion type="multiple" className="w-full space-y-1">
-      {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
-        const CategoryIcon = groupData.icon;
-        const groupItems = groupData.items
-          .map(href => allMenuItems.find(item => item.href === href))
-          .filter(Boolean) as MenuItem[];
-
-        return (
-          <AccordionItem value={groupName} key={groupName} className="border-b-0">
-            <AccordionTrigger className="p-0 hover:no-underline">
-                <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
-                    <CategoryIcon className="h-4 w-4" />
-                    {groupName}
-                </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 pl-4">
-                <div className="space-y-1">
-                {groupItems.map(item => (
-                    <MemoizedDraggableMenuItem
-                        key={item.href}
-                        item={item}
-                        index={-1} // Not needed for non-draggable view
-                        isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
-                        moveMenuItem={() => {}}
-                        isDraggable={false}
-                        isCompact={true}
-                    />
-                ))}
-                </div>
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-       <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
-            <AccordionTrigger className="p-0 hover:no-underline">
-                <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
-                    <Wand2 className="h-4 w-4" />
-                    Google Apps
-                </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 pl-4">
-                <div className="space-y-1">
-                {allGoogleApps.map(app => {
-                    const AppIcon = app.icon;
-                    return (
-                        <Button
-                            key={app.href}
-                            asChild
-                            variant="ghost"
-                            className="w-full justify-start gap-3 h-9 text-sm"
-                        >
-                            <a href={app.href} target="_blank" rel="noopener noreferrer">
-                                <AppIcon className="h-4 w-4" />
-                                <span>{app.name}</span>
-                                <ExternalLink className="ml-auto h-3 w-3" />
-                            </a>
-                        </Button>
-                    );
-                })}
-                </div>
-            </AccordionContent>
-          </AccordionItem>
-    </Accordion>
-  );
 
   return (
     <div className="flex flex-col h-full p-2">
@@ -251,7 +244,7 @@ export function MainMenu() {
       <div className="flex-1 space-y-1">
         {view === 'fullMenu' ? (
             menuItems.map((item, index) => (
-            <MemoizedDraggableMenuItem
+            <DraggableMenuItem
                 key={item.href}
                 item={item}
                 index={index}
@@ -264,7 +257,7 @@ export function MainMenu() {
         ) : view === 'dashboard' ? (
             <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
         ) : (
-            renderGroupedView()
+            <GroupedMenuView pathname={pathname} />
         )}
       </div>
       
@@ -275,10 +268,6 @@ export function MainMenu() {
             </Button>
         </div>
       )}
-
-       <div className="mt-auto md:hidden">
-            <UserNav />
-        </div>
     </div>
   );
 }

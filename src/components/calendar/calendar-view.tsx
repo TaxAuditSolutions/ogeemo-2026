@@ -99,15 +99,15 @@ const isAllDayEvent = (event: Event): boolean => {
   return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
 };
 
-const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDrop: (item: Event) => void, children: React.ReactNode, onClick: () => void }) => {
+const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDrop: (item: Event, date: Date) => void, children: React.ReactNode, onClick: () => void }) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.EVENT,
-        drop: (item: Event) => onDrop(item),
+        drop: (item: Event) => onDrop(item, date),
         collect: (monitor) => ({
             isOver: monitor.isOver(),
             canDrop: monitor.canDrop(),
         }),
-    }));
+    }), [date, onDrop]);
 
     return (
         <div 
@@ -357,7 +357,7 @@ export function CalendarView() {
       }
   }, [slotsConfig, loadEvents, toast]);
 
-  const handleAllDayDrop = async (item: Event, date: Date) => {
+  const handleAllDayDrop = useCallback(async (item: Event, date: Date) => {
     if (!item.id) return;
     const newStart = startOfDay(date);
     const newEnd = endOfDay(date);
@@ -376,7 +376,7 @@ export function CalendarView() {
         console.error("Failed to update event to all-day:", error);
         toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not make the event all-day.' });
     }
-  };
+  }, [loadEvents, toast]);
   
   const getEventsForDay = (date: Date) => {
     const dayStart = startOfDay(date);
@@ -393,6 +393,10 @@ export function CalendarView() {
       const startTimeString = date.toISOString();
       router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
   };
+
+  if (isLoading) {
+    return <CalendarSkeleton />;
+  }
 
   return (
     <>
@@ -606,7 +610,7 @@ export function CalendarView() {
                 return (
                     <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
                         <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
-                        <AllDayDropZone date={date} onDrop={(item) => handleAllDayDrop(item, date)} onClick={() => handleAllDayClick(date)}>
+                        <AllDayDropZone date={date} onDrop={handleAllDayDrop} onClick={() => handleAllDayClick(date)}>
                             {allDayEvents.map(event => (
                                 <CalendarEvent
                                     key={event.id}

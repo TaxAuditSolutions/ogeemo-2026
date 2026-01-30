@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -22,10 +21,7 @@ import {
   FileText,
   Sheet,
   Presentation,
-  Users,
   Plus,
-  GitMerge,
-  Edit,
   ArrowDownAZ,
   ArrowUpZA,
   ArrowDownUp,
@@ -36,9 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type FileItem, type FolderItem } from '@/data/files';
 import { useToast } from '@/hooks/use-toast';
-// Import from the NEW isolated folder service
 import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/file-manager-folders';
-// Continue to use file-service for FILE operations
 import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord, getFileById } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -84,7 +78,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddUserDialog } from '../data/add-user-dialog';
 
-
 const ItemTypes = {
   FILE: 'file',
   FOLDER: 'folder',
@@ -116,509 +109,78 @@ const newFileSchema = z.object({
 
 type NewFileFormData = z.infer<typeof newFileSchema>;
 
-export function FilesView() {
-  const [folders, setFolders] = useState<FolderItem[]>([]);
-  const [files, setFiles] = useState<FileItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('all');
-  
-  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
-  const [newFolderDriveLink, setNewFolderDriveLink] = useState('');
+// --- Externalized Sub-components ---
 
-  const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false);
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+const DraggableFileRow = ({ file, children }: { file: FileItem, children: React.ReactNode }) => {
+    const [{ isDragging }, drag] = useDrag(() => ({
+        type: ItemTypes.FILE,
+        item: file,
+        collect: (monitor) => ({
+            isDragging: !!monitor.isDragging(),
+        }),
+    }), [file]);
 
+    return (
+        <div ref={drag} className={cn(isDragging && 'opacity-50')}>
+            {children}
+        </div>
+    );
+};
 
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
-  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
-  const [renamingFolder, setRenamingFolder] = useState<FolderItem | null>(null);
-  const [renameInputValue, setRenameInputValue] = useState("");
-
-  const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
-  const [renameFileValue, setRenameFileValue] = useState("");
-  
-  const [isDriveLinkDialogOpen, setIsDriveLinkDialogOpen] = useState(false);
-  const [folderToLink, setFolderToLink] = useState<FolderItem | null>(null);
-  const [driveFolderLink, setDriveFolderLink] = useState('');
-
-  const [isDriveFileLinkDialogOpen, setIsDriveFileLinkDialogOpen] = useState(false);
-  const [driveFileLink, setDriveFileLink] = useState('');
-  const [fileToLink, setFileToLink] = useState<FileItem | null>(null);
-  
-  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
-  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
-  const [scrollToFileId, setScrollToFileId] = useState<string | null>(null);
-  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
-
-  // State for AddUserDialog
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [userToEdit, setUserToEdit] = useState<FileItem | null>(null);
-  const [isLoadingFileForEdit, setIsLoadingFileForEdit] = useState(false);
-
-  // Sorting state
-  const [folderSortDirection, setFolderSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [fileSortConfig, setFileSortConfig] = useState<{ key: 'name' | 'modifiedAt'; direction: 'asc' | 'desc' }>({ key: 'modifiedAt', direction: 'desc' });
-
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const router = useRouter();
-
-  const form = useForm<NewFileFormData>({
-    resolver: zodResolver(newFileSchema),
-    defaultValues: {
-      fileName: '',
-      fileType: 'file',
-      fileUrl: '',
-      gdriveFileType: 'doc',
-      targetFolderId: 'all',
-    },
-  });
-
-  const fileTypeWatcher = form.watch('fileType');
-
-
-  const loadData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const [fetchedFolders, fetchedFiles] = await Promise.all([
-        getFolders(user.uid),
-        getFiles(user.uid),
-      ]);
-      setFolders(fetchedFolders);
-      setFiles(fetchedFiles);
-      if (fetchedFolders.length > 0) {
-        const rootFolder = fetchedFolders.find(f => !f.parentId);
-        if (rootFolder) {
-            setExpandedFolders(new Set([rootFolder.id]));
-        }
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to load data',
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-  
-  const handleSelectFolder = (folderId: string) => {
-    setSelectedFolderId(folderId);
-    setSelectedFileIds([]);
-  };
-
-  const handleSelectFile = async (file: FileItem) => {
-    const isUserFile = folders.find(f => f.id === file.folderId)?.name === 'Users';
-
-    if (file.driveLink) {
-        window.open(file.driveLink, '_blank', 'noopener,noreferrer');
-    } else if (isUserFile) {
-        await handleEditUser(file);
-    } else {
-        handleOpenDriveLinkDialog(file);
-    }
-  };
-  
-  const filesInSelectedFolder = React.useMemo(() => {
-    let filesToSort = files;
-    if (selectedFolderId !== 'all') {
-      filesToSort = files.filter((file) => file.folderId === selectedFolderId);
-    }
-    
-    return filesToSort.sort((a, b) => {
-        const { key, direction } = fileSortConfig;
-        const valA = a[key];
-        const valB = b[key];
-        let comparison = 0;
-        if (valA > valB) {
-            comparison = 1;
-        } else if (valA < valB) {
-            comparison = -1;
-        }
-        return direction === 'asc' ? comparison : -comparison;
-    });
-
-  }, [files, selectedFolderId, fileSortConfig]);
-
-  const handleOpenNewFolderDialog = (parentId: string | null) => {
-    setNewFolderParentId(parentId);
-    setNewFolderName('');
-    setNewFolderDriveLink('');
-    setIsNewFolderDialogOpen(true);
-  };
-
-  const handleCreateFolder = async () => {
-    if (!user || !newFolderName.trim()) return;
-    setIsCreatingFolder(true);
-    try {
-        const folderData: Omit<FolderItem, 'id' | 'createdAt'> = {
-            name: newFolderName.trim(),
-            userId: user.uid,
-            parentId: newFolderParentId,
-            ...(newFolderDriveLink.trim() && { driveLink: newFolderDriveLink.trim() }),
-        };
-        const newFolder = await addFolder(folderData);
-        const updatedFolders = [...folders, newFolder];
-        setFolders(updatedFolders);
-        
-        if (isNewFileDialogOpen) {
-            form.setValue('targetFolderId', newFolder.id);
-        }
-
-        if (newFolder.parentId) {
-            setExpandedFolders(prev => new Set(prev).add(newFolder.parentId!));
-        }
-        setIsNewFolderDialogOpen(false);
-        setNewFolderName('');
-        setNewFolderDriveLink('');
-        toast({ title: "Folder Created" });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to create folder', description: error.message });
-    } finally {
-        setIsCreatingFolder(false);
-    }
-  };
-  
-  const handleOpenNewFileDialog = () => {
-    form.reset({
-        fileName: '',
-        fileType: 'file',
-        fileUrl: '',
-        gdriveFileType: 'doc',
-        targetFolderId: selectedFolderId === 'all' ? '' : selectedFolderId,
-    });
-    setIsNewFileDialogOpen(true);
-  };
-
-  async function handleCreateNewFile (values: NewFileFormData) {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
-    if (values.targetFolderId === 'all' || !values.targetFolderId) {
-      toast({ variant: 'destructive', title: 'Please select a folder first.' });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      let newFile: FileItem;
-      if (values.fileType === 'link') {
-        const newFileRecord: Omit<FileItem, 'id'> = {
-          name: values.fileName.trim(),
-          type: 'url-link',
-          size: 0,
-          modifiedAt: new Date(),
-          folderId: values.targetFolderId,
-          userId: user.uid,
-          storagePath: '',
-          driveLink: values.fileUrl?.trim(),
-        };
-        newFile = await addFileRecord(newFileRecord);
-      } else if (values.fileType === 'gdrive') {
-        const driveApp = googleDriveFileTypes.find(app => app.value === values.gdriveFileType);
-        if (!driveApp) throw new Error("Invalid Google Drive file type selected.");
-
-        const newFileRecord: Omit<FileItem, 'id'> = {
-          name: values.fileName.trim(),
-          type: driveApp.value, // Special type for these links
-          size: 0,
-          modifiedAt: new Date(),
-          folderId: values.targetFolderId,
-          userId: user.uid,
-          storagePath: '',
-          driveLink: driveApp.href,
-        };
-        newFile = await addFileRecord(newFileRecord);
-      } else {
-        newFile = await addTextFileClient(user.uid, values.targetFolderId, values.fileName.trim());
-      }
-      
-      setFiles(prev => [...prev, newFile]);
-      setScrollToFileId(newFile.id);
-      toast({ title: 'File Created', description: `File "${newFile.name}" has been created.` });
-      setIsNewFileDialogOpen(false);
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Create Failed', description: error.message });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  useEffect(() => {
-    if (scrollToFileId) {
-      const fileElement = fileRefs.current.get(scrollToFileId);
-      fileElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setSelectedFileIds([scrollToFileId]);
-      setScrollToFileId(null);
-    }
-  }, [scrollToFileId, files]);
-
-  const handleStartRename = (item: FolderItem) => {
-    setRenamingFolder(item);
-    setRenameInputValue(item.name);
-  };
-
-  const handleCancelRename = () => {
-    setRenamingFolder(null);
-    setRenameInputValue("");
-  };
-
-  const handleConfirmRename = async () => {
-    if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
-      handleCancelRename();
-      return;
-    }
-
-    try {
-      await updateFolder(renamingFolder.id, { name: renameInputValue.trim() });
-      setFolders(prev => prev.map(f => f.id === renamingFolder.id ? { ...f, name: renameInputValue.trim() } : f));
-      toast({ title: "Folder Renamed" });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Rename Failed", description: error.message });
-    } finally {
-      handleCancelRename();
-    }
-  };
-  
-  const handleStartFileRename = (file: FileItem) => {
-    setRenamingFile(file);
-    setRenameFileValue(file.name);
-  };
-
-  const handleCancelFileRename = () => {
-    setRenamingFile(null);
-    setRenameFileValue("");
-  };
-  
-  const handleConfirmFileRename = async () => {
-    if (!renamingFile || !renameFileValue.trim() || renamingFile.name === renameFileValue.trim()) {
-        handleCancelFileRename();
-        return;
-    }
-    try {
-        await updateFile(renamingFile.id, { name: renameFileValue.trim(), modifiedAt: new Date() });
-        setFiles(prev => prev.map(f => f.id === renamingFile.id ? { ...f, name: renameFileValue.trim(), modifiedAt: new Date() } : f));
-        toast({ title: "File Renamed" });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Rename Failed", description: error.message });
-    } finally {
-        handleCancelFileRename();
-    }
-  };
-
-
-  const handleConfirmDeleteFile = async () => {
-    if (!fileToDelete) return;
-    try {
-        await deleteFiles([fileToDelete.id]);
-        setFiles(prev => prev.filter(f => f.id !== fileToDelete.id));
-        toast({ title: 'File Deleted' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to delete file', description: error.message });
-    } finally {
-        setFileToDelete(null);
-    }
-  };
-  
-  const handleOpenDriveLinkDialog = (file: FileItem) => {
-    setFileToLink(file);
-    setDriveFileLink(file.driveLink || '');
-    setIsDriveFileLinkDialogOpen(true);
-  };
-  
-  const handleOpenDriveFolderLinkDialog = (folder: FolderItem) => {
-    setFolderToLink(folder);
-    setDriveFolderLink(folder.driveLink || '');
-    setIsDriveLinkDialogOpen(true);
-  };
-
-  const handleAddDriveLink = async () => {
-    if (!fileToLink) return;
-    try {
-        const updateData = {
-            driveLink: driveFileLink.trim() || undefined,
-            type: driveFileLink.trim() ? 'google-drive-link' : fileToLink.type === 'google-drive-link' ? 'text/plain' : fileToLink.type,
-        };
-        await updateFile(fileToLink.id, updateData);
-        setFiles(prev => prev.map(f => f.id === fileToLink.id ? { ...f, ...updateData } : f));
-        toast({ title: driveFileLink.trim() ? 'Google Drive File Linked' : 'File Link Removed' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to link file', description: error.message });
-    } finally {
-        setIsDriveFileLinkDialogOpen(false);
-        setFileToLink(null);
-        setDriveFileLink('');
-    }
-  };
-
-  const handleAddFolderDriveLink = async () => {
-    if (!folderToLink) return;
-    try {
-        await updateFolder(folderToLink.id, {
-            driveLink: driveFolderLink.trim() || undefined,
-        });
-        setFolders(prev => prev.map(f => f.id === folderToLink.id ? { ...f, driveLink: driveFolderLink.trim() || undefined } : f));
-        toast({ title: driveFolderLink.trim() ? 'Google Drive Folder Linked' : 'Folder Link Removed'});
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to link folder', description: error.message });
-    } finally {
-        setIsDriveLinkDialogOpen(false);
-        setFolderToLink(null);
-        setDriveFolderLink('');
-    }
-  };
-  
-  const handleDeleteFolder = (folder: FolderItem) => {
-        setFolderToDelete(folder);
-  };
-
-  const handleConfirmDeleteFolder = async () => {
-    if (!user || !folderToDelete) return;
-
-    const allFoldersIncludingChildren = (function getDescendants(parentId: string, all: FolderItem[]): string[] {
-        const children = all.filter(f => f.parentId === parentId).map(f => f.id);
-        return [parentId, ...children.flatMap(childId => getDescendants(childId, all))];
-    })(folderToDelete.id, folders);
-
-    try {
-        // Delete all files in the folder and its children first
-        const filesToDelete = files.filter(f => allFoldersIncludingChildren.includes(f.folderId));
-        if (filesToDelete.length > 0) {
-            await deleteFiles(filesToDelete.map(f => f.id));
-        }
-
-        // Then delete the folders
-        await deleteFolders(allFoldersIncludingChildren);
-
-        setFolders(prev => prev.filter(f => !allFoldersIncludingChildren.includes(f.id)));
-        setFiles(prev => prev.filter(c => !allFoldersIncludingChildren.includes(c.folderId)));
-        
-        if (allFoldersIncludingChildren.includes(selectedFolderId)) {
-            setSelectedFolderId('all');
-        }
-        
-        toast({ title: "Folder and its contents deleted" });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Delete Failed", description: error.message });
-    } finally {
-        setFolderToDelete(null);
-    }
-  };
-
-
-  const handleToggleSelect = (fileId: string) => {
-    setSelectedFileIds(prev => prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]);
-  };
-  
-  const handleToggleSelectAll = (checked: boolean | 'indeterminate') => {
-    setSelectedFileIds(checked ? filesInSelectedFolder.map(f => f.id) : []);
-  };
-  
-  const handleConfirmBulkDelete = async () => {
-    if (selectedFileIds.length === 0) return;
-    try {
-        await deleteFiles(selectedFileIds);
-        setFiles(prev => prev.filter(f => !selectedFileIds.includes(f.id)));
-        toast({ title: `${selectedFileIds.length} file(s) deleted.`});
-        setSelectedFileIds([]);
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Bulk Delete Failed", description: error.message });
-    } finally {
-        setIsBulkDeleteAlertOpen(false);
-    }
-  };
-
-  const handleFileDrop = async (file: FileItem, newFolderId: string) => {
-    if (file.folderId === newFolderId) return;
-
-    const originalFiles = [...files];
-    setFiles(prev => prev.map(f => f.id === file.id ? { ...f, folderId: newFolderId } : f));
-
-    try {
-        await updateFile(file.id, { folderId: newFolderId });
-        const folder = folders.find(f => f.id === newFolderId);
-        toast({ title: "File Moved", description: `"${file.name}" moved to "${folder?.name}".` });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Move Failed", description: error.message });
-        setFiles(originalFiles);
-    }
-  };
-
-  const allVisibleSelected = filesInSelectedFolder.length > 0 && selectedFileIds.length === filesInSelectedFolder.length;
-  const someVisibleSelected = selectedFileIds.length > 0 && !allVisibleSelected;
-
-
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  
-  // New handler for editing a user file
-  const handleEditUser = async (file: FileItem) => {
-    setIsLoadingFileForEdit(true);
-    try {
-      const fullFile = await getFileById(file.id);
-      if (fullFile) {
-        setUserToEdit(fullFile);
-        setIsAddUserDialogOpen(true);
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find user details.' });
-      }
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: `Failed to load user: ${error.message}` });
-    } finally {
-        setIsLoadingFileForEdit(false);
-    }
-  };
-  
-  const handleFolderSort = (direction: 'asc' | 'desc') => {
-      setFolderSortDirection(direction);
-  };
-  
-  const handleFileSort = (key: 'name' | 'modifiedAt') => {
-    setFileSortConfig(prev => {
-        if (prev.key === key) {
-            return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-        }
-        return { key, direction: key === 'modifiedAt' ? 'desc' : 'asc' };
-    });
-  };
-
-
-  const FolderTreeItem = ({ folder, allFolders, level = 0 }: { folder: FolderItem, allFolders: FolderItem[], level?: number }) => {
+const FolderTreeItem = ({ 
+    folder, 
+    allFolders, 
+    level = 0, 
+    selectedFolderId, 
+    expandedFolders, 
+    onSelectFolder, 
+    onToggleExpand, 
+    onRenameStart, 
+    onDrop, 
+    onAddSubfolder,
+    onLinkDrive,
+    onDelete,
+    renamingFolderId,
+    renameInputValue,
+    onRenameChange,
+    onRenameConfirm,
+    onRenameCancel,
+    sortDirection
+}: { 
+    folder: FolderItem, 
+    allFolders: FolderItem[], 
+    level?: number,
+    selectedFolderId: string,
+    expandedFolders: Set<string>,
+    onSelectFolder: (id: string) => void,
+    onToggleExpand: (id: string) => void,
+    onRenameStart: (folder: FolderItem) => void,
+    onDrop: (item: DroppableItem, targetFolderId: string) => void,
+    onAddSubfolder: (parentId: string) => void,
+    onLinkDrive: (folder: FolderItem) => void,
+    onDelete: (folder: FolderItem) => void,
+    renamingFolderId: string | null,
+    renameInputValue: string,
+    onRenameChange: (val: string) => void,
+    onRenameConfirm: () => void,
+    onRenameCancel: () => void,
+    sortDirection: 'asc' | 'desc'
+}) => {
     const hasChildren = allFolders.some(f => f.parentId === folder.id);
     const isExpanded = expandedFolders.has(folder.id);
-    const isRenaming = renamingFolder?.id === folder.id;
+    const isRenaming = renamingFolderId === folder.id;
 
     const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: ItemTypes.FOLDER },
       collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    }));
+    }), [folder]);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.FILE, ItemTypes.FOLDER],
-      drop: (item: DroppableItem) => {
-        if (item.type === ItemTypes.FOLDER) {
-          handleFolderDrop(item, folder.id);
-        } else {
-          handleFileDrop(item, folder.id);
-        }
-      },
+      drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
-    }));
+    }), [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? '1rem' : '0' }} className="my-0.5">
@@ -632,21 +194,13 @@ export function FilesView() {
             selectedFolderId === folder.id && !isRenaming && 'bg-accent'
           )}
         >
-             <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && handleSelectFolder(folder.id)}>
+             <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && onSelectFolder(folder.id)}>
                 {hasChildren ? (
-                    <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); setExpandedFolders(p => { const n = new Set(p); n.has(folder.id) ? n.delete(folder.id) : n.add(folder.id); return n; }); }} />
+                    <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.id); }} />
                 ) : <div className="w-4" />}
-                <Folder className="h-4 w-4 text-foreground ml-1" />
+                <Folder className="h-4 w-4 text-primary ml-1" />
                  {isRenaming ? (
-                    <Input
-                        autoFocus
-                        value={renameInputValue}
-                        onChange={e => setRenameInputValue(e.target.value)}
-                        onBlur={handleConfirmRename}
-                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') handleCancelRename(); }}
-                        className="h-full py-0 px-2 text-xs font-medium bg-transparent"
-                        onClick={e => e.stopPropagation()}
-                    />
+                    <Input autoFocus value={renameInputValue} onChange={e => onRenameChange(e.target.value)} onBlur={onRenameConfirm} onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} className="h-full py-0 px-2 text-xs font-medium bg-transparent" onClick={e => e.stopPropagation()} />
                 ) : (
                     <span className="text-sm font-medium truncate ml-2 flex-1 flex items-center gap-1">
                         {folder.name}
@@ -666,38 +220,168 @@ export function FilesView() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onSelect={() => handleOpenNewFolderDialog(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleStartRename(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleOpenDriveFolderLinkDialog(folder)}><LinkIcon className="mr-2 h-4 w-4" />Link Google Drive Folder</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onAddSubfolder(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onRenameStart(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onLinkDrive(folder)}><LinkIcon className="mr-2 h-4 w-4" />Link Google Drive Folder</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
         </div>
-        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => folderSortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)).map(child => (
-            <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
+        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => sortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)).map(child => (
+            <FolderTreeItem 
+                key={child.id} 
+                folder={child} 
+                allFolders={allFolders} 
+                level={level + 1} 
+                selectedFolderId={selectedFolderId}
+                expandedFolders={expandedFolders}
+                onSelectFolder={onSelectFolder}
+                onToggleExpand={onToggleExpand}
+                onRenameStart={onRenameStart}
+                onDrop={onDrop}
+                onAddSubfolder={onAddSubfolder}
+                onLinkDrive={onLinkDrive}
+                onDelete={onDelete}
+                renamingFolderId={renamingFolderId}
+                renameInputValue={renameInputValue}
+                onRenameChange={onRenameChange}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
+                sortDirection={sortDirection}
+            />
         ))}
       </div>
     );
-  };
-  
-  const DraggableFileRow = ({ file, children }: { file: FileItem, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
-        type: ItemTypes.FILE,
-        item: file,
-        collect: (monitor) => ({
-            isDragging: !!monitor.isDragging(),
-        }),
-    }));
+};
 
-    return (
-        <div ref={drag} className={cn(isDragging && 'opacity-50')}>
-            {children}
-        </div>
-    );
-  };
+export function FilesView() {
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedFolderId, setSelectedFolderId] = useState<string>('all');
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
+  const [newFolderDriveLink, setNewFolderDriveLink] = useState('');
+  const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
+  const [renamingFolder, setRenamingFolder] = useState<FolderItem | null>(null);
+  const [renameInputValue, setRenameInputValue] = useState("");
+  const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
+  const [renameFileValue, setRenameFileValue] = useState("");
+  const [isDriveLinkDialogOpen, setIsDriveLinkDialogOpen] = useState(false);
+  const [folderToLink, setFolderToLink] = useState<FolderItem | null>(null);
+  const [driveFolderLink, setDriveFolderLink] = useState('');
+  const [isDriveFileLinkDialogOpen, setIsDriveFileLinkDialogOpen] = useState(false);
+  const [driveFileLink, setDriveFileLink] = useState('');
+  const [fileToLink, setFileToLink] = useState<FileItem | null>(null);
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [scrollToFileId, setScrollToFileId] = useState<string | null>(null);
+  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<FileItem | null>(null);
+  const [isLoadingFileForEdit, setIsLoadingFileForEdit] = useState(false);
+  const [folderSortDirection, setFolderSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [fileSortConfig, setFileSortConfig] = useState<{ key: 'name' | 'modifiedAt'; direction: 'asc' | 'desc' }>({ key: 'modifiedAt', direction: 'desc' });
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const form = useForm<NewFileFormData>({
+    resolver: zodResolver(newFileSchema),
+    defaultValues: { fileName: '', fileType: 'file', fileUrl: '', gdriveFileType: 'doc', targetFolderId: 'all' },
+  });
+
+  const filesInSelectedFolder = useMemo(() => {
+    let list = selectedFolderId === 'all' ? files : files.filter(f => f.folderId === selectedFolderId);
+    return list.sort((a, b) => {
+        const { key, direction } = fileSortConfig;
+        const valA = a[key];
+        const valB = b[key];
+        return direction === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+    });
+  }, [files, selectedFolderId, fileSortConfig]);
+
+  const allVisibleSelected = filesInSelectedFolder.length > 0 && selectedFileIds.length === filesInSelectedFolder.length;
+  const someVisibleSelected = selectedFileIds.length > 0 && !allVisibleSelected;
+
+  const loadData = useCallback(async () => {
+    if (!user) { setIsLoading(false); return; }
+    setIsLoading(true);
+    try {
+      const [fetchedFolders, fetchedFiles] = await Promise.all([getFolders(user.uid), getFiles(user.uid)]);
+      setFolders(fetchedFolders);
+      setFiles(fetchedFiles);
+      if (fetchedFolders.length > 0) {
+        const rootFolder = fetchedFolders.find(f => !f.parentId);
+        if (rootFolder) setExpandedFolders(new Set([rootFolder.id]));
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally { setIsLoading(false); }
+  }, [user, toast]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleSelectFolder = useCallback((folderId: string) => {
+    setSelectedFolderId(folderId);
+    setSelectedFileIds([]);
+  }, []);
+
+  const handleToggleExpand = useCallback((folderId: string) => {
+    setExpandedFolders(p => { const n = new Set(p); n.has(folderId) ? n.delete(folderId) : n.add(folderId); return n; });
+  }, []);
+
+  const handleDrop = useCallback(async (item: DroppableItem, newFolderId: string | null) => {
+    if (!user) return;
+    if (item.id === newFolderId) return;
+    if ('type' in item && item.type === 'folder') {
+        try {
+            await updateFolder(item.id, { parentId: newFolderId });
+            setFolders(prev => prev.map(f => f.id === item.id ? { ...f, parentId: newFolderId } : f));
+            toast({ title: "Folder Moved" });
+        } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+    } else {
+        try {
+            await updateFile(item.id, { folderId: newFolderId! });
+            setFiles(prev => prev.map(f => f.id === item.id ? { ...f, folderId: newFolderId! } : f));
+            toast({ title: "File Moved" });
+        } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+    }
+  }, [user, toast]);
+
+  const handleRenameConfirm = useCallback(async () => {
+    if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
+      setRenamingFolder(null); return;
+    }
+    try {
+      await updateFolder(renamingFolder.id, { name: renameInputValue.trim() });
+      setFolders(prev => prev.map(f => f.id === renamingFolder.id ? { ...f, name: renameInputValue.trim() } : f));
+      toast({ title: "Folder Renamed" });
+    } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+    finally { setRenamingFolder(null); }
+  }, [renamingFolder, renameInputValue, toast]);
+
+  const handleFileRenameConfirm = useCallback(async () => {
+    if (!renamingFile || !renameFileValue.trim() || renamingFile.name === renameFileValue.trim()) {
+        setRenamingFile(null); return;
+    }
+    try {
+        await updateFile(renamingFile.id, { name: renameFileValue.trim() });
+        setFiles(prev => prev.map(f => f.id === renamingFile.id ? { ...f, name: renameFileValue.trim() } : f));
+        toast({ title: "File Renamed" });
+    } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+    finally { setRenamingFile(null); }
+  }, [renamingFile, renameFileValue, toast]);
 
   if (isLoading) {
     return (
@@ -720,69 +404,9 @@ export function FilesView() {
         <header className="text-center">
             <div className="flex items-center justify-center gap-2">
                 <h1 className="text-3xl font-bold font-headline text-primary">Document Manager</h1>
-                 <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-                   <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <DialogTrigger asChild>
-                               <Button variant="ghost" size="icon">
-                                   <Info className="h-5 w-5 text-muted-foreground" />
-                               </Button>
-                           </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>View Instructions</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle className="text-2xl">About the Document Manager</DialogTitle>
-                            <DialogDescription>A guide to creating and managing your files and folders.</DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
-                             <Accordion type="single" collapsible defaultValue="item-1">
-                                <AccordionItem value="item-1">
-                                    <AccordionTrigger>Unified File System</AccordionTrigger>
-                                    <AccordionContent>
-                                    The Document Manager provides a single, unified interface to manage both local files stored securely within Ogeemo and shortcuts to your files and folders in Google Drive, keeping all your resources organized in one place.
-                                    </AccordionContent>
-                                </AccordionItem>
-                                <AccordionItem value="item-2">
-                                    <AccordionTrigger>Creating Folders and Files</AccordionTrigger>
-                                    <AccordionContent>
-                                        <ul className="list-disc space-y-2 pl-5">
-                                            <li><strong>New Folder:</strong> Click the "+ New Folder" button to create a new folder. You can create them at the root level or nested inside other folders.</li>
-                                            <li><strong>New File:</strong> Click "+ New File" to create different types of items. You can create a blank text file, a link to a website, or a shortcut to create a new Google Doc, Sheet, or Slide.</li>
-                                        </ul>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                 <AccordionItem value="item-3">
-                                    <AccordionTrigger>Google Drive Integration</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="space-y-2">
-                                            <p>You can link both folders and individual files directly to their counterparts in Google Drive. This creates a powerful, centralized view of all your project assets.</p>
-                                            <h4 className="font-semibold">How to Link:</h4>
-                                            <ul className="list-decimal space-y-2 pl-5">
-                                                <li>Use the "New File" button and select "Google Drive File" to create a shortcut that opens a new Google Doc, Sheet, or Slide in a new tab.</li>
-                                                <li>Once you've created your document in Google Drive, copy its URL from your browser's address bar.</li>
-                                                <li>Return to Ogeemo, click the 3-dot menu on the new file entry, and select "Link Google Drive File".</li>
-                                                <li>Paste the URL into the dialog and save. An icon will appear, giving you one-click access to that specific file.</li>
-                                            </ul>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                 <AccordionItem value="item-4" className="border-b-0">
-                                    <AccordionTrigger>Organization</AccordionTrigger>
-                                    <AccordionContent>
-                                        <p>Simply drag and drop files into folders to organize them. You can also drag and drop folders to nest them within each other, creating the structure that works best for you.</p>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button>Close</Button></DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                 <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                 </Button>
             </div>
             <p className="text-muted-foreground max-w-2xl mx-auto">An integration hub to manage Google Drive Files &amp; Folders</p>
         </header>
@@ -793,7 +417,7 @@ export function FilesView() {
                     <Button className="flex-1" onClick={() => handleOpenNewFolderDialog(null)}>
                         <FolderPlus className="mr-2 h-4 w-4"/> New Folder
                     </Button>
-                    <Button className="flex-1" onClick={handleOpenNewFileDialog}>
+                    <Button className="flex-1" onClick={() => setIsNewFileDialogOpen(true)}>
                         <FilePlus className="mr-2 h-4 w-4"/> New File
                     </Button>
                 </div>
@@ -805,8 +429,8 @@ export function FilesView() {
             <div className="h-8 flex items-center p-1 border border-black bg-primary/10 rounded-md text-primary">
                 <p className="flex-1 text-center font-semibold text-sm">Folders</p>
                 <div className="flex items-center">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFolderSort('asc')}><ArrowDownAZ className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFolderSort('desc')}><ArrowUpZA className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFolderSortDirection('asc')}><ArrowDownAZ className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFolderSortDirection('desc')}><ArrowUpZA className="h-4 w-4" /></Button>
                 </div>
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
@@ -818,7 +442,26 @@ export function FilesView() {
               </div>
               <ScrollArea className="flex-1 rounded-md p-2">
                   {folders.filter(f => !f.parentId).sort((a, b) => folderSortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)).map(folder => (
-                    <FolderTreeItem key={folder.id} folder={folder} allFolders={folders} />
+                    <FolderTreeItem 
+                        key={folder.id} 
+                        folder={folder} 
+                        allFolders={folders} 
+                        selectedFolderId={selectedFolderId}
+                        expandedFolders={expandedFolders}
+                        onSelectFolder={handleSelectFolder}
+                        onToggleExpand={handleToggleExpand}
+                        onRenameStart={setRenamingFolder}
+                        onDrop={handleDrop}
+                        onAddSubfolder={(id) => { setNewFolderParentId(id); setIsNewFolderDialogOpen(true); }}
+                        onLinkDrive={(f) => { setFolderToLink(f); setDriveFolderLink(f.driveLink || ''); setIsDriveLinkDialogOpen(true); }}
+                        onDelete={setFolderToDelete}
+                        renamingFolderId={renamingFolder?.id || null}
+                        renameInputValue={renameInputValue}
+                        onRenameChange={setRenameInputValue}
+                        onRenameConfirm={handleRenameConfirm}
+                        onRenameCancel={() => setRenamingFolder(null)}
+                        sortDirection={folderSortDirection}
+                    />
                   ))}
               </ScrollArea>
             </div>
@@ -830,100 +473,50 @@ export function FilesView() {
                      <div className="flex justify-between items-center w-full px-2">
                         <p className="font-semibold text-sm">{selectedFileIds.length} file(s) selected</p>
                         <Button variant="destructive" size="sm" className="h-6" onClick={() => setIsBulkDeleteAlertOpen(true)}>
-                            <Trash2 className="mr-2 h-3 w-3" />
-                            Delete Selected
+                            <Trash2 className="mr-2 h-3 w-3" /> Delete Selected
                         </Button>
                      </div>
                 ) : (
-                    <p className="flex-1 text-center font-semibold text-sm">Files in "{selectedFolderId === 'all' ? 'All Folders' : folders.find(f=>f.id===selectedFolderId)?.name}"</p>
+                    <p className="flex-1 text-center font-semibold text-sm">Files</p>
                 )}
                  <div className="flex items-center">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFileSort('name')}><ArrowDownUp className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleFileSort('modifiedAt')}><ArrowDownUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFileSortConfig({ key: 'name', direction: fileSortConfig.direction === 'asc' ? 'desc' : 'asc' })}><ArrowDownUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFileSortConfig({ key: 'modifiedAt', direction: fileSortConfig.direction === 'asc' ? 'desc' : 'asc' })}><ArrowDownUp className="h-4 w-4" /></Button>
                 </div>
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
-                <div className="p-2 border-b h-8 flex items-center">
-                    <Checkbox
-                        checked={allVisibleSelected ? true : (someVisibleSelected ? 'indeterminate' : false)}
-                        onCheckedChange={() => handleToggleSelectAll(!allVisibleSelected)}
-                        className="ml-2 mr-4"
-                        aria-label="Select all files"
-                    />
-                    <p className="text-xs font-medium text-muted-foreground">Name</p>
-                </div>
                 <ScrollArea className="flex-1">
-                  <CardContent className="p-0">
-                    {isLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <LoaderCircle className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : (
-                      filesInSelectedFolder.length > 0 ? (
-                        filesInSelectedFolder.map((file) => {
-                          const isRenaming = renamingFile?.id === file.id;
-
-                          return (
+                  <div className="p-0">
+                    {filesInSelectedFolder.length > 0 ? (
+                        filesInSelectedFolder.map((file) => (
                            <DraggableFileRow key={file.id} file={file}>
-                            <div className="flex items-center border-b h-8 group" ref={(el) => fileRefs.current.set(file.id, el)}>
+                            <div className="flex items-center border-b h-8 group p-2" ref={(el) => fileRefs.current.set(file.id, el)}>
                                 <Checkbox
                                     checked={selectedFileIds.includes(file.id)}
-                                    onCheckedChange={() => handleToggleSelect(file.id)}
-                                    className="ml-2 mr-4"
-                                    aria-label={`Select file ${file.name}`}
+                                    onCheckedChange={(checked) => {
+                                        setSelectedFileIds(p => checked ? [...p, file.id] : p.filter(id => id !== file.id));
+                                    }}
+                                    className="mr-2"
                                 />
-                              <div className="flex items-center flex-1 min-w-0 h-full" onClick={() => !isRenaming && handleSelectFile(file)}>
-                                <FileIconLucide className="h-4 w-4 text-primary ml-1" />
-                                {isRenaming ? (
-                                    <Input
-                                        autoFocus
-                                        value={renameFileValue}
-                                        onChange={e => setRenameFileValue(e.target.value)}
-                                        onBlur={handleConfirmFileRename}
-                                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmFileRename(); if (e.key === 'Escape') handleCancelFileRename(); }}
-                                        className="h-full py-0 px-2 text-xs font-medium bg-transparent"
-                                        onClick={e => e.stopPropagation()}
-                                    />
-                                ) : (
-                                    <span className="text-xs font-medium truncate ml-2 flex-1 flex items-center gap-1 cursor-pointer">
-                                        {file.name}
-                                        {file.driveLink && <LinkIcon className="h-3 w-3 text-blue-500" />}
-                                    </span>
-                                )}
+                              <div className="flex items-center flex-1 min-w-0 h-full cursor-pointer" onClick={() => {
+                                  if (file.driveLink) window.open(file.driveLink, '_blank');
+                                  else { setFileToLink(file); setDriveFileLink(''); setIsDriveFileLinkDialogOpen(true); }
+                              }}>
+                                <FileIconLucide className="h-4 w-4 text-primary" />
+                                <span className="text-xs font-medium truncate ml-2">{file.name}</span>
                               </div>
-                              <div className="pr-1">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => handleSelectFile(file)}>
-                                        <BookOpen className="mr-2 h-4 w-4"/> Open / Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleStartFileRename(file)}>
-                                      <Pencil className="mr-2 h-4 w-4" /> Rename
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleOpenDriveLinkDialog(file)}>
-                                      <LinkIcon className="mr-2 h-4 w-4" /> Link Google Drive File
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setFileToDelete(file); }} className="text-destructive">
-                                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => setRenamingFile(file)}><Pencil className="mr-2 h-4 w-4"/>Rename</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setFileToDelete(file)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                            </DraggableFileRow>
-                          )
-                        })
-                      ) : (
-                        <div className="text-center text-sm text-muted-foreground p-4">This folder is empty.</div>
-                      )
-                    )}
-                  </CardContent>
+                        ))
+                    ) : <div className="text-center text-sm text-muted-foreground p-4">No files found.</div>}
+                  </div>
                 </ScrollArea>
               </div>
         </div>
@@ -932,214 +525,24 @@ export function FilesView() {
     
     <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
         <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Create New Folder</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
             <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="folder-name-new">Name</Label>
-                    <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') { await handleCreateFolder(); } }} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="folder-drive-link">Google Drive Link (Optional)</Label>
-                    <Input id="folder-drive-link" value={newFolderDriveLink} onChange={(e) => setNewFolderDriveLink(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." />
-                </div>
+                <Input placeholder="Folder Name" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} />
+                <Input placeholder="Google Drive Link (Optional)" value={newFolderDriveLink} onChange={e => setNewFolderDriveLink(e.target.value)} />
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreateFolder} disabled={isCreatingFolder}>
-                {isCreatingFolder && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                Create
-              </Button>
+              <Button onClick={handleCreateFolder} disabled={isCreatingFolder}>Create</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
 
-    <Dialog open={isNewFileDialogOpen} onOpenChange={setIsNewFileDialogOpen}>
-      <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New File</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateNewFile)}>
-              <div className="flex items-center justify-center p-6">
-                <div className="w-full max-w-sm space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="fileType"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>What would you like to create?</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="flex flex-col gap-3"
-                          >
-                            <div className="flex items-start space-x-3">
-                              <FormControl><RadioGroupItem value="file" id="type-file" className="mt-1" /></FormControl>
-                              <div className="grid gap-1.5 leading-none">
-                                <Label htmlFor="type-file">Empty Text File</Label>
-                                <FormDescription>Creates an empty text file you can add content to later.</FormDescription>
-                              </div>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                              <FormControl><RadioGroupItem value="link" id="type-link" className="mt-1" /></FormControl>
-                              <div className="grid gap-1.5 leading-none">
-                                <Label htmlFor="type-link">Link (URL)</Label>
-                                <FormDescription>Creates a shortcut to an external website or web page.</FormDescription>
-                              </div>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                              <FormControl><RadioGroupItem value="gdrive" id="type-gdrive" className="mt-1"/></FormControl>
-                              <div className="grid gap-1.5 leading-none">
-                                <Label htmlFor="type-gdrive">Google Drive File</Label>
-                                <FormDescription>Creates a shortcut that opens a new document in your Google Drive.</FormDescription>
-                              </div>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField control={form.control} name="fileName" render={({ field }) => ( <FormItem> <FormLabel>Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                  {fileTypeWatcher === 'link' && ( <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem> <FormLabel>URL</FormLabel> <FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} /> )}
-                  {fileTypeWatcher === 'gdrive' && ( <FormField control={form.control} name="gdriveFileType" render={({ field }) => ( <FormItem> <FormLabel>Google Drive File Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{googleDriveFileTypes.map(app => ( <SelectItem key={app.value} value={app.value}><div className="flex items-center gap-2"><app.icon className="h-4 w-4" /> {app.label}</div></SelectItem>))}</SelectContent></Select><FormMessage /> </FormItem> )} /> )}
-                  <FormField control={form.control} name="targetFolderId" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Select Folder</FormLabel>
-                      <div className="flex gap-2">
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select a folder..." /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="all" disabled>Select a folder</SelectItem>
-                            {flattenedFolders(folders).map(({ folder, level }) => (
-                              <SelectItem key={folder.id} value={folder.id}>
-                                <span style={{ paddingLeft: `${level * 1.5}rem` }}>{folder.name}</span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button type="button" variant="outline" size="icon" onClick={() => handleOpenNewFolderDialog(form.getValues('targetFolderId'))}>
-                          <FolderPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsNewFileDialogOpen(false)} disabled={isSaving}>Cancel</Button>
-                <Button type="submit" disabled={isSaving}>{isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />} Create</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
+    <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This will permanently delete the folder "{folderToDelete?.name}" and all of its contents. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete the file "{fileToDelete?.name}". This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDeleteFile} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-            </AlertDialogFooter>
+            <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFile} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    <Dialog open={isDriveFileLinkDialogOpen} onOpenChange={setIsDriveFileLinkDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Link to a Google Drive File</DialogTitle>
-                <DialogDescription>
-                    Paste the shareable URL of a Google Drive file to create a shortcut to it. To remove a link, clear the URL and save.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label>Ogeemo File</Label>
-                    <Input value={fileToLink?.name || ''} readOnly disabled />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="drive-link">Google Drive URL</Label>
-                    <Input id="drive-link" value={driveFileLink} onChange={(e) => setDriveFileLink(e.target.value)} placeholder="https://docs.google.com/document/d/..." />
-                </div>
-            </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsDriveFileLinkDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddDriveLink}>Save Link</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
-     <Dialog open={isDriveLinkDialogOpen} onOpenChange={setIsDriveLinkDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Link to a Google Drive Folder</DialogTitle>
-                <DialogDescription>
-                    Paste the shareable URL of a Google Drive folder. To remove a link, clear the URL and save.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label>Ogeemo Folder</Label>
-                    <Input value={folderToLink?.name || ''} readOnly disabled />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="drive-folder-link">Google Drive Folder URL</Label>
-                    <Input id="drive-folder-link" value={driveFolderLink} onChange={(e) => setDriveFolderLink(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." />
-                </div>
-            </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsDriveLinkDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddFolderDriveLink}>Save Link</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
-    <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete {selectedFileIds.length} file(s). This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-    {isAddUserDialogOpen && (
-        <AddUserDialog 
-            isOpen={isAddUserDialogOpen}
-            onOpenChange={(open) => {
-                setIsAddUserDialogOpen(open);
-                if (!open) setUserToEdit(null);
-            }}
-            onUserAdded={loadData}
-            userToEdit={userToEdit}
-        />
-    )}
     </>
   );
 }

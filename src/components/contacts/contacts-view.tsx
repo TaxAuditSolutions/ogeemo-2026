@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -6,30 +5,19 @@ import dynamic from 'next/dynamic';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   Folder,
-  File as FileIconLucide,
   LoaderCircle,
   FolderPlus,
   ChevronRight,
   ExternalLink,
   MoreVertical,
-  Pencil,
   Trash2,
-  BookOpen,
-  Link as LinkIcon,
-  Info,
-  Files,
-  FilePlus,
-  FileText,
-  Sheet,
-  Presentation,
   Users,
   Plus,
   GitMerge,
-  Edit,
-  ArrowDownAZ,
-  ArrowUpZA,
-  ArrowDownUp,
-  X,
+  Pencil,
+  Files,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -38,7 +26,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Contact } from '@/data/contacts';
 import { type FolderData } from '@/services/contact-folder-service';
 import { useToast } from '@/hooks/use-toast';
-// Import from the NEW isolated folder service
 import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
 import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/contact-folder-service';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
@@ -52,8 +39,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -68,16 +53,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import Link from 'next/link';
-import { Checkbox } from '../ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,8 +60,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AddUserDialog } from '../data/add-user-dialog';
-import MergeContactsDialog from './MergeContactsDialog';
 import {
   Table,
   TableBody,
@@ -95,7 +68,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
+import { Checkbox } from '../ui/checkbox';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -113,6 +86,151 @@ const ItemTypes = {
 
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
+// --- Externalized Sub-components ---
+
+const DraggableTableRow = ({ contact, children, onEdit, onToggleSelect, isSelected }: { contact: Contact, children: React.ReactNode, onEdit: () => void, onToggleSelect: () => void, isSelected: boolean }) => {
+    const [{ isDragging }, drag] = useDrag(() => ({
+        type: ItemTypes.CONTACT,
+        item: contact,
+        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    }), [contact]);
+
+    return (
+      <TableRow ref={drag} className={cn(isDragging && "opacity-50", "cursor-grab")}>
+        {children}
+      </TableRow>
+    );
+};
+
+const FolderTreeItem = ({ 
+    folder, 
+    allFolders, 
+    level = 0, 
+    selectedFolderId, 
+    expandedFolders, 
+    onSelectFolder, 
+    onToggleExpand, 
+    onRenameStart, 
+    onDrop, 
+    onAddSubfolder,
+    onDelete,
+    renamingFolderId,
+    renameInputValue,
+    onRenameChange,
+    onRenameConfirm,
+    onRenameCancel
+}: { 
+    folder: FolderData, 
+    allFolders: FolderData[], 
+    level?: number,
+    selectedFolderId: string,
+    expandedFolders: Set<string>,
+    onSelectFolder: (id: string) => void,
+    onToggleExpand: (id: string) => void,
+    onRenameStart: (folder: FolderData) => void,
+    onDrop: (item: DroppableItem, targetFolderId: string) => void,
+    onAddSubfolder: (parentId: string) => void,
+    onDelete: (folder: FolderData) => void,
+    renamingFolderId: string | null,
+    renameInputValue: string,
+    onRenameChange: (val: string) => void,
+    onRenameConfirm: () => void,
+    onRenameCancel: () => void
+}) => {
+    const hasChildren = allFolders.some(f => f.parentId === folder.id);
+    const isExpanded = expandedFolders.has(folder.id);
+    const isRenaming = renamingFolderId === folder.id;
+
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+      type: ItemTypes.FOLDER,
+      item: { ...folder, type: ItemTypes.FOLDER },
+      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    }), [folder]);
+
+    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+      accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
+      drop: (item: DroppableItem) => onDrop(item, folder.id),
+      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
+    }), [folder.id, onDrop]);
+
+    return (
+      <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
+        <div
+          ref={node => drag(drop(node))}
+          className={cn(
+            "flex items-center justify-between rounded-md h-9 group",
+            isRenaming ? 'bg-background' : 'hover:bg-accent',
+            (isOver && canDrop) && 'bg-primary/20 ring-1 ring-primary',
+            isDragging && 'opacity-50',
+            selectedFolderId === folder.id && !isRenaming && 'bg-accent'
+          )}
+        >
+            <div className="flex-1 flex items-center min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && onSelectFolder(folder.id)}>
+                {hasChildren ? (
+                  <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.id); }} />
+                ) : (
+                  <div className="w-4 h-4 shrink-0" />
+                )}
+                <Folder className="h-4 w-4 text-primary ml-1 shrink-0" />
+                {isRenaming ? (
+                  <Input 
+                    autoFocus 
+                    value={renameInputValue} 
+                    onChange={e => onRenameChange(e.target.value)} 
+                    onBlur={onRenameConfirm} 
+                    onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
+                    className="h-7" 
+                    onClick={e => e.stopPropagation()} 
+                  />
+                ) : (
+                  <span className="truncate ml-2 text-sm">{folder.name}</span>
+                )}
+            </div>
+            <div className="flex items-center">
+                {folder.driveLink && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
+                    <ExternalLink className="h-4 w-4 text-blue-500" />
+                  </Button>
+                )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 px-1.5">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onSelect={() => onAddSubfolder(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onRenameStart(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
+            <FolderTreeItem 
+                key={child.id} 
+                folder={child} 
+                allFolders={allFolders} 
+                level={level + 1}
+                selectedFolderId={selectedFolderId}
+                expandedFolders={expandedFolders}
+                onSelectFolder={onSelectFolder}
+                onToggleExpand={onToggleExpand}
+                onRenameStart={onRenameStart}
+                onDrop={onDrop}
+                onAddSubfolder={onAddSubfolder}
+                onDelete={onDelete}
+                renamingFolderId={renamingFolderId}
+                renameInputValue={renameInputValue}
+                onRenameChange={onRenameChange}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
+            />
+        ))}
+      </div>
+    );
+};
 
 export function ContactsView() {
   const [folders, setFolders] = useState<FolderData[]>([]);
@@ -129,23 +247,43 @@ export function ContactsView() {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
-  
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
-
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
-  const [newFolderDriveLink, setNewFolderDriveLink] = useState('');
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
-  
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
 
-
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const selectedFolder = useMemo(
+    () => folders.find((f) => f && f.id === selectedFolderId),
+    [folders, selectedFolderId]
+  );
+
+  const displayedContacts = useMemo(
+    () => {
+        if (selectedFolderId === 'all') return contacts;
+        const getDescendantFolderIds = (folderId: string): string[] => {
+            let ids = [folderId];
+            const children = folders.filter(f => f.parentId === folderId);
+            children.forEach(child => {
+                ids = [...ids, ...getDescendantFolderIds(child.id)];
+            });
+            return ids;
+        };
+
+        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
+        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
+    },
+    [contacts, folders, selectedFolderId]
+  );
+
+  const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
   
   const loadData = useCallback(async () => {
     if (!user) {
@@ -170,12 +308,7 @@ export function ContactsView() {
           setExpandedFolders(new Set([rootFolder.id]));
         }
     } catch (error: any) {
-        console.error("Failed to load contact data:", error);
-        toast({
-            variant: "destructive",
-            title: "Failed to load data",
-            description: error.message || "Could not retrieve contacts and folders from the database.",
-        });
+        toast({ variant: "destructive", title: "Failed to load data", description: error.message });
     } finally {
         setIsLoading(false);
     }
@@ -185,63 +318,89 @@ export function ContactsView() {
     loadData();
   }, [loadData]);
 
-  const selectedFolder = useMemo(
-    () => folders.find((f) => f && f.id === selectedFolderId),
-    [folders, selectedFolderId]
-  );
+  const handleSelectFolder = useCallback((folderId: string) => {
+    setSelectedFolderId(folderId);
+    setSelectedContactIds([]);
+  }, []);
 
-  const displayedContacts = useMemo(
-    () => {
-        if (selectedFolderId === 'all') return contacts;
-        const getDescendantFolderIds = (folderId: string): string[] => {
-            let ids = [folderId];
-            const children = folders.filter(f => f.parentId === folderId);
-            children.forEach(child => {
-                ids = [...ids, ...getDescendantFolderIds(child.id)];
-            });
-            return ids;
-        };
+  const handleToggleExpand = useCallback((folderId: string) => {
+    setExpandedFolders(p => {
+        const n = new Set(p);
+        n.has(folderId) ? n.delete(folderId) : n.add(folderId);
+        return n;
+    });
+  }, []);
 
-        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
-        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
-    },
-    [contacts, folders, selectedFolderId]
-  );
-  
-  const handleNewContactClick = useCallback(() => {
-    if (selectedFolderId === 'all' && folders.length > 0) {
-      toast({ variant: "destructive", title: "Folder Required", description: "Please select a specific folder before adding a new contact." });
+  const handleDrop = useCallback(async (item: DroppableItem, newFolderId: string | null) => {
+    if (!user) return;
+    if (item.id === newFolderId) return;
+
+    if ('email' in item) { // It's a contact
+        if (item.folderId === newFolderId) return;
+        try {
+            await updateContact(item.id, { folderId: newFolderId! });
+            setContacts(prev => prev.map(c => c.id === item.id ? { ...c, folderId: newFolderId! } : c));
+            toast({ title: "Contact Moved" });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Move Failed", description: error.message });
+        }
+    } else { // It's a folder
+        if (item.parentId === newFolderId) return;
+        try {
+            await updateFolder(item.id, { parentId: newFolderId });
+            setFolders(prev => prev.map(f => f.id === item.id ? { ...f, parentId: newFolderId } : f));
+            toast({ title: "Folder Moved" });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Move Failed", description: error.message });
+        }
+    }
+  }, [user, toast]);
+
+  const handleRenameConfirm = useCallback(async () => {
+    if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
+      setRenamingFolder(null);
       return;
     }
+    try {
+      await updateFolder(renamingFolder.id, { name: renameInputValue.trim() });
+      setFolders(prev => prev.map(f => f.id === renamingFolder.id ? { ...f, name: renameInputValue.trim() } : f));
+      toast({ title: "Folder Renamed" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Rename Failed", description: error.message });
+    } finally {
+      setRenamingFolder(null);
+    }
+  }, [renamingFolder, renameInputValue, toast]);
+
+  const handleNewContactClick = useCallback(() => {
     setContactToEdit(null);
     setIsContactFormOpen(true);
-  }, [selectedFolderId, folders.length, toast]);
-  
+  }, []);
 
-  const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
-  const someSelected = useMemo(() => selectedContactIds.length > 0 && !allVisibleSelected, [selectedContactIds, allVisibleSelected]);
-
-  const handleToggleSelect = (contactId: string) => {
-    setSelectedContactIds((prev) =>
-      prev.includes(contactId)
-        ? prev.filter((id) => id !== contactId)
-        : [...prev, contactId]
-    );
-  };
-
-  const handleToggleSelectAll = () => {
+  const handleToggleSelectAll = useCallback(() => {
     setSelectedContactIds(allVisibleSelected ? [] : displayedContacts.map(c => c.id));
+  }, [allVisibleSelected, displayedContacts]);
+
+  const handleToggleSelect = useCallback((contactId: string) => {
+    setSelectedContactIds((prev) =>
+      prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]
+    );
+  }, []);
+
+  const handleConfirmDeleteFolder = async () => {
+    if (!user || !folderToDelete) return;
+    try {
+        await deleteFolders([folderToDelete.id]);
+        setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+        if (selectedFolderId === folderToDelete.id) setSelectedFolderId('all');
+        toast({ title: "Folder Deleted" });
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Delete Failed", description: error.message });
+    } finally {
+        setFolderToDelete(null);
+    }
   };
-  
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      if (isEditing) {
-          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-      } else {
-          setContacts(prev => [...prev, savedContact]);
-      }
-      setIsContactFormOpen(false);
-  };
-  
+
   const handleConfirmDeleteContact = async () => {
     if (!contactToDelete) return;
     try {
@@ -255,9 +414,8 @@ export function ContactsView() {
     }
   };
 
-  const handleDeleteSelected = async () => {
-    if (!user || selectedContactIds.length === 0) return;
-    
+  const handleConfirmBulkDelete = async () => {
+    if (selectedContactIds.length === 0) return;
     try {
       await deleteContacts(selectedContactIds);
       setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
@@ -269,233 +427,7 @@ export function ContactsView() {
         setIsBulkDeleteAlertOpen(false);
     }
   };
-  
-  const handleDeleteFolder = (folder: FolderData) => {
-      setFolderToDelete(folder);
-  };
-  
-  const handleMergeClick = (contact: Contact) => {
-    setContactToMerge(contact);
-    setIsMergeDialogOpen(true);
-  };
 
-  const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
-    try {
-        await mergeContacts(sourceContactId, masterContactId);
-        setContacts(prev => prev.filter(c => c.id !== sourceContactId));
-        toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
-    }
-  };
-
-
-  const handleConfirmDeleteFolder = async () => {
-    if (!user || !folderToDelete) return;
-    
-    const allFoldersIncludingChildren = (function getDescendants(parentId: string, all: FolderData[]): string[] {
-        const children = all.filter(f => f.parentId === parentId).map(f => f.id);
-        return [parentId, ...children.flatMap(childId => getDescendants(childId, all))];
-    })(folderToDelete.id, folders);
-
-    try {
-        const filesToDelete = contacts.filter(f => allFoldersIncludingChildren.includes(f.folderId));
-        if (filesToDelete.length > 0) {
-            await deleteContacts(filesToDelete.map(f => f.id));
-        }
-
-        await deleteFolders(allFoldersIncludingChildren);
-        
-        setFolders(prev => prev.filter(f => !allFoldersIncludingChildren.includes(f.id)));
-        setContacts(prev => prev.filter(c => !allFoldersIncludingChildren.includes(c.folderId)));
-        
-        if (allFoldersIncludingChildren.includes(selectedFolderId)) setSelectedFolderId('all');
-        
-        toast({ title: "Folder and its contents deleted" });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Delete Failed", description: error.message });
-    } finally {
-        setFolderToDelete(null);
-    }
-  };
-
-
-  const handleStartRename = (folder: FolderData) => {
-    setRenamingFolder(folder);
-    setRenameInputValue(folder.name);
-  };
-
-  const handleCancelRename = () => {
-    setRenamingFolder(null);
-    setRenameInputValue("");
-  };
-
-  const handleConfirmRename = async () => {
-    if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
-      handleCancelRename();
-      return;
-    }
-
-    try {
-      await updateFolder(renamingFolder.id, { name: renameInputValue.trim() });
-      setFolders(prev => prev.map(f => f.id === renamingFolder.id ? { ...f, name: renameInputValue.trim() } : f));
-      toast({ title: "Folder Renamed" });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Rename Failed", description: error.message });
-    } finally {
-      handleCancelRename();
-    }
-  };
-  
-  const handleContactDrop = async (contact: Contact, newFolderId: string) => {
-    if (contact.folderId === newFolderId) return;
-
-    try {
-        const updatedContactData = { ...contact, folderId: newFolderId };
-        await updateContact(contact.id, { folderId: newFolderId });
-        setContacts(prev => prev.map(c => c.id === contact.id ? updatedContactData : c));
-        const folder = folders.find(f => f.id === newFolderId);
-        toast({ title: "Contact Moved", description: `"${contact.name}" moved to "${folder?.name}".` });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Move Failed", description: error.message });
-    }
-  };
-
-  const handleFolderDrop = async (folder: FolderData, newParentId: string | null) => {
-    if (folder.id === newParentId) return; // Can't drop on self
-    if (folder.parentId === newParentId) return; // Already in the target folder
-
-    // Prevent dropping a folder into one of its own descendants
-    let currentParentId = newParentId;
-    while(currentParentId) {
-        if (currentParentId === folder.id) {
-            toast({ variant: "destructive", title: "Invalid Move", description: "You cannot move a folder into one of its own subfolders." });
-            return;
-        }
-        const parent = folders.find(f => f.id === currentParentId);
-        currentParentId = parent?.parentId || null;
-    }
-
-    try {
-        await updateFolder(folder.id, { parentId: newParentId });
-        setFolders(prev => prev.map(f => f.id === folder.id ? { ...f, parentId: newParentId } : f));
-        const parentFolder = folders.find(f => f.id === newParentId);
-        toast({ title: "Folder Moved", description: `"${folder.name}" moved to "${parentFolder?.name || 'Root'}".` });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Move Failed", description: error.message });
-    }
-  };
-
-  const DraggableTableRow = ({ contact, children }: { contact: Contact, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
-        type: ItemTypes.CONTACT,
-        item: contact,
-        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    }));
-    return (
-      <TableRow ref={drag} className={cn(isDragging && "opacity-50", "cursor-grab")}>
-        {children}
-      </TableRow>
-    );
-  };
-
-  const handleSelectFolder = (folderId: string) => {
-    setSelectedFolderId(folderId);
-    setSelectedContactIds([]);
-  };
-
-  const handleOpenNewFolderDialog = (parentId: string | null) => {
-    setNewFolderParentId(parentId);
-    setNewFolderName('');
-    setIsNewFolderDialogOpen(true);
-  };
-  
-  const handleCreateFolder = async () => {
-    if (!user || !newFolderName.trim()) return;
-    try {
-        const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: newFolderParentId });
-        setFolders(prev => [...prev, newFolder]);
-        handleSelectFolder(newFolder.id);
-    } catch(e: any) { toast({ variant: "destructive", title: "Failed", description: (e as Error).message }); }
-    finally { setIsNewFolderDialogOpen(false); setNewFolderName(""); }
-  };
-
-  const FolderTreeItem = ({ folder, allFolders, level = 0 }: { folder: FolderData, allFolders: FolderData[], level?: number }) => {
-    const hasChildren = allFolders.some(f => f.parentId === folder.id);
-    const isExpanded = expandedFolders.has(folder.id);
-    const isRenaming = renamingFolder?.id === folder.id;
-
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
-      type: ItemTypes.FOLDER,
-      item: { ...folder, type: ItemTypes.FOLDER },
-      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    }));
-
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
-      accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
-      drop: (item: DroppableItem) => {
-        if (item.type === ItemTypes.FOLDER) {
-          handleFolderDrop(item, folder.id);
-        } else {
-          handleContactDrop(item, folder.id);
-        }
-      },
-      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
-    }));
-
-    return (
-      <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
-        <div
-          ref={node => drag(drop(node))}
-          className={cn(
-            "flex items-center justify-between rounded-md h-9 group",
-            isRenaming ? 'bg-background' : 'hover:bg-accent',
-            (isOver && canDrop) && 'bg-primary/20 ring-1 ring-primary',
-            isDragging && 'opacity-50',
-            selectedFolderId === folder.id && !isRenaming && 'bg-accent'
-          )}
-        >
-            <div className="flex-1 flex items-center min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && handleSelectFolder(folder.id)}>
-                {hasChildren ? (
-                  <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); setExpandedFolders(p => { const n = new Set(p); n.has(folder.id) ? n.delete(folder.id) : n.add(folder.id); return n; }); }} />
-                ) : (
-                  <div className="w-4 h-4 shrink-0" />
-                )}
-                <Folder className="h-4 w-4 text-primary ml-1 shrink-0" />
-                {isRenaming ? (
-                  <Input autoFocus value={renameInputValue} onChange={e => setRenameInputValue(e.target.value)} onBlur={handleConfirmRename} onKeyDown={e => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') handleCancelRename(); }} className="h-7" onClick={e => e.stopPropagation()} />
-                ) : (
-                  <span className="truncate ml-2 text-sm">{folder.name}</span>
-                )}
-            </div>
-            <div className="flex items-center">
-                {folder.driveLink && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
-                    <ExternalLink className="h-4 w-4 text-blue-500" />
-                  </Button>
-                )}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 px-1.5">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onSelect={() => handleOpenNewFolderDialog(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleStartRename(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </div>
-        {isExpanded && allFolders.filter(f => f.parentId === folder.id).sort((a,b) => a.name.localeCompare(b.name)).map(child => (
-            <FolderTreeItem key={child.id} folder={child} allFolders={allFolders} level={level + 1} />
-        ))}
-      </div>
-    );
-  };
-  
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -511,16 +443,14 @@ export function ContactsView() {
           <h1 className="text-3xl font-bold font-headline text-primary">
             Ogeemo Contact Manager
           </h1>
-          <p className="text-muted-foreground">
-            Manage your contacts and client relationships
-          </p>
+          <p className="text-muted-foreground">Manage your contacts and client relationships</p>
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
             <ResizablePanel defaultSize={25} minSize={20}>
               <div className="flex h-full flex-col p-2">
                   <div className="p-2">
-                      <Button className="w-full" onClick={() => handleOpenNewFolderDialog(null)}>
+                      <Button className="w-full" onClick={() => { setNewFolderParentId(null); setNewFolderName(''); setIsNewFolderDialogOpen(true); }}>
                           <FolderPlus className="mr-2 h-4 w-4" /> New Folder
                       </Button>
                   </div>
@@ -534,7 +464,24 @@ export function ContactsView() {
                           <span>All Contacts</span>
                       </Button>
                       {folders.filter(f => !f.parentId).sort((a,b) => a.name.localeCompare(b.name)).map(folder => (
-                        <FolderTreeItem key={folder.id} folder={folder} allFolders={folders} />
+                        <FolderTreeItem 
+                            key={folder.id} 
+                            folder={folder} 
+                            allFolders={folders} 
+                            selectedFolderId={selectedFolderId}
+                            expandedFolders={expandedFolders}
+                            onSelectFolder={handleSelectFolder}
+                            onToggleExpand={handleToggleExpand}
+                            onRenameStart={(f) => { setRenamingFolder(f); setRenameInputValue(f.name); }}
+                            onDrop={handleDrop}
+                            onAddSubfolder={(parentId) => { setNewFolderParentId(parentId); setNewFolderName(''); setIsNewFolderDialogOpen(true); }}
+                            onDelete={setFolderToDelete}
+                            renamingFolderId={renamingFolder?.id || null}
+                            renameInputValue={renameInputValue}
+                            onRenameChange={setRenameInputValue}
+                            onRenameConfirm={handleRenameConfirm}
+                            onRenameCancel={() => setRenamingFolder(null)}
+                        />
                       ))}
                   </nav>
               </div>
@@ -566,7 +513,6 @@ export function ContactsView() {
                                     <Checkbox
                                       onCheckedChange={handleToggleSelectAll}
                                       checked={allVisibleSelected}
-                                      aria-label="Select all contacts"
                                     />
                                   </TableHead>
                                   <TableHead>Name</TableHead>
@@ -581,13 +527,16 @@ export function ContactsView() {
                                 const folderName = folders.find(f => f.id === contact.folderId)?.name || 'Unassigned';
                                 const primaryPhoneNumber = contact.primaryPhoneType && contact[contact.primaryPhoneType] ? contact[contact.primaryPhoneType] : contact.cellPhone || contact.businessPhone || contact.homePhone;
                                 return (
-                                  <DraggableTableRow key={contact.id} contact={contact}>
+                                  <DraggableTableRow 
+                                    key={contact.id} 
+                                    contact={contact} 
+                                    isSelected={selectedContactIds.includes(contact.id)}
+                                    onToggleSelect={() => handleToggleSelect(contact.id)}
+                                    onEdit={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}
+                                  >
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">
-                                        <button 
-                                          className="text-left hover:underline" 
-                                          onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}
-                                        >
+                                        <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
                                           {contact.name}
                                         </button>
                                       </TableCell>
@@ -601,7 +550,7 @@ export function ContactsView() {
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleMergeClick(contact)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
-                                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.preventDefault(); setContactToDelete(contact); }}> <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}> <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>
@@ -624,59 +573,41 @@ export function ContactsView() {
             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
             <div className="py-4">
               <Label htmlFor="folder-name-new">Name</Label>
-              <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') await handleCreateFolder() }} />
+              <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') {
+                  const newFolder = await addFolder({ name: newFolderName.trim(), userId: user!.uid, parentId: newFolderParentId });
+                  setFolders(prev => [...prev, newFolder]);
+                  setIsNewFolderDialogOpen(false);
+              }}} />
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreateFolder}>Create</Button>
+              <Button onClick={async () => {
+                  const newFolder = await addFolder({ name: newFolderName.trim(), userId: user!.uid, parentId: newFolderParentId });
+                  setFolders(prev => [...prev, newFolder]);
+                  setIsNewFolderDialogOpen(false);
+              }}>Create</Button>
             </DialogFooter>
           </DialogContent>
       </Dialog>
       
       <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This will permanently delete the folder "{folderToDelete?.name}" and all of its subfolders and contacts. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and contacts?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
       <AlertDialog open={!!contactToDelete} onOpenChange={() => setContactToDelete(null)}>
           <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      This action will permanently delete the contact "{contactToDelete?.name}". This action cannot be undone.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-              </AlertDialogFooter>
+              <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{contactToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
+              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
       
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete {selectedContactIds.length} contact(s). This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
+            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} contact(s)?</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 

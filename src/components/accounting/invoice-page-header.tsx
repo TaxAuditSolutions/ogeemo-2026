@@ -19,7 +19,7 @@ interface AccountingPageHeaderProps {
   hubLabel?: string;
 }
 
-export function AccountingPageHeader({ pageTitle, hubPath = "/accounting/accounts-receivable", hubLabel = "Accounts Receivable" }: AccountingPageHeaderProps) {
+export function InvoicePageHeader({ pageTitle, hubPath = "/accounting/accounts-receivable", hubLabel = "Accounts Receivable" }: AccountingPageHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <Breadcrumb>

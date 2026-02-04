@@ -79,6 +79,10 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
   ),
 });
 
+const MergeContactsDialog = dynamic(() => import('@/components/contacts/MergeContactsDialog'), {
+  ssr: false,
+});
+
 const ItemTypes = {
   CONTACT: 'contact',
   FOLDER: 'folder',
@@ -88,7 +92,7 @@ type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'f
 
 // --- Externalized Sub-components ---
 
-const DraggableTableRow = ({ contact, children, onEdit, onToggleSelect, isSelected }: { contact: Contact, children: React.ReactNode, onEdit: () => void, onToggleSelect: () => void, isSelected: boolean }) => {
+const DraggableTableRow = ({ contact, children }: { contact: Contact, children: React.ReactNode }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
@@ -260,31 +264,6 @@ export function ContactsView() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const selectedFolder = useMemo(
-    () => folders.find((f) => f && f.id === selectedFolderId),
-    [folders, selectedFolderId]
-  );
-
-  const displayedContacts = useMemo(
-    () => {
-        if (selectedFolderId === 'all') return contacts;
-        const getDescendantFolderIds = (folderId: string): string[] => {
-            let ids = [folderId];
-            const children = folders.filter(f => f.parentId === folderId);
-            children.forEach(child => {
-                ids = [...ids, ...getDescendantFolderIds(child.id)];
-            });
-            return ids;
-        };
-
-        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
-        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
-    },
-    [contacts, folders, selectedFolderId]
-  );
-
-  const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
-  
   const loadData = useCallback(async () => {
     if (!user) {
         setIsLoading(false);
@@ -318,6 +297,31 @@ export function ContactsView() {
     loadData();
   }, [loadData]);
 
+  const selectedFolder = useMemo(
+    () => folders.find((f) => f && f.id === selectedFolderId),
+    [folders, selectedFolderId]
+  );
+
+  const displayedContacts = useMemo(
+    () => {
+        if (selectedFolderId === 'all') return contacts;
+        const getDescendantFolderIds = (folderId: string): string[] => {
+            let ids = [folderId];
+            const children = folders.filter(f => f.parentId === folderId);
+            children.forEach(child => {
+                ids = [...ids, ...getDescendantFolderIds(child.id)];
+            });
+            return ids;
+        };
+
+        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
+        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
+    },
+    [contacts, folders, selectedFolderId]
+  );
+
+  const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
+  
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolderId(folderId);
     setSelectedContactIds([]);
@@ -428,6 +432,48 @@ export function ContactsView() {
     }
   };
 
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+      } else {
+          setContacts(prev => [savedContact, ...prev]);
+      }
+      setIsContactFormOpen(false);
+  };
+
+  const handleMergeClick = (contact: Contact) => {
+    setContactToMerge(contact);
+    setIsMergeDialogOpen(true);
+  };
+
+  const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
+    try {
+        await mergeContacts(sourceContactId, masterContactId);
+        setContacts(prev => prev.filter(c => c.id !== sourceContactId));
+        toast({ title: "Merge Successful", description: "The contact has been merged and the duplicate was removed." });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+    }
+  };
+
+  const handleCreateFolder = async () => {
+      if (!user || !newFolderName.trim()) return;
+      try {
+          const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: newFolderParentId });
+          setFolders(prev => [...prev, newFolder]);
+          toast({ title: "Folder Created" });
+          setIsNewFolderDialogOpen(false);
+      } catch (error: any) {
+          toast({ variant: "destructive", title: "Failed to create folder", description: error.message });
+      }
+  };
+
+  const handleOpenNewFolderDialog = (parentId: string | null) => {
+      setNewFolderParentId(parentId);
+      setNewFolderName('');
+      setIsNewFolderDialogOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -450,7 +496,7 @@ export function ContactsView() {
             <ResizablePanel defaultSize={25} minSize={20}>
               <div className="flex h-full flex-col p-2">
                   <div className="p-2">
-                      <Button className="w-full" onClick={() => { setNewFolderParentId(null); setNewFolderName(''); setIsNewFolderDialogOpen(true); }}>
+                      <Button className="w-full" onClick={() => handleOpenNewFolderDialog(null)}>
                           <FolderPlus className="mr-2 h-4 w-4" /> New Folder
                       </Button>
                   </div>
@@ -474,7 +520,7 @@ export function ContactsView() {
                             onToggleExpand={handleToggleExpand}
                             onRenameStart={(f) => { setRenamingFolder(f); setRenameInputValue(f.name); }}
                             onDrop={handleDrop}
-                            onAddSubfolder={(parentId) => { setNewFolderParentId(parentId); setNewFolderName(''); setIsNewFolderDialogOpen(true); }}
+                            onAddSubfolder={handleOpenNewFolderDialog}
                             onDelete={setFolderToDelete}
                             renamingFolderId={renamingFolder?.id || null}
                             renameInputValue={renameInputValue}
@@ -530,9 +576,6 @@ export function ContactsView() {
                                   <DraggableTableRow 
                                     key={contact.id} 
                                     contact={contact} 
-                                    isSelected={selectedContactIds.includes(contact.id)}
-                                    onToggleSelect={() => handleToggleSelect(contact.id)}
-                                    onEdit={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}
                                   >
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">
@@ -573,19 +616,11 @@ export function ContactsView() {
             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
             <div className="py-4">
               <Label htmlFor="folder-name-new">Name</Label>
-              <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') {
-                  const newFolder = await addFolder({ name: newFolderName.trim(), userId: user!.uid, parentId: newFolderParentId });
-                  setFolders(prev => [...prev, newFolder]);
-                  setIsNewFolderDialogOpen(false);
-              }}} />
+              <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') handleCreateFolder() }} />
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button>
-              <Button onClick={async () => {
-                  const newFolder = await addFolder({ name: newFolderName.trim(), userId: user!.uid, parentId: newFolderParentId });
-                  setFolders(prev => [...prev, newFolder]);
-                  setIsNewFolderDialogOpen(false);
-              }}>Create</Button>
+              <Button onClick={handleCreateFolder}>Create</Button>
             </DialogFooter>
           </DialogContent>
       </Dialog>

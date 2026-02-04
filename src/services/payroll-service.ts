@@ -17,7 +17,6 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { type Worker, mockWorkers } from '@/data/payroll';
 import { addExpenseTransaction } from './accounting-service';
-import { getRemittances as getPayrollRemittances, addRemittance } from './payroll-service';
 
 
 const WORKERS_COLLECTION = 'payrollWorkers';
@@ -162,6 +161,12 @@ export async function getRemittances(userId: string): Promise<PayrollRemittance[
     const q = query(collection(db, REMITTANCES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToRemittance).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+}
+
+export async function addRemittance(data: Omit<PayrollRemittance, 'id'>): Promise<PayrollRemittance> {
+    const db = getDb();
+    const docRef = await addDoc(collection(db, REMITTANCES_COLLECTION), data);
+    return { id: docRef.id, ...data };
 }
 
 export async function updateRemittance(id: string, data: Partial<Omit<PayrollRemittance, 'id' | 'userId'>>): Promise<void> {

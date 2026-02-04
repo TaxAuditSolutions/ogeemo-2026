@@ -43,14 +43,13 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getWorkers, type Worker, savePayrollRun, deleteWorker, mergeWorkers, deleteWorkers } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, deleteWorkers, type Worker } from '@/services/payroll-service';
 import { type Event as TaskEvent } from '@/types/calendar';
-import { isWithinInterval } from 'date-fns';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
@@ -92,11 +91,11 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
 
 export function RunPayrollView() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
-  const [allTasks, setAllTasks] = useState<TaskEvent[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [payPeriod, setPayPeriod] = useState<DateRange | undefined>(undefined);
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
+  
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
   const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
@@ -107,6 +106,25 @@ export function RunPayrollView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  const loadData = useCallback(async () => {
+    if (!user) { setIsLoading(false); return; }
+    setIsLoading(true);
+    try {
+        const fetchedEmployees = await getWorkers(user.uid);
+        setEmployees(fetchedEmployees.map(e => ({ 
+            ...e, 
+            grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined 
+        })));
+        setSelectedEmployeeIds([]);
+    } catch (e: any) { 
+        toast({ variant: 'destructive', title: 'Error', description: e.message }); 
+    } finally { 
+        setIsLoading(false); 
+    }
+  }, [user, toast]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const selectedEmployees = useMemo(() => employees.filter((e) => selectedEmployeeIds.includes(e.id)), [employees, selectedEmployeeIds]);
   const payrollSummary = useMemo(() => selectedEmployees.map((emp) => {
@@ -119,45 +137,222 @@ export function RunPayrollView() {
   const totalDeductions = useMemo(() => payrollSummary.reduce((sum, emp) => sum + emp.deductions, 0), [payrollSummary]);
   const totalNetPay = useMemo(() => payrollSummary.reduce((sum, emp) => sum + emp.netPay, 0), [payrollSummary]);
 
-  const loadData = useCallback(async () => {
-    if (!user) { setIsLoading(false); return; }
-    setIsLoading(true);
-    try {
-        const [fetchedEmployees, fetchedTasks] = await Promise.all([getWorkers(user.uid), Promise.resolve([] as TaskEvent[])]);
-        setEmployees(fetchedEmployees.map(e => ({ ...e, grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined })));
-        setSelectedEmployeeIds([]);
-    } catch (e: any) { toast({ variant: 'destructive', title: 'Error', description: e.message }); }
-    finally { setIsLoading(false); }
-  }, [user, toast]);
+  const handleOpenWorkerForm = (worker: Worker | null = null) => {
+      setWorkerToEdit(worker);
+      setIsWorkerFormOpen(true);
+  };
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const handleWorkerSave = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
+      if (!user) return;
+      try {
+          await addWorker({ ...workerData, userId: user.uid });
+          toast({ title: "Worker Added" });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      }
+  };
+
+  const handleWorkerUpdate = async (workerId: string, workerData: Partial<Omit<Worker, 'id' | 'userId'>>) => {
+      try {
+          await updateWorker(workerId, workerData);
+          toast({ title: "Worker Updated" });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
+  };
+
+  const handleDeleteWorker = (worker: Worker) => {
+      setWorkerToDelete(worker);
+  };
+
+  const handleConfirmDeleteWorker = async () => {
+      if (!workerToDelete) return;
+      try {
+          await deleteWorker(workerToDelete.id);
+          toast({ title: "Worker Deleted" });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+      } finally {
+          setWorkerToDelete(null);
+      }
+  };
+
+  const handleMergeClick = (worker: Worker) => {
+      setWorkerToMerge(worker);
+      setIsMergeDialogOpen(true);
+  };
+
+  const handleConfirmMerge = async (sourceId: string, targetId: string) => {
+      try {
+          await mergeWorkers(sourceId, targetId);
+          toast({ title: "Records Merged" });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+      } finally {
+          setIsMergeDialogOpen(false);
+          setWorkerToMerge(null);
+      }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+      if (!user || selectedEmployeeIds.length === 0) return;
+      try {
+          await deleteWorkers(selectedEmployeeIds);
+          toast({ title: "Workers Deleted" });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Bulk Delete Failed', description: error.message });
+      } finally {
+          setIsBulkDeleteAlertOpen(false);
+      }
+  };
+
+  const handleRunPayroll = async () => {
+      if (!user || !payPeriod?.from || !payPeriod?.to || selectedEmployeeIds.length === 0) {
+          toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a period and at least one worker.' });
+          return;
+      }
+
+      setPayrollStatus('processing');
+      try {
+          await savePayrollRun({
+              userId: user.uid,
+              payPeriodStart: payPeriod.from,
+              payPeriodEnd: payPeriod.to,
+              payDate: new Date(),
+              totalGrossPay,
+              totalDeductions,
+              totalNetPay,
+              employeeCount: selectedEmployeeIds.length,
+              details: payrollSummary.map(emp => ({
+                  employeeId: emp.id,
+                  employeeName: emp.name,
+                  grossPay: emp.grossPay,
+                  deductions: emp.deductions,
+                  netPay: emp.netPay,
+              }))
+          });
+          setPayrollStatus('completed');
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Payroll Failed', description: error.message });
+          setPayrollStatus('idle');
+      }
+  };
 
   if (isLoading) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
   if (payrollStatus === 'completed') return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} payPeriod={payPeriod} />;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <header className="text-center">
+    <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
+      <header className="text-center relative w-full max-w-5xl">
         <h1 className="text-3xl font-bold font-headline text-primary">Run Payroll</h1>
+        <p className="text-muted-foreground">Select a pay period and workers to begin.</p>
+        <div className="absolute top-0 right-0">
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/accounting/payroll"><X className="h-5 w-5"/></Link>
+            </Button>
+        </div>
       </header>
-      <Card>
-        <CardHeader><CardTitle>Step 1: Select Pay Period & Workers</CardTitle></CardHeader>
-        <CardContent>
-            {/* Minimal UI for Brevity */}
-            <p className="text-sm text-muted-foreground">Select period and employees to pay.</p>
-            <div className="mt-4 flex gap-4">
-                {employees.map(emp => (
-                    <div key={emp.id} className="flex items-center gap-2">
-                        <Checkbox checked={selectedEmployeeIds.includes(emp.id)} onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))} />
-                        <Label>{emp.name}</Label>
+
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 space-y-6">
+            <Card>
+                <CardHeader><CardTitle>1. Select Pay Period</CardTitle></CardHeader>
+                <CardContent>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !payPeriod && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {payPeriod?.from ? (payPeriod.to ? `${format(payPeriod.from, "LLL dd")} - ${format(payPeriod.to, "LLL dd, y")}` : format(payPeriod.from, "LLL dd, y")) : "Select dates..."}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={payPeriod?.from} onSelect={(d) => setPayPeriod({ from: d, to: addDays(d!, 13) })} initialFocus /></PopoverContent>
+                    </Popover>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <CardTitle>2. Select Workers</CardTitle>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenWorkerForm()}><Plus className="h-4 w-4"/></Button>
                     </div>
-                ))}
-            </div>
-        </CardContent>
-        <CardFooter className="justify-center">
-            <Button disabled={selectedEmployeeIds.length === 0} onClick={() => setPayrollStatus('completed')}>Process Payroll for {selectedEmployeeIds.length} Workers</Button>
-        </CardFooter>
-      </Card>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {employees.map(emp => (
+                        <div key={emp.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted group">
+                            <div className="flex items-center gap-2">
+                                <Checkbox checked={selectedEmployeeIds.includes(emp.id)} onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))} />
+                                <Label className="cursor-pointer">{emp.name}</Label>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="lg:col-span-2">
+            <Card className="h-full flex flex-col">
+                <CardHeader><CardTitle>3. Review & Submit</CardTitle></CardHeader>
+                <CardContent className="flex-1">
+                    {selectedEmployees.length > 0 ? (
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Deductions</TableHead><TableHead className="text-right">Net</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {payrollSummary.map(emp => (
+                                    <TableRow key={emp.id}><TableCell>{emp.name}</TableCell><TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell><TableCell className="text-right font-mono">{formatCurrency(emp.deductions)}</TableCell><TableCell className="text-right font-mono font-bold">{formatCurrency(emp.netPay)}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow><TableCell className="font-bold">Totals</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalDeductions)}</TableCell><TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell></TableRow>
+                            </TableFooter>
+                        </Table>
+                    ) : <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg"><p>No workers selected. Use the list on the left to add them to this payroll run.</p></div>}
+                </CardContent>
+                <CardFooter className="border-t p-6">
+                    <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing'} onClick={handleRunPayroll}>
+                        {payrollStatus === 'processing' ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <Calculator className="mr-2 h-4 w-4"/>}
+                        {payrollStatus === 'processing' ? 'Processing...' : `Submit Payroll for ${selectedEmployeeIds.length} Workers`}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+      </div>
+
+      <WorkerFormDialog 
+          isOpen={isWorkerFormOpen} 
+          onOpenChange={setIsWorkerFormOpen} 
+          workerToEdit={workerToEdit} 
+          onWorkerSave={handleWorkerSave} 
+          onWorkerUpdate={handleWorkerUpdate}
+      />
+
+      <MergeWorkerDialog
+          isOpen={isMergeDialogOpen}
+          onOpenChange={setIsMergeDialogOpen}
+          sourceWorker={workerToMerge!}
+          allWorkers={employees}
+          onMergeConfirm={handleConfirmMerge}
+      />
+
+      <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker record for "{workerToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
+              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteWorker} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

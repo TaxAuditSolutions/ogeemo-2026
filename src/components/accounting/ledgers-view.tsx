@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -120,7 +119,7 @@ export function LedgersView() {
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { preferences } = useUserPreferences();
+  const { preferences, updatePreferences } = useUserPreferences();
   const searchParams = useSearchParams();
   const highlightedId = searchParams.get('highlight');
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
@@ -292,6 +291,17 @@ export function LedgersView() {
           return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
       }
       return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+  };
+
+  const handleSetDefaultTaxRate = () => {
+      const rate = parseFloat(newTransaction.taxRate);
+      if (!isNaN(rate)) {
+          updatePreferences({ defaultTaxRate: rate });
+          toast({
+              title: "Default Rate Saved",
+              description: `${rate}% is now your default tax rate.`
+          });
+      }
   };
 
   if (isLoading) {
@@ -489,8 +499,13 @@ export function LedgersView() {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <div className="flex flex-col items-end">
                                 <Label htmlFor="tx-taxRate-gl" className="text-right">Tax Rate (%)</Label>
-                                <Button variant="link" asChild className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary">
-                                    <Link href="/settings">Change Default</Link>
+                                <Button 
+                                    type="button" 
+                                    variant="link" 
+                                    className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary"
+                                    onClick={handleSetDefaultTaxRate}
+                                >
+                                    Set as default
                                 </Button>
                             </div>
                             <div className="relative col-span-3">

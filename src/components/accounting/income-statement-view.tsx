@@ -11,9 +11,8 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer, Info } from 'lucide-react';
+import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer, Info, FileText } from 'lucide-react';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -24,6 +23,8 @@ import { T2125FormDisplay } from './income-statement-form-display';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from '@/components/ui/label';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export interface CalculatedT2125Data {
   businessIncome: { sales: number; other: number; gross: number; };
@@ -39,6 +40,10 @@ export function IncomeStatementView() {
   const [expenses, setExpenses] = useState<ExpenseTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfYear(new Date()), to: endOfYear(new Date()) });
+  
+  const [isStartPickerOpen, setIsStartPickerOpen] = useState(false);
+  const [isEndPickerOpen, setIsEndPickerOpen] = useState(false);
+
   const { handlePrint, contentRef } = useReactToPrint();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -79,11 +84,9 @@ export function IncomeStatementView() {
     const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
 
     filteredIncome.forEach(tx => {
-        // Matches standard line number OR a custom category starting with C-
         if (tx.incomeCategory === primaryIncomeLine || tx.incomeCategory?.startsWith('C-')) {
             sales += tx.totalAmount;
         } else {
-            // Check if it matches any other standard income line (though Part 3 usually only has one main one)
             otherIncome += tx.totalAmount;
         }
     });
@@ -101,7 +104,6 @@ export function IncomeStatementView() {
         if (category) {
             expenseTotals[category.key] += tx.totalAmount;
         } else {
-            // Fallback for custom or misaligned categories
             expenseTotals.otherExpenses += tx.totalAmount;
         }
     });
@@ -134,22 +136,60 @@ export function IncomeStatementView() {
             </AlertDescription>
         </Alert>
 
-        <div className="flex justify-center gap-2 mb-4 print:hidden">
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? ( dateRange.to ? ( <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</> ) : ( format(dateRange.from, "LLL dd, y") ) ) : ( <span>Pick a date range</span> )}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
-                </PopoverContent>
-            </Popover>
-            <Button variant="secondary" onClick={() => setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) })}>This Year</Button>
-            <Button variant="secondary" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
-            <Button variant="ghost" onClick={() => setDateRange(undefined)}><FilterX className="mr-2 h-4 w-4"/>Clear</Button>
-            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print Report</Button>
+        <div className="flex flex-wrap items-end justify-center gap-4 mb-4 print:hidden">
+            <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <CustomCalendar 
+                            mode="single" 
+                            selected={dateRange?.from} 
+                            onSelect={(date) => { 
+                                setDateRange(prev => ({ from: date, to: prev?.to })); 
+                                setIsStartPickerOpen(false); 
+                            }} 
+                            initialFocus 
+                        />
+                    </PopoverContent>
+                </Popover>
+            </div>
+
+            <div className="space-y-2">
+                <Label>End Date</Label>
+                <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <CustomCalendar 
+                            mode="single" 
+                            selected={dateRange?.to} 
+                            onSelect={(date) => { 
+                                setDateRange(prev => ({ from: prev?.from, to: date })); 
+                                setIsEndPickerOpen(false); 
+                            }} 
+                            disabled={(date) => dateRange?.from ? date < dateRange.from : false}
+                            initialFocus 
+                        />
+                    </PopoverContent>
+                </Popover>
+            </div>
+
+            <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) })}>This Year</Button>
+                <Button variant="secondary" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+                <Button variant="ghost" onClick={() => setDateRange(undefined)}><FilterX className="mr-2 h-4 w-4"/>Clear</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print Report</Button>
+            </div>
         </div>
 
         {calculatedData ? (

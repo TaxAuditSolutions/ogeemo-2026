@@ -59,7 +59,7 @@ import {
     getExpenseTransactions, addExpenseTransaction, updateExpenseTransaction, deleteExpenseTransaction, type ExpenseTransaction, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
-    getCompanies, // Kept for dialog support but not used for selection
+    getCompanies, 
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -69,7 +69,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar } from "@/components/ui/calendar";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 
@@ -110,7 +110,6 @@ export function LedgersView() {
   const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense'>('income');
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
   
-  // Contact Dialog State
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
   const [contactSearchValue, setContactSearchValue] = React.useState('');
@@ -396,7 +395,7 @@ export function LedgersView() {
                                         {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
+                                <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
                             </Popover>
                         </div>
 

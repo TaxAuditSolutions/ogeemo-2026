@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -15,7 +14,6 @@ import {
   Timestamp,
   getDoc,
   setDoc,
-  orderBy,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
@@ -117,7 +115,6 @@ const docToTemplate = (doc: any): ProjectTemplate => ({ id: doc.id, ...doc.data(
 const docToFolder = (doc: any): ProjectFolder => ({ id: doc.id, ...doc.data() } as ProjectFolder);
 const iconMap: { [key: string]: LucideIcon } = {
   Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
-  // Add accounting icons here
   FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users,
 };
 const docToActionChip = (chipData: any): ActionChipData => {
@@ -152,7 +149,7 @@ export async function addProjectFolder(folderData: Omit<ProjectFolder, 'id'>): P
 
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
-  const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
+  const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToProject).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
@@ -564,7 +561,11 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
             hr: hrMenuItems,
         };
         const defaultSource = defaultSourceMap[type];
-        return defaultSource.map((c, index) => ({...c, id: `default-${c.label}-${index}`, userId}));
+        return defaultSource.map((c) => ({
+            ...c, 
+            id: `default-${typeof c.href === 'string' ? c.href : c.href.pathname}`, 
+            userId
+        }));
     }
     
     return getChipsFromCollection(userId, collectionName);
@@ -583,44 +584,40 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
 
+    // CRITICAL: Always filter against current Active chips to prevent "active items showing in available"
     const userActionChips = await getActionChips(userId, type);
     const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
 
-    if (!docSnap.exists()) {
-        const defaultSourceMap = {
-            dashboard: allMenuItems,
-            accounting: accountingMenuItems,
-            hr: hrMenuItems,
-        };
-        const defaultSource = defaultSourceMap[type];
-        return defaultSource
-            .filter(item => {
-                const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
-                return !usedHrefs.has(hrefString);
-            })
-            .map(item => ({ ...item, id: `default-${item.href}`, userId }));
-    }
-    
-    const customAvailable = await getChipsFromCollection(userId, collectionName);
-    
     const defaultSourceMap = {
         dashboard: allMenuItems,
         accounting: accountingMenuItems,
         hr: hrMenuItems,
     };
     const defaultSource = defaultSourceMap[type];
-    
-    const defaultAvailable = defaultSource
+
+    const getDefaultsNotUsed = () => defaultSource
         .filter(item => {
             const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
             return !usedHrefs.has(hrefString);
         })
-        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+        .map(item => ({ ...item, id: `default-${typeof item.href === 'string' ? item.href : item.href.pathname}`, userId }));
 
-    const combined = [...customAvailable];
-    const customHrefs = new Set(customAvailable.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
+    if (!docSnap.exists()) {
+        return getDefaultsNotUsed();
+    }
+    
+    const customAvailable = await getChipsFromCollection(userId, collectionName);
+    
+    // Filter custom available items to ensure they aren't active
+    const filteredCustomAvailable = customAvailable.filter(item => {
+        const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
+        return !usedHrefs.has(hrefString);
+    });
 
-    defaultAvailable.forEach(item => {
+    const combined = [...filteredCustomAvailable];
+    const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
+
+    getDefaultsNotUsed().forEach(item => {
         const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
         if (!customHrefs.has(hrefString)) {
             combined.push(item);

@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
 import {
   Card,
@@ -45,7 +46,7 @@ import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X } from "lucide-react";
+import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -70,12 +71,21 @@ import Link from "next/link";
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
-const emptyTransactionForm = { date: '', company: '', description: '', totalAmount: '', taxRate: '', preTaxAmount: '', taxAmount: '', category: '', incomeCategory: '', explanation: '', documentNumber: '', documentUrl: '', type: 'business' as 'business' | 'personal', depositedTo: '' };
-
-const tabTitles: Record<string, string> = {
-    bks: 'BKS (General Ledger)',
-    income: 'Income Ledger',
-    expenses: 'Expense Ledger',
+const emptyTransactionForm = { 
+    date: format(new Date(), 'yyyy-MM-dd'), 
+    company: '', 
+    description: '', 
+    totalAmount: '', 
+    taxRate: '', 
+    preTaxAmount: '', 
+    taxAmount: '', 
+    category: '', 
+    incomeCategory: '', 
+    explanation: '', 
+    documentNumber: '', 
+    documentUrl: '', 
+    type: 'business' as 'business' | 'personal', 
+    depositedTo: 'Bank Account #1' 
 };
 
 export function LedgersView() {
@@ -100,16 +110,12 @@ export function LedgersView() {
   const [showAddIncomeCategory, setShowAddIncomeCategory] = React.useState(false);
   const [newIncomeCategoryName, setNewIncomeCategoryName] = React.useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
-  const [showTotals, setShowTotals] = React.useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const filterCategory = searchParams.get('category');
   const highlightedId = searchParams.get('highlight');
-  const initialTab = searchParams.get('tab') || 'bks';
-  const [activeTab, setActiveTab] = React.useState(initialTab);
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
 
   const loadData = React.useCallback(async () => {
@@ -139,32 +145,23 @@ export function LedgersView() {
       ...incomeLedger.map(item => ({ ...item, transactionType: 'income' as const })),
       ...expenseLedger.map(item => ({ ...item, transactionType: 'expense' as const })),
     ];
-    if (filterCategory) {
-        return combined.filter(item => {
-            const itemCategory = item.transactionType === 'income' ? item.incomeCategory : item.category;
-            return itemCategory === filterCategory;
-        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }
     return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [incomeLedger, expenseLedger, filterCategory]);
+  }, [incomeLedger, expenseLedger]);
 
   const incomeTotal = React.useMemo(() => incomeLedger.reduce((sum, item) => sum + item.totalAmount, 0), [incomeLedger]);
   const expenseTotal = React.useMemo(() => expenseLedger.reduce((sum, item) => sum + item.totalAmount, 0), [expenseLedger]);
+  const netIncome = incomeTotal - expenseTotal;
 
   const handleSaveTransaction = async () => {
       if (!user) return;
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
       
-      let categoryNumber: string | undefined;
-      if (newTransactionType === 'income') {
-          categoryNumber = incomeCategories.find(c => c.name === newTransaction.incomeCategory)?.categoryNumber;
-      } else {
-          categoryNumber = expenseCategories.find(c => c.name === newTransaction.category)?.categoryNumber;
-      }
+      // CRITICAL: We now use the selection from the dropdown which stores the ID (categoryNumber)
+      const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
-      if (!newTransaction.date || !newTransaction.company || !categoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum) || totalAmountNum <= 0) {
-          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill all required fields correctly.' });
+      if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum)) {
+          toast({ variant: 'destructive', title: 'Missing Information', description: 'Please ensure Date, Company, Category, and Amount are provided.' });
           return;
       }
 
@@ -188,18 +185,18 @@ export function LedgersView() {
       try {
           if (transactionToEdit) {
               if (newTransactionType === 'income') {
-                  await updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: categoryNumber, depositedTo: newTransaction.depositedTo });
+                  await updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo });
               } else {
-                  await updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: categoryNumber });
+                  await updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: selectedCategoryNumber });
               }
               toast({ title: "Transaction Updated" });
           } else {
               if (newTransactionType === 'income') {
-                  const newEntryData: Omit<IncomeTransaction, 'id'> = { ...baseData, incomeCategory: categoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid };
+                  const newEntryData: Omit<IncomeTransaction, 'id'> = { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid };
                   await addIncomeTransaction(newEntryData);
                   toast({ title: "Income Transaction Added" });
               } else {
-                  const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: categoryNumber, userId: user.uid };
+                  const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: selectedCategoryNumber, userId: user.uid };
                   await addExpenseTransaction(newEntryData);
                   toast({ title: "Expense Transaction Added" });
               }
@@ -209,10 +206,6 @@ export function LedgersView() {
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
       }
-  };
-
-  const handleDeleteTransaction = (transaction: GeneralTransaction) => {
-      setTransactionToDelete(transaction);
   };
 
   const handleConfirmDelete = async () => {
@@ -246,37 +239,12 @@ export function LedgersView() {
       }
   };
 
-  const handleCreateExpenseCategory = async () => {
-      if (!user || !newExpenseCategoryName.trim()) return;
-      try {
-          const newCategory = await addExpenseCategory({ name: newExpenseCategoryName.trim(), userId: user.uid });
-          setExpenseCategories(prev => [...prev, newCategory]);
-          setNewTransaction(prev => ({ ...prev, category: newExpenseCategoryName.trim() }));
-          setShowAddExpenseCategory(false);
-          setNewExpenseCategoryName('');
-          toast({ title: 'Category Created' });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
-      }
-  };
-
-  const handleCreateIncomeCategory = async () => {
-      if (!user || !newIncomeCategoryName.trim()) return;
-      try {
-          const newCategory = await addIncomeCategory({ name: newIncomeCategoryName.trim(), userId: user.uid });
-          setIncomeCategories(prev => [...prev, newCategory]);
-          setNewTransaction(prev => ({ ...prev, incomeCategory: newIncomeCategoryName.trim() }));
-          setShowAddIncomeCategory(false);
-          setNewIncomeCategoryName('');
-          toast({ title: 'Category Created' });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
-      }
-  };
-
   const handleEditTransaction = (tx: GeneralTransaction) => {
       setTransactionToEdit(tx);
       setNewTransactionType(tx.transactionType);
+      
+      const currentCatNum = tx.transactionType === 'income' ? (tx as IncomeTransaction).incomeCategory : (tx as ExpenseTransaction).category;
+
       setNewTransaction({
           date: tx.date,
           company: tx.company,
@@ -285,8 +253,8 @@ export function LedgersView() {
           taxRate: String(tx.taxRate || ''),
           preTaxAmount: String(tx.preTaxAmount || ''),
           taxAmount: String(tx.taxAmount || ''),
-          category: tx.transactionType === 'expense' ? expenseCategories.find(c => c.categoryNumber === (tx as ExpenseTransaction).category)?.name || '' : '',
-          incomeCategory: tx.transactionType === 'income' ? incomeCategories.find(c => c.categoryNumber === (tx as IncomeTransaction).incomeCategory)?.name || '' : '',
+          incomeCategory: tx.transactionType === 'income' ? currentCatNum : '',
+          category: tx.transactionType === 'expense' ? currentCatNum : '',
           explanation: tx.explanation || '',
           documentNumber: tx.documentNumber || '',
           documentUrl: tx.documentUrl || '',
@@ -296,29 +264,55 @@ export function LedgersView() {
       setIsTransactionDialogOpen(true);
   };
 
+  const getCategoryName = (categoryNumber: string, type: 'income' | 'expense') => {
+      if (type === 'income') {
+          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+      }
+      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+  };
+
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-        <AccountingPageHeader pageTitle={tabTitles[activeTab]} hubPath="/accounting" hubLabel="Accounting Hub" />
+        <AccountingPageHeader pageTitle="BKS Ledger" hubPath="/accounting" hubLabel="Accounting Hub" />
+        
+        <header className="text-center relative">
+            <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
+            <p className="text-muted-foreground">Comprehensive record of all business income and expenses.</p>
+            <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager"><X className="h-5 w-5"/></Link>
+                </Button>
+            </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200">
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600"/> Total Income</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><p className="text-2xl font-bold text-green-600">${incomeTotal.toFixed(2)}</p></CardContent>
+            </Card>
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-200">
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingDown className="h-4 w-4 text-red-600"/> Total Expenses</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><p className="text-2xl font-bold text-red-600">${expenseTotal.toFixed(2)}</p></CardContent>
+            </Card>
+            <Card className={cn("border-primary/20", netIncome >= 0 ? "bg-primary/5" : "bg-red-50")}>
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary"/> Net Position</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><p className={cn("text-2xl font-bold", netIncome >= 0 ? "text-primary" : "text-destructive")}>${netIncome.toFixed(2)}</p></CardContent>
+            </Card>
+        </div>
+
         <Card>
-            <CardHeader className="text-center relative">
-                <CardTitle>BKS General Ledger</CardTitle>
-                <div className="flex justify-center gap-2 pt-4">
-                    <Button variant="outline" onClick={() => { setTransactionToEdit(null); setNewTransaction(emptyTransactionForm); setIsTransactionDialogOpen(true); }}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowTotals(!showTotals)}>
-                        {showTotals ? 'Hide Totals' : 'Show Totals'}
-                    </Button>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Transactions</CardTitle>
+                    <CardDescription>Review and manage your financial records.</CardDescription>
                 </div>
-                <div className="absolute top-4 right-4">
-                    <Button asChild variant="ghost" size="icon">
-                        <Link href="/action-manager"><X className="h-5 w-5"/></Link>
-                    </Button>
-                </div>
+                <Button onClick={() => { setTransactionToEdit(null); setNewTransaction(emptyTransactionForm); setIsTransactionDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
+                </Button>
             </CardHeader>
             <CardContent>
                 <div className="border rounded-md">
@@ -327,6 +321,7 @@ export function LedgersView() {
                             <TableRow>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Company</TableHead>
+                                <TableHead>Category</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -334,11 +329,14 @@ export function LedgersView() {
                         </TableHeader>
                         <TableBody>
                             {generalLedger.map(item => (
-                                <TableRow key={item.id} ref={el => rowRefs.current.set(item.id, el)}>
+                                <TableRow key={item.id} ref={el => rowRefs.current.set(item.id, el)} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse")}>
                                     <TableCell>{item.date}</TableCell>
-                                    <TableCell>{item.company}</TableCell>
+                                    <TableCell className="font-medium">{item.company}</TableCell>
+                                    <TableCell className="text-xs text-muted-foreground">
+                                        {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
+                                    </TableCell>
                                     <TableCell><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>
-                                    <TableCell className="text-right font-mono">${item.totalAmount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-mono font-semibold">${item.totalAmount.toFixed(2)}</TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -346,34 +344,18 @@ export function LedgersView() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleDeleteTransaction(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {generalLedger.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">No transactions found. Post your first entry to get started.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
-                        {showTotals && (
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-right font-bold">Total Income:</TableCell>
-                                    <TableCell className="text-right font-bold text-green-600">${incomeTotal.toFixed(2)}</TableCell>
-                                    <TableCell/>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-right font-bold">Total Expenses:</TableCell>
-                                    <TableCell className="text-right font-bold text-red-600">${expenseTotal.toFixed(2)}</TableCell>
-                                    <TableCell/>
-                                </TableRow>
-                                <TableRow className="bg-muted/50">
-                                    <TableCell colSpan={3} className="text-right font-bold text-lg">Net Profit/Loss:</TableCell>
-                                    <TableCell className={cn("text-right font-bold text-lg", (incomeTotal - expenseTotal) >= 0 ? 'text-primary' : 'text-destructive')}>
-                                        ${(incomeTotal - expenseTotal).toFixed(2)}
-                                    </TableCell>
-                                    <TableCell/>
-                                </TableRow>
-                            </TableFooter>
-                        )}
                     </Table>
                 </div>
             </CardContent>
@@ -390,6 +372,7 @@ export function LedgersView() {
                             <div><RadioGroupItem value="income" id="r-income" className="peer sr-only"/><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600">Income</Label></div>
                             <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only"/><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600">Expense</Label></div>
                         </RadioGroup>
+                        
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Date *</Label>
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
@@ -402,53 +385,90 @@ export function LedgersView() {
                                 <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
                             </Popover>
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Company *</Label>
                             <div className="col-span-3 space-y-2">
                                 <div className="flex gap-2">
                                     <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.company || "Select company..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                {newTransaction.company || "Select company..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                             <Command>
                                                 <CommandInput placeholder="Search company..." value={newCompanyName} onValueChange={setNewCompanyName}/>
                                                 <CommandList>
-                                                    <CommandEmpty>No company found. <Button variant="link" onClick={() => setShowAddCompany(true)}>Add "{newCompanyName}"</Button></CommandEmpty>
+                                                    <CommandEmpty>
+                                                        <div className="p-2 flex flex-col gap-2">
+                                                            <p className="text-xs text-muted-foreground text-center">No company found.</p>
+                                                            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCreateCompany()}>
+                                                                <Plus className="mr-2 h-3 w-3"/> Create "{newCompanyName}"
+                                                            </Button>
+                                                        </div>
+                                                    </CommandEmpty>
                                                     <CommandGroup>
-                                                        {companies.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(p => ({ ...p, company: c.name })); setIsCompanyPopoverOpen(false); }}>{c.name}</CommandItem>))}
+                                                        {companies.map(c => (
+                                                            <CommandItem 
+                                                                key={c.id} 
+                                                                value={c.name} 
+                                                                onSelect={() => { 
+                                                                    setNewTransaction(p => ({ ...p, company: c.name })); 
+                                                                    setIsCompanyPopoverOpen(false); 
+                                                                }}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")} />
+                                                                {c.name}
+                                                            </CommandItem>
+                                                        ))}
                                                     </CommandGroup>
                                                 </CommandList>
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                {showAddCompany && <div className="flex gap-2"><Input placeholder="New company name..." value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} /><Button onClick={handleCreateCompany}>Add</Button></div>}
                             </div>
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Amount *</Label>
-                            <Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value }))} className="col-span-3" placeholder="0.00" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Category *</Label>
-                            <div className="col-span-3 space-y-2">
-                                {newTransactionType === 'income' ? (
-                                    <Select value={newTransaction.incomeCategory} onValueChange={v => setNewTransaction(p => ({ ...p, incomeCategory: v }))}>
-                                        <SelectTrigger><SelectValue placeholder="Select income category..." /></SelectTrigger>
-                                        <SelectContent>{incomeCategories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                ) : (
-                                    <Select value={newTransaction.category} onValueChange={v => setNewTransaction(p => ({ ...p, category: v }))}>
-                                        <SelectTrigger><SelectValue placeholder="Select expense category..." /></SelectTrigger>
-                                        <SelectContent>{expenseCategories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                )}
+                            <div className="relative col-span-3">
+                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                                <Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value }))} className="pl-7" placeholder="0.00" />
                             </div>
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Notes</Label>
-                            <Textarea value={newTransaction.description} onChange={e => setNewTransaction(p => ({ ...p, description: e.target.value }))} className="col-span-3" rows={3} placeholder="Add any extra details..."/>
+                            <Label className="text-right">Category *</Label>
+                            <div className="col-span-3">
+                                <Select 
+                                    value={newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category} 
+                                    onValueChange={v => setNewTransaction(p => ({ ...p, [newTransactionType === 'income' ? 'incomeCategory' : 'category']: v }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select tax category..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
+                                            <SelectItem key={c.id} value={c.categoryNumber || c.id}>
+                                                {c.name} {c.categoryNumber ? `(${c.categoryNumber})` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Tax Rate (%)</Label>
+                            <Input type="number" value={newTransaction.taxRate} onChange={e => setNewTransaction(p => ({ ...p, taxRate: e.target.value }))} className="col-span-3" placeholder="e.g., 15" />
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Description</Label>
+                            <Textarea value={newTransaction.description} onChange={e => setNewTransaction(p => ({ ...p, description: e.target.value }))} className="col-span-3" rows={3} placeholder="Optional details..."/>
                         </div>
                     </div>
                 </ScrollArea>
@@ -461,7 +481,7 @@ export function LedgersView() {
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this transaction record.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this transaction record. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>

@@ -47,20 +47,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon } from "lucide-react";
+import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, addIncomeTransaction, updateIncomeTransaction, deleteIncomeTransaction, type IncomeTransaction, 
     getExpenseTransactions, addExpenseTransaction, updateExpenseTransaction, deleteExpenseTransaction, type ExpenseTransaction, 
-    getCompanies, addCompany, type Company, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
+    getCompanies, // Kept for dialog support but not used for selection
 } from '@/services/accounting-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
@@ -68,6 +69,7 @@ import { format } from 'date-fns';
 import { ScrollArea } from "../ui/scroll-area";
 import { Calendar } from "../ui/calendar";
 import Link from "next/link";
+import ContactFormDialog from "../contacts/contact-form-dialog";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -92,30 +94,30 @@ const emptyTransactionForm = {
 export function LedgersView() {
   const [incomeLedger, setIncomeLedger] = React.useState<IncomeTransaction[]>([]);
   const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
+  const [contacts, setContacts] = React.useState<Contact[]>([]);
+  const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
+  const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
   const [transactionToEdit, setTransactionToEdit] = React.useState<GeneralTransaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
   const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense'>('income');
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
-  const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
-  const [showAddCompany, setShowAddCompany] = React.useState(false);
-  const [newCompanyName, setNewCompanyName] = React.useState('');
-  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
-  const [showAddExpenseCategory, setShowAddExpenseCategory] = React.useState(false);
-  const [newExpenseCategoryName, setNewExpenseCategoryName] = React.useState('');
-  const [isIncomeCategoryPopoverOpen, setIsIncomeCategoryPopoverOpen] = React.useState(false);
-  const [showAddIncomeCategory, setShowAddIncomeCategory] = React.useState(false);
-  const [newIncomeCategoryName, setNewIncomeCategoryName] = React.useState('');
+  
+  // Contact Dialog State
+  const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
+  const [contactSearchValue, setContactSearchValue] = React.useState('');
+
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const highlightedId = searchParams.get('highlight');
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
 
@@ -123,18 +125,24 @@ export function LedgersView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [income, expenses, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
+        const [income, expenses, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
-            getCompanies(user.uid), 
+            getContacts(user.uid),
+            getContactFolders(user.uid),
+            getCompanies(user.uid),
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),
+            getIndustries(user.uid),
         ]);
         setIncomeLedger(income); 
         setExpenseLedger(expenses); 
-        setCompanies(fetchedCompanies); 
+        setContacts(fetchedContacts);
+        setContactFolders(fetchedFolders);
+        setCompanies(fetchedCompanies);
         setExpenseCategories(fetchedExpenseCategories); 
         setIncomeCategories(fetchedIncomeCategories);
+        setCustomIndustries(fetchedIndustries);
     } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
     finally { setIsLoading(false); }
   }, [user, toast]);
@@ -161,7 +169,7 @@ export function LedgersView() {
       const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
       if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum)) {
-          toast({ variant: 'destructive', title: 'Missing Information', description: 'Please ensure Date, Company, Category, and Amount are provided.' });
+          toast({ variant: 'destructive', title: 'Missing Information', description: 'Please ensure Date, Contact, Category, and Amount are provided.' });
           return;
       }
 
@@ -225,18 +233,14 @@ export function LedgersView() {
       }
   };
 
-  const handleCreateCompany = async () => {
-      if (!user || !newCompanyName.trim()) return;
-      try {
-          const newCompany = await addCompany({ name: newCompanyName.trim(), userId: user.uid });
-          setCompanies(prev => [...prev, newCompany]);
-          setNewTransaction(prev => ({ ...prev, company: newCompanyName.trim() }));
-          setShowAddCompany(false);
-          setNewCompanyName('');
-          toast({ title: 'Company Created' });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Failed to create company', description: error.message });
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+      } else {
+          setContacts(prev => [...prev, savedContact]);
       }
+      setNewTransaction(prev => ({ ...prev, company: savedContact.name }));
+      setIsContactFormOpen(false);
   };
 
   const handleEditTransaction = (tx: GeneralTransaction) => {
@@ -320,7 +324,7 @@ export function LedgersView() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Company</TableHead>
+                                <TableHead>Contact</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
@@ -395,48 +399,42 @@ export function LedgersView() {
                         </div>
 
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Company *</Label>
-                            <div className="col-span-3 space-y-2">
-                                <div className="flex gap-2">
-                                    <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="w-full justify-between">
-                                                {newTransaction.company || "Select company..."}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search company..." value={newCompanyName} onValueChange={setNewCompanyName}/>
-                                                <CommandList>
-                                                    <CommandEmpty>
-                                                        <div className="p-2 flex flex-col gap-2">
-                                                            <p className="text-xs text-muted-foreground text-center">No company found.</p>
-                                                            <Button size="sm" variant="outline" className="w-full" onClick={() => { handleCreateCompany(); setIsCompanyPopoverOpen(false); }}>
-                                                                <Plus className="mr-2 h-3 w-3"/> Create "{newCompanyName}"
-                                                            </Button>
-                                                        </div>
-                                                    </CommandEmpty>
-                                                    <CommandGroup>
-                                                        {companies.map(c => (
-                                                            <CommandItem 
-                                                                key={c.id} 
-                                                                value={c.name} 
-                                                                onSelect={() => { 
-                                                                    setNewTransaction(p => ({ ...p, company: c.name })); 
-                                                                    setIsCompanyPopoverOpen(false); 
-                                                                }}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")} />
-                                                                {c.name}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
+                            <Label className="text-right">Contact *</Label>
+                            <div className="col-span-3 flex gap-2">
+                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="flex-1 justify-between">
+                                            {newTransaction.company || "Select contact..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search contact..." value={contactSearchValue} onValueChange={setContactSearchValue}/>
+                                            <CommandList>
+                                                <CommandEmpty>No contact found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {contacts.map(c => (
+                                                        <CommandItem 
+                                                            key={c.id} 
+                                                            value={c.name} 
+                                                            onSelect={() => { 
+                                                                setNewTransaction(p => ({ ...p, company: c.name })); 
+                                                                setIsContactPopoverOpen(false); 
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")} />
+                                                            {c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => setIsContactFormOpen(true)}>
+                                    <UserPlus className="h-4 w-4"/>
+                                </Button>
                             </div>
                         </div>
 
@@ -501,6 +499,19 @@ export function LedgersView() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <ContactFormDialog
+            isOpen={isContactFormOpen}
+            onOpenChange={setIsContactFormOpen}
+            contactToEdit={null}
+            folders={contactFolders}
+            onFoldersChange={setContactFolders}
+            onSave={handleContactSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+        />
     </div>
   );
 }

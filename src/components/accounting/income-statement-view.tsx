@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -14,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer } from 'lucide-react';
+import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer, Info } from 'lucide-react';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -24,6 +23,7 @@ import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, 
 import { T2125FormDisplay } from './income-statement-form-display';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export interface CalculatedT2125Data {
   businessIncome: { sales: number; other: number; gross: number; };
@@ -79,9 +79,11 @@ export function IncomeStatementView() {
     const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
 
     filteredIncome.forEach(tx => {
+        // Matches standard line number OR a custom category starting with C-
         if (tx.incomeCategory === primaryIncomeLine || tx.incomeCategory?.startsWith('C-')) {
             sales += tx.totalAmount;
         } else {
+            // Check if it matches any other standard income line (though Part 3 usually only has one main one)
             otherIncome += tx.totalAmount;
         }
     });
@@ -99,6 +101,7 @@ export function IncomeStatementView() {
         if (category) {
             expenseTotals[category.key] += tx.totalAmount;
         } else {
+            // Fallback for custom or misaligned categories
             expenseTotals.otherExpenses += tx.totalAmount;
         }
     });
@@ -122,31 +125,44 @@ export function IncomeStatementView() {
   
   return (
     <>
-      <div className="flex justify-center gap-2 mb-4 print:hidden">
-          <Popover>
-            <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? ( dateRange.to ? ( <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</> ) : ( format(dateRange.from, "LLL dd, y") ) ) : ( <span>Pick a date range</span> )}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
-            </PopoverContent>
-          </Popover>
-          <Button variant="secondary" onClick={() => setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) })}>This Year</Button>
-          <Button variant="secondary" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
-          <Button variant="ghost" onClick={() => setDateRange(undefined)}><FilterX className="mr-2 h-4 w-4"/>Clear</Button>
-          <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print</Button>
-      </div>
+      <div className="space-y-6">
+        <Alert className="bg-primary/10 border-primary/20 max-w-4xl mx-auto">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertTitle>Beta Notice: Official T2125 Preview</AlertTitle>
+            <AlertDescription>
+                This report is organized to match Parts 3 and 4 of the CRA Form T2125. Ensure your ledger entries are assigned to the correct CRA line numbers for maximum accuracy.
+            </AlertDescription>
+        </Alert>
 
-      {calculatedData ? (
-        <div ref={contentRef}>
-            <T2125FormDisplay data={calculatedData} dateRange={dateRange} />
+        <div className="flex justify-center gap-2 mb-4 print:hidden">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? ( dateRange.to ? ( <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</> ) : ( format(dateRange.from, "LLL dd, y") ) ) : ( <span>Pick a date range</span> )}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
+                </PopoverContent>
+            </Popover>
+            <Button variant="secondary" onClick={() => setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) })}>This Year</Button>
+            <Button variant="secondary" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+            <Button variant="ghost" onClick={() => setDateRange(undefined)}><FilterX className="mr-2 h-4 w-4"/>Clear</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print Report</Button>
         </div>
-      ) : (
-        <div className="text-center p-8 text-muted-foreground">Select a date range to generate the report.</div>
-      )}
+
+        {calculatedData ? (
+            <div ref={contentRef}>
+                <T2125FormDisplay data={calculatedData} dateRange={dateRange} />
+            </div>
+        ) : (
+            <div className="text-center p-12 border-2 border-dashed rounded-lg max-w-4xl mx-auto text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p>Select a date range to generate your Income Statement.</p>
+            </div>
+        )}
+      </div>
     </>
   );
 }

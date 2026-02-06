@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,6 +18,7 @@ import {
   Building,
   Wallet,
   Coins,
+  ShieldAlert,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
@@ -39,6 +39,7 @@ import {
   type Loan,
   type EquityTransaction,
 } from '@/services/accounting-service';
+import { getRemittances, type PayrollRemittance } from '@/services/payroll-service';
 import { MatchbookLoanSummaryDialog } from './MatchbookLoanSummaryDialog';
 import { Separator } from '../ui/separator';
 
@@ -78,6 +79,7 @@ export function FinancialSnapshotView() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [equity, setEquity] = useState<EquityTransaction[]>([]);
+  const [remittances, setRemittances] = useState<PayrollRemittance[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
@@ -108,6 +110,7 @@ export function FinancialSnapshotView() {
           assetsData,
           loansData,
           equityData,
+          remittanceData
         ] = await Promise.all([
           getIncomeTransactions(user.uid),
           getExpenseTransactions(user.uid),
@@ -116,6 +119,7 @@ export function FinancialSnapshotView() {
           getAssets(user.uid),
           getLoans(user.uid),
           getEquityTransactions(user.uid),
+          getRemittances(user.uid)
         ]);
         setIncome(incomeData);
         setExpenses(expenseData);
@@ -124,6 +128,7 @@ export function FinancialSnapshotView() {
         setAssets(assetsData);
         setLoans(loansData);
         setEquity(equityData);
+        setRemittances(remittanceData);
       } catch (error: any) {
         toast({
           variant: 'destructive',
@@ -155,7 +160,8 @@ export function FinancialSnapshotView() {
     // Liabilities
     const accountsPayable = payableBills.reduce((sum, bill) => sum + bill.totalAmount, 0);
     const loansPayable = loans.filter(l => l.loanType === 'payable').reduce((sum, l) => sum + l.outstandingBalance, 0);
-    const totalLiabilities = accountsPayable + loansPayable;
+    const payrollLiabilities = remittances.filter(r => r.status === 'Due').reduce((sum, r) => sum + r.amount, 0);
+    const totalLiabilities = accountsPayable + loansPayable + payrollLiabilities;
 
     // Equity
     const totalContributions = equity.filter(e => e.type === 'contribution').reduce((sum, e) => sum + e.amount, 0);
@@ -165,10 +171,10 @@ export function FinancialSnapshotView() {
     return { 
         totalIncome, totalExpenses, netIncome, 
         accountsReceivable, capitalAssets, loansReceivable, totalAssets,
-        accountsPayable, loansPayable, totalLiabilities,
+        accountsPayable, loansPayable, payrollLiabilities, totalLiabilities,
         netOwnerEquity,
     };
-  }, [income, expenses, invoices, payableBills, assets, loans, equity]);
+  }, [income, expenses, invoices, payableBills, assets, loans, equity, remittances]);
 
 
   if (isLoading) {
@@ -245,6 +251,7 @@ export function FinancialSnapshotView() {
                         <Separator />
                         <BalanceSheetRow label="Accounts Payable" value={formatCurrency(financialMetrics.accountsPayable)} />
                         <BalanceSheetRow label="Loans Payable" value={formatCurrency(financialMetrics.loansPayable)} />
+                        <BalanceSheetRow label="Payroll Remittances Due" value={formatCurrency(financialMetrics.payrollLiabilities)} colorClass="text-destructive" />
                         <BalanceSheetRow label="Total Liabilities" value={formatCurrency(financialMetrics.totalLiabilities)} />
                         <Separator />
                         <BalanceSheetRow label="Owner's Equity" value={formatCurrency(financialMetrics.netOwnerEquity)} />

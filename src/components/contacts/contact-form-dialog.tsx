@@ -161,7 +161,6 @@ export default function ContactFormDialog({
     const [isIndustryPopoverOpen, setIsIndustryPopoverOpen] = useState(false);
     const [industrySearchValue, setIndustrySearchValue] = useState('');
     
-    // State for the custom industry creation/editing dialog
     const [isAddIndustryDialogOpen, setIsAddIndustryDialogOpen] = useState(false);
     const [industryToEdit, setIndustryToEdit] = useState<Industry | null>(null);
     const [newIndustryName, setNewIndustryName] = useState('');
@@ -302,13 +301,11 @@ export default function ContactFormDialog({
         if (!user || !newIndustryName.trim()) return;
         try {
             if (industryToEdit) {
-                // Update existing industry
                 const updatedData = { description: newIndustryName.trim(), code: newIndustryCode.trim() };
                 await updateIndustry(industryToEdit.id, updatedData);
                 onCustomIndustriesChange(customIndustries.map(i => i.id === industryToEdit.id ? { ...i, ...updatedData } : i));
                 toast({ title: 'Industry Updated' });
             } else {
-                // Add new industry
                 const newIndustry = await addIndustry({
                     description: newIndustryName.trim(),
                     code: newIndustryCode.trim(),
@@ -364,7 +361,27 @@ export default function ContactFormDialog({
                                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address</FormLabel> <FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="folderId" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Folder <span className="text-destructive">*</span></FormLabel> <div className="flex gap-2"><Select onValueChange={field.onChange} value={field.value} disabled={!!forceFolderId}><FormControl><SelectTrigger><SelectValue placeholder="Select a folder" /></SelectTrigger></FormControl><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select> <Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)} disabled={!!forceFolderId}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="folderId" render={({ field }) => ( 
+                                            <FormItem className="flex flex-col"> 
+                                                <FormLabel>Folder <span className="text-destructive">*</span></FormLabel> 
+                                                <div className="flex gap-2">
+                                                    <FormControl>
+                                                        <Select onValueChange={field.onChange} value={field.value} disabled={!!forceFolderId}>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select a folder" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl> 
+                                                    <Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)} disabled={!!forceFolderId}>
+                                                        <FolderPlus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
                                         <FormField control={form.control} name="website" render={({ field }) => ( <FormItem> <FormLabel>Website URL</FormLabel> <FormControl><Input placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                     </div>
                                 </section>
@@ -426,7 +443,22 @@ export default function ContactFormDialog({
 
                                 <Separator className="md:col-span-2 my-2" />
 
-                                <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel className="text-lg font-semibold">Notes</FormLabel><div className="relative"><FormControl><Textarea placeholder="Communication history, preferences, or other background info..." className="resize-none pr-10" rows={6} {...field} ref={notesRef}/>{preferences?.showDictationButton && ( <Button type="button" variant={isListening ? 'destructive' : 'ghost'} size="icon" className="absolute bottom-2 right-2 h-8 w-8" onClick={handleDictateNotes} disabled={isSupported === false} title={isSupported === false ? "Voice not supported" : (isListening ? "Stop dictation" : "Dictate notes")}>{isListening ? <Square className="h-4 w-4 animate-pulse" /> : <Mic className="h-4 w-4" />}</Button>)}</FormControl></div><FormMessage /></FormItem>)}/>
+                                <FormField control={form.control} name="notes" render={({ field }) => ( 
+                                    <FormItem className="md:col-span-2">
+                                        <FormLabel className="text-lg font-semibold">Notes</FormLabel>
+                                        <div className="relative">
+                                            <FormControl>
+                                                <Textarea placeholder="Communication history, preferences, or other background info..." className="resize-none pr-10" rows={6} {...field} ref={notesRef}/>
+                                            </FormControl>
+                                            {preferences?.showDictationButton && ( 
+                                                <Button type="button" variant={isListening ? 'destructive' : 'ghost'} size="icon" className="absolute bottom-2 right-2 h-8 w-8" onClick={handleDictateNotes} disabled={isSupported === false} title={isSupported === false ? "Voice not supported" : (isListening ? "Stop dictation" : "Dictate notes")}>
+                                                    {isListening ? <Square className="h-4 w-4 animate-pulse" /> : <Mic className="h-4 w-4" />}
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
                             </div>
                         </ScrollArea>
                         <DialogFooter className="p-6 border-t shrink-0">
@@ -438,7 +470,6 @@ export default function ContactFormDialog({
             </DialogContent>
         </Dialog>
         
-        {/* Helper Dialogs */}
         <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
@@ -473,7 +504,7 @@ export default function ContactFormDialog({
               </DialogFooter>
           </DialogContent>
       </Dialog>
-      <AlertDialog open={!!industryToDelete} onOpenChange={() => setIndustryToDelete(null)}>
+      <AlertDialog open={!!industryToDelete} onOpenChange={setIndustryToDelete}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>

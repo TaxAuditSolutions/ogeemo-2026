@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -85,7 +84,7 @@ const docToInvoice = (doc: any): Invoice => {
         companyName: data.companyName,
         contactId: data.contactId,
         originalAmount: data.originalAmount,
-        amountPaid: data.amountPaid,
+        amountPaid: data.amountPaid || 0,
         dueDate: (data.dueDate as Timestamp)?.toDate ? (data.dueDate as Timestamp).toDate() : new Date(),
         invoiceDate: (data.invoiceDate as Timestamp)?.toDate ? (data.invoiceDate as Timestamp).toDate() : new Date(),
         status: data.status,
@@ -112,7 +111,6 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
 
 export async function getInvoices(userId: string): Promise<Invoice[]> {
   const db = getDb();
-  // Safe Query: No orderBy to avoid index issues.
   const q = query(collection(db, INVOICES_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToInvoice).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -195,6 +193,47 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
         batch.delete(doc.ref);
     });
     
+    await batch.commit();
+}
+
+/**
+ * Records a payment against an invoice and creates a ledger entry.
+ */
+export async function postInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, depositAccount: string): Promise<void> {
+    const db = getDb();
+    const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
+    const invoiceSnap = await getDoc(invoiceRef);
+    
+    if (!invoiceSnap.exists()) throw new Error("Invoice not found.");
+    
+    const invoiceData = docToInvoice(invoiceSnap);
+    const newAmountPaid = (invoiceData.amountPaid || 0) + amount;
+    const isFullyPaid = newAmountPaid >= invoiceData.originalAmount - 0.01;
+
+    const batch = writeBatch(db);
+    
+    // 1. Update Invoice
+    batch.update(invoiceRef, {
+        amountPaid: newAmountPaid,
+        status: isFullyPaid ? 'paid' : 'partially_paid'
+    });
+
+    // 2. Add Income Transaction to Ledger
+    const incomeRef = doc(collection(db, 'incomeTransactions'));
+    const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+    
+    batch.set(incomeRef, {
+        userId,
+        date,
+        company: invoiceData.companyName,
+        description: `Payment for Invoice #${invoiceData.invoiceNumber}`,
+        totalAmount: amount,
+        incomeCategory: primaryIncomeLine || 'Part 3A',
+        depositedTo: depositAccount,
+        type: 'business',
+        documentNumber: invoiceData.invoiceNumber,
+    });
+
     await batch.commit();
 }
 
@@ -501,14 +540,12 @@ async function getCategories<T extends BaseCategory>(
     categoryFieldName: string
 ): Promise<T[]> {
   const db = getDb();
-  // Safe Query: Filter by userId, no orderBy to avoid index requirements
   const q = query(collection(db, collectionName), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   const existingCategories = snapshot.docs.map(docConverter);
   const batch = writeBatch(db);
   let hasWrites = false;
 
-  // Consolidate duplicates by categoryNumber
   const standardCategoriesByLine: Record<string, T[]> = {};
   existingCategories.forEach(cat => {
     if (cat.categoryNumber && !cat.categoryNumber.startsWith('C-')) {
@@ -537,7 +574,6 @@ async function getCategories<T extends BaseCategory>(
     }
   }
 
-  // Seed missing standard categories
   const existingLineNumbers = new Set(existingCategories.map(c => c.categoryNumber));
   for (const stdCat of standardCategories) {
       if (!existingLineNumbers.has(stdCat.line)) {

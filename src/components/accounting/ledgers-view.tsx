@@ -46,7 +46,8 @@ import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -157,7 +158,6 @@ export function LedgersView() {
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
       
-      // CRITICAL: We now use the selection from the dropdown which stores the ID (categoryNumber)
       const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
       if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum)) {
@@ -324,6 +324,7 @@ export function LedgersView() {
                                 <TableHead>Category</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-center">Doc</TableHead>
                                 <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -337,6 +338,13 @@ export function LedgersView() {
                                     </TableCell>
                                     <TableCell><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>
                                     <TableCell className="text-right font-mono font-semibold">${item.totalAmount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-center">
+                                        {item.documentUrl ? (
+                                            <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                                <LinkIcon className="h-4 w-4 mx-auto" />
+                                            </a>
+                                        ) : <span className="text-muted-foreground text-xs">-</span>}
+                                    </TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -352,7 +360,7 @@ export function LedgersView() {
                             ))}
                             {generalLedger.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">No transactions found. Post your first entry to get started.</TableCell>
+                                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">No transactions found. Post your first entry to get started.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -404,7 +412,7 @@ export function LedgersView() {
                                                     <CommandEmpty>
                                                         <div className="p-2 flex flex-col gap-2">
                                                             <p className="text-xs text-muted-foreground text-center">No company found.</p>
-                                                            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCreateCompany()}>
+                                                            <Button size="sm" variant="outline" className="w-full" onClick={() => { handleCreateCompany(); setIsCompanyPopoverOpen(false); }}>
                                                                 <Plus className="mr-2 h-3 w-3"/> Create "{newCompanyName}"
                                                             </Button>
                                                         </div>
@@ -436,7 +444,7 @@ export function LedgersView() {
                             <Label className="text-right">Amount *</Label>
                             <div className="relative col-span-3">
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                <Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value }))} className="pl-7" placeholder="0.00" />
+                                <input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-7" placeholder="0.00" />
                             </div>
                         </div>
 
@@ -469,6 +477,11 @@ export function LedgersView() {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Description</Label>
                             <Textarea value={newTransaction.description} onChange={e => setNewTransaction(p => ({ ...p, description: e.target.value }))} className="col-span-3" rows={3} placeholder="Optional details..."/>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Doc Link</Label>
+                            <Input value={newTransaction.documentUrl} onChange={e => setNewTransaction(p => ({ ...p, documentUrl: e.target.value }))} className="col-span-3" placeholder="Link to source file..."/>
                         </div>
                     </div>
                 </ScrollArea>

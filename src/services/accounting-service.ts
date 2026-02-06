@@ -46,7 +46,7 @@ interface BaseTransaction {
 
 // --- Invoice Interfaces & Functions ---
 export interface InvoiceLineItem {
-  id?: string; // Optional because it won't exist before being saved
+  id?: string;
   invoiceId: string;
   description: string;
   quantity: number;
@@ -112,9 +112,10 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
 
 export async function getInvoices(userId: string): Promise<Invoice[]> {
   const db = getDb();
+  // Safe Query: No orderBy to avoid index issues.
   const q = query(collection(db, INVOICES_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToInvoice);
+  return snapshot.docs.map(docToInvoice).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function getInvoiceById(invoiceId: string): Promise<Invoice | null> {
@@ -141,14 +142,6 @@ export async function addInvoiceWithLineItems(
 ): Promise<Invoice> {
     const db = getDb();
     const batch = writeBatch(db);
-
-    // Sync company name
-    const companiesRef = collection(db, 'companies');
-    const companyQuery = query(companiesRef, where("userId", "==", invoiceData.userId), where("name", "==", invoiceData.companyName));
-    const companySnapshot = await getDocs(companyQuery);
-    if (companySnapshot.empty) {
-        addDoc(companiesRef, { name: invoiceData.companyName, userId: invoiceData.userId });
-    }
 
     const invoiceRef = doc(collection(db, INVOICES_COLLECTION));
     batch.set(invoiceRef, { ...invoiceData, createdAt: new Date() });
@@ -207,7 +200,7 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
 
 // --- Income Interfaces & Functions ---
 export interface IncomeTransaction extends BaseTransaction {
-  incomeCategory: string; // This will store the category NUMBER
+  incomeCategory: string; 
   depositedTo: string;
 }
 
@@ -220,18 +213,7 @@ export async function getIncomeTransactions(userId: string): Promise<IncomeTrans
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-        const batch = writeBatch(db);
-        const newEntries: IncomeTransaction[] = [];
-        mockIncome.forEach(item => {
-            const docRef = doc(collection(db, INCOME_COLLECTION));
-            // Find the category number for the mock item
-            const categoryObject = t2125IncomeCategories.find(c => c.description === item.incomeCategory);
-            const transactionData = { ...item, userId, incomeCategory: categoryObject?.line || 'C-1' }; // Fallback to a custom ID
-            batch.set(docRef, transactionData);
-            newEntries.push({ ...transactionData, id: docRef.id });
-        });
-        await batch.commit();
-        return newEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return [];
     }
     
     return snapshot.docs.map(docToIncome).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -256,7 +238,7 @@ export async function deleteIncomeTransaction(id: string): Promise<void> {
 
 // --- Expense Interfaces & Functions ---
 export interface ExpenseTransaction extends BaseTransaction {
-  category: string; // This will store the category NUMBER
+  category: string; 
 }
 
 const EXPENSE_COLLECTION = 'expenseTransactions';
@@ -268,17 +250,7 @@ export async function getExpenseTransactions(userId: string): Promise<ExpenseTra
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-        const batch = writeBatch(db);
-        const newEntries: ExpenseTransaction[] = [];
-        mockExpenses.forEach(item => {
-            const docRef = doc(collection(db, EXPENSE_COLLECTION));
-            const categoryObject = t2125ExpenseCategories.find(c => c.description === item.category);
-            const transactionData = { ...item, userId, category: categoryObject?.line || 'C-1' };
-            batch.set(docRef, transactionData);
-            newEntries.push({ ...transactionData, id: docRef.id });
-        });
-        await batch.commit();
-        return newEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return [];
     }
     
     return snapshot.docs.map(docToExpense).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -328,7 +300,7 @@ export async function getPayableBills(userId: string): Promise<PayableBill[]> {
   const db = getDb();
   const q = query(collection(db, PAYABLES_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToPayableBill);
+  return snapshot.docs.map(docToPayableBill).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 }
 
 export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<PayableBill> {
@@ -349,7 +321,7 @@ export async function deletePayableBill(id: string): Promise<void> {
 
 // --- Asset Management Interfaces & Functions ---
 export interface DepreciationEntry {
-  id: string; // Could be a timestamp or a unique ID
+  id: string;
   date: string;
   amount: number;
 }
@@ -373,7 +345,7 @@ const docToAsset = (doc: any): Asset => {
     return { 
         id: doc.id, 
         ...data, 
-        applyHalfYearRule: data.applyHalfYearRule !== false, // Default to true if not present
+        applyHalfYearRule: data.applyHalfYearRule !== false,
         depreciationEntries: data.depreciationEntries || [] 
     } as Asset
 };
@@ -382,7 +354,7 @@ export async function getAssets(userId: string): Promise<Asset[]> {
   const db = getDb();
   const q = query(collection(db, ASSETS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToAsset);
+  return snapshot.docs.map(docToAsset).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addAsset(data: Omit<Asset, 'id'>): Promise<Asset> {
@@ -419,7 +391,7 @@ export async function getEquityTransactions(userId: string): Promise<EquityTrans
     const db = getDb();
     const q = query(collection(db, EQUITY_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToEquityTransaction);
+    return snapshot.docs.map(docToEquityTransaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export async function addEquityTransaction(data: Omit<EquityTransaction, 'id'>): Promise<EquityTransaction> {
@@ -459,7 +431,7 @@ export async function getLoans(userId: string): Promise<Loan[]> {
     const db = getDb();
     const q = query(collection(db, LOANS_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToLoan);
+    return snapshot.docs.map(docToLoan).sort((a, b) => a.counterparty.localeCompare(b.counterparty));
 }
 
 export async function addLoan(data: Omit<Loan, 'id'>): Promise<Loan> {
@@ -493,7 +465,7 @@ export async function getCompanies(userId: string): Promise<Company[]> {
   const db = getDb();
   const q = query(collection(db, COMPANIES_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToCompany);
+  return snapshot.docs.map(docToCompany).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addCompany(data: Omit<Company, 'id'>): Promise<Company> {
@@ -529,13 +501,14 @@ async function getCategories<T extends BaseCategory>(
     categoryFieldName: string
 ): Promise<T[]> {
   const db = getDb();
+  // Safe Query: Filter by userId, no orderBy to avoid index requirements
   const q = query(collection(db, collectionName), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   const existingCategories = snapshot.docs.map(docConverter);
   const batch = writeBatch(db);
   let hasWrites = false;
 
-  // Group existing standard categories by line number to find duplicates
+  // Consolidate duplicates by categoryNumber
   const standardCategoriesByLine: Record<string, T[]> = {};
   existingCategories.forEach(cat => {
     if (cat.categoryNumber && !cat.categoryNumber.startsWith('C-')) {
@@ -546,7 +519,6 @@ async function getCategories<T extends BaseCategory>(
     }
   });
 
-  // Consolidate duplicates
   for (const line in standardCategoriesByLine) {
     const duplicates = standardCategoriesByLine[line];
     if (duplicates && duplicates.length > 1) {
@@ -577,7 +549,6 @@ async function getCategories<T extends BaseCategory>(
 
   if (hasWrites) {
     await batch.commit();
-    // Re-fetch all after writes to get the clean list
     const finalSnapshot = await getDocs(q);
     return finalSnapshot.docs.map(docConverter).sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -586,7 +557,6 @@ async function getCategories<T extends BaseCategory>(
 }
 
 
-// --- Income Category Functions ---
 export async function getIncomeCategories(userId: string): Promise<IncomeCategory[]> {
   return getCategories<IncomeCategory>(userId, INCOME_CATEGORIES_COLLECTION, t2125IncomeCategories, docToIncomeCategory, INCOME_COLLECTION, 'incomeCategory');
 }
@@ -626,7 +596,6 @@ export async function deleteIncomeCategories(ids: string[]): Promise<void> {
     const db = getDb(); if (ids.length === 0) return; const batch = writeBatch(db); ids.forEach(id => batch.delete(doc(db, INCOME_CATEGORIES_COLLECTION, id))); await batch.commit();
 }
 
-// --- Expense Category Functions ---
 export async function getExpenseCategories(userId: string): Promise<ExpenseCategory[]> {
   return getCategories<ExpenseCategory>(userId, EXPENSE_CATEGORIES_COLLECTION, t2125ExpenseCategories, docToExpenseCategory, EXPENSE_COLLECTION, 'category');
 }
@@ -665,7 +634,6 @@ export async function deleteExpenseCategories(ids: string[]): Promise<void> {
 }
 
 
-// --- Archive/Restore Functions ---
 async function archiveCategory(
     userId: string,
     categoryId: string,
@@ -681,7 +649,7 @@ async function archiveCategory(
     
     const categoryToArchive = docToCategoryConverter(categorySnap);
     if (!categoryToArchive.categoryNumber) {
-        throw new Error(`Category "${categoryToArchive.name}" does not have a category number and cannot be used in queries.`);
+        throw new Error(`Category "${categoryToArchive.name}" does not have a category number.`);
     }
     
     const otherCategoryName = categoryField === 'incomeCategory' ? 'Other income' : 'Other expenses';
@@ -689,7 +657,7 @@ async function archiveCategory(
     const otherCategory = allCategories.find(c => c.name === otherCategoryName);
 
     if (!otherCategory || !otherCategory.categoryNumber) {
-        throw new Error(`Could not find a valid "${otherCategoryName}" category to reassign transactions to.`);
+        throw new Error(`Could not find a valid "${otherCategoryName}" category.`);
     }
 
     const batch = writeBatch(db);
@@ -701,8 +669,7 @@ async function archiveCategory(
     const transactionsSnapshot = await getDocs(transactionsQuery);
 
     transactionsSnapshot.forEach(txDoc => {
-        const txRef = doc(db, transactionCollection, txDoc.id);
-        batch.update(txRef, { [categoryField]: otherCategory.categoryNumber });
+        batch.update(txDoc.ref, { [categoryField]: otherCategory.categoryNumber });
     });
 
     batch.update(categoryRef, { isArchived: true });
@@ -725,7 +692,6 @@ export async function restoreExpenseCategory(categoryId: string): Promise<void> 
     await updateExpenseCategory(categoryId, { isArchived: false });
 }
 
-// --- Merge Function ---
 export async function mergeCategories(userId: string, sourceCategoryId: string, targetCategoryNumber: string, type: 'income' | 'expense') {
   const db = getDb();
   
@@ -763,7 +729,6 @@ export async function mergeCategories(userId: string, sourceCategoryId: string, 
 }
 
 
-// --- Service Item Interfaces & Functions ---
 export interface ServiceItem {
   id: string;
   description: string;
@@ -780,7 +745,7 @@ export async function getServiceItems(userId: string): Promise<ServiceItem[]> {
   const db = getDb();
   const q = query(collection(db, SERVICE_ITEMS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToServiceItem);
+  return snapshot.docs.map(docToServiceItem).sort((a, b) => a.description.localeCompare(b.description));
 }
 
 export async function addServiceItem(data: Omit<ServiceItem, 'id'>): Promise<ServiceItem> {
@@ -799,7 +764,6 @@ export async function deleteServiceItem(id: string): Promise<void> {
   await deleteDoc(doc(db, SERVICE_ITEMS_COLLECTION, id));
 }
 
-// --- Tax Type Interfaces & Functions ---
 export interface TaxType {
   id: string;
   name: string;
@@ -814,7 +778,7 @@ export async function getTaxTypes(userId: string): Promise<TaxType[]> {
   const db = getDb();
   const q = query(collection(db, TAX_TYPES_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToTaxType);
+  return snapshot.docs.map(docToTaxType).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addTaxType(data: Omit<TaxType, 'id'>): Promise<TaxType> {

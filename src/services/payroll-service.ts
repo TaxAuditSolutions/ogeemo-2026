@@ -16,7 +16,6 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Worker, mockWorkers } from '@/data/payroll';
-import { addExpenseTransaction } from './accounting-service';
 
 
 const WORKERS_COLLECTION = 'payrollWorkers';
@@ -35,25 +34,20 @@ function getDb() {
 const docToWorker = (doc: any): Worker => {
     const data = doc.data();
 
-    // Helper function to safely convert a Firestore Timestamp or a JS Date
     const toDate = (dateValue: any): Date | null => {
         if (!dateValue) return null;
-        // If it's a Firestore Timestamp, convert it
         if (dateValue.toDate) {
             return dateValue.toDate();
         }
-        // If it's already a JS Date object, return it
         if (dateValue instanceof Date) {
             return dateValue;
         }
-        // If it's a string, try to parse it
         if (typeof dateValue === 'string') {
             const parsedDate = new Date(dateValue);
             if (!isNaN(parsedDate.getTime())) {
                 return parsedDate;
             }
         }
-        // If all else fails, return null
         return null;
     };
 
@@ -67,16 +61,12 @@ const docToWorker = (doc: any): Worker => {
 
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
+  // Safe Query: Filter by userId, no orderBy to avoid index issues.
   const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
-    const newWorkers: Worker[] = [];
-    for (const worker of mockWorkers) {
-        const docRef = await addDoc(collection(db, WORKERS_COLLECTION), { ...worker, userId });
-        newWorkers.push({ ...worker, id: docRef.id, userId });
-    }
-    return newWorkers.sort((a,b) => a.name.localeCompare(b.name));
+    return [];
   }
     
   return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
@@ -120,21 +110,18 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     const db = getDb();
     const batch = writeBatch(db);
 
-    // Reassign Time Logs
     const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const timeLogsSnapshot = await getDocs(timeLogsQuery);
     timeLogsSnapshot.forEach(doc => {
         batch.update(doc.ref, { workerId: masterWorkerId });
     });
     
-    // Reassign Leave Requests
     const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
     leaveRequestsSnapshot.forEach(doc => {
         batch.update(doc.ref, { workerId: masterWorkerId });
     });
 
-    // Delete the source worker
     const sourceWorkerRef = doc(db, WORKERS_COLLECTION, sourceWorkerId);
     batch.delete(sourceWorkerRef);
     
@@ -205,7 +192,6 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
 
-    // 1. Create the main payroll run document
     const runRef = doc(collection(db, PAYROLL_RUNS_COLLECTION));
     const runData = {
         userId: data.userId,
@@ -219,13 +205,11 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
     };
     batch.set(runRef, runData);
 
-    // 2. Create detail documents for each employee in the run
     data.details.forEach(detail => {
         const detailRef = doc(collection(db, PAYROLL_RUNS_COLLECTION, runRef.id, 'details'));
         batch.set(detailRef, { ...detail, runId: runRef.id });
     });
 
-    // 3. Create an expense transaction for each employee's gross pay
     data.details.forEach(detail => {
         const expenseRef = doc(collection(db, 'expenseTransactions'));
         batch.set(expenseRef, {
@@ -234,24 +218,22 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
             company: detail.employeeName,
             description: `Payroll for period ${data.payPeriodStart.toISOString().split('T')[0]} to ${data.payPeriodEnd.toISOString().split('T')[0]}`,
             totalAmount: detail.grossPay,
-            category: '9060', // CRA line for Salaries, wages, and benefits
+            category: '9060',
             type: 'business',
         });
     });
 
-    // 4. Create a single remittance liability for the total deductions
     if (data.totalDeductions > 0) {
         const remittanceRef = doc(collection(db, REMITTANCES_COLLECTION));
         batch.set(remittanceRef, {
             userId: data.userId,
             payPeriodStart: data.payPeriodStart.toISOString().split('T')[0],
             payPeriodEnd: data.payPeriodEnd.toISOString().split('T')[0],
-            dueDate: new Date(data.payDate.getFullYear(), data.payDate.getMonth() + 1, 15).toISOString().split('T')[0], // Due 15th of next month
+            dueDate: new Date(data.payDate.getFullYear(), data.payDate.getMonth() + 1, 15).toISOString().split('T')[0],
             amount: data.totalDeductions,
             status: 'Due',
         });
     }
 
-    // Commit all operations as a single transaction
     await batch.commit();
 }

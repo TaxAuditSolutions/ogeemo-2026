@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, FileDown, Clock } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, FileDown, Clock, UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
@@ -30,7 +30,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { getUserProfile } from '@/services/user-profile-service';
 import type { UserProfile } from '@/services/user-profile-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { TimeLogImportDialog } from './time-log-import-dialog'; // New import
+import { TimeLogImportDialog } from './time-log-import-dialog'; 
 import { Event as TaskEvent } from '@/types/calendar-types';
 
 
@@ -86,8 +86,7 @@ export function InvoiceGeneratorView() {
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<LineItem | null>(null);
   
-  const [contactFormInitialData, setContactFormInitialData] = useState<Partial<Contact>>({});
-  const [isClientPopoverOpen, setIsClientPopoverOpen] = useState(false);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
       setIsLoading(true);
@@ -162,7 +161,7 @@ export function InvoiceGeneratorView() {
         if (invoiceId) {
           setInvoiceToEditId(invoiceId);
           await loadInvoiceForEditing(invoiceId);
-          return; // Stop further processing if we are editing
+          return;
         }
 
         const preselectedContactId = sessionStorage.getItem(PRESELECTED_CONTACT_ID_KEY);
@@ -171,7 +170,6 @@ export function InvoiceGeneratorView() {
           sessionStorage.removeItem(PRESELECTED_CONTACT_ID_KEY);
           setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
         } else {
-          // This ensures a truly blank invoice
           setSelectedContactId(null);
           setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
         }
@@ -253,7 +251,7 @@ export function InvoiceGeneratorView() {
         return;
     }
     if (!selectedContactId) {
-        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a client.'});
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a contact.'});
         return;
     }
 
@@ -319,17 +317,11 @@ export function InvoiceGeneratorView() {
     } else {
         setContacts(prev => [...prev, savedContact]);
     }
-    const contactCompany = companies.find(c => c.name === savedContact.businessName);
-    if (!contactCompany && savedContact.businessName && user) {
-        const newCompany = { id: `comp_${Date.now()}`, name: savedContact.businessName, userId: user.uid };
-        setCompanies(prev => [...prev, newCompany]);
-    }
     setSelectedContactId(savedContact.id);
     setIsContactFormOpen(false);
   };
   
   const handleOpenNewContactDialog = () => {
-    setContactFormInitialData({});
     setIsContactFormOpen(true);
   };
   
@@ -345,7 +337,7 @@ export function InvoiceGeneratorView() {
   const handlePreview = () => {
       const selectedContact = contacts.find(c => c.id === selectedContactId);
       if (!selectedContact) {
-          toast({ variant: 'destructive', title: 'Client not selected', description: 'Please select a client before previewing.'});
+          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before previewing.'});
           return;
       }
 
@@ -386,7 +378,7 @@ export function InvoiceGeneratorView() {
         <header className="relative text-center">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Generate professional invoices by selecting a client and adding line items.
+            Select a contact from your master list to generate a professional invoice.
           </p>
           <div className="absolute top-0 right-0">
              <Button asChild variant="ghost" size="icon">
@@ -400,55 +392,58 @@ export function InvoiceGeneratorView() {
 
         <Card>
             <CardHeader className="flex-row justify-between items-center">
-                <CardTitle>Invoice Details</CardTitle>
+                <CardTitle>Invoice Header</CardTitle>
                 <div className="flex items-center gap-2">
                     <Button onClick={handleSaveInvoice} disabled={isSaving}>
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Invoice
                     </Button>
                     <Button variant="outline" onClick={handlePreview}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
-                    <Button variant="outline" onClick={handlePreview}><FileDown className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                             <Label>Client</Label>
-                             <Popover open={isClientPopoverOpen} onOpenChange={setIsClientPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="w-full justify-between">
-                                        {selectedContact ? (
-                                            <span className="truncate">{selectedContact.name} {selectedContact.businessName ? `(${selectedContact.businessName})` : ''}</span>
-                                        ) : "Select client..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search clients..." />
-                                        <CommandList>
-                                            <CommandEmpty>No client found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {contacts.map(c => (
-                                                    <CommandItem
-                                                        key={c.id}
-                                                        value={c.name}
-                                                        onSelect={() => {
-                                                            setSelectedContactId(c.id);
-                                                            setIsClientPopoverOpen(false);
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")} />
-                                                        {c.name} {c.businessName ? `(${c.businessName})` : ''}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                             <Button variant="link" className="p-0 h-auto text-xs" onClick={handleOpenNewContactDialog}>+ Add New Contact</Button>
+                             <Label>Billing Contact</Label>
+                             <div className="flex gap-2">
+                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between overflow-hidden">
+                                            {selectedContact ? (
+                                                <span className="truncate">{selectedContact.name} {selectedContact.businessName ? `(${selectedContact.businessName})` : ''}</span>
+                                            ) : "Select contact..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search contacts..." />
+                                            <CommandList>
+                                                <CommandEmpty>No contact found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {contacts.map(c => (
+                                                        <CommandItem
+                                                            key={c.id}
+                                                            value={c.name}
+                                                            onSelect={() => {
+                                                                setSelectedContactId(c.id);
+                                                                setIsContactPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")} />
+                                                            {c.name} {c.businessName ? `(${c.businessName})` : ''}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Contact">
+                                    <UserPlus className="h-4 w-4" />
+                                </Button>
+                             </div>
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -544,7 +539,7 @@ export function InvoiceGeneratorView() {
                                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" align="start">
-                                            <p className="max-w-xs">
+                                            <p className="max-w-xs text-xs">
                                                 Interest on overdue accounts will be charged at 1% for 30 days, 2% for 60 days, 3% for 90 days, and 5% thereafter, calculated monthly not in advance.
                                             </p>
                                         </TooltipContent>
@@ -553,28 +548,27 @@ export function InvoiceGeneratorView() {
                             </div>
                             <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4}/>
                          </div>
-                         <div className="space-y-2 border rounded-lg p-4 bg-muted/50">
-                            <div className="flex justify-between">
+                         <div className="space-y-2 border rounded-lg p-4 bg-muted/50 h-fit self-end">
+                            <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Subtotal:</span>
                                 <span className="font-mono">{formatCurrency(subtotal)}</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Tax:</span>
                                 <span className="font-mono">{formatCurrency(tax)}</span>
                             </div>
-                            <Separator />
+                            <Separator className="my-2" />
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total Due:</span>
-                                <span className="font-mono">{formatCurrency(total)}</span>
+                                <span className="font-mono text-primary">{formatCurrency(total)}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </CardContent>
-            <CardFooter className="justify-between">
-                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear</Button>
-                 </div>
+            <CardFooter className="justify-between border-t p-4">
+                 <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
+                 <Button variant="outline" size="sm" onClick={handlePreview}><FileDown className="mr-2 h-4 w-4" /> Download PDF</Button>
             </CardFooter>
         </Card>
       </div>
@@ -589,7 +583,6 @@ export function InvoiceGeneratorView() {
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
-        initialData={contactFormInitialData}
       />
       <AddLineItemDialog
         isOpen={isAddLineItemDialogOpen}

@@ -9,15 +9,9 @@ import { Button } from '@/components/ui/button';
 import { LoaderCircle, ArrowLeft, ArrowDownAZ, ArrowUpZA, Save, GripVertical, type LucideIcon } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { allMenuItems } from '@/lib/menu-items';
+import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 import { getUserProfile, updateUserProfile } from '@/services/user-profile-service';
 import { cn } from '@/lib/utils';
-
-interface MenuItem {
-    href: string;
-    label: string;
-    icon: LucideIcon;
-}
 
 interface DraggableItemProps {
     item: MenuItem;

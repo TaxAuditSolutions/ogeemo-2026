@@ -69,6 +69,7 @@ export interface UserProfile {
         accountingQuickNavOrder?: string[];
         googleAppsOrder?: string[];
         fileFolderOrder?: string[];
+        defaultTaxRate?: number;
         planningRituals?: {
             daily: Omit<PlanningRitual, 'day'>;
             weekly: Omit<PlanningRitual, 'repeatEnabled' | 'repeatCount'>;
@@ -88,6 +89,7 @@ const defaultPreferences: UserProfile['preferences'] = {
     accountingQuickNavOrder: [],
     googleAppsOrder: [],
     fileFolderOrder: [],
+    defaultTaxRate: 15,
     planningRituals: {
         daily: { time: '17:00', duration: 25, repeatEnabled: false, repeatCount: 5 },
         weekly: { day: 'Friday', time: '15:00', duration: 90 },

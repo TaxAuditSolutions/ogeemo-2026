@@ -44,13 +44,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { AccountingPageHeader } from "@/components/accounting/page-header";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon, UserPlus } from "lucide-react";
-import { cn, formatTime } from "@/lib/utils";
+import { AccountingPageHeader } from "@/components/accounting/page-header";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon, UserPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
@@ -59,7 +59,6 @@ import {
     getExpenseTransactions, addExpenseTransaction, updateExpenseTransaction, deleteExpenseTransaction, type ExpenseTransaction, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
-    getCompanies, 
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -99,7 +98,6 @@ export function LedgersView() {
   const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
-  const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
@@ -128,12 +126,11 @@ export function LedgersView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [income, expenses, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries] = await Promise.all([
+        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
             getContacts(user.uid),
             getContactFolders(user.uid),
-            getCompanies(user.uid),
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),
             getIndustries(user.uid),
@@ -142,7 +139,6 @@ export function LedgersView() {
         setExpenseLedger(expenses); 
         setContacts(fetchedContacts);
         setContactFolders(fetchedFolders);
-        setCompanies(fetchedCompanies);
         setExpenseCategories(fetchedExpenseCategories); 
         setIncomeCategories(fetchedIncomeCategories);
         setCustomIndustries(fetchedIndustries);
@@ -152,7 +148,6 @@ export function LedgersView() {
 
   React.useEffect(() => { loadData(); }, [loadData]);
 
-  // Set default tax rate when opening dialog for new transaction
   React.useEffect(() => {
     if (isTransactionDialogOpen && !transactionToEdit && preferences?.defaultTaxRate !== undefined) {
         setNewTransaction(prev => ({
@@ -282,7 +277,6 @@ export function LedgersView() {
   };
 
   const sanitizePositiveNumber = (val: string) => {
-      // Remove any non-digit characters except for one decimal point
       return val.replace(/[^-0-9.]/g, '').replace(/^-/, '');
   };
 
@@ -303,6 +297,21 @@ export function LedgersView() {
           });
       }
   };
+
+  React.useEffect(() => {
+      const totalAmount = parseFloat(newTransaction.totalAmount);
+      const taxRate = parseFloat(newTransaction.taxRate);
+
+      if (!isNaN(totalAmount) && !isNaN(taxRate) && taxRate > 0) {
+          const preTax = totalAmount / (1 + taxRate / 100);
+          const tax = totalAmount - preTax;
+          setNewTransaction(prev => ({ ...prev, preTaxAmount: preTax.toFixed(2), taxAmount: tax.toFixed(2) }));
+      } else if (!isNaN(totalAmount)) {
+           setNewTransaction(prev => ({ ...prev, preTaxAmount: totalAmount.toFixed(2), taxAmount: '0.00' }));
+      } else {
+          setNewTransaction(prev => ({ ...prev, preTaxAmount: '', taxAmount: '' }));
+      }
+  }, [newTransaction.totalAmount, newTransaction.taxRate]);
 
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
@@ -404,7 +413,7 @@ export function LedgersView() {
 
         <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
             <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
-                <DialogHeader className="text-center sm:text-center shrink-0">
+                <DialogHeader className="text-center shrink-0">
                     <DialogTitle className="text-2xl text-primary font-bold">{transactionToEdit ? 'Edit' : 'Post'} Transaction</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-1 min-h-0">
@@ -433,7 +442,7 @@ export function LedgersView() {
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="flex-1 justify-between">
-                                            {newTransaction.company || "Select contact..."}
+                                            <span className="truncate">{newTransaction.company || "Select contact..."}</span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -471,7 +480,7 @@ export function LedgersView() {
                             <Label className="text-right">Amount *</Label>
                             <div className="relative col-span-3">
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                <input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: sanitizePositiveNumber(e.target.value) }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-7" placeholder="0.00" />
+                                <Input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: sanitizePositiveNumber(e.target.value) }))} className="pl-7" placeholder="0.00" />
                             </div>
                         </div>
 
@@ -574,8 +583,8 @@ export function LedgersView() {
             folders={contactFolders}
             onFoldersChange={setContactFolders}
             onSave={handleContactSave}
-            companies={companies}
-            onCompaniesChange={setCompanies}
+            companies={[]}
+            onCompaniesChange={() => {}}
             customIndustries={customIndustries}
             onCustomIndustriesChange={setCustomIndustries}
         />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -46,16 +45,16 @@ import { type Industry } from '@/services/industry-service';
 import { addCompany } from '@/services/accounting-service';
 import { addIndustry, updateIndustry, deleteIndustry } from '@/services/industry-service';
 import { craIndustryCodes } from '@/data/cra-industry-codes';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { addContact, updateContact } from '@/services/contact-service';
 import { addFolder } from '@/services/contact-folder-service';
 import { useAuth } from '@/context/auth-context';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
-import { Separator } from '../ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Separator } from '@/components/ui/separator';
 
 const contactSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),

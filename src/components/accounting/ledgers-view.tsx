@@ -44,12 +44,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, FilterX, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon, UserPlus } from "lucide-react";
 import { cn, formatTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -487,9 +487,24 @@ export function LedgersView() {
                         </div>
 
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Tax Rate (%)</Label>
+                            <div className="flex flex-col items-end">
+                                <Label htmlFor="tx-taxRate-gl" className="text-right">Tax Rate (%)</Label>
+                                <Button variant="link" asChild className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary">
+                                    <Link href="/settings">Change Default</Link>
+                                </Button>
+                            </div>
                             <div className="relative col-span-3">
-                                <Input type="number" min="0" max="100" step="0.1" value={newTransaction.taxRate} onChange={e => setNewTransaction(p => ({ ...p, taxRate: sanitizePositiveNumber(e.target.value) }))} className="pr-8" placeholder="e.g., 15" />
+                                <Input 
+                                    id="tx-taxRate-gl" 
+                                    type="number" 
+                                    min="0" 
+                                    max="100" 
+                                    step="0.1" 
+                                    value={newTransaction.taxRate} 
+                                    onChange={e => setNewTransaction(p => ({ ...p, taxRate: sanitizePositiveNumber(e.target.value) }))} 
+                                    className="pr-8" 
+                                    placeholder="e.g., 15" 
+                                />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                             </div>
                         </div>

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Percent } from "lucide-react";
 
 export function PreferencesCard() {
   const { preferences, updatePreferences, isLoading } = useUserPreferences();
@@ -43,15 +44,15 @@ export function PreferencesCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Preferences</CardTitle>
-        <CardDescription>Manage your application preferences.</CardDescription>
+        <CardTitle>Preferences & Defaults</CardTitle>
+        <CardDescription>Customize how Ogeemo works for you.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
             <div className="space-y-0.5">
-                <Label htmlFor="dictation-switch" className="text-base">Show Voice Dictation Buttons</Label>
+                <Label htmlFor="dictation-switch" className="text-base">Voice Dictation</Label>
                 <p className="text-sm text-muted-foreground">
-                    Display the microphone icon for voice-to-text input in forms and chat.
+                    Show microphone buttons for voice-to-text in forms.
                 </p>
             </div>
             <Switch
@@ -64,9 +65,13 @@ export function PreferencesCard() {
         <Separator />
 
         <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary">
+                <Percent className="h-5 w-5" />
+                <h3 className="font-semibold">Tax Settings</h3>
+            </div>
             <div className="space-y-1">
-                <Label htmlFor="default-tax-rate" className="text-base">Default Sales Tax Rate (%)</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label htmlFor="default-tax-rate" className="text-sm">Default Sales Tax Rate (%)</Label>
+                <p className="text-xs text-muted-foreground">
                     This rate will be pre-filled when you post new transactions in the ledger.
                 </p>
             </div>

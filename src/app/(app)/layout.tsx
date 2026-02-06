@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
 import { ActiveTimerIndicator } from '@/components/layout/active-timer-indicator';
-import { Sidebar, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Bot, Search } from 'lucide-react';
+import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 
 // Recompilation trigger comment
@@ -36,6 +36,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex-1 overflow-y-auto pt-4">
                 <MainMenu />
               </div>
+              <SidebarFooter className="border-t border-white/10 p-4 shrink-0">
+                <Button asChild variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent">
+                  <Link href="/settings">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </Button>
+              </SidebarFooter>
             </Sidebar>
             
             {/* Main Content */}

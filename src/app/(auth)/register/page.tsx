@@ -79,7 +79,7 @@ export default function RegisterPage() {
 
         toast({
             title: "Welcome to Ogeemo!",
-            description: "Your account has been created successfully.",
+            description: "Your account has been created successfully. Your 30-day free trial has begun.",
         });
         
         // The AuthProvider will handle the redirect to the action manager automatically
@@ -109,7 +109,7 @@ export default function RegisterPage() {
         </div>
         <CardTitle className="text-2xl font-headline font-semibold">Create Your Ogeemo Account</CardTitle>
         <CardDescription>
-            Enter your information below to create your account.
+            Enter your information below to create your account. <span className="font-bold text-primary block mt-1">First 30 days are free!</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -122,6 +122,9 @@ export default function RegisterPage() {
                 <p className="text-xs text-center text-muted-foreground pt-2">
                     By creating an account, you agree to our <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>.
                 </p>
+                <div className="bg-primary/5 border border-primary/20 rounded-md p-3 text-center mb-4">
+                    <p className="text-sm font-semibold text-primary">No credit card required to start your free trial.</p>
+                </div>
                 <Button type="submit" className="w-full">
                     Create Account
                 </Button>

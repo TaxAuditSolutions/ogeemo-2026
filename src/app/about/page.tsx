@@ -35,7 +35,7 @@ const teamMembers = [
     {
         name: "Julie White",
         role: "Founder & Accounting Specialist",
-        bio: "Julie has over 20 years of in-depth experience with Accounting Software. She ensures that the accounting software is audit-ready and meets the needs of our clients.",
+        bio: "Julie has over 20 years of in depth experience with Accounting Software. She ensures that the accounting software is audit ready and meets the needs of our clients.",
         imageId: "about-julie"
     },
     {
@@ -99,7 +99,7 @@ export default function AboutUsPage() {
                 <div className="container mx-auto px-4">
                      <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">The Ogeemo Philosophy</h2>
-                        <p className="mt-4 text-muted-foreground max-w-3xl mx-auto">
+                        <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
                             Our development is guided by three core principles that ensure we build a platform that truly serves you.
                         </p>
                     </div>

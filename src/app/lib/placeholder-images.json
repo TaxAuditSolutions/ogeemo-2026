@@ -1,0 +1,35 @@
+
+{
+  "website-hero": {
+    "url": "https://picsum.photos/seed/ogeemo-hero/1200/600",
+    "hint": "modern business office workspace"
+  },
+  "about-team": {
+    "url": "https://picsum.photos/seed/ogeemo-team/800/600",
+    "hint": "diverse business founders meeting"
+  },
+  "about-dan": {
+    "url": "https://picsum.photos/seed/dan-white/400/400",
+    "hint": "professional male executive"
+  },
+  "about-nick": {
+    "url": "https://picsum.photos/seed/nick-illiopoulos/400/400",
+    "hint": "software engineer professional"
+  },
+  "about-julie": {
+    "url": "https://picsum.photos/seed/julie-white/400/400",
+    "hint": "professional female accountant"
+  },
+  "features-dashboard": {
+    "url": "https://picsum.photos/seed/ogeemo-dashboard/800/600",
+    "hint": "business software dashboard analytics"
+  },
+  "features-analytics": {
+    "url": "https://picsum.photos/seed/ogeemo-stats/800/600",
+    "hint": "financial data charts screen"
+  },
+  "hytexercise-preview": {
+    "url": "https://picsum.photos/seed/fitness/800/450",
+    "hint": "person doing chair stretches"
+  }
+}

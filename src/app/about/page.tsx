@@ -6,7 +6,6 @@ import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/com
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const principles = [
     {
@@ -30,14 +29,20 @@ const teamMembers = [
     {
         name: "Dan White",
         role: "Founder & CEO",
-        bio: "With over 20 years of experience helping small businesses navigate complex financial landscapes, Dan founded Ogeemo to solve the #1 problem he saw every day: software that creates more work instead of simplifying it. His vision is to empower entrepreneurs with a tool that is as ambitious as they are.",
-        imageId: "about-dan" as const
+        bio: "With over 40 years of experience helping small businesses navigate complex business landscapes, Dan architected Ogeemo to solve the #1 problem he saw every day: That being software that creates more work instead of just simplifying processes. His vision is to empower entrepreneurs with a tool that is as ambitious as the “Ogeemo Project”",
+        imageId: "about-dan"
     },
     {
-        name: "Alex Chen",
-        role: "Lead Architect & Developer",
-        bio: "Alex is the technical mastermind behind Ogeemo. A full-stack developer with a passion for clean architecture and seamless user experiences, he leads the team in building a robust, scalable, and secure platform. He believes technology should be an invisible enabler of success.",
-        imageId: "about-alex" as const
+        name: "Julie White",
+        role: "Founder & Accounting Specialist",
+        bio: "Julie has over 20 years of in-depth experience with Accounting Software. She ensures that the accounting software is audit-ready and meets the needs of our clients.",
+        imageId: "about-julie"
+    },
+    {
+        name: "Nick Illiopoulos",
+        role: "Founder & Software Engineer",
+        bio: "Nick is the technical genius behind the Ogeemo Technology. A full-stack developer with a passion for clean architecture and seamless user experiences, he leads the team in building a robust, scalable, and secure platform. He believes technology should be an invisible enabler of success.",
+        imageId: "about-nick"
     }
 ]
 
@@ -68,21 +73,21 @@ export default function AboutUsPage() {
              <section className="py-16 md:py-24">
                 <div className="container mx-auto px-4">
                      <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Meet the Team</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Meet the Founders</h2>
                         <p className="mt-4 text-muted-foreground max-w-3xl mx-auto">
-                            The minds behind the mission. We're a small, dedicated team passionate about building tools that empower small businesses.
+                            The visionaries behind the mission. We're a dedicated team passionate about building tools that empower small businesses.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         {teamMembers.map(member => (
                             <Card key={member.name} className="border-0 shadow-none bg-transparent">
                                 <CardContent className="flex flex-col items-center text-center p-0">
-                                    <div className="relative w-32 h-32 mb-4">
-                                        <ImagePlaceholder id={member.imageId} className="rounded-full"/>
+                                    <div className="relative w-32 h-32 mb-4 overflow-hidden rounded-full border-2 border-primary/20">
+                                        <ImagePlaceholder id={member.imageId} />
                                     </div>
-                                    <CardTitle>{member.name}</CardTitle>
-                                    <p className="text-primary font-semibold">{member.role}</p>
-                                    <p className="mt-2 text-muted-foreground">{member.bio}</p>
+                                    <CardTitle className="text-xl">{member.name}</CardTitle>
+                                    <p className="text-primary font-semibold text-sm mb-3 uppercase tracking-wider">{member.role}</p>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">{member.bio}</p>
                                 </CardContent>
                             </Card>
                         ))}
@@ -107,7 +112,7 @@ export default function AboutUsPage() {
                                     </div>
                                     <CardTitle>{p.title}</CardTitle>
                                 </CardHeader>
-                                <CardDescription className="px-6 pb-6">
+                                <CardDescription className="px-6 pb-6 text-center">
                                     {p.description}
                                 </CardDescription>
                             </Card>

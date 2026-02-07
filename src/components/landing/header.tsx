@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from "next/link";
@@ -47,7 +46,6 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="link" asChild><Link href="/blog">Blog</Link></Button>
             <Button variant="link" asChild><Link href="/about">About</Link></Button>
             <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>
         </nav>

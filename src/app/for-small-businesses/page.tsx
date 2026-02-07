@@ -40,7 +40,7 @@ export default function ForSmallBusinessesPage() {
                     </p>
                     <div className="mt-8">
                         <Button asChild size="lg">
-                            <Link href="/register">Join Beta Program</Link>
+                            <Link href="/register">Become a Client</Link>
                         </Button>
                     </div>
                 </div>
@@ -94,7 +94,7 @@ export default function ForSmallBusinessesPage() {
                                 </div>
                             </div>
                         </div>
-                        <ImagePlaceholder data-ai-hint="business dashboard" className="rounded-lg h-[400px] w-full" />
+                        <ImagePlaceholder id="website-hero" className="rounded-lg h-[400px] w-full" />
                     </div>
                 </div>
             </section>
@@ -105,7 +105,7 @@ export default function ForSmallBusinessesPage() {
                 <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Focus on Growth, Not Complexity?</h2>
                 <div className="mt-8">
                 <Button asChild size="lg">
-                    <Link href="/register">Join our Ogeemo Beta Tester Community</Link>
+                    <Link href="/register">Join the Ogeemo Community</Link>
                 </Button>
                 </div>
             </div>

@@ -12,8 +12,8 @@ const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Ogeemo",
-  "url": "https://www.ogeemo.com", // Assuming the final URL
-  "logo": "https://www.ogeemo.com/images/Ogeemo-Logo-BonT.png", // Assuming a logo path
+  "url": "https://www.ogeemo.com",
+  "logo": "https://www.ogeemo.com/images/Ogeemo-Logo-BonT.png",
   "description": "Ogeemo is an all-in-one business management platform that unifies accounting, project management, and CRM into a single, intelligent command center.",
 };
 
@@ -42,6 +42,9 @@ export default function HomePage() {
                 Tired of juggling multiple apps for accounting, projects, and CRM? Ogeemo is the all-in-one platform that unifies every part of your business, so you can stop managing software and start building your empire.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4">
+                <Button asChild size="lg">
+                    <Link href="/register">Sign Up as a Client</Link>
+                </Button>
                 <ScrollButton />
               </div>
             </div>

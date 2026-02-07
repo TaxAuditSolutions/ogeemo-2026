@@ -84,7 +84,7 @@ export default function ForBookkeepersPage() {
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Modernize Your Practice?</h2>
                         <div className="mt-8">
                             <Button asChild size="lg">
-                                <Link href="/register">Join the Beta</Link>
+                                <Link href="/register">Sign Up Now</Link>
                             </Button>
                         </div>
                     </div>

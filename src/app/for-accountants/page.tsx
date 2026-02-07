@@ -61,10 +61,10 @@ export default function ForAccountantsPage() {
                 <section className="py-16 md:py-20">
                     <div className="container mx-auto px-4 text-center">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Become a High-Value Advisor?</h2>
-                        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Join our beta program and discover how Ogeemo can transform your client relationships and your bottom line.</p>
+                        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Start your journey with Ogeemo today and transform your client relationships and your bottom line.</p>
                         <div className="mt-8">
                             <Button asChild size="lg">
-                                <Link href="/register">Start Your Free Beta Trial</Link>
+                                <Link href="/register">Get Started Now</Link>
                             </Button>
                         </div>
                     </div>
@@ -103,7 +103,7 @@ export default function ForAccountantsPage() {
                             <div className="mb-8">
                                 <h2 className="text-3xl md:text-4xl font-bold font-headline">The Ogeemo Consultant Advantage</h2>
                                 <p className="mt-4 text-muted-foreground max-w-3xl">
-                                    Master Ogeemo as a beta tester and unlock a new business opportunity. Become a certified consultant and market your services to a growing community.
+                                    Master Ogeemo and unlock a new business opportunity. Become a certified consultant and market your services to a growing community.
                                 </p>
                             </div>
                             <div className="space-y-6">

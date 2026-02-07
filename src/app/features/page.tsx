@@ -52,10 +52,9 @@ const softwareApplicationSchema = {
     "description": "Ogeemo unifies accounting, projects, and client management into one intelligent platform.",
     "offers": {
       "@type": "Offer",
-      "price": "0", // For the beta program
+      "price": "0",
       "priceCurrency": "USD"
     },
-    "softwareVersion": "Beta",
     "featureList": [
       "All-in-One Platform",
       "AI-Powered Automation",
@@ -151,10 +150,10 @@ export default function FeaturesPage() {
                 <section className="py-20 md:py-28">
                     <div className="container mx-auto px-4 text-center">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Build Your Empire on a Single Platform?</h2>
-                        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Join our beta program and be among the first to experience the future of business management.</p>
+                        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Sign up today and experience the future of business management.</p>
                         <div className="mt-8">
                             <Button asChild size="lg">
-                                <Link href="/register">Become a Beta Tester</Link>
+                                <Link href="/register">Get Started Now</Link>
                             </Button>
                         </div>
                     </div>

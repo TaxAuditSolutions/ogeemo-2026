@@ -1,7 +1,7 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -77,6 +77,7 @@ export function CreateTaskDialog({
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -154,6 +155,18 @@ export function CreateTaskDialog({
     }
   }
 
+  const handleScheduleToCalendar = () => {
+    const values = form.getValues();
+    const query = new URLSearchParams();
+    if (values.title) query.append('title', values.title);
+    if (values.description) query.append('notes', values.description);
+    if (values.projectId && values.projectId !== 'unassigned') {
+        query.append('projectId', values.projectId);
+    }
+    router.push(`/master-mind?${query.toString()}`);
+    onOpenChange(false);
+  };
+
   const isEditingTask = !!taskToEdit;
 
   return (
@@ -204,12 +217,17 @@ export function CreateTaskDialog({
               </div>
                  <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditingTask ? "Save Changes" : "Add Task"}
+            <DialogFooter className="flex flex-col sm:flex-row items-center gap-2 sm:justify-between">
+              <Button type="button" variant="outline" onClick={handleScheduleToCalendar} disabled={isLoading} className="w-full sm:w-auto">
+                <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
               </Button>
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                  {isEditingTask ? "Save Changes" : "Add Task"}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>

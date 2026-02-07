@@ -1,7 +1,7 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +29,7 @@ import { type Project, type Event as TaskEvent, type TaskStatus, type ProjectUrg
 import { type Contact } from '@/data/contacts';
 import { useAuth } from '@/context/auth-context';
 import { addTask, updateTask } from '@/services/project-service';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -88,6 +88,7 @@ export function NewTaskDialog({
 }: NewTaskDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
   
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -164,12 +165,26 @@ export function NewTaskDialog({
         setIsLoading(false);
     }
   }
+
+  const handleScheduleToCalendar = () => {
+    const values = form.getValues();
+    const query = new URLSearchParams();
+    if (values.title) query.append('title', values.title);
+    if (values.description) query.append('notes', values.description);
+    if (values.projectId && values.projectId !== 'unassigned') {
+        query.append('projectId', values.projectId);
+    }
+    router.push(`/master-mind?${query.toString()}`);
+    onOpenChange(false);
+  };
   
-  // This is a minimal implementation since project editing is not the primary focus of this dialog anymore.
-  // A dedicated NewProjectDialog will handle this better.
-  if (!onTaskCreate && !onTaskUpdate) {
+  if (!onTaskCreate && !onTaskUpdate && !onProjectCreate && !onProjectUpdate) {
       return null;
   }
+
+  const isEditing = !!taskToEdit || !!projectToEdit;
+  const isTaskMode = !!onTaskCreate || !!onTaskUpdate;
+  const buttonLabel = onProjectCreate || onProjectUpdate ? (isEditing ? "Update Project" : "Create Project") : (isEditing ? "Save Changes" : "Add Task");
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -177,54 +192,66 @@ export function NewTaskDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>{taskToEdit ? "Edit Task" : "New Task"}</DialogTitle>
+              <DialogTitle>{isEditing ? "Edit" : "New"} {isTaskMode ? "Task" : "Project"}</DialogTitle>
               <DialogDescription>
-                {taskToEdit ? "Update the details for this task." : "Add a new task."}
+                {isEditing ? `Update the details for this ${isTaskMode ? 'task' : 'project'}.` : `Add a new ${isTaskMode ? 'task' : 'project'}.`}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
-              <FormField control={form.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder="e.g., Draft homepage copy" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder="Add more details about the task..." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || 'unassigned'}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Assign to a project..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="unassigned">
-                          Unassigned Tasks / To-Do List
-                        </SelectItem>
-                        {projects.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
-              </div>
-                 <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
+              <FormField control={form.control} name="title" render={({ field }) => ( <FormItem> <FormLabel>Title</FormLabel> <FormControl><Input placeholder={isTaskMode ? "e.g., Draft homepage copy" : "Enter project name..."} {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description (Optional)</FormLabel> <FormControl><Textarea placeholder={isTaskMode ? "Add more details about the task..." : "Enter a brief description of the project..."} {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              
+              {isTaskMode && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || 'unassigned'}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Assign to a project..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="unassigned">
+                              Unassigned Tasks / To-Do List
+                            </SelectItem>
+                            {projects.map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="urgency" render={({ field }) => ( <FormItem> <FormLabel>Time Urgency</FormLabel> <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A - Urgent">A - Urgent</SelectItem><SelectItem value="B - Important">B - Important</SelectItem><SelectItem value="C - Optional">C - Optional</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="importance" render={({ field }) => ( <FormItem> <FormLabel>Task Importance</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A">A - Critical</SelectItem><SelectItem value="B">B - Standard</SelectItem><SelectItem value="C">C - Low</SelectItem></SelectContent></Select><FormMessage /> </FormItem> )} />
+                  </div>
+                </>
+              )}
+              <FormField control={form.control} name="isTodoItem" render={({ field }) => ( <FormItem className="hidden"> <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl> </FormItem> )} />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {taskToEdit ? "Save Changes" : "Add Task"}
-              </Button>
+            <DialogFooter className="flex flex-col sm:flex-row items-center gap-2 sm:justify-between">
+              {isTaskMode && (
+                <Button type="button" variant="outline" onClick={handleScheduleToCalendar} disabled={isLoading} className="w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" /> Schedule to Calendar
+                </Button>
+              )}
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                  {buttonLabel}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>

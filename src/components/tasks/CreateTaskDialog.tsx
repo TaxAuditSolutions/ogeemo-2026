@@ -200,7 +200,7 @@ export function CreateTaskDialog({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="unassigned">
-                          None (To-Do List Only)
+                          Unassigned Tasks / To-Do List
                         </SelectItem>
                         {projects.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>

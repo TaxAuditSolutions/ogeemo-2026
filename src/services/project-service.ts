@@ -321,11 +321,20 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
 // --- Task/Event Functions ---
 export async function getTasksForProject(userId: string, projectId: string): Promise<TaskEvent[]> {
   const db = getDb();
-  const q = query(
-    collection(db, TASKS_COLLECTION), 
-    where("userId", "==", userId),
-    where("projectId", "==", projectId)
-  );
+  let q;
+  if (projectId === 'inbox') {
+      q = query(
+        collection(db, TASKS_COLLECTION), 
+        where("userId", "==", userId),
+        where("projectId", "==", null)
+      );
+  } else {
+      q = query(
+        collection(db, TASKS_COLLECTION), 
+        where("userId", "==", userId),
+        where("projectId", "==", projectId)
+      );
+  }
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToTask);
 }

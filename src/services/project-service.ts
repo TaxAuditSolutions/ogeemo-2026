@@ -459,7 +459,7 @@ export async function updateAvailableActionChips(userId: string, chips: ActionCh
 export async function addActionChip(data: Omit<ActionChipData, 'id'>, type: string = 'dashboard'): Promise<ActionChipData> {
     const collectionNameMap: Record<string, string> = {
         dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;

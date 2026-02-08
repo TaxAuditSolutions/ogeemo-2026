@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Edit, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle } from 'lucide-react';
+import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Edit, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
@@ -17,11 +16,12 @@ import { addTask, getProjects, addProject, updateProject, getTaskById, updateTas
 import { getContacts, type FolderData } from '@/services/contact-service';
 import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
 import { Textarea } from '../ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -72,6 +72,7 @@ const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 export function TimeManagerView({ projects: initialProjects, contacts: initialContacts }: { projects: Project[], contacts: Contact[] }) {
     const [projects, setProjects] = React.useState<Project[]>(initialProjects);
     const [contacts, setContacts] = React.useState<Contact[]>(initialContacts);
+    const [workers, setWorkers] = React.useState<Worker[]>([]);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
@@ -83,6 +84,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [notes, setNotes] = React.useState("");
     const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
     const [selectedContactId, setSelectedContactId] = React.useState<string | null>(null);
+    const [selectedWorkerId, setSelectedWorkerId] = React.useState<string | null>(null);
     const [isBillable, setIsBillable] = React.useState(false);
     const [billableRate, setBillableRate] = React.useState<number | ''>(100);
     
@@ -108,6 +110,9 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = React.useState(false);
     const [projectAction, setProjectAction] = React.useState<string>('select');
     const [newProjectName, setNewProjectName] = React.useState('');
+
+    // State for worker selection UI
+    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
 
     
     const [eventToEdit, setEventToEdit] = React.useState<TaskEvent | null>(null);
@@ -159,6 +164,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             position: 0,
             projectId: selectedProjectId,
             contactId: selectedContactId,
+            workerId: selectedWorkerId,
             isBillable: isBillable,
             billableRate: isBillable ? Number(billableRate) || 0 : 0,
             userId: user.uid,
@@ -173,7 +179,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             toast({ variant: "destructive", title: "Failed to create event", description: error.message });
             return null;
         }
-    }, [user, subject, notes, selectedProjectId, selectedContactId, isBillable, billableRate, toast]);
+    }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, toast]);
 
     const handleStartTimer = useCallback(async () => {
         let currentEvent = eventToEdit;
@@ -270,6 +276,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             status: isScheduled ? 'todo' : 'inProgress',
             projectId: selectedProjectId,
             contactId: selectedContactId,
+            workerId: selectedWorkerId,
             duration: totalTime,
             sessions: sessions,
             isBillable: isBillable,
@@ -291,7 +298,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
+    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
 
     const handleLogCurrentSession = async () => {
         if (!timerState || !timerState.isActive || elapsedSeconds <= 0) {
@@ -372,14 +379,16 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             setProjects(initialProjects);
             setContacts(initialContacts);
 
-            const [fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
+            const [fetchedFolders, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid),
+                getWorkers(user.uid),
             ]);
             setContactFolders(fetchedFolders);
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
+            setWorkers(fetchedWorkers);
             
             // Set a default date if one isn't passed from URL
             if (!searchParams.get('start') && !searchParams.get('eventId')) {
@@ -402,6 +411,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     setNotes(eventData.description || "");
                     setSelectedProjectId(eventData.projectId || null);
                     setSelectedContactId(eventData.contactId || null);
+                    setSelectedWorkerId(eventData.workerId || null);
                     setIsBillable(eventData.isBillable || false);
                     setBillableRate(eventData.billableRate || 0);
                     setSessions(eventData.sessions || []);
@@ -411,7 +421,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                         setStartHour(String(eventStartDate.getHours()));
                         setStartMinute(String(eventStartDate.getMinutes()));
                     } else {
-                        // If there is no valid start date, default to now
                         setStartDate(new Date());
                         setStartHour(String(new Date().getHours()));
                         setStartMinute(String(new Date().getMinutes()));
@@ -426,7 +435,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     toast({ variant: 'destructive', title: 'Error', description: 'Could not load event data.' });
                 }
             } else {
-                // Pre-fill from URL params only if not editing an existing event
                 const startParam = searchParams.get('start');
                 const endParam = searchParams.get('end');
                 const titleParam = searchParams.get('title');
@@ -632,6 +640,40 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card>
+                                    <CardHeader className="p-4"><CardTitle className="text-base">Assigned Worker</CardTitle></CardHeader>
+                                    <CardContent className="p-4 pt-0">
+                                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                    <User className="mr-2 h-4 w-4" />
+                                                    <span className="truncate">{selectedWorkerId ? workers.find(w => w.id === selectedWorkerId)?.name : "Unassigned / Admin"}</span>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search workers..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No worker found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem onSelect={() => { setSelectedWorkerId(null); setIsWorkerPopoverOpen(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", !selectedWorkerId ? "opacity-100" : "opacity-0")} />
+                                                                Admin (Me)
+                                                            </CommandItem>
+                                                            {workers.map(w => (
+                                                                <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")} />
+                                                                    {w.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardContent>
+                                </Card>
+                                <Card>
                                     <CardHeader className="p-4"><CardTitle className="text-base">Select a Contact</CardTitle></CardHeader>
                                     <CardContent className="p-4 pt-0">
                                         <div className="space-y-2">
@@ -653,40 +695,40 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <Card>
-                                    <CardHeader className="p-4"><CardTitle className="text-base">Select or Create a Project</CardTitle></CardHeader>
-                                    <CardContent className="p-4 pt-0">
-                                        <div className="space-y-2">
-                                            <RadioGroup onValueChange={(value) => setProjectAction(value)} value={projectAction} className="flex space-x-4">
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="select" id="select-project" /><Label htmlFor="select-project">Select/Search</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-project" /><Label htmlFor="add-project">Add New</Label></div>
-                                            </RadioGroup>
-
-                                            {projectAction === 'select' ? (
-                                                <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                            {selectedProjectId ? projects.find(p => p.id === selectedProjectId)?.name : "Select project..."}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
-                                                </Popover>
-                                            ) : (
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <Input
-                                                        placeholder="Enter new project name..."
-                                                        value={newProjectName}
-                                                        onChange={e => setNewProjectName(e.target.value)}
-                                                        onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
-                                                    />
-                                                    <Button onClick={handleCreateProject}><Plus className="mr-2 h-4 w-4"/> Create</Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
                             </div>
+                            <Card>
+                                <CardHeader className="p-4"><CardTitle className="text-base">Select or Create a Project</CardTitle></CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="space-y-2">
+                                        <RadioGroup onValueChange={(value) => setProjectAction(value)} value={projectAction} className="flex space-x-4">
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="select" id="select-project" /><Label htmlFor="select-project">Select/Search</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-project" /><Label htmlFor="add-project">Add New</Label></div>
+                                        </RadioGroup>
+
+                                        {projectAction === 'select' ? (
+                                            <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
+                                                        {selectedProjectId ? projects.find(p => p.id === selectedProjectId)?.name : "Select project..."}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
+                                            </Popover>
+                                        ) : (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <Input
+                                                    placeholder="Enter new project name..."
+                                                    value={newProjectName}
+                                                    onChange={e => setNewProjectName(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
+                                                />
+                                                <Button onClick={handleCreateProject}><Plus className="mr-2 h-4 w-4"/> Create</Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
                             
                             <div className="space-y-2">
                                 <Label htmlFor="notes">Notes / Details</Label>
@@ -743,7 +785,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base flex items-center justify-between">
-                                <span>Time Log</span>
+                                <span>Live Time Tracking</span>
                                 <span className="font-mono text-lg text-primary">{formatTime(totalTime)}</span>
                             </CardTitle>
                         </CardHeader>
@@ -755,11 +797,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                 </div>
                                 <div className="flex-shrink-0 flex gap-2">
                                      {!timerState || !timerState.isActive ? (
-                                        <Button onClick={handleStartTimer}><Play className="mr-2 h-4 w-4" /> Start New Session</Button>
+                                        <Button onClick={handleStartTimer}><Play className="mr-2 h-4 w-4" /> Start Timer</Button>
                                     ) : timerState.isPaused ? (
-                                        <Button onClick={handleResumeTimer}><Play className="mr-2 h-4 w-4" /> Resume Session</Button>
+                                        <Button onClick={handleResumeTimer}><Play className="mr-2 h-4 w-4" /> Resume</Button>
                                     ) : (
-                                        <Button onClick={handlePauseTimer} variant="secondary"><Pause className="mr-2 h-4 w-4" /> Pause Session</Button>
+                                        <Button onClick={handlePauseTimer} variant="secondary"><Pause className="mr-2 h-4 w-4" /> Pause</Button>
                                     )}
                                     <Button onClick={handleLogCurrentSession} variant="outline" disabled={!timerState || !timerState.isActive}>Log Session</Button>
                                 </div>
@@ -776,7 +818,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent>
-                                                <DropdownMenuItem onSelect={() => handleOpenEditSession(session)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenEditSession(session)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setSessions(prev => prev.filter(s => s.id !== session.id))} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

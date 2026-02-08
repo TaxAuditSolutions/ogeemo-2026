@@ -106,15 +106,18 @@ export default function TimeLogReportPage() {
     }, [loadData]);
 
     const allMergedEntries = useMemo(() => {
-        const fromLogs = timeLogs.map(tl => ({
-            ...tl,
-            id: tl.id,
-            workerId: tl.workerId,
-            workerName: tl.workerName || workers.find(w => w.id === tl.workerId)?.name || (tl.workerId === user?.uid ? adminName : 'Unknown'),
-            startTime: new Date(tl.startTime),
-            durationSeconds: tl.durationSeconds,
-            source: 'log'
-        }));
+        const fromLogs = timeLogs.map(tl => {
+            const worker = workers.find(w => w.id === tl.workerId);
+            return {
+                ...tl,
+                id: tl.id,
+                workerId: tl.workerId,
+                workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
+                startTime: new Date(tl.startTime),
+                durationSeconds: tl.durationSeconds,
+                source: 'log'
+            };
+        });
 
         const fromTasks = tasks.map(t => {
             const workerId = t.workerId || user?.uid;
@@ -174,7 +177,7 @@ export default function TimeLogReportPage() {
     const workersWithAdmin = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: adminName,
+            name: `${adminName} (Admin)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',

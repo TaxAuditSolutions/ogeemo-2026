@@ -124,6 +124,17 @@ const docToActionChip = (doc: any): ActionChipData => {
     } as ActionChipData;
 };
 
+export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        return (data.chips || []).map((chip: any) => docToActionChip(chip));
+    }
+    return [];
+}
+
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
   const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
@@ -339,28 +350,6 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
     const db = getDb();
     const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
     await deleteDoc(templateRef);
-}
-
-export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        return (data.chips || []).map((chip: any) => docToActionChip(chip));
-    }
-    return [];
-}
-
-async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const chipsToSave = chips.map(chip => {
-        const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
-        const { icon, ...rest } = chip;
-        return { ...rest, iconName: iconName || 'Wand2' };
-    });
-    await setDoc(docRef, { chips: chipsToSave }, { merge: true });
 }
 
 export async function getActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {

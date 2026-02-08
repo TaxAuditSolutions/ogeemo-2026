@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
+import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
@@ -28,13 +29,14 @@ export default function TimeLogReportPage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
+    const [adminName, setAdminName] = useState<string>('Admin');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-    const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
+    const [entryToEdit, setEntryToEdit] = setEntryToEdit = useState<any | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
     
@@ -50,16 +52,20 @@ export default function TimeLogReportPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedWorkers, fetchedLogs, fetchedTasks] = await Promise.all([
+            const [fetchedWorkers, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid),
                 getTimeLogs(user.uid),
-                getTasksForUser(user.uid)
+                getTasksForUser(user.uid),
+                getUserProfile(user.uid)
             ]);
             
+            const name = profile?.displayName || user.displayName || user.email || 'Admin';
+            setAdminName(name);
+
             // Construct a virtual "Admin" worker for the current user
             const adminWorker: Worker = {
                 id: user.uid,
-                name: user.displayName || user.email || 'Admin',
+                name: name,
                 email: user.email || '',
                 workerType: 'employee',
                 payType: 'salary',
@@ -92,15 +98,21 @@ export default function TimeLogReportPage() {
             source: 'log'
         }));
 
-        const fromTasks = tasks.map(t => ({
-            ...t,
-            id: t.id,
-            workerId: t.workerId || user?.uid,
-            workerName: t.workerId ? (workers.find(w => w.id === t.workerId)?.name || 'Unknown') : (user?.displayName || user?.email || 'Admin'),
-            startTime: new Date(t.start),
-            durationSeconds: t.duration,
-            source: 'calendar'
-        }));
+        const fromTasks = tasks.map(t => {
+            const workerId = t.workerId || user?.uid;
+            const worker = workers.find(w => w.id === workerId);
+            const workerName = worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown');
+            
+            return {
+                ...t,
+                id: t.id,
+                workerId: workerId,
+                workerName: workerName,
+                startTime: new Date(t.start),
+                durationSeconds: t.duration || 0,
+                source: 'calendar'
+            };
+        });
 
         let combined = [...fromLogs, ...fromTasks];
 
@@ -114,7 +126,7 @@ export default function TimeLogReportPage() {
         }
 
         return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
-    }, [timeLogs, tasks, workers, selectedWorkerId, dateRange, user]);
+    }, [timeLogs, tasks, workers, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
 

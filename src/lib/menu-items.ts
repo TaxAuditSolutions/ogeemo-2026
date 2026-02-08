@@ -43,7 +43,7 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
-  { href: "/website", label: "About Ogeemo", icon: Globe },
+  { href: "/about", label: "About Ogeemo", icon: Globe },
   { href: "/master-mind", label: "Time & Event Scheduler", icon: BrainCircuit },
   { href: "/command-centre", label: "Command Centre", icon: BrainCircuit },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },

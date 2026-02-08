@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -47,12 +47,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil, Route, Briefcase, BookOpen } from 'lucide-react';
-import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, type Event as TaskEvent, getProjectById, updateProject } from '@/services/project-service';
+import { ArrowLeft, ChevronsUpDown, Check, Plus, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil } from 'lucide-react';
+import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, getProjectById, updateProject } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -60,7 +60,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
-
+import { type Event as TaskEvent } from '@/types/calendar-types';
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -125,11 +125,8 @@ export default function CreateProjectPage() {
     }
   }, [isAuthLoading, loadData]);
   
-    useEffect(() => {
-    // Wait until authentication is resolved and initial data is loaded
-    if (isAuthLoading || isLoadingData) {
-      return;
-    }
+  useEffect(() => {
+    if (isAuthLoading || isLoadingData) return;
 
     const projectId = searchParams.get('projectId');
     if (projectId && user) {
@@ -142,35 +139,22 @@ export default function CreateProjectPage() {
             setProjectName(projectData.name);
             setDescription(projectData.description || '');
             setSelectedContactId(projectData.contactId || null);
-          } else {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find project to edit.' });
           }
         } catch (error) {
           toast({ variant: 'destructive', title: 'Error', description: 'Failed to load project data.' });
         }
       };
       loadProject();
-    } else {
-      const title = searchParams.get('title');
-      const desc = searchParams.get('description');
-      if (title) {
-        setProjectName(title);
-        setDescription(desc || '');
-        setCreationStep('form');
-      }
     }
-  }, [searchParams, toast, user, isAuthLoading, isLoadingData]);
+  }, [searchParams, user, isAuthLoading, isLoadingData, toast]);
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-          if (selectedContactId === savedContact.id) {
-            setSelectedContactId(savedContact.id);
-          }
       } else {
           setContacts(prev => [...prev, savedContact]);
-          setSelectedContactId(savedContact.id);
       }
+      setSelectedContactId(savedContact.id);
       setIsContactFormOpen(false);
   };
   
@@ -193,10 +177,7 @@ export default function CreateProjectPage() {
   };
 
   const handleSave = async () => {
-    if (!user) {
-      toast({ variant: "destructive", title: "Error", description: "You must be logged in to create a project." });
-      return;
-    }
+    if (!user) return;
     if (!projectName.trim()) {
       toast({ variant: "destructive", title: "Validation Error", description: "Project Name is required." });
       return;
@@ -245,10 +226,7 @@ export default function CreateProjectPage() {
   };
   
   const handleSaveTemplate = async () => {
-    if (!user || !newTemplateName.trim()) {
-      toast({ variant: 'destructive', title: 'Template name is required.'});
-      return;
-    }
+    if (!user || !newTemplateName.trim()) return;
     if (!templateToEdit) return;
 
     try {
@@ -276,14 +254,13 @@ export default function CreateProjectPage() {
     }
   };
 
-
   const selectedContact = contacts.find(c => c.id === selectedContactId);
 
   return (
     <>
       <div className="p-6 h-full flex flex-col items-center">
         <header className="relative text-center mb-4 w-full max-w-lg">
-          <h1 className="text-3xl font-bold font-headline text-primary text-center">
+          <h1 className="text-3xl font-bold font-headline text-primary">
             {creationStep === 'choice' ? 'Create Your Project' : 'Project Details'}
           </h1>
           <div className="mt-4">
@@ -299,81 +276,53 @@ export default function CreateProjectPage() {
         </header>
         
         {creationStep === 'choice' ? (
-            <>
-              <div className="text-center mt-4">
-                <Dialog>
-                  <DialogTrigger asChild>
-                   <Button variant="link" className="text-muted-foreground">
-                     <Info className="mr-2 h-4 w-4" />
-                     How does Project Management work in Ogeemo?
-                   </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>The Ogeemo Method (TOM)</DialogTitle>
-                      <DialogDescription>
-                        A quick guide to projects, tasks, and getting things done.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-                      <AccordionItem value="item-1"><AccordionTrigger>Step 1: Create a Project</AccordionTrigger><AccordionContent>A "Project" is any outcome that requires more than one step. Start by creating a project for any goal, from "Renovate Kitchen" to "Launch New Website".</AccordionContent></AccordionItem>
-                      <AccordionItem value="item-2"><AccordionTrigger>Step 2: Plan Your Project</AccordionTrigger><AccordionContent>Once a project is created, you'll be taken to the "Project Planner". Here, you can list out all the individual steps required to complete your project. You can also save this list of steps as a reusable template for similar projects in the future.</AccordionContent></AccordionItem>
-                      <AccordionItem value="item-3"><AccordionTrigger>Step 3: Work on Tasks</AccordionTrigger><AccordionContent>From the Planner, go to the "Task Board". This is a Kanban-style board where each step from your plan appears as a task card in the "To Do" column. Drag tasks from "To Do" to "In Progress" and finally to "Done" as you complete your work.</AccordionContent></AccordionItem>
-                    </Accordion>
-                    <DialogFooter>
-                      <DialogClose asChild><Button type="button">Close</Button></DialogClose>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex-1 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-8 animate-in fade-in-50">
-                  <Card className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="text-center">
-                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                              <FilePlus2 className="h-8 w-8 text-primary" />
-                          </div>
-                          <CardTitle>Start a Blank Project</CardTitle>
-                          <CardDescription>Begin with a clean slate to build your project from the ground up.</CardDescription>
-                      </CardHeader>
-                      <CardFooter>
-                          <Button className="w-full" onClick={handleStartBlank}>Create Blank Project</Button>
-                      </CardFooter>
-                  </Card>
-                  <Card className="hover:shadow-lg transition-shadow">
-                      <CardHeader className="text-center">
-                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                              <FileText className="h-8 w-8 text-primary" />
-                          </div>
-                          <CardTitle>Start from a Template</CardTitle>
-                          <CardDescription>Select one of your saved project templates to get started quickly.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          {isLoadingData ? <div className="flex justify-center"><LoaderCircle className="h-6 w-6 animate-spin"/></div> : (
-                              <div className="space-y-2">
-                                  {templates.length > 0 ? templates.map(template => (
-                                    <div key={template.id} className="group flex items-center gap-1">
-                                      <Button variant="outline" className="w-full justify-start flex-1" onClick={() => handleSelectTemplate(template)}>
-                                          {template.name}
-                                      </Button>
-                                      <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-9 w-9">
-                                                  <MoreVertical className="h-4 w-4" />
-                                              </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent>
-                                              <DropdownMenuItem onSelect={() => handleEditTemplate(template)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                                              <DropdownMenuItem onSelect={() => handleDeleteTemplate(template)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
-                                  )) : <p className="text-center text-sm text-muted-foreground">No templates found.</p>}
-                              </div>
-                          )}
-                      </CardContent>
-                  </Card>
-              </div>
-            </>
+            <div className="flex-1 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start pt-8 animate-in fade-in-50">
+                <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <FilePlus2 className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>Start a Blank Project</CardTitle>
+                        <CardDescription>Begin with a clean slate to build your project from the ground up.</CardDescription>
+                    </CardHeader>
+                    <CardFooter>
+                        <Button className="w-full" onClick={handleStartBlank}>Create Blank Project</Button>
+                    </CardFooter>
+                </Card>
+                <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <FileText className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>Start from a Template</CardTitle>
+                        <CardDescription>Select one of your saved project templates to get started quickly.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingData ? <div className="flex justify-center"><LoaderCircle className="h-6 w-6 animate-spin"/></div> : (
+                            <div className="space-y-2">
+                                {templates.length > 0 ? templates.map(template => (
+                                  <div key={template.id} className="group flex items-center gap-1">
+                                    <Button variant="outline" className="w-full justify-start flex-1" onClick={() => handleSelectTemplate(template)}>
+                                        {template.name}
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuItem onSelect={() => handleEditTemplate(template)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleDeleteTemplate(template)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                )) : <p className="text-center text-sm text-muted-foreground">No templates found.</p>}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         ) : (
             <div className="w-full max-w-lg animate-in fade-in-50">
                 <div className="flex justify-start mb-6">
@@ -404,7 +353,7 @@ export default function CreateProjectPage() {
                        <div className="space-y-2">
                           <Label>Client (Optional)</Label>
                           <div className="flex gap-2">
-                             <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between"><span className="truncate">{selectedContact?.name || "Select or search..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map((contact) => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { setSelectedContactId(contact.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />{contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                             <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between"><span className="truncate">{selectedContact?.name || "Select or search..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup><CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")} />-- No Client --</CommandItem>{contacts.map((contact) => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { setSelectedContactId(contact.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />{contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
                         </div>
                       </div>
@@ -463,20 +412,8 @@ export default function CreateProjectPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1" className="border-none">
-                <AccordionTrigger className="hover:no-underline py-0 mb-4">
-                  <span className="text-sm font-normal">Why can't I undo this?</span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  Templates are permanent blue-prints. Once deleted, all associated steps and structures are removed from our database to keep your workspace clean.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <div className="flex gap-2 justify-end w-full">
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-            </div>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

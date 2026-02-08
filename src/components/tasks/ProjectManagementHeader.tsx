@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -16,7 +15,7 @@ export function ProjectManagementHeader({ projectId }: ProjectManagementHeaderPr
     
     const navLinks = [
         { href: "/projects/all", label: "Project List", icon: Briefcase },
-        { href: "/project-status", label: "Status Board", icon: ListChecks },
+        { href: "/project-status", label: "Project Board", icon: ListChecks },
         { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
     ];
     

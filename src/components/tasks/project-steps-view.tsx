@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -42,7 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogHeader, DialogFooter, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
@@ -89,7 +88,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         try {
             const [projectData, tasksData, fetchedContacts] = await Promise.all([
                 getProjectById(projectId),
-                getTasksForProject(projectId),
+                getTasksForProject(user.uid, projectId),
                 getContacts(user.uid),
             ]);
 
@@ -283,7 +282,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
       setIsNewProjectDialogOpen(true);
     };
 
-    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
       if (!user || !taskToConvert) return;
       try {
           const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
@@ -309,13 +308,18 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
       }
     };
     
+    const handleDeleteStepClick = (step: Partial<ProjectStep>) => {
+        setStepToDelete(step);
+    };
+
     const handleArchiveStep = async (step: Partial<ProjectStep>) => {
         const task = tasks.find(t => t.stepId === step.id);
         if (!user || !task) return;
         try {
             await archiveTaskAsFile(user.uid, task);
-            await handleDeleteStep();
+            await deleteTask(task.id);
             toast({ title: 'Step Archived', description: 'Step content saved to File Manager.' });
+            loadData();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Archive Failed', description: error.message });
         }
@@ -392,7 +396,7 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
                                                     <DropdownMenuItem onSelect={() => handleAddToTodoList(step)}><ListTodo className="mr-2 h-4 w-4" /> Add to To-Do List</DropdownMenuItem>
                                                     <DropdownMenuItem onSelect={() => handleArchiveStep(step)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onSelect={() => setStepToDelete(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleDeleteStepClick(step)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Step</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,7 +12,9 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { DraggableProjectCard, ItemTypes } from '@/components/dashboard/DraggableProjectCard';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
+import { NewTaskDialog } from '../tasks/NewTaskDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { type Event as TaskEvent } from '@/types/calendar';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 
@@ -71,6 +72,8 @@ export function ProjectStatusView() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -141,10 +144,15 @@ export function ProjectStatusView() {
         }
     }, [projects, toast]);
 
+    const handleEditProject = (project: Project) => {
+        setProjectToEdit(project);
+        setIsFormOpen(true);
+    };
+
     const handleConfirmDelete = async () => {
-        if (!projectToDelete) return;
+        if (!projectToDelete || !user) return;
         try {
-            const tasksToDelete = await getTasksForProject(projectToDelete.id);
+            const tasksToDelete = await getTasksForProject(user.uid, projectToDelete.id);
             await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
             setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
             toast({ title: 'Project Deleted' });
@@ -152,6 +160,32 @@ export function ProjectStatusView() {
              toast({ variant: 'destructive', title: 'Failed to delete project', description: error.message });
         } finally {
             setProjectToDelete(null);
+        }
+    };
+
+    const handleProjectUpdated = async (updatedProject: Project) => {
+        setIsFormOpen(false);
+        setProjectToEdit(null);
+        try {
+            const { id, userId, createdAt, ...dataToUpdate } = updatedProject;
+            await updateProject(id, dataToUpdate);
+            toast({ title: 'Project Updated' });
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    };
+
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
+        if (!user) return;
+        try {
+            const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+            toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+            router.push(`/projects/${newProject.id}/tasks`);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+        } finally {
+            setIsFormOpen(false);
         }
     };
     
@@ -178,10 +212,8 @@ export function ProjectStatusView() {
                 
                 <div className="flex items-center gap-4">
                     <ProjectManagementHeader />
-                    <Button asChild>
-                        <Link href="/projects/create">
-                            <Plus className="mr-2 h-4 w-4" /> New Project
-                        </Link>
+                    <Button onClick={() => { setProjectToEdit(null); setIsFormOpen(true); }}>
+                        <Plus className="mr-2 h-4 w-4" /> New Project
                     </Button>
                 </div>
 
@@ -194,17 +226,32 @@ export function ProjectStatusView() {
                             projects={projectsByStatus[status]}
                             clientMap={clientMap}
                             onDrop={handleDropProject}
+                            onEdit={handleEditProject}
                             onDelete={setProjectToDelete}
                         />
                     ))}
                 </div>
             </div>
 
+            <NewTaskDialog
+                isOpen={isFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open);
+                    if (!open) {
+                        setProjectToEdit(null);
+                    }
+                }}
+                onProjectCreate={handleProjectCreated}
+                onProjectUpdate={handleProjectUpdated}
+                contacts={contacts}
+                projectToEdit={projectToEdit}
+            />
+
             <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all associated tasks. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will permanently delete the project "{projectToDelete?.name}" and all associated tasks. This cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

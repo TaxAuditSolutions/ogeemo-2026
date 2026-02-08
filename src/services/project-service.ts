@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -232,7 +231,11 @@ export async function updateProjectWithTasks(userId: string, projectId: string, 
 
     batch.update(projectRef, { ...projectData, steps: stepsToSave });
 
-    const existingTasksQuery = query(collection(db, TASKS_COLLECTION), where("projectId", "==", projectId));
+    const existingTasksQuery = query(
+        collection(db, TASKS_COLLECTION), 
+        where("userId", "==", userId),
+        where("projectId", "==", projectId)
+    );
     const existingTasksSnapshot = await getDocs(existingTasksQuery);
     const existingTasks = existingTasksSnapshot.docs.map(docToTask);
 
@@ -316,9 +319,13 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
 }
 
 // --- Task/Event Functions ---
-export async function getTasksForProject(projectId: string): Promise<TaskEvent[]> {
+export async function getTasksForProject(userId: string, projectId: string): Promise<TaskEvent[]> {
   const db = getDb();
-  const q = query(collection(db, TASKS_COLLECTION), where("projectId", "==", projectId));
+  const q = query(
+    collection(db, TASKS_COLLECTION), 
+    where("userId", "==", userId),
+    where("projectId", "==", projectId)
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToTask);
 }

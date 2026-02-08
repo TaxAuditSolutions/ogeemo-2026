@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -17,6 +16,7 @@ import {
   ListTodo,
   Route,
   ArrowLeft,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,12 +108,13 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                     userId: user.uid,
                     createdAt: new Date(0),
                 };
-                const allUserTasks = await getTasksForProject(projectId);
+                // For the inbox, we fetch all tasks where projectId is null
+                const allUserTasks = await getTasksForProject(user.uid, projectId);
                 tasksData = allUserTasks.filter(task => !task.ritualType);
             } else {
                 [projectData, tasksData] = await Promise.all([
                     getProjectById(projectId),
-                    getTasksForProject(projectId),
+                    getTasksForProject(user.uid, projectId),
                 ]);
                 tasksData = tasksData.filter(task => !task.ritualType);
             }
@@ -236,7 +237,6 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         if (!taskToDelete) return;
         try {
             await deleteTask(taskToDelete.id);
-            // The task's step is now deleted via the service
             toast({ title: 'Task Deleted' });
             loadData();
         } catch (error: any) {
@@ -347,7 +347,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
         setIsNewProjectDialogOpen(true);
     };
 
-    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
+    const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
         if (!user) return;
         try {
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });

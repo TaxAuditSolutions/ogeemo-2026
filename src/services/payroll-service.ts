@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -15,15 +14,33 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { type Worker, mockWorkers } from '@/data/payroll';
 
+export interface Worker {
+    id: string;
+    name: string;
+    email: string;
+    sin?: string;
+    workerType: 'employee' | 'contractor';
+    payType: 'hourly' | 'salary';
+    payRate: number;
+    address?: string;
+    homePhone?: string;
+    cellPhone?: string;
+    hireDate?: Date | null;
+    startDate?: Date | null;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    hasContract?: boolean;
+    specialNeeds?: string;
+    notes?: string;
+    userId: string;
+}
 
 const WORKERS_COLLECTION = 'payrollWorkers';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const PAYROLL_RUNS_COLLECTION = 'payrollRuns';
 const TIME_LOGS_COLLECTION = 'timeLogs';
 const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
-
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -61,7 +78,6 @@ const docToWorker = (doc: any): Worker => {
 
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
-  // Safe Query: Filter by userId, no orderBy to avoid index issues.
   const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
 
@@ -72,11 +88,9 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
   return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
 
-
 export async function getEmployees(userId: string): Promise<Worker[]> {
   return getWorkers(userId);
 }
-
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     const db = getDb();
@@ -105,7 +119,6 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
@@ -127,7 +140,6 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     
     await batch.commit();
 }
-
 
 // --- Payroll Remittance Types & Functions ---
 export interface PayrollRemittance {

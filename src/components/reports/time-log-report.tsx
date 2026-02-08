@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -36,65 +35,42 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '../ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, User, Calendar as CalendarIcon, HandCoins, PlusCircle } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getTimeLogs, deleteTimeLog, updateTimeLog, updateTimeLogsStatus, type TimeLog } from '@/services/timelog-service';
-import { addPayableBill } from '@/services/accounting-service';
+import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
+import { getTasksForUser } from '@/services/project-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from './log-time-dialog';
 import { WorkerSelector } from './WorkerSelector';
 import type { DateRange } from 'react-day-picker';
-import { Label } from '../ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { CustomCalendar } from '../ui/custom-calendar';
-
-
-const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-};
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
-    const [allEntries, setAllEntries] = useState<TimeLog[]>([]);
+    const [timeLogs, setTimeLogs] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
-    const searchParams = useSearchParams();
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
-    const [entryToEdit, setEntryToEdit] = useState<TimeLog | null>(null);
-    const [entryToDelete, setEntryToDelete] = useState<TimeLog | null>(null);
+    const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
+    const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
-    
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
-
-    const [isProcessConfirmationOpen, setIsProcessConfirmationOpen] = useState(false);
-
-    useEffect(() => {
-        if (searchParams.get('action') === 'log') {
-            setIsLogTimeDialogOpen(true);
-            setPreselectedWorkerId(searchParams.get('workerId'));
-        }
-    }, [searchParams]);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -103,12 +79,14 @@ export function TimeLogReport() {
         }
         setIsLoading(true);
         try {
-            const [fetchedWorkers, entries] = await Promise.all([
+            const [fetchedWorkers, fetchedLogs, fetchedTasks] = await Promise.all([
                 getWorkers(user.uid),
                 getTimeLogs(user.uid),
+                getTasksForUser(user.uid)
             ]);
             setWorkers(fetchedWorkers);
-            setAllEntries(entries);
+            setTimeLogs(fetchedLogs);
+            setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
@@ -119,37 +97,53 @@ export function TimeLogReport() {
     useEffect(() => {
         loadData();
     }, [loadData]);
-    
-    const { filteredEntries, totalDurationSeconds } = useMemo(() => {
-        let entries = allEntries;
+
+    const allMergedEntries = useMemo(() => {
+        const fromLogs = timeLogs.map(tl => ({
+            ...tl,
+            id: tl.id,
+            workerId: tl.workerId,
+            workerName: tl.workerName,
+            startTime: new Date(tl.startTime),
+            durationSeconds: tl.durationSeconds,
+            source: 'log'
+        }));
+
+        const fromTasks = tasks.map(t => ({
+            ...t,
+            id: t.id,
+            workerId: t.workerId || user?.uid,
+            workerName: t.workerId ? (workers.find(w => w.id === t.workerId)?.name || 'Unknown') : 'Admin',
+            startTime: new Date(t.start),
+            durationSeconds: t.duration,
+            source: 'calendar'
+        }));
+
+        let combined = [...fromLogs, ...fromTasks];
 
         if (selectedWorkerId) {
-            entries = entries.filter(entry => entry.workerId === selectedWorkerId);
+            combined = combined.filter(e => e.workerId === selectedWorkerId);
         }
 
         if (dateRange?.from) {
             const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-            entries = entries.filter(entry => {
-                const entryDate = new Date(entry.startTime);
-                return isWithinInterval(entryDate, { start: startOfDay(dateRange.from!), end: rangeEnd });
-            });
+            combined = combined.filter(e => isWithinInterval(e.startTime, { start: startOfDay(dateRange.from!), end: rangeEnd }));
         }
 
-        const totalSeconds = entries.reduce((acc, entry) => acc + entry.durationSeconds, 0);
-        return { filteredEntries: entries, totalDurationSeconds: totalSeconds };
+        return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+    }, [timeLogs, tasks, workers, selectedWorkerId, dateRange, user?.uid]);
 
-    }, [allEntries, selectedWorkerId, dateRange]);
-
-    const handleOpenLogTimeDialog = (entry: TimeLog | null = null, preselectWorkerId: string | null = null) => {
-        setEntryToEdit(entry);
-        setPreselectedWorkerId(preselectWorkerId);
-        setIsLogTimeDialogOpen(true);
-    };
+    const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
         try {
-            await deleteTimeLog(entryToDelete.id);
+            if (entryToDelete.source === 'log') {
+                await deleteTimeLog(entryToDelete.id);
+            } else {
+                toast({ variant: 'destructive', title: 'Action Restricted', description: 'Calendar events must be deleted from the Calendar or Task Board.' });
+                return;
+            }
             toast({ title: 'Time Log Deleted' });
             loadData();
         } catch (error: any) {
@@ -158,73 +152,21 @@ export function TimeLogReport() {
             setEntryToDelete(null);
         }
     };
-    
-    const handleClearFilters = () => {
-        setSelectedWorkerId(null);
-        setDateRange(undefined);
+
+    const handleOpenLogTimeDialog = (entry: any) => {
+        setEntryToEdit(entry);
+        setIsLogTimeDialogOpen(true);
     };
 
-    const handleProcessPayment = () => {
-      setIsProcessConfirmationOpen(true);
-    };
-
-    const handleConfirmProcessPayment = async () => {
-        if (!selectedWorker || !user) return;
-
-        const entriesToProcess = filteredEntries.filter(e => e.status === 'unprocessed');
-        if (entriesToProcess.length === 0) {
-            toast({ title: "No Entries to Process", description: "All entries for this period have already been processed." });
-            setIsProcessConfirmationOpen(false);
-            return;
-        }
-
-        if (selectedWorker.workerType === 'contractor') {
-            try {
-                await addPayableBill({
-                    userId: user.uid,
-                    vendor: selectedWorker.name,
-                    dueDate: format(new Date(), 'yyyy-MM-dd'),
-                    totalAmount: totalPay,
-                    category: 'Contractor Fees',
-                    description: `Services for period ${dateRange?.from ? format(dateRange.from, 'PP') : ''} to ${dateRange?.to ? format(dateRange.to, 'PP') : ''}`,
-                });
-                await updateTimeLogsStatus(entriesToProcess.map(e => e.id), 'processed');
-                toast({ title: "Bill Created", description: `A payable bill for ${selectedWorker.name} has been added to Accounts Payable.` });
-                loadData();
-            } catch (error: any) {
-                toast({ variant: "destructive", title: "Failed to create bill", description: error.message });
-            }
-        } else { // Employee
-             try {
-                await updateTimeLogsStatus(entriesToProcess.map(e => e.id), 'ready-for-payroll');
-                toast({ title: "Ready for Payroll", description: `Time logs for ${selectedWorker.name} are marked and ready for the next payroll run.` });
-                loadData();
-            } catch (error: any) {
-                toast({ variant: "destructive", title: "Update Failed", description: error.message });
-            }
-        }
-        setIsProcessConfirmationOpen(false);
-    };
-
-    const getStatusBadge = (status: string | undefined) => {
-        switch (status) {
-            case 'processed':
-                return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Processed as Bill</Badge>;
-            case 'ready-for-payroll':
-                return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Ready for Payroll</Badge>;
-            default:
-                return <Badge variant="outline">Unprocessed</Badge>;
-        }
-    };
-    
     const selectedWorker = workers.find(w => w.id === selectedWorkerId);
     
+    const formatCurrency = (amount: number) => {
+        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    };
+
     const totalPay = useMemo(() => {
-        if (!selectedWorker || selectedWorker.payType !== 'hourly' || totalDurationSeconds <= 0) {
-            return 0;
-        }
-        const hoursWorked = totalDurationSeconds / 3600;
-        return hoursWorked * selectedWorker.payRate;
+        if (!selectedWorker || selectedWorker.payType !== 'hourly' || totalDurationSeconds <= 0) return 0;
+        return (totalDurationSeconds / 3600) * selectedWorker.payRate;
     }, [selectedWorker, totalDurationSeconds]);
 
     return (
@@ -256,7 +198,7 @@ export function TimeLogReport() {
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
+                                    <PopoverContent className="w-auto p-0" align="start">
                                         <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
@@ -270,21 +212,18 @@ export function TimeLogReport() {
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
+                                    <PopoverContent className="w-auto p-0" align="start">
                                         <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>
 
-                            <Button variant="ghost" onClick={handleClearFilters} disabled={!selectedWorkerId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                            <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                                <FilterX className="mr-2 h-4 w-4" /> Clear
                             </Button>
                             
-                            <Button variant="outline" onClick={() => handleOpenLogTimeDialog(null, selectedWorkerId)}>
+                            <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
-                            </Button>
-                             <Button onClick={handleProcessPayment} disabled={!selectedWorkerId}>
-                                <HandCoins className="mr-2 h-4 w-4" /> Process for Payment
                             </Button>
                         </div>
                     </CardHeader>
@@ -295,53 +234,45 @@ export function TimeLogReport() {
                                     <TableRow>
                                         <TableHead>Worker</TableHead>
                                         <TableHead>Date</TableHead>
+                                        <TableHead>Source</TableHead>
                                         <TableHead>Notes</TableHead>
-                                        <TableHead>Status</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24">
-                                                <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : filteredEntries.length > 0 ? (
-                                        filteredEntries.map(entry => (
+                                        <TableRow><TableCell colSpan={6} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                    ) : allMergedEntries.length > 0 ? (
+                                        allMergedEntries.map(entry => (
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
-                                                <TableCell>{entry.startTime ? format(new Date(entry.startTime), 'yyyy-MM-dd') : 'N/A'}</TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
-                                                <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                                                <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
+                                                <TableCell><Badge variant="outline">{entry.source === 'log' ? 'Manual' : 'Calendar'}</Badge></TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}>
-                                                                <Edit className="mr-2 h-4 w-4" /> Edit Entry
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Entry
-                                                            </DropdownMenuItem>
+                                                            {entry.source === 'log' ? (
+                                                                <>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                                                </>
+                                                            ) : (
+                                                                <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
+                                                            )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                                No time log entries found for this selection.
-                                            </TableCell>
-                                        </TableRow>
+                                        <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
                                     )}
                                 </TableBody>
-                                {filteredEntries.length > 0 && (
+                                {allMergedEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
                                             <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
@@ -380,36 +311,13 @@ export function TimeLogReport() {
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete this time log entry. This action cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
+                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            <Dialog open={isProcessConfirmationOpen} onOpenChange={setIsProcessConfirmationOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Process Payment for {selectedWorker?.name}?</DialogTitle>
-                        <DialogDescription>
-                            {selectedWorker?.workerType === 'contractor'
-                                ? `This will create a new bill of ${formatCurrency(totalPay)} in Accounts Payable for this contractor.`
-                                : `This will mark these time entries as "Ready for Payroll" to be included in the next payroll run.`
-                            }
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsProcessConfirmationOpen(false)}>Cancel</Button>
-                        <Button onClick={handleConfirmProcessPayment}>Confirm & Process</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

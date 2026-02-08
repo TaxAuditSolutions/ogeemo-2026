@@ -17,14 +17,13 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
-import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ListPlus } from 'lucide-react';
+import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ListPlus, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { addMinutes } from 'date-fns';
 import { allMenuItems } from '@/lib/menu-items';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
 import hrMenuItems from '@/data/hr-menu-items';
 
-// Re-export the Project type to make it available for other modules.
 export type { Project };
 
 const PROJECTS_COLLECTION = 'projects';
@@ -46,13 +45,11 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
   { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
 ];
 
-
 function getDb() {
     const { db } = getFirebaseServices();
     return db;
 }
 
-// --- Type Converters ---
 const docToProject = (doc: any): Project => {
   const data = doc.data();
   if (!data) throw new Error("Document data is missing.");
@@ -72,8 +69,8 @@ const docToProject = (doc: any): Project => {
     urgency: data.urgency || 'important',
     importance: data.importance || 'B',
     projectManagerId: data.projectManagerId || null,
-    startDate: (data.startDate as Timestamp)?.toDate() || null,
-    endDate: (data.endDate as Timestamp)?.toDate() || null,
+    startDate: (data.startDate as Timestamp)?.toDate ? (data.startDate as Timestamp).toDate() : null,
+    endDate: (data.endDate as Timestamp)?.toDate ? (data.endDate as Timestamp).toDate() : null,
     projectValue: data.projectValue || null,
   };
 };
@@ -115,46 +112,26 @@ const docToTemplate = (doc: any): ProjectTemplate => ({ id: doc.id, ...doc.data(
 const docToFolder = (doc: any): ProjectFolder => ({ id: doc.id, ...doc.data() } as ProjectFolder);
 const iconMap: { [key: string]: LucideIcon } = {
   Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
-  FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users,
+  FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ArrowDownAZ, ArrowUpZA
 };
+
 const docToActionChip = (chipData: any): ActionChipData => {
     const iconName = chipData.iconName as keyof typeof iconMap;
     return {
         ...chipData,
-        icon: iconMap[iconName] || Wand2, // Fallback icon
+        icon: iconMap[iconName] || Wand2,
     } as ActionChipData;
 };
-
-
-// --- Folder Functions ---
-export async function getProjectFolders(userId: string): Promise<ProjectFolder[]> {
-  const db = getDb();
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFolder);
-}
-
-export async function addProjectFolder(folderData: Omit<ProjectFolder, 'id'>): Promise<ProjectFolder> {
-  const db = getDb();
-  const dataToSave = {
-    ...folderData,
-    parentId: folderData.parentId || null,
-  };
-  const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
-  return { id: docRef.id, ...dataToSave };
-}
-
-
-// --- Project Functions ---
 
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
   const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToProject).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+  return snapshot.docs.map(docToProject).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
+    if (!projectId || projectId === 'inbox') return null;
     const db = getDb();
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     const projectSnap = await getDoc(projectRef);
@@ -166,11 +143,9 @@ export async function getProjectById(projectId: string): Promise<Project | null>
 
 export async function addProject(projectData: Omit<Project, 'id'>): Promise<Project> {
     const db = getDb();
-
-    // Ensure optional fields that are undefined are converted to null for Firestore
     const dataToSave = {
         ...projectData,
-        createdAt: projectData.createdAt || new Date(), // Ensure createdAt is set
+        createdAt: projectData.createdAt || new Date(),
         startDate: projectData.startDate || null,
         endDate: projectData.endDate || null,
         contactId: projectData.contactId || null,
@@ -182,35 +157,8 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
         projectValue: projectData.projectValue || null,
         steps: projectData.steps || [],
     };
-
     const docRef = await addDoc(collection(db, PROJECTS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave };
-}
-
-
-export async function addProjectWithTasks(
-  projectData: Omit<Project, 'id' | 'createdAt'>,
-  tasksData: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]
-): Promise<Project> {
-  const db = getDb();
-  const batch = writeBatch(db);
-
-  const projectRef = doc(collection(db, PROJECTS_COLLECTION));
-  const newProjectData = { ...projectData, steps: [], createdAt: new Date() };
-  batch.set(projectRef, newProjectData);
-
-  tasksData.forEach((task, index) => {
-    const taskRef = doc(collection(db, TASKS_COLLECTION));
-    batch.set(taskRef, {
-      ...task,
-      projectId: projectRef.id,
-      userId: projectData.userId,
-      position: index, // Set initial position
-    });
-  });
-
-  await batch.commit();
-  return { id: projectRef.id, ...newProjectData, createdAt: newProjectData.createdAt };
 }
 
 export async function updateProject(projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>): Promise<void> {
@@ -219,110 +167,37 @@ export async function updateProject(projectId: string, projectData: Partial<Omit
     await updateDoc(projectRef, projectData);
 }
 
-export async function updateProjectWithTasks(userId: string, projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
-
-    const stepsToSave = (projectData.steps || []).map(step => {
-        const finalId = (step.id && !step.id.startsWith('temp_')) ? step.id : doc(collection(db, 'projects')).id;
-        return { ...step, id: finalId };
-    });
-
-    batch.update(projectRef, { ...projectData, steps: stepsToSave });
-
-    const existingTasksQuery = query(
-        collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId),
-        where("projectId", "==", projectId)
-    );
-    const existingTasksSnapshot = await getDocs(existingTasksQuery);
-    const existingTasks = existingTasksSnapshot.docs.map(docToTask);
-
-    const tasksByStepId = new Map(existingTasks.filter(t => t.stepId).map(t => [t.stepId, t]));
-    const stepsInPlan = new Set(stepsToSave.map(s => s.id));
-
-    for (const step of stepsToSave) {
-        if (!step.id) continue;
-        const existingTask = tasksByStepId.get(step.id);
-
-        if (step.connectToCalendar && step.startTime) {
-            const taskData: Partial<Omit<TaskEvent, 'id' | 'userId'>> = {
-                title: step.title,
-                description: step.description,
-                start: step.startTime,
-                end: addMinutes(step.startTime, step.durationMinutes!),
-                status: 'todo',
-                position: 0,
-                projectId,
-                stepId: step.id,
-                isScheduled: true,
-            };
-
-            if (existingTask) {
-                const taskRef = doc(db, TASKS_COLLECTION, existingTask.id);
-                batch.update(taskRef, taskData);
-            } else {
-                const taskRef = doc(collection(db, TASKS_COLLECTION));
-                batch.set(taskRef, { ...taskData, userId });
-            }
-        } else if (!step.connectToCalendar && existingTask) {
-            const taskRef = doc(db, TASKS_COLLECTION, existingTask.id);
-            batch.delete(taskRef);
-        }
-    }
-
-    for (const task of existingTasks) {
-        if (task.stepId && !stepsInPlan.has(task.stepId)) {
-            const taskRef = doc(db, TASKS_COLLECTION, task.id);
-            batch.delete(taskRef);
-        }
-    }
-
-    await batch.commit();
-}
-
-
 export async function deleteProject(projectId: string, taskIds: string[]): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
-
     taskIds.forEach(taskId => {
         const taskRef = doc(db, TASKS_COLLECTION, taskId);
         batch.delete(taskRef);
     });
-
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     batch.delete(projectRef);
-
     await batch.commit();
 }
 
 export async function deleteProjects(projectIds: string[]): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
-
     for (const projectId of projectIds) {
-        // Delete the project document
         const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
         batch.delete(projectRef);
-
-        // Find and delete all tasks associated with this project
         const tasksQuery = query(collection(db, TASKS_COLLECTION), where("projectId", "==", projectId));
         const tasksSnapshot = await getDocs(tasksQuery);
         tasksSnapshot.forEach(taskDoc => {
             batch.delete(taskDoc.ref);
         });
     }
-
     await batch.commit();
 }
 
-// --- Task/Event Functions ---
 export async function getTasksForProject(userId: string, projectId: string): Promise<TaskEvent[]> {
   const db = getDb();
   let q;
-  if (projectId === 'inbox') {
+  if (projectId === 'inbox' || !projectId) {
       q = query(
         collection(db, TASKS_COLLECTION), 
         where("userId", "==", userId),
@@ -364,20 +239,15 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
         end: taskData.end || null,
         isScheduled: taskData.isScheduled || false,
     };
-
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
     const newTaskId = docRef.id;
-
     if (dataToSave.projectId && dataToSave.projectId !== 'inbox' && !dataToSave.stepId) {
         const projectRef = doc(db, PROJECTS_COLLECTION, dataToSave.projectId);
         const projectSnap = await getDoc(projectRef);
         if (projectSnap.exists()) {
             const projectData = docToProject(projectSnap);
             const stepId = `step_${newTaskId}`;
-            
-            // Check if a step for this task already exists to prevent duplication
             const existingStep = (projectData.steps || []).find(step => step?.id === stepId);
-
             if (!existingStep) {
                 const newStep: Partial<ProjectStep> = {
                     id: stepId,
@@ -387,28 +257,21 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
                 };
                 const updatedSteps = [...(projectData.steps || []), newStep];
                 await updateDoc(projectRef, { steps: updatedSteps });
-                // Update the task with the newly created stepId
                 await updateDoc(docRef, { stepId: stepId });
                 return { ...dataToSave, id: newTaskId, stepId: stepId };
             }
         }
     }
-
     return { ...dataToSave, id: newTaskId };
 }
-
 
 export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEvent, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
-    
-    // Ensure that if projectId is explicitly passed as undefined, it gets set to null.
-    // This happens when dragging an item from a project board to the unassigned "Action Items".
     const dataToUpdate = { ...taskData };
     if ('projectId' in dataToUpdate && dataToUpdate.projectId === undefined) {
         dataToUpdate.projectId = null;
     }
-
     await updateDoc(taskRef, dataToUpdate);
 }
 
@@ -422,15 +285,12 @@ export async function updateTaskPositions(tasksToUpdate: { id: string; position:
     await batch.commit();
 }
 
-
 export async function deleteTask(taskId: string): Promise<void> {
     const db = getDb();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
-
     if (taskSnap.exists()) {
         const taskData = docToTask(taskSnap);
-        // If the task is linked to a project and has a step ID, remove the step
         if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
             const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
             const projectSnap = await getDoc(projectRef);
@@ -441,68 +301,19 @@ export async function deleteTask(taskId: string): Promise<void> {
             }
         }
     }
-    
     await deleteDoc(taskRef);
 }
 
-export async function deleteTasks(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
-    const db = getDb();
-    const batch = writeBatch(db);
-    taskIds.forEach(id => {
-        const taskRef = doc(db, TASKS_COLLECTION, id);
-        batch.delete(taskRef);
-    });
-    await batch.commit();
-}
-
-export async function updateTodosStatus(todoIds: string[], completed: boolean): Promise<void> {
-    const db = getDb();
+export async function deleteTodos(todoIds: string[]): Promise<void> {
     if (todoIds.length === 0) return;
+    const db = getDb();
     const batch = writeBatch(db);
-    const status = completed ? 'done' : 'todo';
     todoIds.forEach(id => {
         const docRef = doc(db, TASKS_COLLECTION, id);
-        batch.update(docRef, { completed, status });
+        batch.delete(docRef);
     });
     await batch.commit();
 }
-
-
-export async function deleteAllTasksForUser(userId: string): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-        return; // No tasks to delete
-    }
-
-    snapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-
-    await batch.commit();
-}
-
-export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    const q = query(
-        collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId),
-        where("ritualType", "==", ritualType)
-    );
-    const snapshot = await getDocs(q);
-    snapshot.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
-}
-
-
-// --- Template Functions ---
 
 export async function getProjectTemplates(userId: string): Promise<ProjectTemplate[]> {
     const db = getDb();
@@ -529,36 +340,6 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
     await deleteDoc(templateRef);
 }
 
-
-// --- Action Chip Functions ---
-type ChipMenuType = 'dashboard' | 'accounting' | 'hr';
-
-async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const chipsToSave = chips.filter(Boolean).map((chip, index) => {
-        const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
-        const { icon, ...rest } = chip;
-        return { ...rest, position: index, iconName: iconName || 'Wand2' };
-    });
-    await setDoc(docRef, { chips: chipsToSave }, { merge: true });
-}
-
-async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        const chips = (data.chips || []).filter(Boolean).map(docToActionChip);
-        return chips
-            .map((chip: any, index: number) => ({ ...chip, position: chip.position ?? index }))
-            .sort((a: any, b: any) => a.position - b.position);
-    }
-    return [];
-}
-
-
 export async function getActionChips(userId: string, type: ChipMenuType = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap = {
         dashboard: ACTION_CHIPS_COLLECTION,
@@ -566,11 +347,9 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
         hr: HR_QUICK_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type];
-
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
-
     if (!docSnap.exists()) {
         const defaultSourceMap = {
             dashboard: defaultChips,
@@ -580,14 +359,12 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
         const defaultSource = defaultSourceMap[type];
         return defaultSource.map((c) => ({
             ...c, 
-            id: `default-${typeof c.href === 'string' ? c.href : c.href.pathname}`, 
+            id: `default-${typeof c.href === 'string' ? c.href : (c.href as any).pathname}`, 
             userId
         }));
     }
-    
     return getChipsFromCollection(userId, collectionName);
 }
-
 
 export async function getAvailableActionChips(userId: string, type: ChipMenuType = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap = {
@@ -596,54 +373,34 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type];
-
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const docSnap = await getDoc(docRef);
-
-    // CRITICAL: Always filter against current Active chips to prevent "active items showing in available"
     const userActionChips = await getActionChips(userId, type);
-    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
-
+    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
     const defaultSourceMap = {
         dashboard: allMenuItems,
         accounting: accountingMenuItems,
         hr: hrMenuItems,
     };
     const defaultSource = defaultSourceMap[type];
-
     const getDefaultsNotUsed = () => defaultSource
-        .filter(item => {
-            const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
-            return !usedHrefs.has(hrefString);
-        })
-        .map(item => ({ ...item, id: `default-${typeof item.href === 'string' ? item.href : item.href.pathname}`, userId }));
-
+        .filter(item => !usedHrefs.has(item.href))
+        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) {
         return getDefaultsNotUsed();
     }
-    
     const customAvailable = await getChipsFromCollection(userId, collectionName);
-    
-    // Filter custom available items to ensure they aren't active
-    const filteredCustomAvailable = customAvailable.filter(item => {
-        const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
-        return !usedHrefs.has(hrefString);
-    });
-
+    const filteredCustomAvailable = customAvailable.filter(item => !usedHrefs.has(typeof item.href === 'string' ? item.href : (item.href as any).pathname));
     const combined = [...filteredCustomAvailable];
-    const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : c.href.pathname));
-
+    const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
     getDefaultsNotUsed().forEach(item => {
-        const hrefString = typeof item.href === 'string' ? item.href : item.href.pathname;
-        if (!customHrefs.has(hrefString)) {
+        if (!customHrefs.has(item.href)) {
             combined.push(item);
         }
     });
-
     return combined.sort((a,b) => a.label.localeCompare(b.label));
 }
-
 
 export async function updateActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
     const collectionNameMap = {
@@ -665,7 +422,6 @@ export async function updateAvailableActionChips(userId: string, chips: ActionCh
     await updateChipsInCollection(userId, collectionName, chips);
 }
 
-
 export async function getTrashedActionChips(userId: string): Promise<ActionChipData[]> {
     return getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
 }
@@ -674,17 +430,12 @@ export async function trashActionChips(userId: string, chipsToTrash: ActionChipD
     const allUserChips = await getActionChips(userId, menuType);
     const allAvailableChips = await getAvailableActionChips(userId, menuType);
     const allTrashedChips = await getTrashedActionChips(userId);
-
     const chipIdsToTrash = new Set(chipsToTrash.map(c => c.id));
-    
     const newUserChips = allUserChips.filter(c => !chipIdsToTrash.has(c.id));
     const newAvailableChips = allAvailableChips.filter(c => !chipIdsToTrash.has(c.id));
-    
     const chipsActuallyBeingTrashed = [...allUserChips, ...allAvailableChips].filter(c => chipIdsToTrash.has(c.id));
-    if (chipsActuallyBeingTrashed.length === 0) return; // Nothing to do
-
+    if (chipsActuallyBeingTrashed.length === 0) return;
     const newTrashedChips = [...allTrashedChips, ...chipsActuallyBeingTrashed];
-
     await Promise.all([
         updateActionChips(userId, newUserChips, menuType),
         updateAvailableActionChips(userId, newAvailableChips, menuType),
@@ -695,12 +446,9 @@ export async function trashActionChips(userId: string, chipsToTrash: ActionChipD
 export async function restoreActionChips(userId: string, chipsToRestore: ActionChipData[]): Promise<void> {
     const availableChips = await getAvailableActionChips(userId, 'dashboard');
     const trashedChips = await getTrashedActionChips(userId);
-
     const chipIdsToRestore = new Set(chipsToRestore.map(c => c.id));
-
     const newAvailableChips = [...availableChips, ...chipsToRestore];
     const newTrashedChips = trashedChips.filter(c => !chipIdsToRestore.has(c.id));
-
     await Promise.all([
         updateAvailableActionChips(userId, newAvailableChips, 'dashboard'),
         updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashedChips)
@@ -710,10 +458,8 @@ export async function restoreActionChips(userId: string, chipsToRestore: ActionC
 export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
   const db = getDb();
   const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
-  // Setting an empty array to the 'chips' field effectively deletes all items.
   await setDoc(docRef, { chips: [] }, { merge: true });
 }
-
 
 export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: ChipMenuType = 'dashboard'): Promise<ActionChipData> {
   const collectionNameMap = {
@@ -725,50 +471,16 @@ export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: 
   const db = getDb();
   const docRef = doc(db, collectionName, chipData.userId);
   const docSnap = await getDoc(docRef);
-
   const existingChips = docSnap.exists() ? (docSnap.data().chips || []).map(docToActionChip) : [];
-
   const iconName = Object.keys(iconMap).find(key => iconMap[key] === chipData.icon);
   const { icon, ...restOfChipData } = chipData;
   const newChipForDb = { ...restOfChipData, iconName: iconName || 'Wand2' };
   const newId = `chip_${Date.now()}`;
-  
   const updatedChips = [...existingChips, {...newChipForDb, id: newId }];
   await updateChipsInCollection(chipData.userId, collectionName, updatedChips);
-
   return { ...chipData, id: newId };
 }
 
-
-export async function updateActionChip(userId: string, updatedChip: ActionChipData, type: ChipMenuType = 'dashboard'): Promise<void> {
-    const userChipsCollectionMap = {
-        dashboard: ACTION_CHIPS_COLLECTION,
-        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
-        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
-    };
-    const availableChipsCollectionMap = {
-        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
-        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-    };
-    const userChipsCollection = userChipsCollectionMap[type];
-    const availableChipsCollection = availableChipsCollectionMap[type];
-
-    const userChips = await getChipsFromCollection(userId, userChipsCollection);
-    const availableChips = await getChipsFromCollection(userId, availableChipsCollection);
-
-    const isUserChip = userChips.some(c => c.id === updatedChip.id);
-
-    // Find the icon name (string) from the icon component (function) before saving
-    const iconName = Object.keys(iconMap).find(key => iconMap[key] === updatedChip.icon);
-    const { icon, ...chipToSave } = updatedChip;
-    const finalChipData = { ...chipToSave, iconName: iconName || 'Wand2' };
-
-    if (isUserChip) {
-        const newUserChips = userChips.map(c => c.id === updatedChip.id ? updatedChip : c);
-        await updateActionChips(userId, newUserChips, type);
-    } else {
-        const newAvailableChips = availableChips.map(c => c.id === updatedChip.id ? updatedChip : c);
-        await updateAvailableActionChips(userId, newAvailableChips, type);
-    }
+export async function deleteRitualTasksByType(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
+    return deleteRitualTasks(userId, ritualType);
 }

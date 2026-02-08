@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -91,18 +91,7 @@ export default function TimeLogReportPage() {
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
 
-            // Construct a virtual "Admin" worker for the current user
-            const adminWorker: Worker = {
-                id: user.uid,
-                name: name,
-                email: user.email || '',
-                workerType: 'employee',
-                payType: 'salary',
-                payRate: 0,
-                userId: user.uid
-            };
-
-            setWorkers([adminWorker, ...fetchedWorkers]);
+            setWorkers(fetchedWorkers);
             setTimeLogs(fetchedLogs);
             setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
@@ -121,7 +110,7 @@ export default function TimeLogReportPage() {
             ...tl,
             id: tl.id,
             workerId: tl.workerId,
-            workerName: tl.workerName || workers.find(w => w.id === tl.workerId)?.name || 'Unknown',
+            workerName: tl.workerName || workers.find(w => w.id === tl.workerId)?.name || (tl.workerId === user?.uid ? adminName : 'Unknown'),
             startTime: new Date(tl.startTime),
             durationSeconds: tl.durationSeconds,
             source: 'log'
@@ -182,7 +171,20 @@ export default function TimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
-    const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+    const workersWithAdmin = useMemo(() => {
+        const adminWorker: Worker = {
+            id: user?.uid || '',
+            name: adminName,
+            email: user?.email || '',
+            workerType: 'employee',
+            payType: 'salary',
+            payRate: 0,
+            userId: user?.uid || ''
+        };
+        return [adminWorker, ...workers];
+    }, [workers, user, adminName]);
+
+    const selectedWorker = workersWithAdmin.find(w => w.id === selectedWorkerId);
     
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -196,7 +198,7 @@ export default function TimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/action-manager" hubLabel="Action Manager" />
+                <ReportsPageHeader pageTitle="Time Log Report" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage all work sessions logged by your team.</p>
@@ -204,19 +206,18 @@ export default function TimeLogReportPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Filters & Actions</CardTitle>
+                        <CardTitle>Filters</CardTitle>
                         <div className="flex flex-wrap items-end gap-4 pt-2">
-                             <div className="space-y-2">
+                           <div className="space-y-2">
                                 <Label>Select Worker</Label>
                                 <WorkerSelector
-                                    workers={workers}
+                                    workers={workersWithAdmin}
                                     selectedWorkerId={selectedWorkerId}
                                     onSelect={setSelectedWorkerId}
                                     isLoading={isLoading}
                                 />
-                             </div>
-                            
-                            <div className="space-y-2">
+                           </div>
+                           <div className="space-y-2">
                                 <Label>Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -229,8 +230,8 @@ export default function TimeLogReportPage() {
                                         <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
-                            </div>
-                             <div className="space-y-2">
+                           </div>
+                           <div className="space-y-2">
                                 <Label>End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -243,7 +244,7 @@ export default function TimeLogReportPage() {
                                         <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>
                                 </Popover>
-                            </div>
+                           </div>
 
                             <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear

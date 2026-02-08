@@ -318,8 +318,10 @@ export default function CreateProjectPage() {
         ) : (
             <div className="w-full max-w-lg animate-in fade-in-50">
                 <div className="flex justify-start mb-6">
-                    <Button variant="outline" onClick={() => setCreationStep('choice')}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
+                    <Button variant="outline" asChild>
+                        <Link href="/projects/all">
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
+                        </Link>
                     </Button>
                 </div>
                 <div className="p-8 border-2 border-dashed rounded-lg">

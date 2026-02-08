@@ -59,6 +59,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
 
 export default function CreateProjectPage() {
@@ -285,6 +286,9 @@ export default function CreateProjectPage() {
           <h1 className="text-3xl font-bold font-headline text-primary text-center">
             {creationStep === 'choice' ? 'Create Your Project' : 'Project Details'}
           </h1>
+          <div className="mt-4">
+            <ProjectManagementHeader />
+          </div>
           <div className="absolute top-0 right-0">
             <Button asChild variant="ghost" size="icon">
                 <Link href="/projects/all" aria-label="Close">

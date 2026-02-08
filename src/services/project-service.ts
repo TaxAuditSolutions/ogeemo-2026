@@ -19,6 +19,9 @@ import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ListPlus, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { accountingMenuItems } from '@/data/accounting-menu-items';
+import hrMenuItems from '@/data/hr-menu-items';
+import { allMenuItems } from '@/lib/menu-items';
 
 export type { Project };
 
@@ -340,7 +343,7 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
 
 type ChipMenuType = 'dashboard' | 'accounting' | 'hr';
 
-async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
+export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
@@ -433,7 +436,108 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
     return combined.sort((a,b) => a.label.localeCompare(b.label));
 }
 
-export async function updateActionChip(userId: string, chip: ActionChipData, type: ChipMenuType = 'dashboard'): Promise<void> {
+export async function updateActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
+    const collectionNameMap = {
+        dashboard: ACTION_CHIPS_COLLECTION,
+        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
+        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
+    };
+    const collectionName = collectionNameMap[type];
+    await updateChipsInCollection(userId, collectionName, chips);
+}
+
+export async function updateAvailableActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
+    const collectionNameMap = {
+        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
+    };
+    const collectionName = collectionNameMap[type];
+    await updateChipsInCollection(userId, collectionName, chips);
+}
+
+export async function addActionChip(data: Omit<ActionChipData, 'id'>, type: ChipMenuType = 'dashboard'): Promise<ActionChipData> {
+    const collectionNameMap = {
+        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
+    };
+    const collectionName = collectionNameMap[type];
+    
+    const currentAvailable = await getChipsFromCollection(data.userId, collectionName);
+    
+    const newChip: ActionChipData = {
+        ...data,
+        id: `custom-${Date.now()}`
+    };
+    
+    await updateChipsInCollection(data.userId, collectionName, [...currentAvailable, newChip]);
+    return newChip;
+}
+
+export async function trashActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
+    const db = getDb();
+    
+    const collectionNameMap = {
+        dashboard: ACTION_CHIPS_COLLECTION,
+        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
+        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
+    };
+    const availableCollectionNameMap = {
+        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
+    };
+    
+    const collectionName = collectionNameMap[type];
+    const availableCollectionName = availableCollectionNameMap[type];
+
+    const [currentChips, currentAvailable, currentTrashed] = await Promise.all([
+        getChipsFromCollection(userId, collectionName),
+        getChipsFromCollection(userId, availableCollectionName),
+        getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION)
+    ]);
+
+    const chipIdsToTrash = new Set(chips.map(c => c.id));
+    
+    const newChips = currentChips.filter(c => !chipIdsToTrash.has(c.id));
+    const newAvailable = currentAvailable.filter(c => !chipIdsToTrash.has(c.id));
+    const newTrashed = [...currentTrashed, ...chips];
+
+    await Promise.all([
+        updateChipsInCollection(userId, collectionName, newChips),
+        updateChipsInCollection(userId, availableCollectionName, newAvailable),
+        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashed)
+    ]);
+}
+
+export async function getTrashedActionChips(userId: string): Promise<ActionChipData[]> {
+    return getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
+}
+
+export async function restoreActionChips(userId: string, chips: ActionChipData[]): Promise<void> {
+    const currentAvailable = await getChipsFromCollection(userId, AVAILABLE_ACTION_CHIPS_COLLECTION);
+    const currentTrashed = await getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
+
+    const chipIdsToRestore = new Set(chips.map(c => c.id));
+    
+    const newAvailable = [...currentAvailable, ...chips];
+    const newTrashed = currentTrashed.filter(c => !chipIdsToRestore.has(c.id));
+
+    await Promise.all([
+        updateChipsInCollection(userId, AVAILABLE_ACTION_CHIPS_COLLECTION, newAvailable),
+        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashed)
+    ]);
+}
+
+export async function deleteActionChips(userId: string, chipIds: string[]): Promise<void> {
+    const currentTrashed = await getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
+    const chipIdsToDelete = new Set(chipIds);
+    const newTrashed = currentTrashed.filter(c => !chipIdsToDelete.has(c.id));
+    await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashed);
+}
+
+export async function updateActionChipData(userId: string, chip: ActionChipData, type: ChipMenuType = 'dashboard'): Promise<void> {
     const currentChips = await getActionChips(userId, type);
     const updatedChips = currentChips.map(c => c.id === chip.id ? chip : c);
     await updateActionChips(userId, updatedChips, type);

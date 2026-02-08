@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -168,8 +167,6 @@ service cloud.firestore {
         allow create: if isOwner(request.resource.data.userId);
     }
 
-    // --- Collections with more complex rules ---
-    
     match /invoiceLineItems/{itemId} {
       allow read, update, delete: if isOwner(get(/databases/$(database)/documents/invoices/$(resource.data.invoiceId)).data.userId);
       allow create: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
@@ -187,16 +184,15 @@ service cloud.firestore {
     }
 
     match /timeLogs/{timeLogId} {
-      allow create: if isOwner(request.resource.data.workerId);
-      allow read, update, delete: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
+      allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
+      allow read, update, delete: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
       
       match /locations/{locationId} {
-        allow create: if isOwner(request.resource.data.workerId);
-        allow read: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
+        allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
+        allow read: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
       }
     }
 
-    // --- USER-SCOPED COLLECTIONS (docId is userId) ---
     match /userActionChips/{userId} {
       allow read, write: if isOwner(userId);
     }
@@ -222,7 +218,6 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
-    // --- Public/Semi-public collections ---
     match /siteImages/{imageId} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -230,18 +225,6 @@ service cloud.firestore {
     
     match /feedback/{feedbackId} {
       allow read, write: if request.auth != null;
-    }
-
-    match /blogPosts/{postId} {
-        allow read: if resource.data.status == 'published';
-        allow create: if isOwner(request.resource.data.authorId);
-        allow update, delete: if isOwner(resource.data.authorId);
-
-        match /comments/{commentId} {
-            allow read: if resource.data.status == 'approved';
-            allow create: if request.auth != null;
-            allow update, delete: if isOwner(get(/databases/$(database)/documents/blogPosts/$(postId)).data.authorId) || (resource.data.authorId != null && isOwner(resource.data.authorId));
-        }
     }
   }
 }

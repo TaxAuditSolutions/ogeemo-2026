@@ -40,12 +40,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ChevronsUpDown, Check, Plus, MoreVertical, Trash2, LoaderCircle, X, Info, FilePlus2, FileText, Save, Pencil } from 'lucide-react';
 import { addProject, getProjectTemplates, updateProjectTemplate, deleteProjectTemplate, type Project, type ProjectTemplate, getProjectById, updateProject } from '@/services/project-service';

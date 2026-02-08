@@ -28,6 +28,7 @@ import {
   Search,
   Image,
   ArrowDownAZ,
+  ArrowUpZA,
   Database,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";

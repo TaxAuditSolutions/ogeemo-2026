@@ -102,7 +102,7 @@ export default function RegisterPage() {
         </div>
         <CardTitle className="text-2xl font-headline font-semibold">Create Your Ogeemo Account</CardTitle>
         <CardDescription>
-            Enter your information below to create your account. <span className="font-bold text-primary block mt-1">First 30 days are free!</span>
+            Enter your information below to create your account. <span className="font-bold text-primary block mt-1">First 30 days is free!</span>
         </CardDescription>
       </CardHeader>
       <CardContent>

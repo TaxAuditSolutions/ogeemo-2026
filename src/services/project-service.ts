@@ -19,10 +19,6 @@ import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ProjectFolder, type ActionChipData, TimeSession, type ProjectUrgency, type ProjectImportance } from '@/types/calendar-types';
 import { Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, Link as LinkIcon, FileOutput, FileDigit, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ListPlus, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { addMinutes } from 'date-fns';
-import { allMenuItems } from '@/lib/menu-items';
-import { accountingMenuItems } from '@/data/accounting-menu-items';
-import hrMenuItems from '@/data/hr-menu-items';
 
 export type { Project };
 
@@ -44,6 +40,11 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
   { label: 'Projects', icon: Briefcase, href: '/projects/all' },
   { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
 ];
+
+const iconMap: { [key: string]: LucideIcon } = {
+  Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
+  FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ArrowDownAZ, ArrowUpZA
+};
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -109,16 +110,13 @@ const docToTask = (doc: any): TaskEvent => {
 };
 
 const docToTemplate = (doc: any): ProjectTemplate => ({ id: doc.id, ...doc.data() } as ProjectTemplate);
-const docToFolder = (doc: any): ProjectFolder => ({ id: doc.id, ...doc.data() } as ProjectFolder);
-const iconMap: { [key: string]: LucideIcon } = {
-  Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
-  FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ArrowDownAZ, ArrowUpZA
-};
 
-const docToActionChip = (chipData: any): ActionChipData => {
-    const iconName = chipData.iconName as keyof typeof iconMap;
+const docToActionChip = (doc: any): ActionChipData => {
+    const data = doc.data ? doc.data() : doc;
+    const iconName = data.iconName as keyof typeof iconMap;
     return {
-        ...chipData,
+        id: doc.id || data.id,
+        ...data,
         icon: iconMap[iconName] || Wand2,
     } as ActionChipData;
 };
@@ -340,6 +338,30 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
     await deleteDoc(templateRef);
 }
 
+type ChipMenuType = 'dashboard' | 'accounting' | 'hr';
+
+async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        return (data.chips || []).map((chip: any) => docToActionChip(chip));
+    }
+    return [];
+}
+
+async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const chipsToSave = chips.map(chip => {
+        const iconName = Object.keys(iconMap).find(key => iconMap[key] === chip.icon);
+        const { icon, ...rest } = chip;
+        return { ...rest, iconName: iconName || 'Wand2' };
+    });
+    await setDoc(docRef, { chips: chipsToSave }, { merge: true });
+}
+
 export async function getActionChips(userId: string, type: ChipMenuType = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap = {
         dashboard: ACTION_CHIPS_COLLECTION,
@@ -350,6 +372,7 @@ export async function getActionChips(userId: string, type: ChipMenuType = 'dashb
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
+    
     if (!docSnap.exists()) {
         const defaultSourceMap = {
             dashboard: defaultChips,
@@ -375,112 +398,56 @@ export async function getAvailableActionChips(userId: string, type: ChipMenuType
     const collectionName = collectionNameMap[type];
     const userActionChips = await getActionChips(userId, type);
     const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
+    
     const defaultSourceMap = {
         dashboard: allMenuItems,
         accounting: accountingMenuItems,
         hr: hrMenuItems,
     };
     const defaultSource = defaultSourceMap[type];
+    
     const getDefaultsNotUsed = () => defaultSource
         .filter(item => !usedHrefs.has(item.href))
         .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
+    
     if (!docSnap.exists()) {
         return getDefaultsNotUsed();
     }
+    
     const customAvailable = await getChipsFromCollection(userId, collectionName);
     const filteredCustomAvailable = customAvailable.filter(item => !usedHrefs.has(typeof item.href === 'string' ? item.href : (item.href as any).pathname));
+    
     const combined = [...filteredCustomAvailable];
     const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
+    
     getDefaultsNotUsed().forEach(item => {
         if (!customHrefs.has(item.href)) {
             combined.push(item);
         }
     });
+    
     return combined.sort((a,b) => a.label.localeCompare(b.label));
 }
 
-export async function updateActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
-    const collectionNameMap = {
-        dashboard: ACTION_CHIPS_COLLECTION,
-        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
-        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
-    };
-    const collectionName = collectionNameMap[type];
-    await updateChipsInCollection(userId, collectionName, chips);
+export async function updateActionChip(userId: string, chip: ActionChipData, type: ChipMenuType = 'dashboard'): Promise<void> {
+    const currentChips = await getActionChips(userId, type);
+    const updatedChips = currentChips.map(c => c.id === chip.id ? chip : c);
+    await updateActionChips(userId, updatedChips, type);
 }
 
-export async function updateAvailableActionChips(userId: string, chips: ActionChipData[], type: ChipMenuType = 'dashboard'): Promise<void> {
-    const collectionNameMap = {
-        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
-        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-    };
-    const collectionName = collectionNameMap[type];
-    await updateChipsInCollection(userId, collectionName, chips);
-}
-
-export async function getTrashedActionChips(userId: string): Promise<ActionChipData[]> {
-    return getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
-}
-
-export async function trashActionChips(userId: string, chipsToTrash: ActionChipData[], menuType: ChipMenuType = 'dashboard'): Promise<void> {
-    const allUserChips = await getActionChips(userId, menuType);
-    const allAvailableChips = await getAvailableActionChips(userId, menuType);
-    const allTrashedChips = await getTrashedActionChips(userId);
-    const chipIdsToTrash = new Set(chipsToTrash.map(c => c.id));
-    const newUserChips = allUserChips.filter(c => !chipIdsToTrash.has(c.id));
-    const newAvailableChips = allAvailableChips.filter(c => !chipIdsToTrash.has(c.id));
-    const chipsActuallyBeingTrashed = [...allUserChips, ...allAvailableChips].filter(c => chipIdsToTrash.has(c.id));
-    if (chipsActuallyBeingTrashed.length === 0) return;
-    const newTrashedChips = [...allTrashedChips, ...chipsActuallyBeingTrashed];
-    await Promise.all([
-        updateActionChips(userId, newUserChips, menuType),
-        updateAvailableActionChips(userId, newAvailableChips, menuType),
-        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashedChips)
-    ]);
-}
-
-export async function restoreActionChips(userId: string, chipsToRestore: ActionChipData[]): Promise<void> {
-    const availableChips = await getAvailableActionChips(userId, 'dashboard');
-    const trashedChips = await getTrashedActionChips(userId);
-    const chipIdsToRestore = new Set(chipsToRestore.map(c => c.id));
-    const newAvailableChips = [...availableChips, ...chipsToRestore];
-    const newTrashedChips = trashedChips.filter(c => !chipIdsToRestore.has(c.id));
-    await Promise.all([
-        updateAvailableActionChips(userId, newAvailableChips, 'dashboard'),
-        updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashedChips)
-    ]);
-}
-
-export async function deleteActionChips(userId: string, chipIdsToDelete: string[]): Promise<void> {
-  const db = getDb();
-  const docRef = doc(db, TRASHED_ACTION_CHIPS_COLLECTION, userId);
-  await setDoc(docRef, { chips: [] }, { merge: true });
-}
-
-export async function addActionChip(chipData: Omit<ActionChipData, 'id'>, type: ChipMenuType = 'dashboard'): Promise<ActionChipData> {
-  const collectionNameMap = {
-    dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-    accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
-    hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-  };
-  const collectionName = collectionNameMap[type];
-  const db = getDb();
-  const docRef = doc(db, collectionName, chipData.userId);
-  const docSnap = await getDoc(docRef);
-  const existingChips = docSnap.exists() ? (docSnap.data().chips || []).map(docToActionChip) : [];
-  const iconName = Object.keys(iconMap).find(key => iconMap[key] === chipData.icon);
-  const { icon, ...restOfChipData } = chipData;
-  const newChipForDb = { ...restOfChipData, iconName: iconName || 'Wand2' };
-  const newId = `chip_${Date.now()}`;
-  const updatedChips = [...existingChips, {...newChipForDb, id: newId }];
-  await updateChipsInCollection(chipData.userId, collectionName, updatedChips);
-  return { ...chipData, id: newId };
-}
-
-export async function deleteRitualTasksByType(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
-    return deleteRitualTasks(userId, ritualType);
+export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
+    const db = getDb();
+    const q = query(
+        collection(db, TASKS_COLLECTION),
+        where("userId", "==", userId),
+        where("ritualType", "==", ritualType)
+    );
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
 }

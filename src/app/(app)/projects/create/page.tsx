@@ -422,7 +422,7 @@ export default function CreateProjectPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+      <AlertDialog open={!!templateToDelete} onOpenChange={setTemplateToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

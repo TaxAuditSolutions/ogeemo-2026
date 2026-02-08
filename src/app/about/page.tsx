@@ -28,7 +28,7 @@ const teamMembers = [
     {
         name: "Dan White",
         role: "Founder & CEO",
-        bio: "With over 40 years of experience helping small businesses navigate complex business landscapes, Dan architected Ogeemo to solve the #1 problem he saw every day: That being software that creates more work instead of just simplifying processes. His vision is to empower entrepreneurs with a tool that is as ambitious as the “Ogeemo Project”",
+        bio: "With over 40 years of experience helping small businesses navigate complex business landscapes, Dan architected Ogeemo to solve the #1 problem he saw every day: software that creates more work instead of just simplifying processes. His vision is to empower entrepreneurs with a tool that is as ambitious as the 'Ogeemo Project'.",
         imageId: "about-dan"
     },
     {

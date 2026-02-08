@@ -116,13 +116,26 @@ const docToTemplate = (doc: any): ProjectTemplate => ({ id: doc.id, ...doc.data(
 
 const docToActionChip = (doc: any): ActionChipData => {
     const data = doc.data ? doc.data() : doc;
-    const iconName = data.iconName as keyof typeof iconMap;
+    const iconName = data.iconName || (data.icon ? (data.icon as any).displayName || (data.icon as any).name : 'Wand2');
     return {
         id: doc.id || data.id,
         ...data,
         icon: iconMap[iconName] || Wand2,
     } as ActionChipData;
 };
+
+async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const serializedChips = chips.map(chip => ({
+        id: chip.id,
+        label: chip.label,
+        href: chip.href,
+        userId: chip.userId,
+        iconName: (chip.icon as any).displayName || (chip.icon as any).name || 'Wand2'
+    }));
+    await setDoc(docRef, { chips: serializedChips }, { merge: true });
+}
 
 export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
     const db = getDb();

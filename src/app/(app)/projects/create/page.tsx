@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -375,7 +374,7 @@ export default function CreateProjectPage() {
             <div className="w-full max-w-lg animate-in fade-in-50">
                 <div className="flex justify-start mb-6">
                     <Button variant="outline" onClick={() => setCreationStep('choice')}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Choices
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
                     </Button>
                 </div>
                 <div className="p-8 border-2 border-dashed rounded-lg">
@@ -460,8 +459,20 @@ export default function CreateProjectPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1" className="border-none">
+                <AccordionTrigger className="hover:no-underline py-0 mb-4">
+                  <span className="text-sm font-normal">Why can't I undo this?</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  Templates are permanent blue-prints. Once deleted, all associated steps and structures are removed from our database to keep your workspace clean.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            <div className="flex gap-2 justify-end w-full">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

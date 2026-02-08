@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 
-
 export function SiteHeader() {
   const { user } = useAuth();
   const router = useRouter();

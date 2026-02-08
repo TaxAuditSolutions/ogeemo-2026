@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Users,
   Briefcase,
-  Newspaper,
   MessageSquare,
   Info,
   FileText,
@@ -12,48 +11,24 @@ import {
   Clock,
   Folder,
   Mail,
-  Calculator,
   Lightbulb,
   Settings,
   LogOut,
-  Database,
-  Bug,
-  Bell,
   HeartPulse,
-  BarChart3,
   Wand2,
   Landmark,
   Megaphone,
   PackageSearch,
   Users2,
-  Contact2,
-  HardHat,
-  ArrowDownAZ,
   Trash2,
-  ListTodo,
-  BookText,
-  BrainCircuit,
-  GitMerge,
-  Pencil,
   ListChecks,
-  FilePenLine,
-  Route,
-  Link as LinkIcon,
-  FileOutput,
-  FileDigit,
-  TrendingUp,
-  TrendingDown,
-  BookOpen,
-  ClipboardList,
-  PlayCircle,
-  Wrench,
-  DatabaseBackup,
+  BrainCircuit,
+  X,
   Globe,
-  MessageCircleQuestion,
   Search,
   Image,
 } from "lucide-react";
-import type { LucideIcon } from 'lucide-react';
+import type { MenuItem } from '@/lib/menu-items';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
 import hrMenuItems from '@/data/hr-menu-items';
 
@@ -62,7 +37,6 @@ export interface MenuItem {
   label: string;
   icon: LucideIcon;
 }
-
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },

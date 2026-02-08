@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -7,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { Rocket, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,6 @@ export default function RegisterPage() {
     
     setIsLoading(true);
     try {
-        // 1. Create Firebase Auth user
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
 
@@ -57,13 +55,10 @@ export default function RegisterPage() {
             throw new Error("User creation failed.");
         }
         
-        // 2. Update Auth profile display name
         await updateProfile(user, { displayName: formData.name });
         
-        // 3. Find or create the "Subscribers to Ogeemo" folder
         const contactsFolder = await findOrCreateFolder(user.uid, "Subscribers to Ogeemo");
 
-        // 4. Prepare and save the contact details
         const notes = `New user sign-up on ${new Date().toLocaleDateString()}.`;
 
         const newContactData = {
@@ -82,8 +77,6 @@ export default function RegisterPage() {
             description: "Your account has been created successfully. Your 30-day free trial has begun.",
         });
         
-        // The AuthProvider will handle the redirect to the action manager automatically
-
     } catch (error: any) {
         let description = "An unknown error occurred. Please try again.";
         if (error.code === 'auth/email-already-in-use') {

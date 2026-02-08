@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
@@ -44,7 +43,7 @@ const teamMembers = [
         bio: "Nick is the technical genius behind the Ogeemo Technology. A full-stack developer with a passion for clean architecture and seamless user experiences, he leads the team in building a robust, scalable, and secure platform. He believes technology should be an invisible enabler of success.",
         imageId: "about-nick"
     }
-]
+];
 
 export default function AboutUsPage() {
     return (
@@ -112,9 +111,11 @@ export default function AboutUsPage() {
                                     </div>
                                     <CardTitle>{p.title}</CardTitle>
                                 </CardHeader>
-                                <CardDescription className="px-6 pb-6 text-center">
-                                    {p.description}
-                                </CardDescription>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground text-center">
+                                        {p.description}
+                                    </p>
+                                </CardContent>
                             </Card>
                         ))}
                     </div>

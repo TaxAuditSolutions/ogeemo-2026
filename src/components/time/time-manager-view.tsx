@@ -134,7 +134,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const hasStartedTimerRef = useRef(false);
 
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
-    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: ':' + String(minutes).padStart(2, '0') }; });
+    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
     
     const totalAccumulatedSeconds = useMemo(() => {
         return sessions.reduce((acc, session) => acc + session.durationSeconds, 0);
@@ -788,13 +788,10 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                             <p className="font-semibold text-sm">{formatTime(session.durationSeconds)}</p>
                                             <p className="text-xs text-muted-foreground">{session.notes}</p>
                                         </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                                <DropdownMenuItem onSelect={() => handleOpenEditSession(session)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setSessions(prev => prev.filter(s => s.id !== session.id))} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <div className="flex items-center gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditSession(session)}><Pencil className="h-4 w-4"/></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setSessions(prev => prev.filter(s => s.id !== session.id))}><Trash2 className="h-4 w-4"/></Button>
+                                        </div>
                                     </div>
                                 )) : <p className="text-sm text-center text-muted-foreground pt-4">No sessions logged for this event yet.</p>}
                                 </div>

@@ -42,9 +42,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
-import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X, Pencil } from 'lucide-react';
+import { 
+    Calendar as CalendarIcon, 
+    ArrowLeft, 
+    CheckCircle, 
+    FileSpreadsheet, 
+    Users, 
+    DollarSign, 
+    LoaderCircle, 
+    Calculator, 
+    Trash2, 
+    MoreVertical, 
+    Edit, 
+    Plus, 
+    GitMerge, 
+    X, 
+    Pencil,
+    ChevronDown,
+    ChevronUp
+} from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -106,6 +125,8 @@ export function RunPayrollView() {
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
+  
+  const [isWorkerListOpen, setIsWorkerListOpen] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -296,67 +317,84 @@ export function RunPayrollView() {
                 </CardContent>
             </Card>
             
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>2. Select Workers</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenWorkerForm()}><Plus className="h-4 w-4"/></Button>
+            <Card className="overflow-hidden">
+                <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-4" onClick={() => setIsWorkerListOpen(!isWorkerListOpen)}>
+                    <div className="flex justify-between items-center w-full">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            2. Select Workers
+                            {isWorkerListOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
+                        </CardTitle>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleOpenWorkerForm(); }}>
+                            <Plus className="h-4 w-4"/>
+                        </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Accordion type="multiple" className="w-full">
-                        {employees.map(emp => (
-                            <AccordionItem key={emp.id} value={emp.id} className="border-b px-4">
-                                <div className="flex items-center gap-3 py-2">
-                                    <Checkbox 
-                                        checked={selectedEmployeeIds.includes(emp.id)} 
-                                        onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
-                                        id={`check-${emp.id}`}
-                                    />
-                                    <AccordionTrigger className="flex-1 py-0 hover:no-underline font-normal text-sm">
-                                        <span>{emp.name}</span>
-                                    </AccordionTrigger>
-                                </div>
-                                <AccordionContent className="pt-0 pb-4 text-xs text-muted-foreground space-y-2">
-                                    <div className="grid grid-cols-2 gap-2 pl-7">
-                                        <div>
-                                            <p className="font-semibold text-foreground">Email</p>
-                                            <p>{emp.email || 'No email set'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">Type</p>
-                                            <p className="capitalize">{emp.workerType}</p>
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">Pay Type</p>
-                                            <p className="capitalize">{emp.payType}</p>
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">Pay Rate</p>
-                                            <p>{formatCurrency(emp.payRate)}{emp.payType === 'hourly' ? '/hr' : '/yr'}</p>
-                                        </div>
+                <AnimatePresence>
+                    {isWorkerListOpen && (
+                        <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: 'auto' }}
+                            exit={{ height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden border-t"
+                        >
+                            <CardContent className="p-0">
+                                <Accordion type="multiple" className="w-full">
+                                    {employees.map(emp => (
+                                        <AccordionItem key={emp.id} value={emp.id} className="border-b px-4">
+                                            <div className="flex items-center gap-3 py-2">
+                                                <Checkbox 
+                                                    checked={selectedEmployeeIds.includes(emp.id)} 
+                                                    onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
+                                                    id={`check-${emp.id}`}
+                                                />
+                                                <AccordionTrigger className="flex-1 py-0 hover:no-underline font-normal text-sm">
+                                                    <span>{emp.name}</span>
+                                                </AccordionTrigger>
+                                            </div>
+                                            <AccordionContent className="pt-0 pb-4 text-xs text-muted-foreground space-y-2">
+                                                <div className="grid grid-cols-2 gap-2 pl-7">
+                                                    <div>
+                                                        <p className="font-semibold text-foreground">Email</p>
+                                                        <p>{emp.email || 'No email set'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-foreground">Type</p>
+                                                        <p className="capitalize">{emp.workerType}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-foreground">Pay Type</p>
+                                                        <p className="capitalize">{emp.payType}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-foreground">Pay Rate</p>
+                                                        <p>{formatCurrency(emp.payRate)}{emp.payType === 'hourly' ? '/hr' : '/yr'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end gap-2 pl-7 pt-2">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleOpenWorkerForm(emp)} className="h-7 px-2 text-[10px]">
+                                                        <Pencil className="mr-1 h-3 w-3"/> Edit
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleMergeClick(emp)} className="h-7 px-2 text-[10px]">
+                                                        <GitMerge className="mr-1 h-3 w-3"/> Merge
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteWorker(emp)} className="h-7 px-2 text-[10px] text-destructive">
+                                                        <Trash2 className="mr-1 h-3 w-3"/> Delete
+                                                    </Button>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                                {employees.length === 0 && (
+                                    <div className="p-8 text-center text-sm text-muted-foreground">
+                                        No workers found. Click the plus icon to add one.
                                     </div>
-                                    <div className="flex justify-end gap-2 pl-7 pt-2">
-                                        <Button variant="ghost" size="sm" onClick={() => handleOpenWorkerForm(emp)} className="h-7 px-2 text-[10px]">
-                                            <Pencil className="mr-1 h-3 w-3"/> Edit
-                                        </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => handleMergeClick(emp)} className="h-7 px-2 text-[10px]">
-                                            <GitMerge className="mr-1 h-3 w-3"/> Merge
-                                        </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteWorker(emp)} className="h-7 px-2 text-[10px] text-destructive">
-                                            <Trash2 className="mr-1 h-3 w-3"/> Delete
-                                        </Button>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                    {employees.length === 0 && (
-                        <div className="p-8 text-center text-sm text-muted-foreground">
-                            No workers found. Click the plus icon to add one.
-                        </div>
+                                )}
+                            </CardContent>
+                        </motion.div>
                     )}
-                </CardContent>
+                </AnimatePresence>
             </Card>
         </div>
 
@@ -369,14 +407,19 @@ export function RunPayrollView() {
                             <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Deductions</TableHead><TableHead className="text-right">Net</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {payrollSummary.map(emp => (
-                                    <TableRow key={emp.id}><TableCell>{emp.name}</TableCell><TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell><TableCell className="text-right font-mono">{formatCurrency(emp.deductions)}</TableCell><TableCell className="text-right font-mono font-bold">{formatCurrency(emp.netPay)}</TableCell></TableRow>
+                                    <TableRow key={emp.id}>
+                                        <TableCell>{emp.name}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(emp.deductions)}</TableCell>
+                                        <TableCell className="text-right font-mono font-bold">{formatCurrency(emp.netPay)}</TableCell>
+                                    </TableRow>
                                 ))}
                             </TableBody>
                             <TableFooter>
                                 <TableRow><TableCell className="font-bold">Totals</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalDeductions)}</TableCell><TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell></TableRow>
                             </TableFooter>
                         </Table>
-                    ) : <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg"><p>No workers selected. Use the list on the left to add them to this payroll run.</p></div>}
+                    ) : <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg"><p>No workers selected. Open the "Select Workers" list on the left to add them.</p></div>}
                 </CardContent>
                 <CardFooter className="border-t p-6">
                     <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing'} onClick={handleRunPayroll}>

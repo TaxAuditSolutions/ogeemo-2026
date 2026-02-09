@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -613,6 +612,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                         <Card className="bg-primary/10 border-primary">
                             <CardHeader className="text-center">
                                 <div className="flex justify-center items-center gap-2">
+                                <CheckCircle className="h-6 w-6 text-primary" />
                                 <CheckCircle className="h-6 w-6 text-primary" />
                                 <CardTitle>Final Step: Review &amp; Schedule Your Logged Email</CardTitle>
                                 </div>

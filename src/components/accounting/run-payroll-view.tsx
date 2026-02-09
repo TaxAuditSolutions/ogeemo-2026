@@ -64,7 +64,7 @@ const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void, payPeriod?: DateRange }) => {
+const PayrollSuccessView = ({ onStartNew, startDate, endDate }: { onStartNew: () => void, startDate?: Date, endDate?: Date }) => {
     return (
         <div className="p-4 sm:p-6 flex items-center justify-center h-full">
             <Card className="w-full max-w-2xl text-center">
@@ -76,7 +76,7 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
                         Payroll Submitted Successfully
                     </CardTitle>
                     <CardDescription>
-                        Processed period: {payPeriod?.from ? format(payPeriod.from, 'PP') : ''} - {payPeriod?.to ? format(payPeriod.to, 'PP') : ''}
+                        Processed period: {startDate ? format(startDate, 'PP') : ''} - {endDate ? format(endDate, 'PP') : ''}
                     </CardDescription>
                 </CardHeader>
                 <CardFooter className="flex-col sm:flex-row justify-center gap-4">
@@ -91,7 +91,12 @@ const PayrollSuccessView = ({ onStartNew, payPeriod }: { onStartNew: () => void,
 export function RunPayrollView() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-  const [payPeriod, setPayPeriod] = useState<DateRange | undefined>(undefined);
+  
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false);
+
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
   
@@ -197,7 +202,7 @@ export function RunPayrollView() {
   };
 
   const handleRunPayroll = async () => {
-      if (!user || !payPeriod?.from || !payPeriod?.to || selectedEmployeeIds.length === 0) {
+      if (!user || !startDate || !endDate || selectedEmployeeIds.length === 0) {
           toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a period and at least one worker.' });
           return;
       }
@@ -206,8 +211,8 @@ export function RunPayrollView() {
       try {
           await savePayrollRun({
               userId: user.uid,
-              payPeriodStart: payPeriod.from,
-              payPeriodEnd: payPeriod.to,
+              payPeriodStart: startDate,
+              payPeriodEnd: endDate,
               payDate: new Date(),
               totalGrossPay,
               totalDeductions,
@@ -229,7 +234,7 @@ export function RunPayrollView() {
   };
 
   if (isLoading) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
-  if (payrollStatus === 'completed') return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} payPeriod={payPeriod} />;
+  if (payrollStatus === 'completed') return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} startDate={startDate} endDate={endDate} />;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
@@ -247,16 +252,46 @@ export function RunPayrollView() {
         <div className="lg:col-span-1 space-y-6">
             <Card>
                 <CardHeader><CardTitle>1. Select Pay Period</CardTitle></CardHeader>
-                <CardContent>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !payPeriod && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {payPeriod?.from ? (payPeriod.to ? `${format(payPeriod.from, "LLL dd")} - ${format(payPeriod.to, "LLL dd, y")}` : format(payPeriod.from, "LLL dd, y")) : "Select dates..."}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={payPeriod?.from} onSelect={(d) => setPayPeriod({ from: d, to: d ? addDays(d, 13) : undefined })} initialFocus /></PopoverContent>
-                    </Popover>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Start of Payroll Period</Label>
+                        <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <CustomCalendar
+                                    mode="single"
+                                    selected={startDate}
+                                    onSelect={(d) => { setStartDate(d); setIsStartDateOpen(false); }}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>End of Payroll Period</Label>
+                        <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")} disabled={!startDate}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <CustomCalendar
+                                    mode="single"
+                                    selected={endDate}
+                                    onSelect={(d) => { setEndDate(d); setIsEndDateOpen(false); }}
+                                    disabled={(date) => startDate ? date < startDate : false}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </CardContent>
             </Card>
             

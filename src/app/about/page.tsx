@@ -6,24 +6,6 @@ import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
 
-const principles = [
-    {
-        icon: Users,
-        title: "Human-Centric Design",
-        description: "We build for people, not for an endless list of features. Every tool within Ogeemo is designed to be intuitive, solve real-world problems, and reduce your learning curve, empowering you to get back to the work you love."
-    },
-    {
-        icon: Target,
-        title: "Integration Over Isolation",
-        description: "Your business is a single, connected entity. Your software should be too. Ogeemo breaks down the silos between your finances, projects, and client relationships to create a single source of truth, where every action informs the next."
-    },
-    {
-        icon: Lightbulb,
-        title: "AI as a True Partner",
-        description: "We leverage artificial intelligence not to replace human intuition, but to augment it. Ogeemo acts as your smart assistant, automating mundane tasks, providing timely insights, and connecting the dots across your entire workflow so you can focus on the meaningful decisions that drive growth."
-    }
-];
-
 const teamMembers = [
     {
         name: "Dan White",
@@ -42,6 +24,24 @@ const teamMembers = [
         role: "Founder & Software Engineer",
         bio: "Nick is the technical genius behind the Ogeemo Technology. A full-stack developer with a passion for clean architecture and seamless user experiences, he leads the team in building a robust, scalable, and secure platform. He believes technology should be an invisible enabler of success.",
         imageId: "about-nick"
+    }
+];
+
+const principles = [
+    {
+        icon: Users,
+        title: "Human-Centric Design",
+        description: "We build for people, not for an endless list of features. Every tool within Ogeemo is designed to be intuitive, solve real-world problems, and reduce your learning curve, empowering you to get back to the work you love."
+    },
+    {
+        icon: Target,
+        title: "Integration Over Isolation",
+        description: "Your business is a single, connected entity. Your software should be too. Ogeemo breaks down the silos between your finances, projects, and client relationships to create a single source of truth, where every action informs the next."
+    },
+    {
+        icon: Lightbulb,
+        title: "AI as a True Partner",
+        description: "We leverage artificial intelligence not to replace human intuition, but to augment it. Ogeemo acts as your smart assistant, automating mundane tasks, providing timely insights, and connecting the dots across your entire workflow so you can focus on the meaningful decisions that drive growth."
     }
 ];
 

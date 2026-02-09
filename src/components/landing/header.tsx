@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LayoutDashboard } from "lucide-react";
 
 export function SiteHeader() {
   const { user } = useAuth();
@@ -50,7 +50,15 @@ export function SiteHeader() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
             {user ? (
-                <UserNav />
+                <div className="flex items-center gap-4">
+                    <Button asChild className="hidden sm:flex">
+                        <Link href="/action-manager">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            Action Manager
+                        </Link>
+                    </Button>
+                    <UserNav />
+                </div>
             ) : (
                 <Button onClick={() => router.push('/login')}>Login</Button>
             )}

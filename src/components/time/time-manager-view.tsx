@@ -563,7 +563,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
+            <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
                     <div className="flex justify-between items-center relative">
                         <div className="flex-1 flex justify-start">
@@ -877,7 +877,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This will permanently delete this event and all of its logged time sessions. This action cannot be undone.
                         </AlertDialogDescription>

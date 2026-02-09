@@ -60,7 +60,8 @@ import {
     X, 
     Pencil,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Clock
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -69,16 +70,18 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, type Worker } from '@/services/payroll-service';
+import { getTimeLogs } from '@/services/timelog-service';
+import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type PayrollEmployee = Worker & {
-    grossPay?: number;
-    deductions?: number;
-    netPay?: number;
-    hoursWorked?: number;
+    grossPay: number;
+    deductions: number;
+    netPay: number;
+    hoursWorked: number;
 };
 
 const formatCurrency = (amount: number) => {
@@ -110,7 +113,9 @@ const PayrollSuccessView = ({ onStartNew, startDate, endDate }: { onStartNew: ()
 };
 
 export function RunPayrollView() {
-  const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
+  const [workersList, setWorkersList] = useState<Worker[]>([]);
+  const [allTasks, setAllTasks] = useState<any[]>([]);
+  const [allTimeLogs, setAllTimeLogs] = useState<any[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -137,11 +142,14 @@ export function RunPayrollView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const fetchedEmployees = await getWorkers(user.uid);
-        setEmployees(fetchedEmployees.map(e => ({ 
-            ...e, 
-            grossPay: e.payType === 'salary' ? parseFloat((e.payRate / 24).toFixed(2)) : undefined 
-        })));
+        const [fetchedWorkers, fetchedTasks, fetchedLogs] = await Promise.all([
+            getWorkers(user.uid),
+            getTasksForUser(user.uid),
+            getTimeLogs(user.uid)
+        ]);
+        setWorkersList(fetchedWorkers);
+        setAllTasks(fetchedTasks);
+        setAllTimeLogs(fetchedLogs);
         setSelectedEmployeeIds([]);
     } catch (e: any) { 
         toast({ variant: 'destructive', title: 'Error', description: e.message }); 
@@ -152,16 +160,55 @@ export function RunPayrollView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const selectedEmployees = useMemo(() => employees.filter((e) => selectedEmployeeIds.includes(e.id)), [employees, selectedEmployeeIds]);
-  const payrollSummary = useMemo(() => selectedEmployees.map((emp) => {
-      const gross = emp.grossPay || 0;
-      const deductions = emp.deductions || 0;
-      return { ...emp, grossPay: gross, deductions, netPay: gross - deductions };
-  }), [selectedEmployees]);
+  const processedEmployees = useMemo((): PayrollEmployee[] => {
+    return workersList.map(emp => {
+        let totalSeconds = 0;
+        
+        if (startDate && endDate) {
+            const start = startOfDay(startDate);
+            const end = endOfDay(endDate);
 
-  const totalGrossPay = useMemo(() => payrollSummary.reduce((sum, emp) => sum + emp.grossPay, 0), [payrollSummary]);
-  const totalDeductions = useMemo(() => payrollSummary.reduce((sum, emp) => sum + emp.deductions, 0), [payrollSummary]);
-  const totalNetPay = useMemo(() => payrollSummary.reduce((sum, emp) => sum + emp.netPay, 0), [payrollSummary]);
+            // Sum hours from calendar tasks
+            const taskSeconds = allTasks
+                .filter(t => t.workerId === emp.id && t.start && isWithinInterval(new Date(t.start), { start, end }))
+                .reduce((sum, t) => sum + (t.duration || 0), 0);
+
+            // Sum hours from manual time logs
+            const logSeconds = allTimeLogs
+                .filter(l => l.workerId === emp.id && l.startTime && isWithinInterval(new Date(l.startTime), { start, end }))
+                .reduce((sum, l) => sum + (l.durationSeconds || 0), 0);
+
+            totalSeconds = taskSeconds + logSeconds;
+        }
+
+        const totalHours = totalSeconds / 3600;
+        
+        let grossPay = 0;
+        if (emp.payType === 'hourly') {
+            grossPay = parseFloat((totalHours * emp.payRate).toFixed(2));
+        } else {
+            // Salary calculation: Annual Rate / 24 (bi-monthly)
+            grossPay = parseFloat((emp.payRate / 24).toFixed(2));
+        }
+
+        // Placeholder for deductions (e.g., 20% flat for simulation)
+        const deductions = parseFloat((grossPay * 0.2).toFixed(2));
+
+        return { 
+            ...emp, 
+            hoursWorked: totalHours, 
+            grossPay,
+            deductions,
+            netPay: grossPay - deductions
+        };
+    });
+  }, [workersList, allTasks, allTimeLogs, startDate, endDate]);
+
+  const selectedEmployees = useMemo(() => processedEmployees.filter((e) => selectedEmployeeIds.includes(e.id)), [processedEmployees, selectedEmployeeIds]);
+
+  const totalGrossPay = useMemo(() => selectedEmployees.reduce((sum, emp) => sum + emp.grossPay, 0), [selectedEmployees]);
+  const totalDeductions = useMemo(() => selectedEmployees.reduce((sum, emp) => sum + emp.deductions, 0), [selectedEmployees]);
+  const totalNetPay = useMemo(() => selectedEmployees.reduce((sum, emp) => sum + emp.netPay, 0), [selectedEmployees]);
 
   const handleOpenWorkerForm = (worker: Worker | null = null) => {
       setWorkerToEdit(worker);
@@ -241,7 +288,7 @@ export function RunPayrollView() {
               totalDeductions,
               totalNetPay,
               employeeCount: selectedEmployeeIds.length,
-              details: payrollSummary.map(emp => ({
+              details: selectedEmployees.map(emp => ({
                   employeeId: emp.id,
                   employeeName: emp.name,
                   grossPay: emp.grossPay,
@@ -341,7 +388,7 @@ export function RunPayrollView() {
                         >
                             <CardContent className="p-0">
                                 <Accordion type="multiple" className="w-full">
-                                    {employees.map(emp => (
+                                    {processedEmployees.map(emp => (
                                         <AccordionItem key={emp.id} value={emp.id} className="border-b px-4">
                                             <div className="flex items-center gap-3 py-2">
                                                 <Checkbox 
@@ -350,7 +397,13 @@ export function RunPayrollView() {
                                                     id={`check-${emp.id}`}
                                                 />
                                                 <AccordionTrigger className="flex-1 py-0 hover:no-underline font-normal text-sm">
-                                                    <span>{emp.name}</span>
+                                                    <div className="flex flex-col items-start text-left">
+                                                        <span>{emp.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                            <Clock className="h-2 w-2" />
+                                                            {emp.hoursWorked.toFixed(2)} hrs in period
+                                                        </span>
+                                                    </div>
                                                 </AccordionTrigger>
                                             </div>
                                             <AccordionContent className="pt-0 pb-4 text-xs text-muted-foreground space-y-2">
@@ -387,7 +440,7 @@ export function RunPayrollView() {
                                         </AccordionItem>
                                     ))}
                                 </Accordion>
-                                {employees.length === 0 && (
+                                {processedEmployees.length === 0 && (
                                     <div className="p-8 text-center text-sm text-muted-foreground">
                                         No workers found. Click the plus icon to add one.
                                     </div>
@@ -401,29 +454,51 @@ export function RunPayrollView() {
 
         <div className="lg:col-span-2">
             <Card className="h-full flex flex-col">
-                <CardHeader><CardTitle>3. Review & Submit</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle>3. Review & Submit</CardTitle>
+                    <CardDescription>Pay is calculated based on hours logged in the selected period for hourly workers.</CardDescription>
+                </CardHeader>
                 <CardContent className="flex-1">
                     {selectedEmployees.length > 0 ? (
                         <Table>
-                            <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Deductions</TableHead><TableHead className="text-right">Net</TableHead></TableRow></TableHeader>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Employee</TableHead>
+                                    <TableHead className="text-right">Hours</TableHead>
+                                    <TableHead className="text-right">Gross Pay</TableHead>
+                                    <TableHead className="text-right">Deductions</TableHead>
+                                    <TableHead className="text-right">Net Pay</TableHead>
+                                </TableRow>
+                            </TableHeader>
                             <TableBody>
-                                {payrollSummary.map(emp => (
+                                {selectedEmployees.map(emp => (
                                     <TableRow key={emp.id}>
-                                        <TableCell>{emp.name}</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">{emp.name}</span>
+                                                <span className="text-[10px] text-muted-foreground capitalize">{emp.payType}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">{emp.hoursWorked.toFixed(2)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(emp.deductions)}</TableCell>
-                                        <TableCell className="text-right font-mono font-bold">{formatCurrency(emp.netPay)}</TableCell>
+                                        <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(emp.netPay)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                             <TableFooter>
-                                <TableRow><TableCell className="font-bold">Totals</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalDeductions)}</TableCell><TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell></TableRow>
+                                <TableRow>
+                                    <TableCell colSpan={2} className="font-bold">Totals</TableCell>
+                                    <TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell>
+                                    <TableCell className="text-right font-bold">{formatCurrency(totalDeductions)}</TableCell>
+                                    <TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell>
+                                </TableRow>
                             </TableFooter>
                         </Table>
                     ) : <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg"><p>No workers selected. Open the "Select Workers" list on the left to add them.</p></div>}
                 </CardContent>
                 <CardFooter className="border-t p-6">
-                    <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing'} onClick={handleRunPayroll}>
+                    <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing' || !startDate || !endDate} onClick={handleRunPayroll}>
                         {payrollStatus === 'processing' ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <Calculator className="mr-2 h-4 w-4"/>}
                         {payrollStatus === 'processing' ? 'Processing...' : `Submit Payroll for ${selectedEmployeeIds.length} Workers`}
                     </Button>
@@ -445,7 +520,7 @@ export function RunPayrollView() {
             isOpen={isMergeDialogOpen}
             onOpenChange={setIsMergeDialogOpen}
             sourceWorker={workerToMerge}
-            allWorkers={employees}
+            allWorkers={workersList}
             onMergeConfirm={handleConfirmMerge}
         />
       )}
@@ -459,3 +534,5 @@ export function RunPayrollView() {
     </div>
   );
 }
+
+    

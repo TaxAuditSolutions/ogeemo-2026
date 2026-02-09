@@ -805,7 +805,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             </div>
             <ContactFormDialog 
                 isOpen={isContactFormOpen}
-                onOpenChange={setIsContactPopoverOpen}
+                onOpenChange={setIsContactFormOpen}
                 contactToEdit={null}
                 folders={contactFolders}
                 onFoldersChange={setContactFolders}

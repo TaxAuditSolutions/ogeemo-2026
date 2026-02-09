@@ -52,6 +52,7 @@ import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, merg
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type PayrollEmployee = Worker & {
     grossPay?: number;
@@ -302,23 +303,59 @@ export function RunPayrollView() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenWorkerForm()}><Plus className="h-4 w-4"/></Button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                    {employees.map(emp => (
-                        <div key={emp.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted group">
-                            <div className="flex items-center gap-2">
-                                <Checkbox checked={selectedEmployeeIds.includes(emp.id)} onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))} />
-                                <Label className="cursor-pointer">{emp.name}</Label>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                <CardContent className="p-0">
+                    <Accordion type="multiple" className="w-full">
+                        {employees.map(emp => (
+                            <AccordionItem key={emp.id} value={emp.id} className="border-b px-4">
+                                <div className="flex items-center gap-3 py-2">
+                                    <Checkbox 
+                                        checked={selectedEmployeeIds.includes(emp.id)} 
+                                        onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
+                                        id={`check-${emp.id}`}
+                                    />
+                                    <AccordionTrigger className="flex-1 py-0 hover:no-underline font-normal text-sm">
+                                        <span>{emp.name}</span>
+                                    </AccordionTrigger>
+                                </div>
+                                <AccordionContent className="pt-0 pb-4 text-xs text-muted-foreground space-y-2">
+                                    <div className="grid grid-cols-2 gap-2 pl-7">
+                                        <div>
+                                            <p className="font-semibold text-foreground">Email</p>
+                                            <p>{emp.email || 'No email set'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-foreground">Type</p>
+                                            <p className="capitalize">{emp.workerType}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-foreground">Pay Type</p>
+                                            <p className="capitalize">{emp.payType}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-foreground">Pay Rate</p>
+                                            <p>{formatCurrency(emp.payRate)}{emp.payType === 'hourly' ? '/hr' : '/yr'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-2 pl-7 pt-2">
+                                        <Button variant="ghost" size="sm" onClick={() => handleOpenWorkerForm(emp)} className="h-7 px-2 text-[10px]">
+                                            <Pencil className="mr-1 h-3 w-3"/> Edit
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleMergeClick(emp)} className="h-7 px-2 text-[10px]">
+                                            <GitMerge className="mr-1 h-3 w-3"/> Merge
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteWorker(emp)} className="h-7 px-2 text-[10px] text-destructive">
+                                            <Trash2 className="mr-1 h-3 w-3"/> Delete
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                    {employees.length === 0 && (
+                        <div className="p-8 text-center text-sm text-muted-foreground">
+                            No workers found. Click the plus icon to add one.
                         </div>
-                    ))}
+                    )}
                 </CardContent>
             </Card>
         </div>

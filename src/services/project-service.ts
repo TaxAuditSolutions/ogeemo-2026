@@ -124,9 +124,6 @@ const docToActionChip = (doc: any): ActionChipData => {
     } as ActionChipData;
 };
 
-/**
- * Helper to update chips in a specific collection
- */
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
@@ -140,9 +137,6 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     await setDoc(docRef, { chips: serializedChips }, { merge: true });
 }
 
-/**
- * Helper to get chips from a specific collection
- */
 export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);

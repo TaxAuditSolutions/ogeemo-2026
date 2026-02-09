@@ -44,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
@@ -56,6 +57,7 @@ import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export default function TimeLogReportPage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
@@ -81,8 +83,9 @@ export default function TimeLogReportPage() {
         }
         setIsLoading(true);
         try {
-            const [fetchedWorkers, fetchedLogs, fetchedTasks, profile] = await Promise.all([
+            const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid),
+                getContacts(user.uid),
                 getTimeLogs(user.uid),
                 getTasksForUser(user.uid),
                 getUserProfile(user.uid)
@@ -92,6 +95,7 @@ export default function TimeLogReportPage() {
             setAdminName(name);
 
             setWorkers(fetchedWorkers);
+            setContacts(fetchedContacts);
             setTimeLogs(fetchedLogs);
             setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
@@ -108,11 +112,14 @@ export default function TimeLogReportPage() {
     const allMergedEntries = useMemo(() => {
         const fromLogs = timeLogs.map(tl => {
             const worker = workers.find(w => w.id === tl.workerId);
+            const contact = contacts.find(c => c.id === tl.contactId);
+            
             return {
                 ...tl,
                 id: tl.id,
                 workerId: tl.workerId,
-                workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
+                // Primary identity: 1. Manage Workers list, 2. Contacts list (for Todd Dunker scenario), 3. Admin name
+                workerName: worker ? worker.name : (contact ? contact.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown')),
                 startTime: new Date(tl.startTime),
                 durationSeconds: tl.durationSeconds,
                 source: 'log'
@@ -122,13 +129,13 @@ export default function TimeLogReportPage() {
         const fromTasks = tasks.map(t => {
             const workerId = t.workerId || user?.uid;
             const worker = workers.find(w => w.id === workerId);
-            const workerName = worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown');
+            const contact = contacts.find(c => c.id === t.contactId);
             
             return {
                 ...t,
                 id: t.id,
                 workerId: workerId,
-                workerName: workerName,
+                workerName: worker ? worker.name : (contact ? contact.name : (workerId === user?.uid ? adminName : 'Unknown')),
                 startTime: new Date(t.start),
                 durationSeconds: t.duration || 0,
                 source: 'calendar'
@@ -138,7 +145,7 @@ export default function TimeLogReportPage() {
         let combined = [...fromLogs, ...fromTasks];
 
         if (selectedWorkerId) {
-            combined = combined.filter(e => e.workerId === selectedWorkerId);
+            combined = combined.filter(e => e.workerId === selectedWorkerId || e.contactId === selectedWorkerId);
         }
 
         if (dateRange?.from) {
@@ -147,7 +154,7 @@ export default function TimeLogReportPage() {
         }
 
         return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
-    }, [timeLogs, tasks, workers, selectedWorkerId, dateRange, user, adminName]);
+    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
 
@@ -174,7 +181,8 @@ export default function TimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
-    const workersWithAdmin = useMemo(() => {
+    // Include Admin AND Contacts who might be workers in the selector
+    const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
             name: `${adminName} (Admin)`,
@@ -184,10 +192,22 @@ export default function TimeLogReportPage() {
             payRate: 0,
             userId: user?.uid || ''
         };
-        return [adminWorker, ...workers];
-    }, [workers, user, adminName]);
+        
+        // Add contacts as potential workers if you want to select them in the dropdown
+        const contactWorkers = contacts.map(c => ({
+            id: c.id,
+            name: c.name,
+            email: c.email || '',
+            workerType: 'contractor' as const,
+            payType: 'hourly' as const,
+            payRate: 0,
+            userId: user?.uid || ''
+        }));
 
-    const selectedWorker = workersWithAdmin.find(w => w.id === selectedWorkerId);
+        return [adminWorker, ...workers, ...contactWorkers];
+    }, [workers, contacts, user, adminName]);
+
+    const selectedWorker = workersForSelection.find(w => w.id === selectedWorkerId);
     
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -212,9 +232,9 @@ export default function TimeLogReportPage() {
                         <CardTitle>Filters</CardTitle>
                         <div className="flex flex-wrap items-end gap-4 pt-2">
                            <div className="space-y-2">
-                                <Label>Select Worker</Label>
+                                <Label>Select Person</Label>
                                 <WorkerSelector
-                                    workers={workersWithAdmin}
+                                    workers={workersForSelection}
                                     selectedWorkerId={selectedWorkerId}
                                     onSelect={setSelectedWorkerId}
                                     isLoading={isLoading}
@@ -263,7 +283,7 @@ export default function TimeLogReportPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Worker</TableHead>
+                                        <TableHead>Person</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Source</TableHead>
                                         <TableHead>Notes</TableHead>
@@ -288,7 +308,7 @@ export default function TimeLogReportPage() {
                                                         <DropdownMenuContent align="end">
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
@@ -334,7 +354,7 @@ export default function TimeLogReportPage() {
                         setPreselectedWorkerId(null);
                     }
                 }}
-                workers={workers}
+                workers={workersForSelection}
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
                 preselectedWorkerId={preselectedWorkerId}

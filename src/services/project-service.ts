@@ -124,6 +124,9 @@ const docToActionChip = (doc: any): ActionChipData => {
     } as ActionChipData;
 };
 
+/**
+ * Helper to update chips in a specific collection
+ */
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
@@ -137,6 +140,9 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     await setDoc(docRef, { chips: serializedChips }, { merge: true });
 }
 
+/**
+ * Helper to get chips from a specific collection
+ */
 export async function getChipsFromCollection(userId: string, collectionName: string): Promise<ActionChipData[]> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
@@ -459,7 +465,7 @@ export async function updateAvailableActionChips(userId: string, chips: ActionCh
 export async function addActionChip(data: Omit<ActionChipData, 'id'>, type: string = 'dashboard'): Promise<ActionChipData> {
     const collectionNameMap: Record<string, string> = {
         dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;

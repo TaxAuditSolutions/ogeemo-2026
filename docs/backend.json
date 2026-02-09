@@ -331,9 +331,12 @@
             "endTime": { "type": "string", "format": "date-time" },
             "durationSeconds": { "type": "number" },
             "notes": { "type": "string" },
-            "status": { "type": "string", "enum": ["unprocessed", "processed", "ready-for-payroll"] }
+            "status": { "type": "string", "enum": ["unprocessed", "processed", "ready-for-payroll"] },
+            "isBillable": { "type": "boolean" },
+            "billableRate": { "type": "number" },
+            "userId": { "type": "string" }
         },
-        "required": ["workerId", "startTime", "endTime", "durationSeconds", "status"]
+        "required": ["workerId", "startTime", "endTime", "durationSeconds", "status", "userId"]
     },
     "LocationLog": {
         "title": "Location Log",
@@ -609,5 +612,3 @@
     }
   }
 }
-
-    

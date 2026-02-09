@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { type Worker } from '@/services/payroll-service';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '../ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 interface LogTimeDialogProps {
@@ -50,6 +51,8 @@ export function LogTimeDialog({
     const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
     const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    const [isBillable, setIsBillable] = useState(false);
+    const [billableRate, setBillableRate] = useState<number | ''>(100);
 
     const [isSaving, setIsSaving] = useState(false);
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = useState(false);
@@ -67,12 +70,16 @@ export function LogTimeDialog({
                 setEndTime({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
                 setNotes(entryToEdit.notes || '');
                 setSelectedWorkerId(entryToEdit.workerId);
+                setIsBillable(entryToEdit.isBillable || false);
+                setBillableRate(entryToEdit.billableRate || 0);
             } else {
                 setDate(new Date());
                 setStartTime({ hour: '09', minute: '00' });
                 setEndTime({ hour: '17', minute: '00' });
                 setNotes('');
                 setSelectedWorkerId(preselectedWorkerId);
+                setIsBillable(false);
+                setBillableRate(100);
             }
         }
     }, [isOpen, entryToEdit, preselectedWorkerId]);
@@ -106,25 +113,23 @@ export function LogTimeDialog({
 
         setIsSaving(true);
         try {
+            const baseData = {
+                workerId: selectedWorkerId,
+                workerName: selectedWorker.name,
+                startTime: finalStartTime,
+                endTime: finalEndTime,
+                durationSeconds,
+                notes: notes,
+                isBillable,
+                billableRate: isBillable ? Number(billableRate) || 0 : 0,
+            };
+
             if (entryToEdit) {
-                const updatedData = {
-                    workerId: selectedWorkerId,
-                    workerName: selectedWorker.name,
-                    startTime: finalStartTime,
-                    endTime: finalEndTime,
-                    durationSeconds,
-                    notes: notes,
-                };
-                await updateTimeLog(entryToEdit.id, updatedData);
+                await updateTimeLog(entryToEdit.id, baseData);
                 toast({ title: "Time Log Updated" });
             } else {
                  const logData = {
-                    workerId: selectedWorkerId,
-                    workerName: selectedWorker.name,
-                    startTime: finalStartTime,
-                    endTime: finalEndTime,
-                    durationSeconds,
-                    notes: notes,
+                    ...baseData,
                     userId: user.uid,
                     status: 'unprocessed' as const,
                 };
@@ -192,7 +197,20 @@ export function LogTimeDialog({
                             </div>
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-4 pt-2 border-t">
+                        <Label>Billing Status</Label>
+                        <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-4">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="non-billable" id="rb1"/><Label htmlFor="r1">Non-Billable</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="billable" id="rb2"/><Label htmlFor="r2">Billable</Label></div>
+                        </RadioGroup>
+                        {isBillable && (
+                            <div className="space-y-2 max-w-xs">
+                                <Label htmlFor="rate">Billable Rate ($/hr)</Label>
+                                <Input id="rate" type="number" value={billableRate} onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="100.00" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="space-y-2 border-t pt-4">
                         <Label htmlFor="description">Description of work done *</Label>
                         <Textarea id="description" placeholder="e.g., On-site client meeting, regular shift, etc." value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </div>

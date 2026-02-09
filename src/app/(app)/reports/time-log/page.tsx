@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -118,11 +119,12 @@ export default function TimeLogReportPage() {
                 ...tl,
                 id: tl.id,
                 workerId: tl.workerId,
-                // Primary identity: 1. Manage Workers list, 2. Contacts list (for Todd Dunker scenario), 3. Admin name
                 workerName: worker ? worker.name : (contact ? contact.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown')),
                 startTime: new Date(tl.startTime),
                 durationSeconds: tl.durationSeconds,
-                source: 'log'
+                source: 'log',
+                isBillable: tl.isBillable || false,
+                billableRate: tl.billableRate || 0,
             };
         });
 
@@ -138,7 +140,9 @@ export default function TimeLogReportPage() {
                 workerName: worker ? worker.name : (contact ? contact.name : (workerId === user?.uid ? adminName : 'Unknown')),
                 startTime: new Date(t.start),
                 durationSeconds: t.duration || 0,
-                source: 'calendar'
+                source: 'calendar',
+                isBillable: t.isBillable || false,
+                billableRate: t.billableRate || 0,
             };
         });
 
@@ -157,6 +161,8 @@ export default function TimeLogReportPage() {
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -181,7 +187,6 @@ export default function TimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
-    // Include Admin AND Contacts who might be workers in the selector
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
@@ -193,7 +198,6 @@ export default function TimeLogReportPage() {
             userId: user?.uid || ''
         };
         
-        // Add contacts as potential workers if you want to select them in the dropdown
         const contactWorkers = contacts.map(c => ({
             id: c.id,
             name: c.name,
@@ -207,16 +211,9 @@ export default function TimeLogReportPage() {
         return [adminWorker, ...workers, ...contactWorkers];
     }, [workers, contacts, user, adminName]);
 
-    const selectedWorker = workersForSelection.find(w => w.id === selectedWorkerId);
-    
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     };
-
-    const totalPay = useMemo(() => {
-        if (!selectedWorker || selectedWorker.payType !== 'hourly' || totalDurationSeconds <= 0) return 0;
-        return (totalDurationSeconds / 3600) * selectedWorker.payRate;
-    }, [selectedWorker, totalDurationSeconds]);
 
     return (
         <>
@@ -285,7 +282,7 @@ export default function TimeLogReportPage() {
                                     <TableRow>
                                         <TableHead>Person</TableHead>
                                         <TableHead>Date</TableHead>
-                                        <TableHead>Source</TableHead>
+                                        <TableHead>Billing</TableHead>
                                         <TableHead>Notes</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -299,7 +296,11 @@ export default function TimeLogReportPage() {
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
-                                                <TableCell><Badge variant="outline">{entry.source === 'log' ? 'Manual' : 'Calendar'}</Badge></TableCell>
+                                                <TableCell>
+                                                    <Badge variant={entry.isBillable ? "default" : "secondary"}>
+                                                        {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
@@ -308,7 +309,7 @@ export default function TimeLogReportPage() {
                                                         <DropdownMenuContent align="end">
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
@@ -326,17 +327,20 @@ export default function TimeLogReportPage() {
                                 {allMergedEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
+                                            <TableCell colSpan={4} className="text-right font-bold">Total Hours (All Entries):</TableCell>
                                             <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
                                             <TableCell />
                                         </TableRow>
-                                        {selectedWorker?.payType === 'hourly' && (
-                                            <TableRow className="text-base bg-muted/50">
-                                                <TableCell colSpan={4} className="text-right font-bold">Total Pay:</TableCell>
-                                                <TableCell className="text-right font-bold font-mono">{formatCurrency(totalPay)}</TableCell>
-                                                <TableCell />
-                                            </TableRow>
-                                        )}
+                                        <TableRow className="bg-muted/30">
+                                            <TableCell colSpan={4} className="text-right font-semibold">Billable Hours Only:</TableCell>
+                                            <TableCell className="text-right font-semibold font-mono text-primary">{formatTime(billableDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        <TableRow className="text-lg bg-primary/5">
+                                            <TableCell colSpan={4} className="text-right font-bold text-primary">Total Billable Amount (to Client):</TableCell>
+                                            <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
                                     </TableFooter>
                                 )}
                             </Table>

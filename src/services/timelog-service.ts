@@ -26,6 +26,8 @@ export interface TimeLog {
   notes: string;
   userId: string;
   status: 'unprocessed' | 'processed' | 'ready-for-payroll';
+  isBillable?: boolean;
+  billableRate?: number;
 }
 
 const TIME_LOGS_COLLECTION = 'timeLogs';
@@ -42,7 +44,9 @@ const docToTimeLog = (doc: any): TimeLog => {
     ...data,
     startTime: (data.startTime as Timestamp)?.toDate(),
     endTime: (data.endTime as Timestamp)?.toDate(),
-    status: data.status || 'unprocessed', // Default to unprocessed
+    status: data.status || 'unprocessed',
+    isBillable: data.isBillable || false,
+    billableRate: data.billableRate || 0,
   } as TimeLog;
 };
 

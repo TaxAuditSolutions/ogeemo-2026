@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -267,7 +268,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             end,
             isScheduled,
             status: isScheduled ? 'todo' : 'inProgress',
-            projectId: selectedProjectId,
+            projectId: selectedProjectId === 'inbox' ? null : selectedProjectId,
             contactId: selectedContactId,
             duration: totalTime,
             sessions: sessions,

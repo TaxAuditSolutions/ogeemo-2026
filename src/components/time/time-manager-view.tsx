@@ -69,14 +69,14 @@ export interface StoredTimerState {
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
-export function TimeManagerView({ projects: initialProjects, contacts: initialContacts }: { projects: Project[], contacts: Contact[] }) {
+export function TimeManagerView() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [projects, setProjects] = React.useState<Project[]>(initialProjects);
-    const [contacts, setContacts] = React.useState<Contact[]>(initialContacts);
+    const [projects, setProjects] = React.useState<Project[]>([]);
+    const [contacts, setContacts] = React.useState<Contact[]>([]);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
@@ -369,14 +369,15 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         }
         setIsLoadingData(true);
         try {
-            setProjects(initialProjects);
-            setContacts(initialContacts);
-
-            const [fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
+            const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
+                getProjects(user.uid),
+                getContacts(user.uid),
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid),
             ]);
+            setProjects(fetchedProjects);
+            setContacts(fetchedContacts);
             setContactFolders(fetchedFolders);
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
@@ -461,7 +462,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         } finally {
             setIsLoadingData(false);
         }
-    }, [user, searchParams, toast, initialProjects, initialContacts, router]);
+    }, [user, searchParams, toast]);
 
     useEffect(() => {
         loadData();

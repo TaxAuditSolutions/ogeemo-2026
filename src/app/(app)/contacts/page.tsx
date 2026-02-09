@@ -1,4 +1,6 @@
 
+'use client';
+
 import dynamic from 'next/dynamic';
 import { ContactsSkeleton } from '@/components/contacts/contacts-skeleton';
 
@@ -8,7 +10,6 @@ const ContactsView = dynamic(
     loading: () => <ContactsSkeleton />,
   }
 );
-
 
 export default function ContactsPage() {
   return <ContactsView />;

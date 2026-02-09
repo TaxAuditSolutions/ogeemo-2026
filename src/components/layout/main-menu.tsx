@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
@@ -26,7 +26,7 @@ const groupedMenuItems = {
     Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup', '/tools/image-generator'] },
 };
 
-const GroupedMenuView = ({ pathname }: { pathname: string }) => (
+const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
   <Accordion type="multiple" className="w-full space-y-1">
     {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
       const CategoryIcon = groupData.icon;
@@ -90,7 +90,9 @@ const GroupedMenuView = ({ pathname }: { pathname: string }) => (
           </AccordionContent>
         </AccordionItem>
   </Accordion>
-);
+));
+
+GroupedMenuView.displayName = "GroupedMenuView";
 
 export function MainMenu() {
   const pathname = usePathname();

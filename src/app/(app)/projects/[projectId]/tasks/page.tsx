@@ -2,33 +2,22 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { ProjectTasksView } from '@/components/tasks/project-tasks-view';
+import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { LoaderCircle, Route } from 'lucide-react';
+import { LoaderCircle, Route, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 
-
-function ProjectTaskBoardPageContent() {
-  const params = useParams();
-  const projectId = params.projectId as string;
-  
-  if (!projectId) {
-     return (
-       <div className="flex h-full w-full items-center justify-center p-4">
-         <div className="text-center">
-            <h2 className="text-xl font-semibold">No Project ID Found</h2>
-            <p className="text-muted-foreground">Could not determine which project to display.</p>
-         </div>
-       </div>
-     );
+const ProjectTasksView = dynamic(
+  () => import('@/components/tasks/project-tasks-view').then((mod) => mod.ProjectTasksView),
+  {
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center p-4">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    ),
   }
-
-  return <ProjectTasksView projectId={projectId} />;
-}
-
+);
 
 export default function ProjectTaskBoardPage() {
     const params = useParams();
@@ -55,13 +44,7 @@ export default function ProjectTaskBoardPage() {
                 </div>
             </header>
             
-            <Suspense fallback={
-                <div className="flex h-full w-full items-center justify-center p-4">
-                    <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-                </div>
-            }>
-                <ProjectTaskBoardPageContent />
-            </Suspense>
+            <ProjectTasksView projectId={projectId} />
         </div>
     );
 }

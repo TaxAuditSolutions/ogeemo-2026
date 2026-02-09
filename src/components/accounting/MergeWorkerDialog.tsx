@@ -27,12 +27,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { type Worker } from '@/services/payroll-service';
 import { cn } from '@/lib/utils';
-import { Separator } from '../ui/separator';
 
 interface MergeWorkerDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  sourceWorker: Worker;
+  sourceWorker: Worker | null;
   allWorkers: Worker[];
   onMergeConfirm: (sourceWorkerId: string, masterWorkerId: string) => void;
 }
@@ -41,6 +40,9 @@ export default function MergeWorkerDialog({ isOpen, onOpenChange, sourceWorker, 
   const [masterWorkerId, setMasterWorkerId] = useState<string | null>(null);
   const [isConfirmAlertOpen, setIsConfirmAlertOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  // Guard against null source worker
+  if (!sourceWorker) return null;
 
   const masterWorker = allWorkers.find(c => c.id === masterWorkerId);
 

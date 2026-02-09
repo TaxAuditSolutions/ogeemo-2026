@@ -637,10 +637,30 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                                             </RadioGroup>
 
                                             {contactAction === 'select' ? (
-                                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                    {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup>{contacts.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
+                                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                        <Command>
+                                                            <CommandInput placeholder="Search contacts..." />
+                                                            <CommandList>
+                                                                <CommandEmpty>No contact found.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {contacts.map(c => (
+                                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
+                                                                            <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>
+                                                                            {c.name}
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
                                             ) : (
                                                 <Button variant="outline" onClick={() => setIsContactFormOpen(true)} className="w-full mt-2">
                                                     <Plus className="mr-2 h-4 w-4" /> Create New Contact
@@ -786,7 +806,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
             </div>
             <ContactFormDialog 
                 isOpen={isContactFormOpen}
-                onOpenChange={setIsContactFormOpen}
+                onOpenChange={setIsContactPopoverOpen}
                 contactToEdit={null}
                 folders={contactFolders}
                 onFoldersChange={setContactFolders}

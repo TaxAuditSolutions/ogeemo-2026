@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -69,6 +70,11 @@ export interface StoredTimerState {
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
 export function TimeManagerView({ projects: initialProjects, contacts: initialContacts }: { projects: Project[], contacts: Contact[] }) {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const { user } = useAuth();
+    const { toast } = useToast();
+
     const [projects, setProjects] = React.useState<Project[]>(initialProjects);
     const [contacts, setContacts] = React.useState<Contact[]>(initialContacts);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
@@ -127,10 +133,6 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isReviewMode, setIsReviewMode] = useState(false);
 
-
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
     const hasStartedTimerRef = useRef(false);
 
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
@@ -277,7 +279,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         try {
             if (eventToEdit) {
                 await updateTask(eventToEdit.id, eventData);
-                toast({ title: "Event Updated", description: `"${eventData.title}" has been saved.` });
+                toast({ title: "Event Updated", description: `"${eventData.title}" has been updated.` });
             } else {
                 const newEvent = await addTask({ ...eventData as Omit<TaskEvent, 'id'>, userId: user.uid });
                 setEventToEdit(newEvent);
@@ -459,7 +461,7 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
         } finally {
             setIsLoadingData(false);
         }
-    }, [user, searchParams, toast, initialProjects, initialContacts]);
+    }, [user, searchParams, toast, initialProjects, initialContacts, router]);
 
     useEffect(() => {
         loadData();

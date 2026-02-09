@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -41,7 +40,7 @@ export default function MergeWorkerDialog({ isOpen, onOpenChange, sourceWorker, 
   const [isConfirmAlertOpen, setIsConfirmAlertOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  // Guard against null source worker
+  // Guard against null source worker to prevent "reading name of null" errors
   if (!sourceWorker) return null;
 
   const masterWorker = allWorkers.find(c => c.id === masterWorkerId);

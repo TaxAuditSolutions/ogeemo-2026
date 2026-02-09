@@ -130,12 +130,11 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
 
     const { user } = useAuth();
     const { toast } = useToast();
-    const searchParams = useSearchParams();
     const router = useRouter();
     const hasStartedTimerRef = useRef(false);
 
-    const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
-    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` }; });
+    const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
+    const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: ':' + String(minutes).padStart(2, '0') }; });
     
     const totalAccumulatedSeconds = useMemo(() => {
         return sessions.reduce((acc, session) => acc + session.durationSeconds, 0);
@@ -407,18 +406,18 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     if (eventData.start && isValid(new Date(eventData.start))) {
                         const eventStartDate = new Date(eventData.start);
                         setStartDate(eventStartDate);
-                        setStartHour(String(eventStartDate.getHours()));
-                        setStartMinute(String(eventStartDate.getMinutes()));
+                        setStartHour(String(eventStartDate.getHours()).padStart(2, '0'));
+                        setStartMinute(String(eventStartDate.getMinutes()).padStart(2, '0'));
                     } else {
                         setStartDate(new Date());
-                        setStartHour(String(new Date().getHours()));
-                        setStartMinute(String(new Date().getMinutes()));
+                        setStartHour(String(new Date().getHours()).padStart(2, '0'));
+                        setStartMinute(String(new Date().getMinutes()).padStart(2, '0'));
                     }
                     if (eventData.end && isValid(new Date(eventData.end))) {
                         const eventEndDate = new Date(eventData.end);
                         setEndDate(eventEndDate);
-                        setEndHour(String(eventEndDate.getHours()));
-                        setEndMinute(String(eventEndDate.getMinutes()));
+                        setEndHour(String(eventEndDate.getHours()).padStart(2, '0'));
+                        setEndMinute(String(eventEndDate.getMinutes()).padStart(2, '0'));
                     }
                 } else {
                     toast({ variant: 'destructive', title: 'Error', description: 'Could not load event data.' });
@@ -442,16 +441,16 @@ export function TimeManagerView({ projects: initialProjects, contacts: initialCo
                     const eventStartDate = parseISO(startParam);
                     if (isValid(eventStartDate)) {
                         setStartDate(eventStartDate);
-                        setStartHour(String(eventStartDate.getHours()));
-                        setStartMinute(String(eventStartDate.getMinutes()));
+                        setStartHour(String(eventStartDate.getHours()).padStart(2, '0'));
+                        setStartMinute(String(eventStartDate.getMinutes()).padStart(2, '0'));
                     }
                 }
                  if (endParam) {
                     const eventEndDate = parseISO(endParam);
                     if (isValid(eventEndDate)) {
                         setEndDate(eventEndDate);
-                        setEndHour(String(eventEndDate.getHours()));
-                        setEndMinute(String(eventEndDate.getMinutes()));
+                        setEndHour(String(eventEndDate.getHours()).padStart(2, '0'));
+                        setEndMinute(String(eventEndDate.getMinutes()).padStart(2, '0'));
                     }
                 }
             }

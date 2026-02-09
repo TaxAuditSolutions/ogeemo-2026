@@ -48,7 +48,7 @@ import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, deleteWorkers, type Worker } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, type Worker } from '@/services/payroll-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
@@ -237,7 +237,7 @@ export function RunPayrollView() {
   if (payrollStatus === 'completed') return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} startDate={startDate} endDate={endDate} />;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
+    <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
       <header className="text-center relative w-full max-w-5xl">
         <h1 className="text-3xl font-bold font-headline text-primary">Run Payroll</h1>
         <p className="text-muted-foreground">Select a pay period and workers to begin.</p>

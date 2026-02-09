@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -134,7 +133,7 @@ export function LogTimeDialog({
                     status: 'unprocessed' as const,
                 };
                 await addTimeLog(logData);
-                toast({ title: "Time Logged Successfully" });
+                toast({ title: "Time Log Logged Successfully" });
             }
             onTimeLogged();
             onOpenChange(false);
@@ -200,8 +199,8 @@ export function LogTimeDialog({
                     <div className="space-y-4 pt-2 border-t">
                         <Label>Billing Status</Label>
                         <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="non-billable" id="rb1"/><Label htmlFor="r1">Non-Billable</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="billable" id="rb2"/><Label htmlFor="r2">Billable</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="non-billable" id="rb1"/><Label htmlFor="rb1">Non-Billable</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="billable" id="rb2"/><Label htmlFor="rb2">Billable</Label></div>
                         </RadioGroup>
                         {isBillable && (
                             <div className="space-y-2 max-w-xs">

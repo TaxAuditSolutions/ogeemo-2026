@@ -43,13 +43,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, deleteWorkers, type Worker } from '@/services/payroll-service';
-import { type Event as TaskEvent } from '@/types/calendar';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
@@ -99,7 +98,6 @@ export function RunPayrollView() {
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
   const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
-  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
 
@@ -198,19 +196,6 @@ export function RunPayrollView() {
       }
   };
 
-  const handleConfirmBulkDelete = async () => {
-      if (!user || selectedEmployeeIds.length === 0) return;
-      try {
-          await deleteWorkers(selectedEmployeeIds);
-          toast({ title: "Workers Deleted" });
-          loadData();
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Bulk Delete Failed', description: error.message });
-      } finally {
-          setIsBulkDeleteAlertOpen(false);
-      }
-  };
-
   const handleRunPayroll = async () => {
       if (!user || !payPeriod?.from || !payPeriod?.to || selectedEmployeeIds.length === 0) {
           toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a period and at least one worker.' });
@@ -270,7 +255,7 @@ export function RunPayrollView() {
                                 {payPeriod?.from ? (payPeriod.to ? `${format(payPeriod.from, "LLL dd")} - ${format(payPeriod.to, "LLL dd, y")}` : format(payPeriod.from, "LLL dd, y")) : "Select dates..."}
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={payPeriod?.from} onSelect={(d) => setPayPeriod({ from: d, to: addDays(d!, 13) })} initialFocus /></PopoverContent>
+                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={payPeriod?.from} onSelect={(d) => setPayPeriod({ from: d, to: d ? addDays(d, 13) : undefined })} initialFocus /></PopoverContent>
                     </Popover>
                 </CardContent>
             </Card>
@@ -339,13 +324,15 @@ export function RunPayrollView() {
           onWorkerUpdate={handleWorkerUpdate}
       />
 
-      <MergeWorkerDialog
-          isOpen={isMergeDialogOpen}
-          onOpenChange={setIsMergeDialogOpen}
-          sourceWorker={workerToMerge!}
-          allWorkers={employees}
-          onMergeConfirm={handleConfirmMerge}
-      />
+      {workerToMerge && (
+        <MergeWorkerDialog
+            isOpen={isMergeDialogOpen}
+            onOpenChange={setIsMergeDialogOpen}
+            sourceWorker={workerToMerge}
+            allWorkers={employees}
+            onMergeConfirm={handleConfirmMerge}
+        />
+      )}
 
       <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
           <AlertDialogContent>

@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
-import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowLeft, CheckCircle, FileSpreadsheet, Users, DollarSign, LoaderCircle, Calculator, Trash2, MoreVertical, Edit, Plus, GitMerge, X, Pencil } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 

@@ -119,7 +119,8 @@ export default function TimeLogReportPage() {
                 ...tl,
                 id: tl.id,
                 workerId: tl.workerId,
-                workerName: worker ? worker.name : (contact ? contact.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown')),
+                workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
+                contactName: contact ? contact.name : 'Internal',
                 startTime: new Date(tl.startTime),
                 durationSeconds: tl.durationSeconds,
                 source: 'log',
@@ -137,7 +138,8 @@ export default function TimeLogReportPage() {
                 ...t,
                 id: t.id,
                 workerId: workerId,
-                workerName: worker ? worker.name : (contact ? contact.name : (workerId === user?.uid ? adminName : 'Unknown')),
+                workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
+                contactName: contact ? contact.name : 'Internal',
                 startTime: new Date(t.start),
                 durationSeconds: t.duration || 0,
                 source: 'calendar',
@@ -149,7 +151,7 @@ export default function TimeLogReportPage() {
         let combined = [...fromLogs, ...fromTasks];
 
         if (selectedWorkerId) {
-            combined = combined.filter(e => e.workerId === selectedWorkerId || e.contactId === selectedWorkerId);
+            combined = combined.filter(e => e.workerId === selectedWorkerId);
         }
 
         if (dateRange?.from) {
@@ -197,19 +199,8 @@ export default function TimeLogReportPage() {
             payRate: 0,
             userId: user?.uid || ''
         };
-        
-        const contactWorkers = contacts.map(c => ({
-            id: c.id,
-            name: c.name,
-            email: c.email || '',
-            workerType: 'contractor' as const,
-            payType: 'hourly' as const,
-            payRate: 0,
-            userId: user?.uid || ''
-        }));
-
-        return [adminWorker, ...workers, ...contactWorkers];
-    }, [workers, contacts, user, adminName]);
+        return [adminWorker, ...workers];
+    }, [workers, user, adminName]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -221,7 +212,7 @@ export default function TimeLogReportPage() {
                 <ReportsPageHeader pageTitle="Time Log Report" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
-                  <p className="text-muted-foreground">Review and manage all work sessions logged by your team.</p>
+                  <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                 </header>
 
                 <Card>
@@ -229,7 +220,7 @@ export default function TimeLogReportPage() {
                         <CardTitle>Filters</CardTitle>
                         <div className="flex flex-wrap items-end gap-4 pt-2">
                            <div className="space-y-2">
-                                <Label>Select Person</Label>
+                                <Label>Select Worker</Label>
                                 <WorkerSelector
                                     workers={workersForSelection}
                                     selectedWorkerId={selectedWorkerId}
@@ -280,7 +271,8 @@ export default function TimeLogReportPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Person</TableHead>
+                                        <TableHead>Worker</TableHead>
+                                        <TableHead>Client</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Billing</TableHead>
                                         <TableHead>Notes</TableHead>
@@ -290,11 +282,12 @@ export default function TimeLogReportPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
-                                        <TableRow><TableCell colSpan={6} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                                     ) : allMergedEntries.length > 0 ? (
                                         allMergedEntries.map(entry => (
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
+                                                <TableCell>{entry.contactName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={entry.isBillable ? "default" : "secondary"}>
@@ -321,23 +314,23 @@ export default function TimeLogReportPage() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                                 {allMergedEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-right font-bold">Total Hours (All Entries):</TableCell>
+                                            <TableCell colSpan={5} className="text-right font-bold">Total Hours (All Entries):</TableCell>
                                             <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
                                             <TableCell />
                                         </TableRow>
                                         <TableRow className="bg-muted/30">
-                                            <TableCell colSpan={4} className="text-right font-semibold">Billable Hours Only:</TableCell>
+                                            <TableCell colSpan={5} className="text-right font-semibold">Billable Hours Only:</TableCell>
                                             <TableCell className="text-right font-semibold font-mono text-primary">{formatTime(billableDurationSeconds)}</TableCell>
                                             <TableCell />
                                         </TableRow>
                                         <TableRow className="text-lg bg-primary/5">
-                                            <TableCell colSpan={4} className="text-right font-bold text-primary">Total Billable Amount (to Client):</TableCell>
+                                            <TableCell colSpan={5} className="text-right font-bold text-primary">Total Billable Amount (to Client):</TableCell>
                                             <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
                                             <TableCell />
                                         </TableRow>

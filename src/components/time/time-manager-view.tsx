@@ -17,6 +17,7 @@ import { addTask, getProjects, addProject, updateProject, getTaskById, updateTas
 import { getContacts, type FolderData } from '@/services/contact-service';
 import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, formatTime } from '@/lib/utils';
@@ -55,6 +56,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { getUserProfile } from '@/services/user-profile-service';
 
 
 export interface StoredTimerState {
@@ -77,6 +79,7 @@ export function TimeManagerView() {
 
     const [projects, setProjects] = React.useState<Project[]>([]);
     const [contacts, setContacts] = React.useState<Contact[]>([]);
+    const [workers, setWorkers] = React.useState<Worker[]>([]);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
@@ -88,6 +91,7 @@ export function TimeManagerView() {
     const [notes, setNotes] = React.useState("");
     const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
     const [selectedContactId, setSelectedContactId] = React.useState<string | null>(null);
+    const [selectedWorkerId, setSelectedWorkerId] = React.useState<string | null>(null);
     const [isBillable, setIsBillable] = React.useState(false);
     const [billableRate, setBillableRate] = React.useState<number | ''>(100);
     
@@ -113,6 +117,9 @@ export function TimeManagerView() {
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = React.useState(false);
     const [projectAction, setProjectAction] = React.useState<string>('select');
     const [newProjectName, setNewProjectName] = React.useState('');
+
+    // Worker UI
+    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
 
     
     const [eventToEdit, setEventToEdit] = React.useState<TaskEvent | null>(null);
@@ -159,6 +166,7 @@ export function TimeManagerView() {
             position: 0,
             projectId: selectedProjectId,
             contactId: selectedContactId,
+            workerId: selectedWorkerId || user.uid,
             isBillable: isBillable,
             billableRate: isBillable ? Number(billableRate) || 0 : 0,
             userId: user.uid,
@@ -173,7 +181,7 @@ export function TimeManagerView() {
             toast({ variant: "destructive", title: "Failed to create event", description: error.message });
             return null;
         }
-    }, [user, subject, notes, selectedProjectId, selectedContactId, isBillable, billableRate, toast]);
+    }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, toast]);
 
     const handleStartTimer = useCallback(async () => {
         let currentEvent = eventToEdit;
@@ -270,6 +278,7 @@ export function TimeManagerView() {
             status: isScheduled ? 'todo' : 'inProgress',
             projectId: selectedProjectId === 'inbox' ? null : selectedProjectId,
             contactId: selectedContactId,
+            workerId: selectedWorkerId || user.uid,
             duration: totalTime,
             sessions: sessions,
             isBillable: isBillable,
@@ -291,7 +300,7 @@ export function TimeManagerView() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
+    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
 
     const handleLogCurrentSession = async () => {
         if (!timerState || !timerState.isActive || elapsedSeconds <= 0) {
@@ -369,19 +378,24 @@ export function TimeManagerView() {
         }
         setIsLoadingData(true);
         try {
-            const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
+            const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
                 getProjects(user.uid),
                 getContacts(user.uid),
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid),
+                getWorkers(user.uid),
             ]);
             setProjects(fetchedProjects);
             setContacts(fetchedContacts);
             setContactFolders(fetchedFolders);
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
+            setWorkers(fetchedWorkers);
             
+            // Set default worker to current user
+            setSelectedWorkerId(user.uid);
+
             // Set a default date if one isn't passed from URL
             if (!searchParams.get('start') && !searchParams.get('eventId')) {
                 setStartDate(new Date());
@@ -403,6 +417,7 @@ export function TimeManagerView() {
                     setNotes(eventData.description || "");
                     setSelectedProjectId(eventData.projectId || null);
                     setSelectedContactId(eventData.contactId || null);
+                    setSelectedWorkerId(eventData.workerId || user.uid);
                     setIsBillable(eventData.isBillable || false);
                     setBillableRate(eventData.billableRate || 0);
                     setSessions(eventData.sessions || []);
@@ -630,7 +645,7 @@ export function TimeManagerView() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card>
-                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Contact</CardTitle></CardHeader>
+                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Client (Contact)</CardTitle></CardHeader>
                                     <CardContent className="p-4 pt-0">
                                         <div className="space-y-2">
                                             <RadioGroup onValueChange={(value) => setContactAction(value)} value={contactAction} className="flex space-x-4">
@@ -705,6 +720,42 @@ export function TimeManagerView() {
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            <Card>
+                                <CardHeader className="p-4"><CardTitle className="text-base">Assign Worker (Person doing the work)</CardTitle></CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="space-y-2">
+                                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
+                                                    {selectedWorkerId ? (selectedWorkerId === user?.uid ? "Me (Admin)" : workers.find(w => w.id === selectedWorkerId)?.name || "Select worker...") : "Select worker..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search workers..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No worker found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem onSelect={() => { setSelectedWorkerId(user?.uid || null); setIsWorkerPopoverOpen(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === user?.uid ? "opacity-100" : "opacity-0")}/>
+                                                                Me (Admin)
+                                                            </CommandItem>
+                                                            {workers.map(w => (
+                                                                <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
+                                                                    {w.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </CardContent>
+                            </Card>
                             
                             <div className="space-y-2">
                                 <Label htmlFor="notes">Notes / Details</Label>

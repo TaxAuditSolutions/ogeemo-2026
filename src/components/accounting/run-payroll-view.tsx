@@ -54,7 +54,8 @@ import {
     Pencil,
     ChevronDown,
     ChevronUp,
-    Clock
+    Clock,
+    RefreshCw
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -122,8 +123,6 @@ export function RunPayrollView() {
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
-  
-  const [isWorkerListOpen, setIsWorkerListOpen] = useState(true);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -133,17 +132,19 @@ export function RunPayrollView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
+        console.log("RunPayrollView: Loading worker and time data for user", user.uid);
         const [fetchedWorkers, fetchedTasks, fetchedLogs] = await Promise.all([
             getWorkers(user.uid),
             getTasksForUser(user.uid),
             getTimeLogs(user.uid)
         ]);
+        console.log("RunPayrollView: Fetched", fetchedWorkers.length, "workers");
         setWorkersList(fetchedWorkers);
         setAllTasks(fetchedTasks);
         setAllTimeLogs(fetchedLogs);
-        setSelectedEmployeeIds([]);
     } catch (e: any) { 
-        toast({ variant: 'destructive', title: 'Error', description: e.message }); 
+        console.error("RunPayrollView: Load error", e);
+        toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message }); 
     } finally { 
         setIsLoading(false); 
     }
@@ -173,10 +174,12 @@ export function RunPayrollView() {
         const totalHours = totalSeconds / 3600;
         
         let grossPay = 0;
+        const rate = Number(emp.payRate) || 0;
+
         if (emp.payType === 'hourly') {
-            grossPay = parseFloat((totalHours * emp.payRate).toFixed(2));
+            grossPay = parseFloat((totalHours * rate).toFixed(2));
         } else {
-            grossPay = parseFloat((emp.payRate / 24).toFixed(2));
+            grossPay = parseFloat((rate / 24).toFixed(2));
         }
 
         const deductions = parseFloat((grossPay * 0.2).toFixed(2));
@@ -184,9 +187,9 @@ export function RunPayrollView() {
         return { 
             ...emp, 
             hoursWorked: totalHours, 
-            grossPay,
-            deductions,
-            netPay: grossPay - deductions
+            grossPay: isNaN(grossPay) ? 0 : grossPay,
+            deductions: isNaN(deductions) ? 0 : deductions,
+            netPay: isNaN(grossPay - deductions) ? 0 : (grossPay - deductions)
         };
     });
   }, [workersList, allTasks, allTimeLogs, startDate, endDate]);
@@ -290,15 +293,15 @@ export function RunPayrollView() {
       }
   };
 
-  if (isLoading) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
-  if (payrollStatus === 'completed') return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} startDate={startDate} endDate={endDate} />;
-
   return (
     <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
       <header className="text-center relative w-full max-w-5xl">
         <h1 className="text-3xl font-bold font-headline text-primary">Run Payroll</h1>
         <p className="text-muted-foreground">Select a pay period and workers to begin.</p>
-        <div className="absolute top-0 right-0">
+        <div className="absolute top-0 right-0 flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={loadData} title="Refresh data">
+                <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
+            </Button>
             <Button asChild variant="ghost" size="icon">
                 <Link href="/accounting"><X className="h-5 w-5"/></Link>
             </Button>
@@ -353,74 +356,76 @@ export function RunPayrollView() {
             </Card>
             
             <Card className="overflow-hidden">
-                <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-4" onClick={() => setIsWorkerListOpen(!isWorkerListOpen)}>
+                <CardHeader className="py-4 border-b">
                     <div className="flex justify-between items-center w-full">
                         <CardTitle className="text-base flex items-center gap-2">
                             2. Select Workers
-                            {isWorkerListOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
                         </CardTitle>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleOpenWorkerForm(); }}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenWorkerForm()}>
                             <Plus className="h-4 w-4"/>
                         </Button>
                     </div>
                 </CardHeader>
-                {isWorkerListOpen && (
-                    <CardContent className="p-0 border-t">
-                        <div className="max-h-[400px] overflow-y-auto">
-                            {processedEmployees.length > 0 ? (
-                                <div className="divide-y">
-                                    {processedEmployees.map(emp => (
-                                        <div key={emp.id} className="flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors">
-                                            <div className="pt-1">
-                                                <Checkbox 
-                                                    checked={selectedEmployeeIds.includes(emp.id)} 
-                                                    onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
-                                                    id={`check-${emp.id}`}
-                                                />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <Label htmlFor={`check-${emp.id}`} className="cursor-pointer">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="font-bold text-sm block truncate">{emp.name}</span>
-                                                        <span className="text-[10px] text-muted-foreground block">
-                                                            ID: {emp.workerIdNumber || 'N/A'} • {emp.payType}
-                                                        </span>
-                                                        <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1">
-                                                            <Clock className="h-2.5 w-2.5" />
-                                                            {emp.hoursWorked.toFixed(2)} hrs tracked
-                                                        </span>
-                                                    </div>
-                                                </Label>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
-                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Record
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleMergeClick(emp)}>
-                                                        <GitMerge className="mr-2 h-4 w-4" /> Merge Duplicate
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                <CardContent className="p-0">
+                    <div className="max-h-[400px] overflow-y-auto">
+                        {isLoading ? (
+                            <div className="p-12 text-center flex flex-col items-center gap-4">
+                                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                                <p className="text-sm text-muted-foreground">Loading workers...</p>
+                            </div>
+                        ) : processedEmployees.length > 0 ? (
+                            <div className="divide-y">
+                                {processedEmployees.map(emp => (
+                                    <div key={emp.id} className="flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors">
+                                        <div className="pt-1">
+                                            <Checkbox 
+                                                checked={selectedEmployeeIds.includes(emp.id)} 
+                                                onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
+                                                id={`check-${emp.id}`}
+                                            />
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-8 text-center text-sm text-muted-foreground italic">
-                                    No workers found. Click the plus icon to add one.
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                )}
+                                        <div className="flex-1 min-w-0">
+                                            <Label htmlFor={`check-${emp.id}`} className="cursor-pointer">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="font-bold text-sm block truncate">{emp.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground block">
+                                                        ID: {emp.workerIdNumber || 'N/A'} • {emp.payType}
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1">
+                                                        <Clock className="h-2.5 w-2.5" />
+                                                        {emp.hoursWorked.toFixed(2)} hrs tracked
+                                                    </span>
+                                                </div>
+                                            </Label>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleMergeClick(emp)}>
+                                                    <GitMerge className="mr-2 h-4 w-4" /> Merge Duplicate
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center text-sm text-muted-foreground italic">
+                                No workers found. Click the plus icon to add one.
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
             </Card>
         </div>
 
@@ -467,7 +472,11 @@ export function RunPayrollView() {
                                 </TableRow>
                             </TableFooter>
                         </Table>
-                    ) : <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg"><p>No workers selected. Open the "Select Workers" list on the left to add them.</p></div>}
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground p-12 text-center border-2 border-dashed rounded-lg">
+                            <p>No workers selected. Use the "Select Workers" list on the left to add them to the run.</p>
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter className="border-t p-6">
                     <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing' || !startDate || !endDate} onClick={handleRunPayroll}>

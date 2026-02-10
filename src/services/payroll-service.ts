@@ -73,6 +73,7 @@ const docToWorker = (doc: any): Worker => {
     return {
         id: doc.id,
         ...data,
+        payRate: Number(data.payRate) || 0,
         hireDate: toDate(data.hireDate),
         startDate: toDate(data.startDate),
     } as Worker;
@@ -80,7 +81,7 @@ const docToWorker = (doc: any): Worker => {
 
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
-  // Simplified query to avoid index issues; sorting is handled on the client.
+  // Using a direct collection query first to ensure we aren't hitting silent index errors
   const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
 

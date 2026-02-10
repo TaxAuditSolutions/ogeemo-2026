@@ -9,6 +9,7 @@
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
+        "employeeNumber": { "type": "string", "description": "Unique identifier for the worker." },
         "notes": { "type": "string", "description": "General notes about the user." }
       }
     },
@@ -327,9 +328,11 @@
         "type": "object",
         "properties": {
             "workerId": { "type": "string" },
+            "workerName": { "type": "string" },
             "startTime": { "type": "string", "format": "date-time" },
             "endTime": { "type": "string", "format": "date-time" },
             "durationSeconds": { "type": "number" },
+            "location": { "type": "string", "description": "The site or location of the work." },
             "notes": { "type": "string" },
             "status": { "type": "string", "enum": ["unprocessed", "processed", "ready-for-payroll"] },
             "isBillable": { "type": "boolean" },

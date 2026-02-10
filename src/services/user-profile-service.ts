@@ -33,6 +33,7 @@ export interface UserProfile {
     id: string; // This will be the user's UID
     email: string;
     displayName?: string;
+    employeeNumber?: string;
     companyName?: string;
     website?: string;
     businessPhone?: string;

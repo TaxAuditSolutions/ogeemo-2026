@@ -4,29 +4,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Clock, Play, Pause, Square, LogIn, LogOut, ArrowLeft, GripVertical, MapPin, Landmark } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Clock, Play, Pause, Square, LogIn, LogOut, Landmark, MapPin, User, LoaderCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { Logo } from '../logo';
 import { Separator } from '../ui/separator';
+import { useAuth } from '@/context/auth-context';
+import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
 
-interface LoggedSession {
-    id: number;
-    startTime: Date;
-    endTime: Date;
-    duration: string;
-    notes: string;
-}
-
-interface LoggedLocation {
-    id: number;
-    timestamp: Date;
-    coords: { lat: number; lng: number };
-}
-
-const formatTime = (totalSeconds: number): string => {
+const formatTimeDisplay = (totalSeconds: number): string => {
     if (totalSeconds < 0) totalSeconds = 0;
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -34,205 +24,281 @@ const formatTime = (totalSeconds: number): string => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-export function FieldAppView() {
-    const [isClockedIn, setIsClockedIn] = useState(false);
-    const [isTimerPaused, setIsTimerPaused] = useState(false);
-    const [elapsedTime, setElapsedTime] = useState(0);
-    const [notes, setNotes] = useState('');
-    const [loggedSessions, setLoggedSessions] = useState<LoggedSession[]>([]);
-    const [loggedLocations, setLoggedLocations] = useState<LoggedLocation[]>([]);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const startTimeRef = useRef<Date | null>(null);
+const FIELD_TIMER_KEY = 'fieldAppTimerState';
 
+interface TimerState {
+    startTime: number;
+    isPaused: boolean;
+    pauseTime: number | null;
+    totalPausedDuration: number;
+    location: string;
+}
+
+export function FieldAppView() {
+    const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
 
-    const startTimer = useCallback(() => {
-        if (!startTimeRef.current) {
-            startTimeRef.current = new Date();
-        }
-        timerRef.current = setInterval(() => {
-            setElapsedTime(prev => prev + 1);
-        }, 1000);
-    }, []);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [isClockedIn, setIsClockedIn] = useState(false);
+    const [isTimerPaused, setIsTimerPaused] = useState(false);
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [location, setLocation] = useState('');
+    const [todayLogs, setTodayLogs] = useState<TimeLog[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const stopTimer = useCallback(() => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const loadData = useCallback(async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const [userProfile, logs] = await Promise.all([
+                getUserProfile(user.uid),
+                getTimeLogs(user.uid)
+            ]);
+            setProfile(userProfile);
+            setTodayLogs(logs.filter(l => isSameDay(new Date(l.startTime), new Date())));
+
+            // Load saved timer state
+            const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
+            if (savedTimer) {
+                const state: TimerState = JSON.parse(savedTimer);
+                setIsClockedIn(true);
+                setIsTimerPaused(state.isPaused);
+                setLocation(state.location);
+                
+                const now = Date.now();
+                const pausedDuration = state.isPaused && state.pauseTime ? Math.floor((now - state.pauseTime) / 1000) : 0;
+                const totalElapsed = Math.floor((now - state.startTime) / 1000) - state.totalPausedDuration - pausedDuration;
+                setElapsedTime(totalElapsed > 0 ? totalElapsed : 0);
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Error", description: "Failed to load worker session." });
+        } finally {
+            setIsLoading(false);
         }
-    }, []);
+    }, [user, toast]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    useEffect(() => {
+        if (isClockedIn && !isTimerPaused) {
+            timerRef.current = setInterval(() => {
+                setElapsedTime(prev => prev + 1);
+            }, 1000);
+        } else {
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [isClockedIn, isTimerPaused]);
 
     const handleClockIn = () => {
-        setIsClockedIn(true);
-        startTimer();
-        toast({ title: "Clocked In", description: "Your work session has started." });
-    };
-
-    const handleClockOut = () => {
-        if (elapsedTime > 0) {
-            handleLogSession();
+        if (!location.trim()) {
+            toast({ variant: 'destructive', title: "Location Required", description: "Please enter your work location before clocking in." });
+            return;
         }
-        setIsClockedIn(false);
+        const startTime = Date.now();
+        const state: TimerState = {
+            startTime,
+            isPaused: false,
+            pauseTime: null,
+            totalPausedDuration: 0,
+            location
+        };
+        localStorage.setItem(FIELD_TIMER_KEY, JSON.stringify(state));
+        setIsClockedIn(true);
         setIsTimerPaused(false);
-        stopTimer();
-        setLoggedLocations([]); // Clear locations on clock out
-        toast({ title: "Clocked Out", description: "Your work day has ended." });
+        setElapsedTime(0);
+        toast({ title: "Clocked In", description: `Shift started at ${location}.` });
     };
 
     const handlePauseResume = () => {
+        const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
+        if (!savedTimer) return;
+        const state: TimerState = JSON.parse(savedTimer);
+
         if (isTimerPaused) {
-            startTimer();
+            const pausedDuration = state.pauseTime ? Math.floor((Date.now() - state.pauseTime) / 1000) : 0;
+            const newState = {
+                ...state,
+                isPaused: false,
+                pauseTime: null,
+                totalPausedDuration: state.totalPausedDuration + pausedDuration
+            };
+            localStorage.setItem(FIELD_TIMER_KEY, JSON.stringify(newState));
+            setIsTimerPaused(false);
         } else {
-            stopTimer();
+            const newState = {
+                ...state,
+                isPaused: true,
+                pauseTime: Date.now()
+            };
+            localStorage.setItem(FIELD_TIMER_KEY, JSON.stringify(newState));
+            setIsTimerPaused(true);
         }
-        setIsTimerPaused(!isTimerPaused);
     };
 
-    const handleLogSession = () => {
-        if (elapsedTime === 0) {
-            toast({ variant: 'destructive', title: "No time to log" });
+    const handleClockOut = async () => {
+        if (!user || isSubmitting) return;
+        setIsSubmitting(true);
+
+        const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
+        if (!savedTimer) {
+            setIsSubmitting(false);
             return;
         }
-        const newSession: LoggedSession = {
-            id: Date.now(),
-            startTime: startTimeRef.current || new Date(),
-            endTime: new Date(),
-            duration: formatTime(elapsedTime),
-            notes,
-        };
-        setLoggedSessions(prev => [newSession, ...prev]);
-        setElapsedTime(0);
-        setNotes('');
-        startTimeRef.current = null;
-        stopTimer(); // Stop the timer after logging a session
-        toast({ title: "Session Logged" });
-    };
-    
-    const handleLogLocation = () => {
-        const mockLat = 44.6488 + (Math.random() - 0.5) * 0.01;
-        const mockLng = -63.5752 + (Math.random() - 0.5) * 0.01;
-        
-        const newLocation: LoggedLocation = {
-            id: Date.now(),
-            timestamp: new Date(),
-            coords: { lat: mockLat, lng: mockLng }
-        };
-        
-        setLoggedLocations(prev => [newLocation, ...prev]);
-        toast({
-            title: "Location Logged (Mock)",
-            description: `Lat: ${mockLat.toFixed(4)}, Lng: ${mockLng.toFixed(4)}`
-        });
+        const state: TimerState = JSON.parse(savedTimer);
+
+        try {
+            const endTime = new Date();
+            const startTime = new Date(state.startTime);
+            
+            const logData: Omit<TimeLog, 'id'> = {
+                workerId: user.uid,
+                workerName: profile?.displayName || user.displayName || user.email || 'Worker',
+                startTime,
+                endTime,
+                durationSeconds: elapsedTime,
+                location: state.location,
+                notes: `Mobile session logged via Field App at ${state.location}.`,
+                userId: user.uid,
+                status: 'unprocessed',
+                isBillable: false,
+            };
+
+            await addTimeLog(logData);
+            
+            localStorage.removeItem(FIELD_TIMER_KEY);
+            setIsClockedIn(false);
+            setIsTimerPaused(false);
+            setElapsedTime(0);
+            setLocation('');
+            
+            toast({ title: "Clock Out Successful", description: "Your time has been saved to the database." });
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Clock Out Failed", description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    useEffect(() => {
-        return () => stopTimer(); // Cleanup on unmount
-    }, [stopTimer]);
+    if (isLoading) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col min-h-screen bg-muted/40">
-            <header className="flex items-center justify-between p-4 border-b bg-background">
+        <div className="flex flex-col min-h-screen bg-muted/20">
+            <header className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
                 <Logo />
-                <Button variant="outline" onClick={() => router.push('/hr-manager')}>
-                    <Landmark className="mr-2 h-4 w-4" /> Quick Navigation
+                <Button variant="ghost" size="sm" onClick={() => router.push('/action-manager')}>
+                    <Landmark className="mr-2 h-4 w-4" /> Hub
                 </Button>
             </header>
-            <main className="flex-1 flex flex-col items-center p-4">
-                <Card className="w-full max-w-2xl">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Ogeemo Field App</CardTitle>
+
+            <main className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
+                <Card className="border-t-4 border-t-primary">
+                    <CardHeader className="text-center pb-2">
+                        <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
+                            <User className="h-6 w-6 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl">{profile?.displayName || user?.displayName || 'Worker'}</CardTitle>
                         <CardDescription>
-                            {isClockedIn ? "You are currently on the clock." : "You are currently off the clock."}
+                            ID: {profile?.employeeNumber || 'Not Set'}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="p-6 border-4 border-dashed rounded-lg text-center">
-                            <p className="text-6xl font-bold font-mono">{formatTime(elapsedTime)}</p>
+                    <CardContent className="space-y-6 pt-4">
+                        {!isClockedIn && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                <Label htmlFor="location">Work Location / Site Name</Label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        id="location" 
+                                        placeholder="Where are you working today?" 
+                                        className="pl-10"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="text-center py-8 bg-muted/30 rounded-xl border border-dashed border-muted-foreground/30 relative">
+                            {isClockedIn && (
+                                <Badge className="absolute top-2 right-2 bg-green-500">Active</Badge>
+                            )}
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Elapsed Work Time</p>
+                            <p className={cn("text-5xl font-bold font-mono", isTimerPaused ? 'text-muted-foreground' : 'text-primary')}>
+                                {formatTimeDisplay(elapsedTime)}
+                            </p>
+                            {isClockedIn && (
+                                <p className="text-xs text-muted-foreground mt-2 flex items-center justify-center gap-1">
+                                    <MapPin className="h-3 w-3" /> {location}
+                                </p>
+                            )}
                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             {!isClockedIn ? (
-                                <Button size="lg" onClick={handleClockIn} className="col-span-2">
-                                    <LogIn className="mr-2 h-5 w-5" /> Clock In & Start Day
+                                <Button size="lg" className="col-span-2 h-14 text-lg shadow-md" onClick={handleClockIn}>
+                                    <LogIn className="mr-2 h-5 w-5" /> Clock In
                                 </Button>
                             ) : (
                                 <>
-                                    <Button size="lg" variant="secondary" onClick={handlePauseResume}>
+                                    <Button size="lg" variant="outline" className="h-14 border-2" onClick={handlePauseResume}>
                                         {isTimerPaused ? <Play className="mr-2 h-5 w-5" /> : <Pause className="mr-2 h-5 w-5" />}
                                         {isTimerPaused ? "Resume" : "Pause"}
                                     </Button>
-                                    <Button size="lg" variant="destructive" onClick={handleClockOut}>
-                                        <LogOut className="mr-2 h-5 w-5" /> Clock Out
+                                    <Button size="lg" variant="destructive" className="h-14 shadow-md" onClick={handleClockOut} disabled={isSubmitting}>
+                                        {isSubmitting ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <LogOut className="mr-2 h-5 w-5" />}
+                                        Clock Out
                                     </Button>
                                 </>
                             )}
                         </div>
-                        {isClockedIn && (
-                            <div className="space-y-4 pt-4 border-t">
-                                <Textarea
-                                    placeholder="Add notes about your current task..."
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    rows={4}
-                                />
-                                <div className="grid grid-cols-2 gap-4">
-                                     <Button className="w-full" onClick={handleLogLocation}>
-                                        <MapPin className="mr-2 h-5 w-5" /> Log Location
-                                    </Button>
-                                    <Button className="w-full" onClick={handleLogSession}>
-                                        <Square className="mr-2 h-5 w-5" /> Log Current Session
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
-                <Card className="w-full max-w-2xl mt-6">
-                    <CardHeader>
-                        <CardTitle>Today's Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div>
-                            <h3 className="font-semibold mb-2">Logged Time Sessions</h3>
-                            {loggedSessions.length > 0 ? (
-                                <div className="space-y-4">
-                                    {loggedSessions.map(session => (
-                                        <div key={session.id} className="flex items-start gap-4 p-3 border rounded-md">
-                                            <div className="text-center">
-                                                <p className="font-bold">{session.duration}</p>
-                                                <p className="text-xs text-muted-foreground">{format(session.startTime, 'p')}</p>
-                                            </div>
-                                            <p className="text-sm">{session.notes || "No notes for this session."}</p>
+
+                <div className="space-y-4">
+                    <h3 className="font-bold flex items-center gap-2 px-1">
+                        <Clock className="h-4 w-4 text-primary" /> Today's Sessions
+                    </h3>
+                    {todayLogs.length > 0 ? (
+                        <div className="space-y-3">
+                            {todayLogs.map(log => (
+                                <Card key={log.id} className="bg-background/50">
+                                    <CardContent className="p-4 flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold text-sm">{log.location || 'Generic Site'}</p>
+                                            <p className="text-xs text-muted-foreground">{format(new Date(log.startTime), 'p')} - {format(new Date(log.endTime), 'p')}</p>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center text-muted-foreground p-8">
-                                    <p>No sessions logged yet today.</p>
-                                </div>
-                            )}
-                        </div>
-                        <Separator className="my-6" />
-                         <div>
-                            <h3 className="font-semibold mb-2">Logged Locations (Mock)</h3>
-                            {loggedLocations.length > 0 ? (
-                                <div className="space-y-2">
-                                    {loggedLocations.map(location => (
-                                        <div key={location.id} className="flex items-center justify-between p-2 border rounded-md text-sm">
-                                            <span className="text-muted-foreground">{format(location.timestamp, 'p')}</span>
-                                            <span className="font-mono">{location.coords.lat.toFixed(4)}, {location.coords.lng.toFixed(4)}</span>
+                                        <div className="text-right">
+                                            <p className="font-mono font-bold text-primary">{formatTimeDisplay(log.durationSeconds)}</p>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center text-muted-foreground p-8">
-                                    <p>No locations logged yet today.</p>
-                                </div>
-                            )}
+                                    </CardContent>
+                                </Card>
+                            ))}
                         </div>
-                    </CardContent>
-                </Card>
+                    ) : (
+                        <div className="text-center p-10 border-2 border-dashed rounded-lg bg-background/50 text-muted-foreground italic text-sm">
+                            No sessions logged for today yet.
+                        </div>
+                    )}
+                </div>
             </main>
+
+            <footer className="p-4 text-center text-[10px] text-muted-foreground border-t bg-background">
+                <p>Ogeemo v1.2 | Logged in as {user?.email}</p>
+            </footer>
         </div>
     );
 }

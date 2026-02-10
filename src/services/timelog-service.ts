@@ -23,6 +23,7 @@ export interface TimeLog {
   startTime: Date;
   endTime: Date;
   durationSeconds: number;
+  location?: string;
   notes: string;
   userId: string;
   status: 'unprocessed' | 'processed' | 'ready-for-payroll';

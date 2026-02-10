@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
     email: z.string().email({ message: "Please enter a valid email address." }).optional(),
+    employeeNumber: z.string().optional(),
     companyName: z.string().optional(),
     website: z.string().optional(),
     businessPhone: z.string().optional(),
@@ -74,22 +75,24 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
           </div>
         </div>
         
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>URL</FormLabel>
-                        <FormControl>
-                            <Input placeholder="https://example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Employee Number</FormLabel><FormControl><Input placeholder="EMP-001" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
+
+        <FormField
+            control={form.control}
+            name="website"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>URL</FormLabel>
+                    <FormControl>
+                        <Input placeholder="https://example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
         
         <div className="space-y-4">
             <FormField control={form.control} name="businessPhone" render={({ field }) => (<FormItem><FormLabel>Business Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />

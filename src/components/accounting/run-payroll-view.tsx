@@ -55,7 +55,8 @@ import {
     ChevronDown,
     ChevronUp,
     Clock,
-    RefreshCw
+    RefreshCw,
+    UserPlus
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -132,18 +133,15 @@ export function RunPayrollView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        console.log("RunPayrollView: Loading worker and time data for user", user.uid);
         const [fetchedWorkers, fetchedTasks, fetchedLogs] = await Promise.all([
             getWorkers(user.uid),
             getTasksForUser(user.uid),
             getTimeLogs(user.uid)
         ]);
-        console.log("RunPayrollView: Fetched", fetchedWorkers.length, "workers");
         setWorkersList(fetchedWorkers);
         setAllTasks(fetchedTasks);
         setAllTimeLogs(fetchedLogs);
     } catch (e: any) { 
-        console.error("RunPayrollView: Load error", e);
         toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message }); 
     } finally { 
         setIsLoading(false); 
@@ -293,6 +291,10 @@ export function RunPayrollView() {
       }
   };
 
+  if (payrollStatus === 'completed') {
+      return <PayrollSuccessView onStartNew={() => setPayrollStatus('idle')} startDate={startDate} endDate={endDate} />;
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
       <header className="text-center relative w-full max-w-5xl">
@@ -389,7 +391,7 @@ export function RunPayrollView() {
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="font-bold text-sm block truncate">{emp.name}</span>
                                                     <span className="text-[10px] text-muted-foreground block">
-                                                        ID: {emp.workerIdNumber || 'N/A'} • {emp.payType}
+                                                        ID: {emp.workerIdNumber || 'Not Assigned'} • {emp.payType}
                                                     </span>
                                                     <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1">
                                                         <Clock className="h-2.5 w-2.5" />
@@ -420,8 +422,13 @@ export function RunPayrollView() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-8 text-center text-sm text-muted-foreground italic">
-                                No workers found. Click the plus icon to add one.
+                            <div className="p-8 text-center space-y-4">
+                                <p className="text-sm text-muted-foreground italic">No workers found in your directory.</p>
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href="/accounting/payroll/manage-workers">
+                                        <UserPlus className="mr-2 h-4 w-4" /> Go to Worker Directory
+                                    </Link>
+                                </Button>
                             </div>
                         )}
                     </div>

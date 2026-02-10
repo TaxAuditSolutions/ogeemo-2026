@@ -10,11 +10,24 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow any logged-in user to read profiles (needed for user lists and lookup)
       allow read: if request.auth != null;
+      // Allow management of profiles for the owner
       allow update, delete: if isOwner(userId);
+      // Allow creation of profiles during registration or by admins
       allow create: if request.auth != null;
+    }
+
+    match /contactFolders/{folderId} {
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /contacts/{contactId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /clientAccounts/{accountId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
@@ -70,7 +83,8 @@ service cloud.firestore {
     }
     
     match /companies/{companyId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
 
@@ -85,24 +99,14 @@ service cloud.firestore {
     }
     
     match /industries/{industryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if request.auth != null;
       allow create: if isOwner(request.resource.data.userId);
     }
-
-    match /leaveRequests/{leaveRequestId} {
-      allow create: if isOwner(request.resource.data.workerId);
-      allow read: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
-      allow update: if isOwner(resource.data.userId);
-    }
-
-    match /timeLogs/{timeLogId} {
-      allow create: if isOwner(request.resource.data.workerId);
-      allow read, update, delete: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
-      
-      match /locations/{locationId} {
-        allow create: if isOwner(request.resource.data.workerId);
-        allow read: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
-      }
+    
+    match /loans/{loanId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /leads/{leadId} {
@@ -130,6 +134,41 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.userId);
     }
     
+    match /projects/{projectId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /tasks/{taskId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /ideas/{ideaId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /fileManagerFolders/{folderId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /files/{fileId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /crmActions/{actionId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    match /payrollWorkers/{workerId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+
     match /invoiceLineItems/{itemId} {
       allow read, update, delete: if isOwner(get(/databases/$(database)/documents/invoices/$(resource.data.invoiceId)).data.userId);
       allow create: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
@@ -138,6 +177,48 @@ service cloud.firestore {
     match /payrollRuns/{runId}/details/{detailId} {
         allow read, create, update, delete: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
     }
+
+    match /leaveRequests/{leaveRequestId} {
+      allow create: if isOwner(request.resource.data.workerId);
+      allow read: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
+    }
+
+    match /timeLogs/{timeLogId} {
+      allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
+      allow read, update, delete: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
+      
+      match /locations/{locationId} {
+        allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
+        allow read: if isOwner(resource.data.userId) || isOwner(request.resource.data.workerId);
+      }
+    }
+
+    match /userActionChips/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /availableActionChips/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /trashedActionChips/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /accountingQuickNavItems/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /availableAccountingNavItems/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /hrQuickNavItems/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /availableHrNavItems/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /dialogSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
     
     match /siteImages/{imageId} {
       allow read: if true;
@@ -145,11 +226,6 @@ service cloud.firestore {
     }
     
     match /feedback/{feedbackId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Fallback rule for any other path
-    match /{document=**} {
       allow read, write: if request.auth != null;
     }
   }

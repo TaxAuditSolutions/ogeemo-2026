@@ -39,6 +39,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
@@ -62,7 +63,8 @@ import {
     Clock,
     RefreshCw,
     UserPlus,
-    Info
+    Info,
+    ExternalLink
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -248,6 +250,19 @@ export function RunPayrollView() {
       } finally {
           setWorkerToDelete(null);
       }
+  };
+
+  const handleRemoveFromRun = (workerId: string) => {
+      setSelectedEmployeeIds(prev => prev.filter(id => id !== workerId));
+      toast({ title: "Worker Removed from Selection" });
+  };
+
+  const handleOpenReport = (emp: PayrollEmployee) => {
+      const params = new URLSearchParams();
+      params.set('selectedWorkerId', emp.id);
+      if (startDate) params.set('from', startDate.toISOString());
+      if (endDate) params.set('to', endDate.toISOString());
+      router.push(`/reports/time-log?${params.toString()}`);
   };
 
   const handleRunPayroll = async () => {
@@ -454,6 +469,7 @@ export function RunPayrollView() {
                                         </TooltipProvider>
                                     </TableHead>
                                     <TableHead className="text-right">Net Pay</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -469,6 +485,27 @@ export function RunPayrollView() {
                                         <TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell>
                                         <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(emp.deductions)}</TableCell>
                                         <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(emp.netPay)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenReport(emp)}>
+                                                        <ExternalLink className="mr-2 h-4 w-4" /> Open Source Logs
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Worker Profile
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onSelect={() => handleRemoveFromRun(emp.id)} className="text-destructive">
+                                                        <X className="mr-2 h-4 w-4" /> Remove from This Run
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -478,6 +515,7 @@ export function RunPayrollView() {
                                     <TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell>
                                     <TableCell className="text-right font-bold text-muted-foreground">{formatCurrency(totalDeductions)}</TableCell>
                                     <TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell>
+                                    <TableCell />
                                 </TableRow>
                             </TableFooter>
                         </Table>

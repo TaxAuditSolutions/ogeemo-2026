@@ -116,7 +116,7 @@ export function RunPayrollView() {
   const [isStartDateOpen, setIsStartDateOpen] = useState(false);
   const [isEndDateOpen, setIsEndDateOpen] = useState(false);
 
-  const [payrollStatus, setPayrollStatus] = setPayrollStatus || useState<'idle' | 'processing' | 'completed'>('idle');
+  const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
   
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
@@ -142,6 +142,7 @@ export function RunPayrollView() {
         setAllTasks(fetchedTasks);
         setAllTimeLogs(fetchedLogs);
     } catch (e: any) { 
+        console.error("RunPayrollView: Failed to load data", e);
         toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message }); 
     } finally { 
         setIsLoading(false); 

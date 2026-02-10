@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -144,9 +143,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{userToEdit ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogTitle>{userToEdit ? 'Edit User Profile' : 'Add New User'}</DialogTitle>
           <DialogDescription>
-            {userToEdit ? 'Update the details for this user.' : 'Create a new user account with login credentials.'}
+            {userToEdit ? 'Update the details for this user. The User ID can be changed below.' : 'Create a new user account with login credentials.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -186,6 +185,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                   <FormControl>
                     <Input placeholder="e.g. U-1001" {...field} />
                   </FormControl>
+                  <FormDescription>Assign a unique identification number for this user.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

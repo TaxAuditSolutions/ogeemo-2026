@@ -80,6 +80,7 @@ const docToWorker = (doc: any): Worker => {
 
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
+  // Simplified query to avoid index issues; sorting is handled on the client.
   const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
 

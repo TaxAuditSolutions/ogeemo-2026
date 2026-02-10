@@ -25,12 +25,6 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -64,7 +58,6 @@ import {
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
-import { AnimatePresence, motion } from 'framer-motion';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -74,7 +67,6 @@ import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type PayrollEmployee = Worker & {
     grossPay: number;
@@ -131,7 +123,6 @@ export function RunPayrollView() {
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
   
-  // Expanded by default to ensure visibility
   const [isWorkerListOpen, setIsWorkerListOpen] = useState(true);
 
   const { user } = useAuth();
@@ -168,12 +159,10 @@ export function RunPayrollView() {
             const start = startOfDay(startDate);
             const end = endOfDay(endDate);
 
-            // Sum hours from calendar tasks
             const taskSeconds = allTasks
                 .filter(t => t.workerId === emp.id && t.start && isWithinInterval(new Date(t.start), { start, end }))
                 .reduce((sum, t) => sum + (t.duration || 0), 0);
 
-            // Sum hours from manual time logs
             const logSeconds = allTimeLogs
                 .filter(l => l.workerId === emp.id && l.startTime && isWithinInterval(new Date(l.startTime), { start, end }))
                 .reduce((sum, l) => sum + (l.durationSeconds || 0), 0);
@@ -187,7 +176,6 @@ export function RunPayrollView() {
         if (emp.payType === 'hourly') {
             grossPay = parseFloat((totalHours * emp.payRate).toFixed(2));
         } else {
-            // Salary calculation: Annual Rate / 24 (bi-monthly)
             grossPay = parseFloat((emp.payRate / 24).toFixed(2));
         }
 
@@ -376,78 +364,63 @@ export function RunPayrollView() {
                         </Button>
                     </div>
                 </CardHeader>
-                <AnimatePresence initial={true}>
-                    {isWorkerListOpen && (
-                        <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: 'auto' }}
-                            exit={{ height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden border-t"
-                        >
-                            <CardContent className="p-0">
-                                <Accordion type="multiple" className="w-full">
+                {isWorkerListOpen && (
+                    <CardContent className="p-0 border-t">
+                        <div className="max-h-[400px] overflow-y-auto">
+                            {processedEmployees.length > 0 ? (
+                                <div className="divide-y">
                                     {processedEmployees.map(emp => (
-                                        <AccordionItem key={emp.id} value={emp.id} className="border-b px-4">
-                                            <div className="flex items-center gap-3 py-2">
+                                        <div key={emp.id} className="flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors">
+                                            <div className="pt-1">
                                                 <Checkbox 
                                                     checked={selectedEmployeeIds.includes(emp.id)} 
                                                     onCheckedChange={(checked) => setSelectedEmployeeIds(p => checked ? [...p, emp.id] : p.filter(id => id !== emp.id))}
                                                     id={`check-${emp.id}`}
                                                 />
-                                                <AccordionTrigger className="flex-1 py-0 hover:no-underline font-normal text-sm">
-                                                    <div className="flex flex-col items-start text-left">
-                                                        <span>{emp.name}</span>
-                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                            <Clock className="h-2 w-2" />
-                                                            {emp.hoursWorked.toFixed(2)} hrs in period
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <Label htmlFor={`check-${emp.id}`} className="cursor-pointer">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="font-bold text-sm block truncate">{emp.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground block">
+                                                            ID: {emp.workerIdNumber || 'N/A'} • {emp.payType}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1">
+                                                            <Clock className="h-2.5 w-2.5" />
+                                                            {emp.hoursWorked.toFixed(2)} hrs tracked
                                                         </span>
                                                     </div>
-                                                </AccordionTrigger>
+                                                </Label>
                                             </div>
-                                            <AccordionContent className="pt-0 pb-4 text-xs text-muted-foreground space-y-2">
-                                                <div className="grid grid-cols-2 gap-2 pl-7">
-                                                    <div>
-                                                        <p className="font-semibold text-foreground">Email</p>
-                                                        <p>{emp.email || 'No email set'}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-foreground">Worker ID</p>
-                                                        <p>{emp.workerIdNumber || 'N/A'}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-foreground">Type</p>
-                                                        <p className="capitalize">{emp.workerType}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-foreground">Pay Rate</p>
-                                                        <p>{formatCurrency(emp.payRate)}{emp.payType === 'hourly' ? '/hr' : '/yr'}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-end gap-2 pl-7 pt-2">
-                                                    <Button variant="ghost" size="sm" onClick={() => handleOpenWorkerForm(emp)} className="h-7 px-2 text-[10px]">
-                                                        <Pencil className="mr-1 h-3 w-3"/> Edit
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                                                        <MoreVertical className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleMergeClick(emp)} className="h-7 px-2 text-[10px]">
-                                                        <GitMerge className="mr-1 h-3 w-3"/> Merge
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteWorker(emp)} className="h-7 px-2 text-[10px] text-destructive">
-                                                        <Trash2 className="mr-1 h-3 w-3"/> Delete
-                                                    </Button>
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleMergeClick(emp)}>
+                                                        <GitMerge className="mr-2 h-4 w-4" /> Merge Duplicate
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
                                     ))}
-                                </Accordion>
-                                {processedEmployees.length === 0 && (
-                                    <div className="p-8 text-center text-sm text-muted-foreground">
-                                        No workers found. Click the plus icon to add one.
-                                    </div>
-                                )}
-                            </CardContent>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                </div>
+                            ) : (
+                                <div className="p-8 text-center text-sm text-muted-foreground italic">
+                                    No workers found. Click the plus icon to add one.
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                )}
             </Card>
         </div>
 

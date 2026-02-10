@@ -55,7 +55,6 @@ import {
     MoreVertical, 
     Edit, 
     Plus, 
-    GitMerge, 
     X, 
     Pencil,
     ChevronDown,
@@ -70,13 +69,12 @@ import { type DateRange } from 'react-day-picker';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, mergeWorkers, type Worker } from '@/services/payroll-service';
+import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { getUserProfile } from '@/services/user-profile-service';
 import { cn } from '@/lib/utils';
-import MergeWorkerDialog from './MergeWorkerDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type PayrollEmployee = Worker & {
@@ -134,8 +132,6 @@ export function RunPayrollView() {
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
   const [workerToEdit, setWorkerToEdit] = useState<Worker | null>(null);
   const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
-  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
-  const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -251,24 +247,6 @@ export function RunPayrollView() {
           toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
       } finally {
           setWorkerToDelete(null);
-      }
-  };
-
-  const handleMergeClick = (worker: Worker) => {
-      setWorkerToMerge(worker);
-      setIsMergeDialogOpen(true);
-  };
-
-  const handleConfirmMerge = async (sourceId: string, targetId: string) => {
-      try {
-          await mergeWorkers(sourceId, targetId);
-          toast({ title: "Records Merged" });
-          loadData();
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
-      } finally {
-          setIsMergeDialogOpen(false);
-          setWorkerToMerge(null);
       }
   };
 
@@ -423,9 +401,6 @@ export function RunPayrollView() {
                                                 <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Edit Record
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleMergeClick(emp)}>
-                                                    <GitMerge className="mr-2 h-4 w-4" /> Merge Duplicate
-                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => handleDeleteWorker(emp)} className="text-destructive">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
@@ -534,16 +509,6 @@ export function RunPayrollView() {
           onWorkerSave={handleWorkerSave} 
           onWorkerUpdate={handleWorkerUpdate}
       />
-
-      {workerToMerge && (
-        <MergeWorkerDialog
-            isOpen={isMergeDialogOpen}
-            onOpenChange={setIsMergeDialogOpen}
-            sourceWorker={workerToMerge}
-            allWorkers={workersList}
-            onMergeConfirm={handleConfirmMerge}
-        />
-      )}
 
       <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
           <AlertDialogContent>

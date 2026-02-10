@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -77,7 +76,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Employee Number</FormLabel><FormControl><Input placeholder="EMP-001" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>User ID</FormLabel><FormControl><Input placeholder="EMP-001" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
 
         <FormField

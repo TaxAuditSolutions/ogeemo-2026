@@ -10,8 +10,8 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow any logged-in user to read profiles (needed for user lists and lookup)
       allow get, list: if request.auth != null;
-      // Users can manage their own profiles
-      allow update, delete: if isOwner(userId);
+      // Allow management of profiles for the prototype
+      allow update, delete: if request.auth != null;
       // Allow creation of profiles during registration or by admins
       allow create: if request.auth != null;
     }

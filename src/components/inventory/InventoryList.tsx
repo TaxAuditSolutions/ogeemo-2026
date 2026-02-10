@@ -10,7 +10,14 @@ import {
   TableRow,
   TableFooter,
 } from '@/components/ui/table';
-import { LoaderCircle, Edit } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { LoaderCircle, MoreVertical, Eye, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { EditableSkuCell } from './EditableSkuCell';
@@ -77,9 +84,29 @@ export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: In
                               <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost)}</TableCell>
                               <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
                               <TableCell className="text-right py-2">
-                                  <Button variant="ghost" size="icon" onClick={() => onEditItem(item)}>
-                                      <Edit className="h-4 w-4"/>
-                                  </Button>
+                                  <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                                              <MoreVertical className="h-4 w-4" />
+                                              <span className="sr-only">Open menu</span>
+                                          </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                          <DropdownMenuItem onSelect={() => onEditItem(item)}>
+                                              <Eye className="mr-2 h-4 w-4" /> Open / View
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onSelect={() => onEditItem(item)}>
+                                              <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem 
+                                              onSelect={() => onItemDelete(item.id)}
+                                              className="text-destructive focus:text-destructive"
+                                          >
+                                              <Trash2 className="mr-2 h-4 w-4" /> Delete Item
+                                          </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
                               </TableCell>
                           </TableRow>
                       ))

@@ -181,11 +181,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
               name="employeeNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>User ID / Employee Number</FormLabel>
+                  <FormLabel>User ID</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. U-1001" {...field} />
                   </FormControl>
-                  <FormDescription>Assign a unique identification number for this user.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

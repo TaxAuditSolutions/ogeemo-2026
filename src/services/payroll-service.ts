@@ -124,21 +124,39 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
 }
 
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
-    const db = getDb();
+    const { db, auth } = getFirebaseServices();
+    const currentUserId = auth.currentUser?.uid;
+    
+    if (!currentUserId) {
+        throw new Error("Authentication required to merge workers.");
+    }
+
     const batch = writeBatch(db);
 
-    const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
+    // 1. Reassign Time Logs
+    // We MUST include userId in the query to satisfy Firestore security rules
+    const timeLogsQuery = query(
+        collection(db, TIME_LOGS_COLLECTION), 
+        where('userId', '==', currentUserId),
+        where('workerId', '==', sourceWorkerId)
+    );
     const timeLogsSnapshot = await getDocs(timeLogsQuery);
     timeLogsSnapshot.forEach(doc => {
         batch.update(doc.ref, { workerId: masterWorkerId });
     });
     
-    const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('workerId', '==', sourceWorkerId));
+    // 2. Reassign Leave Requests
+    const leaveRequestsQuery = query(
+        collection(db, LEAVE_REQUESTS_COLLECTION), 
+        where('userId', '==', currentUserId),
+        where('workerId', '==', sourceWorkerId)
+    );
     const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
     leaveRequestsSnapshot.forEach(doc => {
         batch.update(doc.ref, { workerId: masterWorkerId });
     });
 
+    // 3. Delete Source Worker
     const sourceWorkerRef = doc(db, WORKERS_COLLECTION, sourceWorkerId);
     batch.delete(sourceWorkerRef);
     

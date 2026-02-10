@@ -8,7 +8,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, update, delete: if isOwner(userId);
+      // Allow any logged-in user to read profiles (needed for user lists and lookup)
+      allow read: if request.auth != null;
+      allow update, delete: if isOwner(userId);
       allow create: if request.auth != null;
     }
     
@@ -99,7 +101,7 @@ service cloud.firestore {
       
       match /locations/{locationId} {
         allow create: if isOwner(request.resource.data.workerId);
-        allow read: if isOwner(request.resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
+        allow read: if isOwner(resource.data.workerId) || isOwner(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUserId);
       }
     }
     

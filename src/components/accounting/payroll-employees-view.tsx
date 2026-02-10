@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -217,6 +216,7 @@ export function PayrollEmployeesView() {
                                     />
                                 </TableHead>
                                 <TableHead>Name</TableHead>
+                                <TableHead>ID Number</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Pay Type</TableHead>
                                 <TableHead className="text-right">Pay Rate</TableHead>
@@ -237,6 +237,7 @@ export function PayrollEmployeesView() {
                                         {emp.name}
                                     </button>
                                 </TableCell>
+                                <TableCell>{emp.workerIdNumber || 'N/A'}</TableCell>
                                 <TableCell><Badge variant={emp.workerType === 'employee' ? 'default' : 'secondary'}>{emp.workerType}</Badge></TableCell>
                                 <TableCell className="capitalize">{emp.payType}</TableCell>
                                 <TableCell className="text-right font-mono">

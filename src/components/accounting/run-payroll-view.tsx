@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -413,12 +412,12 @@ export function RunPayrollView() {
                                                         <p>{emp.email || 'No email set'}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-foreground">Type</p>
-                                                        <p className="capitalize">{emp.workerType}</p>
+                                                        <p className="font-semibold text-foreground">Worker ID</p>
+                                                        <p>{emp.workerIdNumber || 'N/A'}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-foreground">Pay Type</p>
-                                                        <p className="capitalize">{emp.payType}</p>
+                                                        <p className="font-semibold text-foreground">Type</p>
+                                                        <p className="capitalize">{emp.workerType}</p>
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-foreground">Pay Rate</p>
@@ -534,5 +533,3 @@ export function RunPayrollView() {
     </div>
   );
 }
-
-    

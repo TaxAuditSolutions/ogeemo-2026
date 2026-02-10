@@ -44,6 +44,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from './log-time-dialog';
@@ -55,8 +57,10 @@ import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export function TimeLogReport() {
     const [workers, setWorkers] = useState<Worker[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
+    const [adminName, setAdminName] = useState<string>('Admin');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -79,12 +83,19 @@ export function TimeLogReport() {
         }
         setIsLoading(true);
         try {
-            const [fetchedWorkers, fetchedLogs, fetchedTasks] = await Promise.all([
+            const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid),
+                getContacts(user.uid),
                 getTimeLogs(user.uid),
-                getTasksForUser(user.uid)
+                getTasksForUser(user.uid),
+                getUserProfile(user.uid)
             ]);
+            
+            const name = profile?.displayName || user.displayName || user.email || 'Admin';
+            setAdminName(name);
+
             setWorkers(fetchedWorkers);
+            setContacts(fetchedContacts);
             setTimeLogs(fetchedLogs);
             setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
@@ -99,25 +110,42 @@ export function TimeLogReport() {
     }, [loadData]);
 
     const allMergedEntries = useMemo(() => {
-        const fromLogs = timeLogs.map(tl => ({
-            ...tl,
-            id: tl.id,
-            workerId: tl.workerId,
-            workerName: tl.workerName,
-            startTime: new Date(tl.startTime),
-            durationSeconds: tl.durationSeconds,
-            source: 'log'
-        }));
+        const fromLogs = timeLogs.map(tl => {
+            const worker = workers.find(w => w.id === tl.workerId);
+            const contact = contacts.find(c => c.id === tl.contactId);
+            
+            return {
+                ...tl,
+                id: tl.id,
+                workerId: tl.workerId,
+                workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
+                contactName: contact ? contact.name : 'Internal',
+                startTime: new Date(tl.startTime),
+                durationSeconds: tl.durationSeconds,
+                source: 'log',
+                isBillable: tl.isBillable || false,
+                billableRate: tl.billableRate || 0,
+            };
+        });
 
-        const fromTasks = tasks.map(t => ({
-            ...t,
-            id: t.id,
-            workerId: t.workerId || user?.uid,
-            workerName: t.workerId ? (workers.find(w => w.id === t.workerId)?.name || 'Unknown') : 'Admin',
-            startTime: new Date(t.start),
-            durationSeconds: t.duration,
-            source: 'calendar'
-        }));
+        const fromTasks = tasks.map(t => {
+            const workerId = t.workerId || user?.uid;
+            const worker = workers.find(w => w.id === workerId);
+            const contact = contacts.find(c => c.id === t.contactId);
+            
+            return {
+                ...t,
+                id: t.id,
+                workerId: workerId,
+                workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
+                contactName: contact ? contact.name : 'Internal',
+                startTime: new Date(t.start),
+                durationSeconds: t.duration || 0,
+                source: 'calendar',
+                isBillable: t.isBillable || false,
+                billableRate: t.billableRate || 0,
+            };
+        });
 
         let combined = [...fromLogs, ...fromTasks];
 
@@ -131,9 +159,11 @@ export function TimeLogReport() {
         }
 
         return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
-    }, [timeLogs, tasks, workers, selectedWorkerId, dateRange, user?.uid]);
+    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -158,16 +188,22 @@ export function TimeLogReport() {
         setIsLogTimeDialogOpen(true);
     };
 
-    const selectedWorker = workers.find(w => w.id === selectedWorkerId);
-    
+    const workersForSelection = useMemo(() => {
+        const adminWorker: Worker = {
+            id: user?.uid || '',
+            name: `${adminName} (Admin)`,
+            email: user?.email || '',
+            workerType: 'employee',
+            payType: 'salary',
+            payRate: 0,
+            userId: user?.uid || ''
+        };
+        return [adminWorker, ...workers];
+    }, [workers, user, adminName]);
+
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     };
-
-    const totalPay = useMemo(() => {
-        if (!selectedWorker || selectedWorker.payType !== 'hourly' || totalDurationSeconds <= 0) return 0;
-        return (totalDurationSeconds / 3600) * selectedWorker.payRate;
-    }, [selectedWorker, totalDurationSeconds]);
 
     return (
         <>
@@ -175,21 +211,23 @@ export function TimeLogReport() {
                 <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
-                  <p className="text-muted-foreground">Review and manage all work sessions logged by your team.</p>
+                  <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                 </header>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Filters & Actions</CardTitle>
+                        <CardTitle>Filters</CardTitle>
                         <div className="flex flex-wrap items-end gap-4 pt-2">
-                             <WorkerSelector
-                                workers={workers}
-                                selectedWorkerId={selectedWorkerId}
-                                onSelect={setSelectedWorkerId}
-                                isLoading={isLoading}
-                            />
-                            
-                            <div className="space-y-2">
+                           <div className="space-y-2">
+                                <Label>Select Worker</Label>
+                                <WorkerSelector
+                                    workers={workersForSelection}
+                                    selectedWorkerId={selectedWorkerId}
+                                    onSelect={setSelectedWorkerId}
+                                    isLoading={isLoading}
+                                />
+                           </div>
+                           <div className="space-y-2">
                                 <Label>Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -202,8 +240,8 @@ export function TimeLogReport() {
                                         <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
-                            </div>
-                             <div className="space-y-2">
+                           </div>
+                           <div className="space-y-2">
                                 <Label>End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -216,7 +254,7 @@ export function TimeLogReport() {
                                         <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>
                                 </Popover>
-                            </div>
+                           </div>
 
                             <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
@@ -233,8 +271,9 @@ export function TimeLogReport() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Worker</TableHead>
+                                        <TableHead>Client</TableHead>
                                         <TableHead>Date</TableHead>
-                                        <TableHead>Source</TableHead>
+                                        <TableHead>Billing</TableHead>
                                         <TableHead>Notes</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -242,13 +281,18 @@ export function TimeLogReport() {
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
-                                        <TableRow><TableCell colSpan={6} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                                     ) : allMergedEntries.length > 0 ? (
                                         allMergedEntries.map(entry => (
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
+                                                <TableCell>{entry.contactName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
-                                                <TableCell><Badge variant="outline">{entry.source === 'log' ? 'Manual' : 'Calendar'}</Badge></TableCell>
+                                                <TableCell>
+                                                    <Badge variant={entry.isBillable ? "default" : "secondary"}>
+                                                        {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
@@ -269,23 +313,26 @@ export function TimeLogReport() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                                 {allMergedEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-right font-bold">Total Hours:</TableCell>
+                                            <TableCell colSpan={5} className="text-right font-bold">Total Hours (All Entries):</TableCell>
                                             <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
                                             <TableCell />
                                         </TableRow>
-                                        {selectedWorker?.payType === 'hourly' && (
-                                            <TableRow className="text-base bg-muted/50">
-                                                <TableCell colSpan={4} className="text-right font-bold">Total Pay:</TableCell>
-                                                <TableCell className="text-right font-bold font-mono">{formatCurrency(totalPay)}</TableCell>
-                                                <TableCell />
-                                            </TableRow>
-                                        )}
+                                        <TableRow className="bg-muted/30">
+                                            <TableCell colSpan={5} className="text-right font-semibold">Billable Hours Only:</TableCell>
+                                            <TableCell className="text-right font-semibold font-mono text-primary">{formatTime(billableDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        <TableRow className="text-lg bg-primary/5">
+                                            <TableCell colSpan={5} className="text-right font-bold text-primary">Total Billable Amount (to Client):</TableCell>
+                                            <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
                                     </TableFooter>
                                 )}
                             </Table>
@@ -303,7 +350,7 @@ export function TimeLogReport() {
                         setPreselectedWorkerId(null);
                     }
                 }}
-                workers={workers}
+                workers={workersForSelection}
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
                 preselectedWorkerId={preselectedWorkerId}

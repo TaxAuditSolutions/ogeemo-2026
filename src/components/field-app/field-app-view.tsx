@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -16,6 +15,7 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
 import { cn } from '@/lib/utils';
 
 const formatTimeDisplay = (totalSeconds: number): string => {
@@ -42,6 +42,7 @@ export function FieldAppView() {
     const router = useRouter();
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [workerRecord, setWorkerRecord] = useState<Worker | null>(null);
     const [isClockedIn, setIsClockedIn] = useState(false);
     const [isTimerPaused, setIsTimerPaused] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
@@ -56,12 +57,19 @@ export function FieldAppView() {
         if (!user) return;
         setIsLoading(true);
         try {
-            const [userProfile, logs] = await Promise.all([
+            const [userProfile, allWorkers, logs] = await Promise.all([
                 getUserProfile(user.uid),
+                getWorkers(user.uid),
                 getTimeLogs(user.uid)
             ]);
             setProfile(userProfile);
             setTodayLogs(logs.filter(l => isSameDay(new Date(l.startTime), new Date())));
+
+            // Find matching worker record to get Worker ID Number
+            const match = allWorkers.find(w => w.email === user.email);
+            if (match) {
+                setWorkerRecord(match);
+            }
 
             // Load saved timer state
             const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
@@ -207,14 +215,15 @@ export function FieldAppView() {
             </header>
 
             <main className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
-                <Card className="border-t-4 border-t-primary">
+                <Card className="border-t-4 border-t-primary shadow-lg">
                     <CardHeader className="text-center pb-2">
                         <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
                             <User className="h-6 w-6 text-primary" />
                         </div>
                         <CardTitle className="text-xl">{profile?.displayName || user?.displayName || 'Worker'}</CardTitle>
-                        <CardDescription>
-                            ID: {profile?.employeeNumber || 'Not Set'}
+                        <CardDescription className="flex flex-col gap-1">
+                            <span>{user?.email}</span>
+                            <span className="font-bold text-primary">ID: {workerRecord?.workerIdNumber || profile?.employeeNumber || 'Not Assigned'}</span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-4">

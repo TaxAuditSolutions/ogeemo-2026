@@ -4,6 +4,7 @@ import {
   getFirestore,
   collection,
   getDocs,
+  getDoc,
   doc,
   addDoc,
   updateDoc,
@@ -20,6 +21,7 @@ export interface Worker {
     name: string;
     email: string;
     sin?: string;
+    workerIdNumber?: string; // Unique identifier for company tracking
     workerType: 'employee' | 'contractor';
     payType: 'hourly' | 'salary';
     payRate: number;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -143,8 +142,8 @@ export function PayrollHistoryView() {
           <p className="text-muted-foreground">Review past payroll runs and access detailed reports.</p>
            <div className="mt-4">
                 <Button asChild variant="outline">
-                    <Link href="/accounting/payroll">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll Hub
+                    <Link href="/accounting">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Accounting Hub
                     </Link>
                 </Button>
             </div>

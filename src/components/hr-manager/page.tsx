@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -65,10 +64,10 @@ export default function HrHubPage() {
     },
     {
       icon: Banknote,
-      title: "Payroll Hub",
+      title: "Payroll Processing",
       description: "Process payroll, view history, and manage payroll settings.",
-      href: "/accounting/payroll",
-      cta: "Go to Payroll",
+      href: "/accounting",
+      cta: "Go to Payroll Hub",
     },
     {
       icon: Clock,

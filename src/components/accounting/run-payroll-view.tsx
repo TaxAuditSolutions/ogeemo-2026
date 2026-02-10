@@ -312,7 +312,7 @@ export function RunPayrollView() {
         <p className="text-muted-foreground">Select a pay period and workers to begin.</p>
         <div className="absolute top-0 right-0">
             <Button asChild variant="ghost" size="icon">
-                <Link href="/accounting/payroll"><X className="h-5 w-5"/></Link>
+                <Link href="/accounting"><X className="h-5 w-5"/></Link>
             </Button>
         </div>
       </header>

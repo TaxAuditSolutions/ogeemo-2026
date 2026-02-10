@@ -44,7 +44,7 @@ export default function CalendarTestPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
             <div className="w-full max-w-4xl">
-              <AccountingPageHeader pageTitle="Calendar Test" hubPath="/accounting/payroll" hubLabel="Payroll Hub" />
+              <AccountingPageHeader pageTitle="Calendar Test" hubPath="/accounting" hubLabel="Accounting Hub" />
             </div>
             <div className="flex flex-col items-center gap-4 pt-8">
                 <h2 className="text-xl font-semibold">Test Grid Frame</h2>

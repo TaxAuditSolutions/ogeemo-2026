@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -37,11 +36,9 @@ export function WorkerSelector({ workers, selectedWorkerId, onSelect, isLoading 
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" className="w-64 justify-between">
           <User className="mr-2 h-4 w-4" />
-          {selectedWorker ? (
-            <span className="truncate">{selectedWorker.name}</span>
-          ) : (
-            "Select Worker..."
-          )}
+          <span className="truncate">
+            {selectedWorker ? `${selectedWorker.name} ${selectedWorker.workerIdNumber ? `(ID: ${selectedWorker.workerIdNumber})` : ''}` : "Select Worker..."}
+          </span>
           {isLoading ? (
             <LoaderCircle className="ml-2 h-4 w-4 shrink-0 animate-spin" />
           ) : (
@@ -70,7 +67,10 @@ export function WorkerSelector({ workers, selectedWorkerId, onSelect, isLoading 
                       selectedWorkerId === worker.id ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {worker.name}
+                  <div className="flex flex-col">
+                    <span>{worker.name}</span>
+                    {worker.workerIdNumber && <span className="text-[10px] text-muted-foreground">ID: {worker.workerIdNumber}</span>}
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>

@@ -147,6 +147,8 @@ export function LogTimeDialog({
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: format(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
 
+    const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl">
@@ -159,12 +161,30 @@ export function LogTimeDialog({
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-full justify-between" disabled={!!entryToEdit}>
-                                    {selectedWorkerId ? workers.find(e => e.id === selectedWorkerId)?.name : "Select a worker..."}
+                                    <span className="truncate">
+                                        {selectedWorker ? `${selectedWorker.name} ${selectedWorker.workerIdNumber ? `(ID: ${selectedWorker.workerIdNumber})` : ''}` : "Select a worker..."}
+                                    </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command><CommandInput placeholder="Search workers..." /><CommandList><CommandEmpty>No worker found.</CommandEmpty><CommandGroup>{workers.map(c => (<CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedWorkerId(c.id); setIsWorkerPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === c.id ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                                <Command>
+                                    <CommandInput placeholder="Search workers..." />
+                                    <CommandList>
+                                        <CommandEmpty>No worker found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {workers.map(w => (
+                                                <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
+                                                    <div className="flex flex-col">
+                                                        <span>{w.name}</span>
+                                                        {w.workerIdNumber && <span className="text-[10px] text-muted-foreground">ID: {w.workerIdNumber}</span>}
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
                             </PopoverContent>
                         </Popover>
                     </div>

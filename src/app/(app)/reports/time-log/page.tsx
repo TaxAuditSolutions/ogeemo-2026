@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -62,6 +61,7 @@ export default function TimeLogReportPage() {
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
+    const [adminIdNumber, setAdminIdNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -94,6 +94,7 @@ export default function TimeLogReportPage() {
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
+            setAdminIdNumber(profile?.employeeNumber || '');
 
             setWorkers(fetchedWorkers);
             setContacts(fetchedContacts);
@@ -197,10 +198,11 @@ export default function TimeLogReportPage() {
             workerType: 'employee',
             payType: 'salary',
             payRate: 0,
-            userId: user?.uid || ''
+            userId: user?.uid || '',
+            workerIdNumber: adminIdNumber,
         };
         return [adminWorker, ...workers];
-    }, [workers, user, adminName]);
+    }, [workers, user, adminName, adminIdNumber]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -209,7 +211,7 @@ export default function TimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" />
+                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/action-manager" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>

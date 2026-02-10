@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Pause, Square, LogIn, LogOut, Landmark, MapPin, User, LoaderCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, isSameDay } from 'date-fns';
@@ -15,6 +16,7 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
+import { cn } from '@/lib/utils';
 
 const formatTimeDisplay = (totalSeconds: number): string => {
     if (totalSeconds < 0) totalSeconds = 0;
@@ -259,7 +261,7 @@ export function FieldAppView() {
                                         {isTimerPaused ? "Resume" : "Pause"}
                                     </Button>
                                     <Button size="lg" variant="destructive" className="h-14 shadow-md" onClick={handleClockOut} disabled={isSubmitting}>
-                                        {isSubmitting ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <LogOut className="mr-2 h-5 w-5" />}
+                                        {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
                                         Clock Out
                                     </Button>
                                 </>

@@ -62,7 +62,8 @@ import {
     ChevronUp,
     Clock,
     RefreshCw,
-    UserPlus
+    UserPlus,
+    Info
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -76,6 +77,7 @@ import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { getUserProfile } from '@/services/user-profile-service';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type PayrollEmployee = Worker & {
     grossPay: number;
@@ -83,6 +85,9 @@ type PayrollEmployee = Worker & {
     netPay: number;
     hoursWorked: number;
 };
+
+// Global deduction rate for the prototype (20%)
+const ESTIMATED_DEDUCTION_RATE = 0.20;
 
 const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -188,7 +193,7 @@ export function RunPayrollView() {
             grossPay = parseFloat((rate / 24).toFixed(2));
         }
 
-        const deductions = parseFloat((grossPay * 0.2).toFixed(2));
+        const deductions = parseFloat((grossPay * ESTIMATED_DEDUCTION_RATE).toFixed(2));
 
         return { 
             ...emp, 
@@ -448,7 +453,9 @@ export function RunPayrollView() {
             <Card className="h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>3. Review & Submit</CardTitle>
-                    <CardDescription>Pay is calculated based on hours logged in the selected period for hourly workers.</CardDescription>
+                    <CardDescription>
+                        Calculated pay for selected workers. Deductions are estimated at 20% for taxes and benefits.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
                     {selectedEmployees.length > 0 ? (
@@ -458,7 +465,19 @@ export function RunPayrollView() {
                                     <TableHead>Employee</TableHead>
                                     <TableHead className="text-right">Hours</TableHead>
                                     <TableHead className="text-right">Gross Pay</TableHead>
-                                    <TableHead className="text-right">Deductions</TableHead>
+                                    <TableHead className="text-right flex items-center justify-end gap-1">
+                                        Deductions (20%)
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="text-xs">Estimated 20% flat rate for Tax, EI, and CPP.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </TableHead>
                                     <TableHead className="text-right">Net Pay</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -473,7 +492,7 @@ export function RunPayrollView() {
                                         </TableCell>
                                         <TableCell className="text-right font-mono">{emp.hoursWorked.toFixed(2)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(emp.grossPay)}</TableCell>
-                                        <TableCell className="text-right font-mono">{formatCurrency(emp.deductions)}</TableCell>
+                                        <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(emp.deductions)}</TableCell>
                                         <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(emp.netPay)}</TableCell>
                                     </TableRow>
                                 ))}
@@ -482,7 +501,7 @@ export function RunPayrollView() {
                                 <TableRow>
                                     <TableCell colSpan={2} className="font-bold">Totals</TableCell>
                                     <TableCell className="text-right font-bold">{formatCurrency(totalGrossPay)}</TableCell>
-                                    <TableCell className="text-right font-bold">{formatCurrency(totalDeductions)}</TableCell>
+                                    <TableCell className="text-right font-bold text-muted-foreground">{formatCurrency(totalDeductions)}</TableCell>
                                     <TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(totalNetPay)}</TableCell>
                                 </TableRow>
                             </TableFooter>

@@ -34,6 +34,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { 
@@ -67,6 +73,7 @@ import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, merg
 import { getTimeLogs } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
+import { getUserProfile } from '@/services/user-profile-service';
 import { cn } from '@/lib/utils';
 import MergeWorkerDialog from './MergeWorkerDialog';
 

@@ -33,6 +33,7 @@ import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
 const userSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
   email: z.string().email({ message: 'A valid email is required.' }),
+  employeeNumber: z.string().optional(),
   password: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -54,7 +55,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', password: '', notes: '' },
+    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '' },
   });
 
   useEffect(() => {
@@ -63,11 +64,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         form.reset({
           name: userToEdit.displayName || '',
           email: userToEdit.email || '',
+          employeeNumber: userToEdit.employeeNumber || '',
           notes: userToEdit.notes || '',
           password: '',
         });
       } else {
-        form.reset({ name: '', email: '', password: '', notes: '' });
+        form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '' });
       }
     }
   }, [isOpen, userToEdit, form]);
@@ -80,6 +82,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             const profileUpdateData: Partial<UserProfile> = {};
             if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
             if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
+            if (values.employeeNumber !== userToEdit.employeeNumber) profileUpdateData.employeeNumber = values.employeeNumber;
 
             const authUpdateData: { email?: string; password?: string } = {};
             if (values.email !== userToEdit.email) authUpdateData.email = values.email;
@@ -116,6 +119,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             await updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
+                employeeNumber: values.employeeNumber,
                 notes: values.notes,
             });
             
@@ -168,6 +172,19 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="jane.doe@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="employeeNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>User ID / Employee Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. U-1001" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

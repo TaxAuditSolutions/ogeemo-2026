@@ -1,3 +1,4 @@
+
 'use client';
 
 import { MoreVertical, Plus, LoaderCircle, Trash2, BookOpen, Info, User as UserIcon, Pencil, KeyRound } from "lucide-react";
@@ -121,7 +122,7 @@ export function UserListView() {
             </div>
         </header>
         <Card>
-          <CardHeader className="flex flex-row justify-between items-center">
+          <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Users</CardTitle>
               <CardDescription>
@@ -136,6 +137,7 @@ export function UserListView() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>User ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="hidden md:table-cell">
@@ -149,13 +151,16 @@ export function UserListView() {
               <TableBody>
                 {isLoading ? (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                             <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
                         </TableCell>
                     </TableRow>
                 ) : users.length > 0 ? (
                   users.map((userProfile) => (
                     <TableRow key={userProfile.id}>
+                      <TableCell className="font-mono text-xs">
+                        {userProfile.employeeNumber || 'N/A'}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {userProfile.displayName}
                       </TableCell>
@@ -195,7 +200,7 @@ export function UserListView() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                             No users found.
                         </TableCell>
                     </TableRow>

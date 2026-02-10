@@ -131,7 +131,8 @@ export function RunPayrollView() {
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
   
-  const [isWorkerListOpen, setIsWorkerListOpen] = useState(false);
+  // Expanded by default to ensure visibility
+  const [isWorkerListOpen, setIsWorkerListOpen] = useState(true);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -190,7 +191,6 @@ export function RunPayrollView() {
             grossPay = parseFloat((emp.payRate / 24).toFixed(2));
         }
 
-        // Placeholder for deductions (e.g., 20% flat for simulation)
         const deductions = parseFloat((grossPay * 0.2).toFixed(2));
 
         return { 
@@ -376,7 +376,7 @@ export function RunPayrollView() {
                         </Button>
                     </div>
                 </CardHeader>
-                <AnimatePresence>
+                <AnimatePresence initial={true}>
                     {isWorkerListOpen && (
                         <motion.div
                             initial={{ height: 0 }}
@@ -508,7 +508,12 @@ export function RunPayrollView() {
 
       <WorkerFormDialog 
           isOpen={isWorkerFormOpen} 
-          onOpenChange={setIsWorkerFormOpen} 
+          onOpenChange={(isOpen) => {
+              setIsWorkerFormOpen(isOpen);
+              if (!isOpen) {
+                  setWorkerToEdit(null);
+              }
+          }} 
           workerToEdit={workerToEdit} 
           onWorkerSave={handleWorkerSave} 
           onWorkerUpdate={handleWorkerUpdate}

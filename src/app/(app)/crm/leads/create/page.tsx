@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -56,6 +55,7 @@ export default function CreateLeadPage() {
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -181,6 +181,11 @@ export default function CreateLeadPage() {
     setPhone(contact.cellPhone || contact.businessPhone || '');
     setSelectedFolderId(contact.folderId || '');
     setIsContactPopoverOpen(false);
+  };
+
+  const handleNewContactClick = () => {
+    setContactToEdit(null);
+    setIsContactFormOpen(true);
   };
 
   const handleCreateFolder = async () => {
@@ -351,7 +356,7 @@ export default function CreateLeadPage() {
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
-        contactToEdit={null}
+        contactToEdit={contactToEdit}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
         onSave={(c) => handleSelectContact(c)}

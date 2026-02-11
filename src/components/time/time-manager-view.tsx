@@ -14,7 +14,7 @@ import { type Project, type Event as TaskEvent, type TimeSession } from '@/types
 import { type Contact } from '@/data/contacts';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
 import { getContacts, type FolderData } from '@/services/contact-service';
-import { getFolders as getContactFolders } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, ensureSystemFolders } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { Textarea } from '../ui/textarea';
@@ -44,10 +44,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
-import { CustomCalendar } from '../ui/custom-calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { Checkbox } from '../ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +52,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { getUserProfile } from '@/services/user-profile-service';
+import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
+import { CustomCalendar } from '../ui/custom-calendar';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
 
 
 export interface StoredTimerState {
@@ -78,7 +78,6 @@ export function TimeManagerView() {
 
     const [projects, setProjects] = React.useState<Project[]>([]);
     const [contacts, setContacts] = React.useState<Contact[]>([]);
-    const [workers, setWorkers] = React.useState<Worker[]>([]);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
@@ -144,6 +143,23 @@ export function TimeManagerView() {
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
     
+    // Logic to calculate worker list from Contact Hub
+    const workerContacts = useMemo(() => {
+        const workersFolder = contactFolders.find(f => f.name === 'Workers' && f.isSystem);
+        if (!workersFolder) return [];
+
+        const getDescendantIds = (parentId: string): string[] => {
+            let ids = [parentId];
+            contactFolders.filter(f => f.parentId === parentId).forEach(child => {
+                ids = [...ids, ...getDescendantIds(child.id)];
+            });
+            return ids;
+        };
+
+        const workerFolderIds = getDescendantIds(workersFolder.id);
+        return contacts.filter(c => workerFolderIds.includes(c.folderId));
+    }, [contactFolders, contacts]);
+
     const totalAccumulatedSeconds = useMemo(() => {
         return sessions.reduce((acc, session) => acc + session.durationSeconds, 0);
     }, [sessions]);
@@ -377,20 +393,18 @@ export function TimeManagerView() {
         }
         setIsLoadingData(true);
         try {
-            const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
+            const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
                 getProjects(user.uid),
                 getContacts(user.uid),
-                getContactFolders(user.uid),
+                ensureSystemFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid),
-                getWorkers(user.uid),
             ]);
             setProjects(fetchedProjects);
             setContacts(fetchedContacts);
             setContactFolders(fetchedFolders);
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
-            setWorkers(fetchedWorkers);
             
             // Set default worker to current user
             setSelectedWorkerId(user.uid);
@@ -558,6 +572,11 @@ export function TimeManagerView() {
         }
     };
     
+    const getContactDisplayName = (contact?: Contact) => {
+        if (!contact) return "Select contact...";
+        return `${contact.name}${contact.businessName ? ` (${contact.businessName})` : ''}`;
+    };
+
     if (isLoadingData) {
         return (
             <div className="flex h-full w-full items-center justify-center">
@@ -644,7 +663,7 @@ export function TimeManagerView() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card>
-                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Client (Contact)</CardTitle></CardHeader>
+                                    <CardHeader className="p-4"><CardTitle className="text-base">Select a Contact</CardTitle></CardHeader>
                                     <CardContent className="p-4 pt-0">
                                         <div className="space-y-2">
                                             <RadioGroup onValueChange={(value) => setContactAction(value)} value={contactAction} className="flex space-x-4">
@@ -656,7 +675,9 @@ export function TimeManagerView() {
                                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Select contact..."}
+                                                            <span className="truncate">
+                                                                {selectedContactId ? getContactDisplayName(contacts.find(c => c.id === selectedContactId)) : "Select contact..."}
+                                                            </span>
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </PopoverTrigger>
@@ -669,7 +690,7 @@ export function TimeManagerView() {
                                                                     {contacts.map(c => (
                                                                         <CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
                                                                             <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>
-                                                                            {c.name}
+                                                                            {getContactDisplayName(c)}
                                                                         </CommandItem>
                                                                     ))}
                                                                 </CommandGroup>
@@ -727,7 +748,9 @@ export function TimeManagerView() {
                                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button variant="outline" role="combobox" className="w-full justify-between mt-2">
-                                                    {selectedWorkerId ? (selectedWorkerId === user?.uid ? "Me (Admin)" : workers.find(w => w.id === selectedWorkerId)?.name || "Select worker...") : "Select worker..."}
+                                                    <span className="truncate">
+                                                        {selectedWorkerId ? (selectedWorkerId === user?.uid ? "Me (Admin)" : getContactDisplayName(workerContacts.find(w => w.id === selectedWorkerId))) : "Select worker..."}
+                                                    </span>
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
@@ -741,10 +764,10 @@ export function TimeManagerView() {
                                                                 <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === user?.uid ? "opacity-100" : "opacity-0")}/>
                                                                 Me (Admin)
                                                             </CommandItem>
-                                                            {workers.map(w => (
+                                                            {workerContacts.map(w => (
                                                                 <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
                                                                     <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
-                                                                    {w.name}
+                                                                    {getContactDisplayName(w)}
                                                                 </CommandItem>
                                                             ))}
                                                         </CommandGroup>

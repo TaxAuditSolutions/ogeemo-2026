@@ -9,7 +9,7 @@
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
-        "employeeNumber": { "type": "string", "description": "Unique identifier for the worker." },
+        "employeeNumber": { "type": "string", "description": "Unique identifier for the user (User ID)." },
         "notes": { "type": "string", "description": "General notes about the user." }
       }
     },
@@ -21,6 +21,7 @@
             "name": { "type": "string" },
             "email": { "type": "string", "format": "email" },
             "businessName": { "type": "string" },
+            "employeeNumber": { "type": "string", "description": "Unique identifier for the contact (User ID)." },
             "craProgramAccountNumber": { "type": "string" },
             "userId": { "type": "string" },
             "keywords": { "type": "array", "items": { "type": "string" } }

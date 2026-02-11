@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -196,7 +197,8 @@ export function TimeLogReport() {
             workerType: 'employee',
             payType: 'salary',
             payRate: 0,
-            userId: user?.uid || ''
+            userId: user?.uid || '',
+            workerIdNumber: profile?.employeeNumber || '', // Use standardized ID
         };
         return [adminWorker, ...workers];
     }, [workers, user, adminName]);

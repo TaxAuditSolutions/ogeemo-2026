@@ -1,27 +1,24 @@
 
-import dynamic from 'next/dynamic';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
-import { HrPageHeader } from '@/components/hr/page-header';
 
-const PayrollWorkersView = dynamic(
-  () => import('@/components/accounting/payroll-employees-view').then((mod) => mod.PayrollEmployeesView),
-  {
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Worker Manager...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+export default function ManageWorkersRedirectPage() {
+  const router = useRouter();
 
-export default function ManageWorkersPage() {
+  useEffect(() => {
+    // The Worker Directory is now consolidated into the Contacts Hub.
+    router.replace('/contacts');
+  }, [router]);
+
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-        <HrPageHeader pageTitle="Manage Workers" />
-        <PayrollWorkersView />
+    <div className="flex h-full w-full items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-4">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">Redirecting to Contacts Hub...</p>
+      </div>
     </div>
   );
 }

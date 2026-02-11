@@ -62,6 +62,7 @@ const contactSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }).optional().or(z.literal('')),
   website: z.string().optional(),
   businessName: z.string().optional(),
+  employeeNumber: z.string().optional(), // Used as User ID
   industryCode: z.string().optional(),
   craProgramAccountNumber: z.string().optional(),
   streetAddress: z.string().optional(),
@@ -109,6 +110,7 @@ const defaultFormValues: ContactFormData = {
   email: "",
   website: "",
   businessName: "",
+  employeeNumber: "",
   industryCode: "",
   craProgramAccountNumber: "",
   streetAddress: "",
@@ -388,8 +390,9 @@ export default function ContactFormDialog({
                                                 <FormMessage />
                                             </FormItem>
                                         )} />
-                                        <FormField control={form.control} name="website" render={({ field }) => ( <FormItem> <FormLabel>Website URL</FormLabel> <FormControl><Input placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                                        <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem> <FormLabel>User ID</FormLabel> <FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl> <FormDescription>Assign a unique identifier for this individual.</FormDescription> <FormMessage /> </FormItem> )} />
                                     </div>
+                                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem> <FormLabel>Website URL</FormLabel> <FormControl><Input placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                 </section>
 
                                 <Separator className="md:col-span-2 my-2" />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle, Route } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Edit, Trash2, LoaderCircle, Route, X } from 'lucide-react';
 import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
 import {
@@ -278,15 +279,15 @@ export default function CrmPlanPage() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
-        <header className="flex items-center justify-between">
-          <div className="w-1/3 flex gap-2">
-              <Button asChild variant="outline">
+        <header className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-2">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 lg:w-1/3">
+              <Button asChild variant="outline" size="sm" className="whitespace-nowrap">
                   <Link href="/action-manager">
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back to Action Manager
                   </Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" size="sm" className="whitespace-nowrap">
                   <Link href="/contacts">
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back to Contact Hub
@@ -294,13 +295,13 @@ export default function CrmPlanPage() {
               </Button>
           </div>
           <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold font-headline text-primary">
+              <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">
                   CRM Leads Pipeline
               </h1>
-              <p className="text-muted-foreground text-sm">Managing Prospects from the Contacts Hub</p>
+              <p className="text-muted-foreground text-xs md:text-sm">Managing Prospects from the Contacts Hub</p>
           </div>
-          <div className="w-1/3 flex justify-end">
-              <Button asChild>
+          <div className="flex justify-center lg:justify-end lg:w-1/3">
+              <Button asChild size="sm">
                   <Link href="/crm/leads/create">
                       <Plus className="mr-2 h-4 w-4" />
                       Add a Prospect

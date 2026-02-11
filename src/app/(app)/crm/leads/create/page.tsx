@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -359,7 +360,7 @@ export default function CreateLeadPage() {
         contactToEdit={contactToEdit}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
-        onSave={(c) => handleSelectContact(c)}
+        onSave={handleContactSave}
         companies={companies}
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}

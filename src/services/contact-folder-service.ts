@@ -14,9 +14,18 @@ import {
     writeBatch,
     Timestamp,
     orderBy,
+    setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import type { FolderData } from '@/data/files';
+
+export interface FolderData {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  userId: string;
+  createdAt: Date;
+  isSystem?: boolean;
+}
 
 const FOLDERS_COLLECTION = 'contactFolders';
 
@@ -34,11 +43,8 @@ const docToFolder = (doc: any): FolderData => ({
 
 export async function getFolders(userId: string): Promise<FolderData[]> {
   const db = getDb();
-  // Adding orderBy on the same field as the where clause is a common pattern
-  // to ensure Firestore can use its default indexes efficiently.
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
+  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
-  // Client-side sort to ensure alphabetical order for display
   return snapshot.docs.map(docToFolder).sort((a,b) => a.name.localeCompare(b.name));
 }
 
@@ -70,4 +76,60 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
     });
 
     await batch.commit();
+}
+
+/**
+ * Ensures that hardcoded system folders exist for the user.
+ */
+export async function ensureSystemFolders(userId: string): Promise<FolderData[]> {
+    const db = getDb();
+    const existing = await getFolders(userId);
+    
+    const systemFoldersConfig = [
+        { name: 'Ogeemo Users', parent: null },
+        { name: 'Workers', parent: null },
+        { name: 'Employees', parent: 'Workers' },
+        { name: 'Contractors', parent: 'Workers' },
+        { name: 'Clients', parent: null },
+        { name: 'Family', parent: null },
+        { name: 'Friends', parent: null },
+        { name: 'Suppliers', parent: null },
+        { name: 'Prospects', parent: null },
+        { name: 'Miscellaneous', parent: null },
+    ];
+
+    const currentFolders = [...existing];
+    const batch = writeBatch(db);
+    let hasChanges = false;
+
+    for (const config of systemFoldersConfig) {
+        const exists = currentFolders.find(f => f.name === config.name && f.isSystem);
+        if (!exists) {
+            let parentId = null;
+            if (config.parent) {
+                const parent = currentFolders.find(f => f.name === config.parent && f.isSystem);
+                if (parent) {
+                    parentId = parent.id;
+                }
+            }
+
+            const docRef = doc(collection(db, FOLDERS_COLLECTION));
+            const newFolder = {
+                name: config.name,
+                userId,
+                parentId,
+                isSystem: true,
+                createdAt: new Date(),
+            };
+            batch.set(docRef, newFolder);
+            currentFolders.push({ id: docRef.id, ...newFolder });
+            hasChanges = true;
+        }
+    }
+
+    if (hasChanges) {
+        await batch.commit();
+    }
+
+    return currentFolders;
 }

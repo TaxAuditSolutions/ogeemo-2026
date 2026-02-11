@@ -1,7 +1,9 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -27,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { updateUserProfile, updateUserAuth, type UserProfile } from '@/services/user-profile-service';
-import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
+import { LoaderCircle, Eye, EyeOff, UserPlus } from 'lucide-react';
 
 const userSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -51,6 +53,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const [showPassword, setShowPassword] = useState(false);
   const { auth } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -99,11 +102,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             ]);
 
             toast({ title: 'User Updated', description: `Information for ${values.name} has been updated.` });
+            onUserAdded();
+            onOpenChange(false);
         } else {
             // Creating new user
-            if (!auth) {
-                throw new Error("Authentication service is not available.");
-            }
+            if (!auth) throw new Error("Authentication service is not available.");
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
@@ -123,10 +126,18 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             });
             
             toast({ title: 'User Created', description: `Account for ${values.name} has been created.` });
+            
+            // Redirect to Contacts Hub to finalize the record in Ogeemo Users
+            const query = new URLSearchParams({
+                action: 'new',
+                source: 'user',
+                name: values.name,
+                email: values.email,
+                notes: `System User ID: ${values.employeeNumber || 'N/A'}\nNotes: ${values.notes || ''}`
+            });
+            router.push(`/contacts?${query.toString()}`);
+            onOpenChange(false);
         }
-      
-        onUserAdded();
-        onOpenChange(false);
 
     } catch (error: any) {
         let description = error.message || 'An unexpected error occurred.';
@@ -145,7 +156,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         <DialogHeader>
           <DialogTitle>{userToEdit ? 'Edit User Profile' : 'Add New User'}</DialogTitle>
           <DialogDescription>
-            {userToEdit ? 'Update the details for this user. The User ID can be changed below.' : 'Create a new user account with login credentials.'}
+            {userToEdit ? 'Update the details for this user.' : 'Create a new user account with login credentials.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -230,11 +241,17 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 </FormItem>
               )}
             />
+            {!userToEdit && (
+                <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 text-xs text-muted-foreground flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-primary shrink-0" />
+                    <span>Proceeding will create the login account and then finalize their contact record in the hub.</span>
+                </div>
+            )}
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" disabled={isSaving}>
                     {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                    {userToEdit ? 'Save Changes' : 'Create User'}
+                    {userToEdit ? 'Save Changes' : 'Create & Finalize'}
                 </Button>
             </DialogFooter>
           </form>

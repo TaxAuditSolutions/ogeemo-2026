@@ -22,7 +22,8 @@
             "email": { "type": "string", "format": "email" },
             "businessName": { "type": "string" },
             "craProgramAccountNumber": { "type": "string" },
-            "userId": { "type": "string" }
+            "userId": { "type": "string" },
+            "keywords": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["name", "userId"]
     },
@@ -33,7 +34,8 @@
         "properties": {
             "name": { "type": "string" },
             "parentId": { "type": "string" },
-            "userId": { "type": "string" }
+            "userId": { "type": "string" },
+            "isSystem": { "type": "boolean", "description": "Flag for protected system folders" }
         },
         "required": ["name", "userId"]
     },

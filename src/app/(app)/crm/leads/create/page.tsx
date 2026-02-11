@@ -23,12 +23,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, Edit } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, Edit, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { type Contact, getContacts } from '@/services/contact-service';
-import { type FolderData, getFolders as getContactFolders } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { type Company, getCompanies } from '@/services/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
 import { getLeadById, addLead, updateLead, type Lead, type LeadStatus } from '@/services/lead-service';
@@ -124,15 +124,14 @@ export default function CreateLeadPage() {
     }
   }, [leadId, router, toast, contacts]);
 
-  const handleSaveLead = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveLeadInternal = async () => {
     if (!contactName.trim() || !email.trim() || !user) {
         toast({
             variant: 'destructive',
             title: 'Missing Information',
             description: 'Please fill out at least the Contact Name, Email, and ensure you are logged in.',
         });
-        return;
+        return null;
     }
     
     setIsLoading(true);
@@ -150,16 +149,39 @@ export default function CreateLeadPage() {
     try {
         if (isEditing && leadId) {
             await updateLead(leadId, leadData);
-            toast({ title: 'Lead Updated', description: `Changes to "${contactName}" have been saved.` });
+            toast({ title: 'Lead Updated' });
         } else {
             await addLead({ ...leadData, userId: user.uid });
-            toast({ title: 'Lead Created', description: `"${contactName}" has been added to your leads list.` });
+            toast({ title: 'Lead Created' });
         }
-        router.push('/crm/plan');
+        return leadData;
     } catch (error) {
         console.error("Failed to save lead:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the lead to the database.' });
+        return null;
+    } finally {
         setIsLoading(false);
+    }
+  };
+
+  const handleSaveLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await saveLeadInternal();
+    if (result) router.push('/crm/plan');
+  };
+
+  const handleSaveToContacts = async () => {
+    const result = await saveLeadInternal();
+    if (result) {
+        const query = new URLSearchParams({
+            action: 'new',
+            source: 'lead',
+            name: result.contactName,
+            email: result.email,
+            company: result.companyName,
+            notes: result.notes,
+        });
+        router.push(`/contacts?${query.toString()}`);
     }
   };
   
@@ -330,7 +352,10 @@ export default function CreateLeadPage() {
                   />
               </div>
               </CardContent>
-              <CardFooter className="justify-end">
+              <CardFooter className="justify-between gap-4">
+                  <Button type="button" variant="outline" onClick={handleSaveToContacts} disabled={isLoading}>
+                      <UserPlus className="mr-2 h-4 w-4" /> Save to Contacts Hub
+                  </Button>
                   <Button type="submit" disabled={isLoading}>
                       {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                       {isEditing ? 'Save Changes' : 'Save Lead'}

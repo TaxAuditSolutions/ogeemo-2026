@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -17,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -279,11 +279,17 @@ export default function CrmPlanPage() {
     <>
       <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
         <header className="flex items-center justify-between">
-          <div className="w-1/4">
+          <div className="w-1/3 flex gap-2">
               <Button asChild variant="outline">
                   <Link href="/action-manager">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Dashboard
+                      Back to Action Manager
+                  </Link>
+              </Button>
+              <Button asChild variant="outline">
+                  <Link href="/contacts">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Contact Hub
                   </Link>
               </Button>
           </div>
@@ -293,7 +299,7 @@ export default function CrmPlanPage() {
               </h1>
               <p className="text-muted-foreground text-sm">Managing Prospects from the Contacts Hub</p>
           </div>
-          <div className="w-1/4 flex justify-end">
+          <div className="w-1/3 flex justify-end">
               <Button asChild>
                   <Link href="/crm/leads/create">
                       <Plus className="mr-2 h-4 w-4" />

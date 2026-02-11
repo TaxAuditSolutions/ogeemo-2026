@@ -20,6 +20,7 @@ import {
   Files,
   Check,
   ChevronsUpDown,
+  X,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '../ui/checkbox';
+import Link from 'next/link';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -526,11 +528,18 @@ export function ContactsView() {
   return (
     <>
       <div className="flex flex-col h-full">
-        <header className="text-center py-4 sm:py-6 px-4 sm:px-6">
+        <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
           <h1 className="text-3xl font-bold font-headline text-primary">
             Ogeemo Contact Manager
           </h1>
           <p className="text-muted-foreground">Manage your contacts and client relationships</p>
+          <div className="absolute top-4 right-4">
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/action-manager" aria-label="Close Contact Manager">
+                    <X className="h-5 w-5" />
+                </Link>
+            </Button>
+          </div>
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">

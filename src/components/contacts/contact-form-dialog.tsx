@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Phone, Mic, Square, FolderPlus, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2 } from 'lucide-react';
+import { Phone, Mic, Square, FolderPlus, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -341,13 +342,19 @@ export default function ContactFormDialog({
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0">
-                <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center shrink-0">
+                <DialogHeader className="p-6 pb-4 border-b text-center sm:text-center shrink-0 relative">
                     <DialogTitle className="text-2xl font-bold font-headline text-primary">
                         {contactToEdit ? "Edit Contact" : "New Contact"}
                     </DialogTitle>
                     <DialogDescription>
                         {contactToEdit ? `Editing details for ${contactToEdit.name}.` : `Create a new contact record.`}
                     </DialogDescription>
+                    <div className="absolute top-4 right-4">
+                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                            <X className="h-5 w-5" />
+                            <span className="sr-only">Close</span>
+                        </Button>
+                    </div>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">

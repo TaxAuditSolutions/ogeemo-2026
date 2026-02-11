@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -696,14 +697,20 @@ export function ContactsView() {
       <AlertDialog open={!!contactToDelete} onOpenChange={() => setContactToDelete(null)}>
           <AlertDialogContent>
               <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{contactToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
-              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
       
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} contact(s)?</AlertDialogDescription></AlertDialogHeader>
-            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 

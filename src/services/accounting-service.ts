@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -546,40 +547,49 @@ async function getCategories<T extends BaseCategory>(
   const batch = writeBatch(db);
   let hasWrites = false;
 
-  const standardCategoriesByLine: Record<string, T[]> = {};
-  existingCategories.forEach(cat => {
-    if (cat.categoryNumber && !cat.categoryNumber.startsWith('C-')) {
-        if (!standardCategoriesByLine[cat.categoryNumber]) {
-            standardCategoriesByLine[cat.categoryNumber] = [];
-        }
-        standardCategoriesByLine[cat.categoryNumber].push(cat);
-    }
-  });
+  // Idempotent Seeding Logic: 
+  // We check for existing structural categories by categoryNumber instead of random IDs.
+  const existingByNumber = new Map(existingCategories.map(c => [c.categoryNumber, c]));
 
-  for (const line in standardCategoriesByLine) {
-    const duplicates = standardCategoriesByLine[line];
-    if (duplicates && duplicates.length > 1) {
-        const master = duplicates[0];
-        const duplicatesToDelete = duplicates.slice(1);
-
-        for (const duplicate of duplicatesToDelete) {
-            const txQuery = query(collection(db, transactionCollectionName), where("userId", "==", userId), where(categoryFieldName, "==", duplicate.categoryNumber));
-            const txSnapshot = await getDocs(txQuery);
-            txSnapshot.forEach(txDoc => {
-                batch.update(txDoc.ref, { [categoryFieldName]: master.categoryNumber });
-            });
-            batch.delete(doc(db, collectionName, duplicate.id));
-            hasWrites = true;
-        }
-    }
+  for (const stdCat of standardCategories) {
+      const existing = existingByNumber.get(stdCat.line);
+      if (!existing) {
+          const docRef = doc(collection(db, collectionName));
+          batch.set(docRef, { 
+              name: stdCat.description, 
+              userId, 
+              categoryNumber: stdCat.line, 
+              explanation: stdCat.explanation, 
+              isArchived: false 
+          });
+          hasWrites = true;
+      }
   }
 
-  const existingLineNumbers = new Set(existingCategories.map(c => c.categoryNumber));
-  for (const stdCat of standardCategories) {
-      if (!existingLineNumbers.has(stdCat.line)) {
-          const docRef = doc(collection(db, collectionName));
-          batch.set(docRef, { name: stdCat.description, userId, categoryNumber: stdCat.line, explanation: stdCat.explanation, isArchived: false });
-          hasWrites = true;
+  // Deduplication logic: If multiple categories exist with the same name/number (from historical bugs)
+  const groupedByNumber: Record<string, T[]> = {};
+  existingCategories.forEach(cat => {
+      if (cat.categoryNumber) {
+          if (!groupedByNumber[cat.categoryNumber]) groupedByNumber[cat.categoryNumber] = [];
+          groupedByNumber[cat.categoryNumber].push(cat);
+      }
+  });
+
+  for (const num in groupedByNumber) {
+      const matches = groupedByNumber[num];
+      if (matches.length > 1) {
+          const master = matches[0];
+          const duplicates = matches.slice(1);
+          for (const dupe of duplicates) {
+              // Reassign transactions from duplicate to master
+              const txQuery = query(collection(db, transactionCollectionName), where("userId", "==", userId), where(categoryFieldName, "==", dupe.categoryNumber));
+              const txSnapshot = await getDocs(txQuery);
+              txSnapshot.forEach(txDoc => {
+                  batch.update(txDoc.ref, { [categoryFieldName]: master.categoryNumber });
+              });
+              batch.delete(doc(db, collectionName, dupe.id));
+              hasWrites = true;
+          }
       }
   }
 

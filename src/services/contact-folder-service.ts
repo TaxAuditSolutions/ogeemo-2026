@@ -12,9 +12,7 @@ import {
     query, 
     where, 
     writeBatch,
-    Timestamp,
-    orderBy,
-    setDoc,
+    Timestamp 
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 
@@ -28,6 +26,7 @@ export interface FolderData {
 }
 
 const FOLDERS_COLLECTION = 'contactFolders';
+const CONTACTS_COLLECTION = 'contacts';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -80,10 +79,13 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 
 /**
  * Ensures that hardcoded system folders exist for the user.
+ * This function is idempotent: it will claim existing folders by name or merge duplicates.
  */
 export async function ensureSystemFolders(userId: string): Promise<FolderData[]> {
     const db = getDb();
-    const existing = await getFolders(userId);
+    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+    const existing = snapshot.docs.map(docToFolder);
     
     const systemFoldersConfig = [
         { name: 'Ogeemo Users', parent: null },
@@ -103,13 +105,50 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     let hasChanges = false;
 
     for (const config of systemFoldersConfig) {
-        const exists = currentFolders.find(f => f.name === config.name && f.isSystem);
-        if (!exists) {
-            let parentId = null;
+        // 1. Check for folders with the same name (case-insensitive)
+        const matches = currentFolders.filter(f => f.name.toLowerCase() === config.name.toLowerCase());
+        
+        let masterFolder: FolderData;
+
+        if (matches.length > 0) {
+            // Pick the first match as our master record for this structural category
+            masterFolder = matches[0];
+            
+            // Claim it as a system folder if not already marked
+            if (!masterFolder.isSystem) {
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
+                masterFolder.isSystem = true;
+                hasChanges = true;
+            }
+
+            // 2. Resolve duplicates: if multiple folders exist with the same name, merge them
+            if (matches.length > 1) {
+                const duplicates = matches.slice(1);
+                for (const dupe of duplicates) {
+                    // Reassign all contacts in the duplicate folder to the master folder
+                    const contactsQuery = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), where("folderId", "==", dupe.id));
+                    const contactsSnapshot = await getDocs(contactsQuery);
+                    contactsSnapshot.forEach(contactDoc => {
+                        batch.update(contactDoc.ref, { folderId: masterFolder.id });
+                    });
+
+                    // Delete the duplicate folder
+                    batch.delete(doc(db, FOLDERS_COLLECTION, dupe.id));
+                    
+                    // Remove from our local memory list so subsequent steps don't see it
+                    const index = currentFolders.findIndex(f => f.id === dupe.id);
+                    if (index > -1) currentFolders.splice(index, 1);
+                    hasChanges = true;
+                }
+            }
+        } else {
+            // 3. Create the folder if it doesn't exist
+            let parentId: string | null = null;
             if (config.parent) {
-                const parent = currentFolders.find(f => f.name === config.parent && f.isSystem);
-                if (parent) {
-                    parentId = parent.id;
+                // Look for the master version of the parent
+                const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
+                if (parentMatch) {
+                    parentId = parentMatch.id;
                 }
             }
 
@@ -122,8 +161,19 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
                 createdAt: new Date(),
             };
             batch.set(docRef, newFolder);
-            currentFolders.push({ id: docRef.id, ...newFolder });
+            masterFolder = { id: docRef.id, ...newFolder };
+            currentFolders.push(masterFolder);
             hasChanges = true;
+        }
+
+        // 4. Ensure parent assignment is correct for subfolders
+        if (config.parent) {
+            const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
+            if (parentMatch && masterFolder.parentId !== parentMatch.id) {
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { parentId: parentMatch.id });
+                masterFolder.parentId = parentMatch.id;
+                hasChanges = true;
+            }
         }
     }
 

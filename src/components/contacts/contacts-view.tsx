@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -49,6 +48,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -682,7 +682,10 @@ export function ContactsView() {
       
       <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and contacts?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and contacts?</AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>

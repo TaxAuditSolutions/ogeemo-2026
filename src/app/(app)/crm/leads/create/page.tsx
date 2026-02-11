@@ -23,17 +23,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, Edit, UserPlus } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { type Contact, getContacts, getContactById, addContact, updateContact } from '@/services/contact-service';
-import { ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { ensureSystemFolders, addFolder, type FolderData } from '@/services/contact-folder-service';
 import { type Company, getCompanies } from '@/services/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 export default function CreateLeadPage() {
@@ -52,6 +53,7 @@ export default function CreateLeadPage() {
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<string>('Unscheduled Leads');
   const [notes, setNotes] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -61,7 +63,8 @@ export default function CreateLeadPage() {
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   
-  const [prospectsFolderId, setProspectsFolderId] = useState<string | null>(null);
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const loadDropdownData = useCallback(async () => {
     if (!user) return;
@@ -78,12 +81,12 @@ export default function CreateLeadPage() {
         setContacts(contactsData);
         
         const prospectsFolder = foldersData.find(f => f.name === 'Prospects' && f.isSystem);
-        if (prospectsFolder) setProspectsFolderId(prospectsFolder.id);
+        if (prospectsFolder && !selectedFolderId) setSelectedFolderId(prospectsFolder.id);
 
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
     }
-  }, [user, toast]);
+  }, [user, toast, selectedFolderId]);
 
   useEffect(() => {
     loadDropdownData();
@@ -103,6 +106,7 @@ export default function CreateLeadPage() {
               setPhone(leadToEdit.cellPhone || leadToEdit.businessPhone || '');
               setStatus(leadToEdit.status || 'Unscheduled Leads');
               setNotes(leadToEdit.notes || '');
+              setSelectedFolderId(leadToEdit.folderId || '');
               setSelectedContact(leadToEdit);
             } else {
               toast({ variant: 'destructive', title: 'Error', description: 'Could not find the record.' });
@@ -120,8 +124,8 @@ export default function CreateLeadPage() {
 
   const handleSaveLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactName.trim() || !user || !prospectsFolderId) {
-        toast({ variant: 'destructive', title: 'Missing Information' });
+    if (!contactName.trim() || !user || !selectedFolderId) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a name and select a folder.' });
         return;
     }
     
@@ -134,7 +138,7 @@ export default function CreateLeadPage() {
             cellPhone: phone,
             status: status,
             notes: notes,
-            folderId: prospectsFolderId,
+            folderId: selectedFolderId,
         };
 
         if (isEditing && contactId) {
@@ -175,7 +179,27 @@ export default function CreateLeadPage() {
     setEmail(contact.email || '');
     setCompanyName(contact.businessName || '');
     setPhone(contact.cellPhone || contact.businessPhone || '');
+    setSelectedFolderId(contact.folderId || '');
     setIsContactPopoverOpen(false);
+  };
+
+  const handleCreateFolder = async () => {
+      if (!user || !newFolderName.trim()) return;
+      try {
+          const prospectsFolder = contactFolders.find(f => f.name === 'Prospects' && f.isSystem);
+          const newFolder = await addFolder({ 
+              name: newFolderName.trim(), 
+              userId: user.uid, 
+              parentId: prospectsFolder?.id || null 
+          });
+          setContactFolders(prev => [...prev, newFolder]);
+          setSelectedFolderId(newFolder.id);
+          toast({ title: "Folder Created" });
+          setIsNewFolderDialogOpen(false);
+          setNewFolderName('');
+      } catch (error: any) {
+          toast({ variant: "destructive", title: "Failed to create folder", description: error.message });
+      }
   };
 
   return (
@@ -207,7 +231,7 @@ export default function CreateLeadPage() {
               <CardHeader>
               <CardTitle>Prospect Information</CardTitle>
               <CardDescription>
-                  This record is stored in your structural "Prospects" contact folder.
+                  This record is managed as a Contact within your Prospects hierarchy.
               </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -246,7 +270,7 @@ export default function CreateLeadPage() {
                             </Command>
                         </PopoverContent>
                     </Popover>
-                    <Button type="button" variant="outline" onClick={() => { setSelectedContact(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New</Button>
+                    <Button type="button" variant="outline" onClick={handleNewContactClick}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,6 +278,24 @@ export default function CreateLeadPage() {
                     <Label htmlFor="company-name">Company Name</Label>
                     <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Inc." />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Folder <span className="text-destructive">*</span></Label>
+                    <div className="flex gap-2">
+                        <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a folder" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {contactFolders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}>
+                            <FolderPlus className="h-4 w-4" />
+                        </Button>
+                    </div>
+                  </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                   <Label htmlFor="lead-status">Pipeline Stage</Label>
                   <Select value={status} onValueChange={(value) => setStatus(value)}>
@@ -267,12 +309,12 @@ export default function CreateLeadPage() {
                       </SelectContent>
                   </Select>
                   </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input id="email" type="email" placeholder="jane.smith@acme.com" value={email} onChange={e => setEmail(e.target.value)} />
                   </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input id="phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
@@ -293,7 +335,7 @@ export default function CreateLeadPage() {
                   <div className="flex gap-2">
                     {isEditing && (
                         <Button type="button" variant="outline" onClick={handlePromoteToContacts} disabled={isLoading}>
-                            <UserPlus className="mr-2 h-4 w-4" /> Promote to Client
+                            Promote to Client
                         </Button>
                     )}
                   </div>
@@ -305,6 +347,7 @@ export default function CreateLeadPage() {
           </form>
         </Card>
       </div>
+
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
@@ -316,8 +359,21 @@ export default function CreateLeadPage() {
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
-        forceFolderId={prospectsFolderId || undefined}
       />
+
+      <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Create New Prospect Folder</DialogTitle></DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="folder-name-new">Folder Name</Label>
+              <Input id="folder-name-new" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={async (e) => { if (e.key === 'Enter') await handleCreateFolder() }} />
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateFolder}>Create</Button>
+            </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </>
   );
 }

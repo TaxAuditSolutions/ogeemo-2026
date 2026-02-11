@@ -236,7 +236,7 @@ export default function ContactFormDialog({
 
         const dataToSave = {
             ...values,
-            folderId: forceFolderId || values.folderId,
+            folderId: values.folderId,
             primaryPhoneType: values.primaryPhoneType || null,
         };
 
@@ -374,7 +374,7 @@ export default function ContactFormDialog({
                                                 <FormLabel>Folder <span className="text-destructive">*</span></FormLabel> 
                                                 <div className="flex gap-2">
                                                     <FormControl>
-                                                        <Select onValueChange={field.onChange} value={field.value} disabled={!!forceFolderId}>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Select a folder" />
                                                             </SelectTrigger>
@@ -383,7 +383,7 @@ export default function ContactFormDialog({
                                                             </SelectContent>
                                                         </Select>
                                                     </FormControl> 
-                                                    <Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)} disabled={!!forceFolderId}>
+                                                    <Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}>
                                                         <FolderPlus className="h-4 w-4" />
                                                     </Button>
                                                 </div>

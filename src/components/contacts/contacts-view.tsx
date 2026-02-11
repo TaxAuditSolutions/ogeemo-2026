@@ -49,7 +49,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -226,7 +225,7 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={setRenameInputValue}
+                onRenameChange={onRenameChange}
                 onRenameConfirm={onRenameConfirm}
                 onRenameCancel={onRenameCancel}
             />
@@ -251,7 +250,7 @@ export function ContactsView() {
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
-  const [expandedFolders, setExpandedFolders] = useState<Set<Set<string>>>(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');

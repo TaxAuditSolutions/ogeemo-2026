@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -123,6 +122,26 @@ export default function CreateLeadPage() {
     }
   }, [contactId, router, toast, contacts]);
 
+  const handleSelectContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setContactName(contact.name);
+    setEmail(contact.email || '');
+    setCompanyName(contact.businessName || '');
+    setPhone(contact.cellPhone || contact.businessPhone || '');
+    setSelectedFolderId(contact.folderId || '');
+    setIsContactPopoverOpen(false);
+  };
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+    if (isEditing) {
+        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+    } else {
+        setContacts(prev => [...prev, savedContact]);
+    }
+    handleSelectContact(savedContact);
+    setIsContactFormOpen(false);
+  };
+
   const handleSaveLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactName.trim() || !user || !selectedFolderId) {
@@ -172,16 +191,6 @@ export default function CreateLeadPage() {
     } finally {
         setIsLoading(false);
     }
-  };
-  
-  const handleSelectContact = (contact: Contact) => {
-    setSelectedContact(contact);
-    setContactName(contact.name);
-    setEmail(contact.email || '');
-    setCompanyName(contact.businessName || '');
-    setPhone(contact.cellPhone || contact.businessPhone || '');
-    setSelectedFolderId(contact.folderId || '');
-    setIsContactPopoverOpen(false);
   };
 
   const handleNewContactClick = () => {

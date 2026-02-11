@@ -27,11 +27,10 @@ import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, Edit, UserPlus
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
-import { type Contact, getContacts } from '@/services/contact-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { type Contact, getContacts, getContactById, addContact, updateContact } from '@/services/contact-service';
+import { ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { type Company, getCompanies } from '@/services/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
-import { getLeadById, addLead, updateLead, type Lead, type LeadStatus } from '@/services/lead-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -45,18 +44,16 @@ export default function CreateLeadPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const leadId = searchParams.get('id');
+  const contactId = searchParams.get('id');
 
   const [contactName, setContactName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [source, setSource] = useState('');
-  const [status, setStatus] = useState<LeadStatus>('Unscheduled Leads');
+  const [status, setStatus] = useState<string>('Unscheduled Leads');
   const [notes, setNotes] = useState('');
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
-  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -64,11 +61,13 @@ export default function CreateLeadPage() {
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   
+  const [prospectsFolderId, setProspectsFolderId] = useState<string | null>(null);
+
   const loadDropdownData = useCallback(async () => {
     if (!user) return;
     try {
         const [foldersData, companiesData, industriesData, contactsData] = await Promise.all([
-            getContactFolders(user.uid),
+            ensureSystemFolders(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
             getContacts(user.uid),
@@ -77,6 +76,10 @@ export default function CreateLeadPage() {
         setCompanies(companiesData);
         setCustomIndustries(industriesData);
         setContacts(contactsData);
+        
+        const prospectsFolder = foldersData.find(f => f.name === 'Prospects' && f.isSystem);
+        if (prospectsFolder) setProspectsFolderId(prospectsFolder.id);
+
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load necessary data.' });
     }
@@ -87,132 +90,91 @@ export default function CreateLeadPage() {
   }, [loadDropdownData]);
   
   useEffect(() => {
-    if (leadId) {
+    if (contactId && contacts.length > 0) {
       const loadLead = async () => {
           setIsLoading(true);
           try {
-            const leadToEdit = await getLeadById(leadId);
+            const leadToEdit = await getContactById(contactId);
             if (leadToEdit) {
               setIsEditing(true);
-              setContactName(leadToEdit.contactName || '');
-              setCompanyName(leadToEdit.companyName || '');
+              setContactName(leadToEdit.name || '');
+              setCompanyName(leadToEdit.businessName || '');
               setEmail(leadToEdit.email || '');
-              setPhone(leadToEdit.phone || '');
-              setSource(leadToEdit.source || '');
+              setPhone(leadToEdit.cellPhone || leadToEdit.businessPhone || '');
               setStatus(leadToEdit.status || 'Unscheduled Leads');
               setNotes(leadToEdit.notes || '');
-
-              // Try to find and set the matching contact
-              const matchingContact = contacts.find(c => c.name === leadToEdit.contactName && c.email === leadToEdit.email);
-              if (matchingContact) {
-                  setSelectedContact(matchingContact);
-              }
-
+              setSelectedContact(leadToEdit);
             } else {
-              toast({ variant: 'destructive', title: 'Error', description: 'Could not find the lead to edit.' });
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not find the record.' });
               router.push('/crm/plan');
             }
           } catch (error) {
-             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load lead data.' });
+             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load data.' });
           } finally {
               setIsLoading(false);
           }
       }
-      if (contacts.length > 0) { // Ensure contacts are loaded before trying to find a match
-        loadLead();
-      }
+      loadLead();
     }
-  }, [leadId, router, toast, contacts]);
+  }, [contactId, router, toast, contacts]);
 
-  const saveLeadInternal = async () => {
-    if (!contactName.trim() || !email.trim() || !user) {
-        toast({
-            variant: 'destructive',
-            title: 'Missing Information',
-            description: 'Please fill out at least the Contact Name, Email, and ensure you are logged in.',
-        });
-        return null;
+  const handleSaveLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactName.trim() || !user || !prospectsFolderId) {
+        toast({ variant: 'destructive', title: 'Missing Information' });
+        return;
     }
     
     setIsLoading(true);
-
-    const leadData: Omit<Lead, 'id' | 'userId'> = {
-        contactName,
-        companyName,
-        email,
-        phone,
-        source,
-        status,
-        notes,
-    };
-
     try {
-        if (isEditing && leadId) {
-            await updateLead(leadId, leadData);
-            toast({ title: 'Lead Updated' });
+        const data: Partial<Contact> = {
+            name: contactName,
+            businessName: companyName,
+            email: email,
+            cellPhone: phone,
+            status: status,
+            notes: notes,
+            folderId: prospectsFolderId,
+        };
+
+        if (isEditing && contactId) {
+            await updateContact(contactId, data);
+            toast({ title: 'Prospect Updated' });
         } else {
-            await addLead({ ...leadData, userId: user.uid });
-            toast({ title: 'Lead Created' });
+            await addContact({ ...data, userId: user.uid } as any);
+            toast({ title: 'Prospect Added to Pipeline' });
         }
-        return leadData;
-    } catch (error) {
-        console.error("Failed to save lead:", error);
-        toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the lead to the database.' });
-        return null;
+        router.push('/crm/plan');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
         setIsLoading(false);
     }
   };
 
-  const handleSaveLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = await saveLeadInternal();
-    if (result) router.push('/crm/plan');
-  };
+  const handlePromoteToContacts = async () => {
+    if (!contactId || !user) return;
+    setIsLoading(true);
+    try {
+        const clientsFolder = contactFolders.find(f => f.name === 'Clients' && f.isSystem);
+        if (!clientsFolder) throw new Error("Could not find Clients folder.");
 
-  const handleSaveToContacts = async () => {
-    const result = await saveLeadInternal();
-    if (result) {
-        const query = new URLSearchParams({
-            action: 'new',
-            source: 'lead',
-            name: result.contactName,
-            email: result.email,
-            company: result.companyName,
-            notes: result.notes,
-        });
-        router.push(`/contacts?${query.toString()}`);
+        await updateContact(contactId, { folderId: clientsFolder.id, status: 'Completed Leads' });
+        toast({ title: 'Success!', description: `${contactName} is now a client.` });
+        router.push('/contacts');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Promotion Failed', description: error.message });
+    } finally {
+        setIsLoading(false);
     }
   };
   
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      if (isEditing) {
-          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-          if(selectedContact?.id === savedContact.id) {
-            setSelectedContact(savedContact); // Update selected contact details
-            setCompanyName(savedContact.businessName || ''); // Update company name field
-          }
-      } else {
-          setContacts(prev => [savedContact, ...prev]);
-      }
-      handleSelectContact(savedContact); // This will set the name, email, etc.
-      setIsContactFormOpen(false);
-      setContactToEdit(null);
-  };
-  
-  const handleEditContact = () => {
-    if (selectedContact) {
-      setContactToEdit(selectedContact);
-      setIsContactFormOpen(true);
-    }
-  };
-
   const handleSelectContact = (contact: Contact) => {
     setSelectedContact(contact);
     setContactName(contact.name);
     setEmail(contact.email || '');
     setCompanyName(contact.businessName || '');
-    setPhone(contact.cellPhone || contact.businessPhone || contact.homePhone || '');
+    setPhone(contact.cellPhone || contact.businessPhone || '');
     setIsContactPopoverOpen(false);
   };
 
@@ -224,12 +186,12 @@ export default function CreateLeadPage() {
               <Button asChild variant="outline">
                   <Link href="/crm/plan">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to CRM Leads
+                      Back to CRM
                   </Link>
               </Button>
           </div>
           <h1 className="text-3xl font-bold font-headline text-primary">
-            {isEditing ? 'Edit Lead' : 'Create New Lead'}
+            {isEditing ? 'Manage Prospect' : 'New CRM Prospect'}
           </h1>
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
               <Button asChild variant="ghost" size="icon">
@@ -243,14 +205,14 @@ export default function CreateLeadPage() {
         <Card className="w-full max-w-2xl">
           <form onSubmit={handleSaveLead}>
               <CardHeader>
-              <CardTitle>Lead Information</CardTitle>
+              <CardTitle>Prospect Information</CardTitle>
               <CardDescription>
-                  {isEditing ? 'Update the information for this lead.' : 'Fill out the form below to add a new lead to your pipeline.'}
+                  This record is stored in your structural "Prospects" contact folder.
               </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Contact Name</Label>
+                <Label>Contact Name <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                     <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -284,22 +246,27 @@ export default function CreateLeadPage() {
                             </Command>
                         </PopoverContent>
                     </Popover>
-                    <Button type="button" variant="outline" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New</Button>
+                    <Button type="button" variant="outline" onClick={() => { setSelectedContact(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New</Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <div className="flex gap-2 items-center">
-                    <div className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {companyName || <span className="text-muted-foreground">Not set</span>}
-                    </div>
-                    {selectedContact && (
-                        <Button type="button" variant="outline" onClick={handleEditContact}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            {companyName ? 'Edit' : 'Add'} Company
-                        </Button>
-                    )}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Inc." />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="lead-status">Pipeline Stage</Label>
+                  <Select value={status} onValueChange={(value) => setStatus(value)}>
+                      <SelectTrigger id="lead-status">
+                      <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                      <SelectItem value="Unscheduled Leads">Unscheduled</SelectItem>
+                      <SelectItem value="Scheduled Leads">Scheduled</SelectItem>
+                      <SelectItem value="Completed Leads">Completed</SelectItem>
+                      </SelectContent>
+                  </Select>
+                  </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -311,41 +278,11 @@ export default function CreateLeadPage() {
                   <Input id="phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
                   </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                  <Label htmlFor="lead-source">Lead Source</Label>
-                  <Select value={source} onValueChange={setSource}>
-                      <SelectTrigger id="lead-source">
-                      <SelectValue placeholder="Select a source" />
-                      </SelectTrigger>
-                      <SelectContent>
-                      <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="referral">Referral</SelectItem>
-                      <SelectItem value="trade-show">Trade Show</SelectItem>
-                      <SelectItem value="advertisement">Advertisement</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  </div>
-                  <div className="space-y-2">
-                  <Label htmlFor="lead-status">Status</Label>
-                  <Select value={status} onValueChange={(value) => setStatus(value as LeadStatus)}>
-                      <SelectTrigger id="lead-status">
-                      <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                      <SelectItem value="Unscheduled Leads">Unscheduled Leads</SelectItem>
-                      <SelectItem value="Scheduled Leads">Scheduled Leads</SelectItem>
-                      <SelectItem value="Completed Leads">Completed Leads</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  </div>
-              </div>
               <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
                   id="notes"
-                  placeholder="Add any relevant details about this lead..."
+                  placeholder="History, preferences, or other background..."
                   rows={4}
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
@@ -353,12 +290,16 @@ export default function CreateLeadPage() {
               </div>
               </CardContent>
               <CardFooter className="justify-between gap-4">
-                  <Button type="button" variant="outline" onClick={handleSaveToContacts} disabled={isLoading}>
-                      <UserPlus className="mr-2 h-4 w-4" /> Save to Contacts Hub
-                  </Button>
+                  <div className="flex gap-2">
+                    {isEditing && (
+                        <Button type="button" variant="outline" onClick={handlePromoteToContacts} disabled={isLoading}>
+                            <UserPlus className="mr-2 h-4 w-4" /> Promote to Client
+                        </Button>
+                    )}
+                  </div>
                   <Button type="submit" disabled={isLoading}>
                       {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                      {isEditing ? 'Save Changes' : 'Save Lead'}
+                      {isEditing ? 'Save Changes' : 'Add to Pipeline'}
                   </Button>
               </CardFooter>
           </form>
@@ -367,14 +308,15 @@ export default function CreateLeadPage() {
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}
-        contactToEdit={contactToEdit}
+        contactToEdit={null}
         folders={contactFolders}
         onFoldersChange={setContactFolders}
-        onSave={handleContactSave}
+        onSave={(c) => handleSelectContact(c)}
         companies={companies}
         onCompaniesChange={setCompanies}
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
+        forceFolderId={prospectsFolderId || undefined}
       />
     </>
   );

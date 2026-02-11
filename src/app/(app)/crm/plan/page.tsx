@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -31,7 +31,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getLeads, updateLead, deleteLead, type Lead, type LeadStatus } from '@/services/lead-service';
+import { getContacts, updateContact, deleteContacts, type Contact } from '@/services/contact-service';
+import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { getAllCrmActions, type Action as CrmAction } from '@/services/crm-action-service';
 
 
@@ -41,13 +42,13 @@ const ItemTypes = {
 
 // --- Draggable Lead Card Component ---
 interface LeadCardProps {
-  lead: Lead;
+  lead: Contact;
   index: number;
   hasPlan: boolean;
-  moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
-  onEdit: (lead: Lead) => void;
-  onDelete: (lead: Lead) => void;
-  onPlanAction: (lead: Lead) => void;
+  moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: string) => void;
+  onEdit: (lead: Contact) => void;
+  onDelete: (lead: Contact) => void;
+  onPlanAction: (lead: Contact) => void;
 }
 
 const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanAction }: LeadCardProps) => {
@@ -63,11 +64,11 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
 
     const [, drop] = useDrop({
         accept: ItemTypes.LEAD,
-        hover(item: Lead & { index: number }, monitor) {
+        hover(item: Contact & { index: number }, monitor) {
             if (!ref.current || item.id === lead.id) {
                 return;
             }
-            moveCard(item.index, index, lead.status);
+            moveCard(item.index, index, lead.status || 'Unscheduled Leads');
             item.index = index;
         },
     });
@@ -79,8 +80,8 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
             <Card className="mb-2 group hover:bg-muted/50 cursor-grab active:cursor-grabbing">
                 <CardContent className="p-3 flex justify-between items-start">
                     <div className="flex-1" onClick={() => onEdit(lead)}>
-                        <p className="font-semibold text-sm">{lead.contactName}</p>
-                        <p className="text-xs text-muted-foreground">{lead.companyName}</p>
+                        <p className="font-semibold text-sm">{lead.name}</p>
+                        <p className="text-xs text-muted-foreground">{lead.businessName}</p>
                     </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -91,7 +92,7 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => onEdit(lead)}>
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit Lead
+                                Edit Prospect
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onPlanAction(lead)}>
                                 <Route className="mr-2 h-4 w-4" />
@@ -99,7 +100,7 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onDelete(lead)} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Lead
+                                Delete Prospect
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -111,39 +112,33 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
 
 // --- Droppable Column Component ---
 interface LeadColumnProps {
-    status: LeadStatus;
-    leads: Lead[];
+    status: string;
+    leads: Contact[];
     allCrmActions: CrmAction[];
-    moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => void;
-    onDropCard: (lead: Lead, targetStatus: LeadStatus) => void;
-    onEditLead: (lead: Lead) => void;
-    onDeleteLead: (lead: Lead) => void;
-    onPlanAction: (lead: Lead) => void;
+    moveCard: (dragIndex: number, hoverIndex: number, sourceStatus: string) => void;
+    onDropCard: (lead: Contact, targetStatus: string) => void;
+    onEditLead: (lead: Contact) => void;
+    onDeleteLead: (lead: Contact) => void;
+    onPlanAction: (lead: Contact) => void;
 }
 
 const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEditLead, onDeleteLead, onPlanAction }: LeadColumnProps) => {
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.LEAD,
-        drop: (item: Lead) => onDropCard(item, status),
+        drop: (item: Contact) => onDropCard(item, status),
         collect: (monitor) => ({
             isOver: monitor.isOver(),
         }),
     });
 
-    const columnTitles: Record<LeadStatus, string> = {
-      "Unscheduled Leads": "Unscheduled Leads",
-      "Scheduled Leads": "Scheduled Leads",
-      "Completed Leads": "Completed Leads",
-    };
-
     return (
-        <Card ref={drop} className={`flex flex-col ${isOver ? 'bg-primary/10' : ''}`}>
+        <Card ref={drop} className={`flex flex-col h-full min-h-[400px] ${isOver ? 'bg-primary/10' : ''}`}>
             <CardHeader className="text-center">
-                <CardTitle>{columnTitles[status]}</CardTitle>
+                <CardTitle>{status}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
                 {leads.map((lead, index) => {
-                    const hasPlan = allCrmActions.some(action => action.leadName === lead.contactName);
+                    const hasPlan = allCrmActions.some(action => action.leadName === lead.name);
                     return (
                         <LeadCard 
                             key={lead.id} 
@@ -159,7 +154,7 @@ const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEdit
                 })}
                 {leads.length === 0 && (
                     <div className="text-sm text-muted-foreground text-center pt-8 h-full">
-                        <p>No leads in this stage.</p>
+                        <p>No prospects in this stage.</p>
                     </div>
                 )}
             </CardContent>
@@ -169,10 +164,12 @@ const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEdit
 
 
 export default function CrmPlanPage() {
-  const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [prospects, setProspects] = useState<Contact[]>([]);
   const [allCrmActions, setAllCrmActions] = useState<CrmAction[]>([]);
-  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [prospectsFolderId, setProspectsFolderId] = useState<string | null>(null);
+
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -183,15 +180,28 @@ export default function CrmPlanPage() {
         if (!user) return;
         setIsLoading(true);
         try {
-            const [leadsFromDb, actionsFromDb] = await Promise.all([
-                getLeads(user.uid),
+            const folders = await ensureSystemFolders(user.uid);
+            const prospectsFolder = folders.find(f => f.name === 'Prospects' && f.isSystem);
+            
+            if (!prospectsFolder) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not find the Prospects folder.' });
+                return;
+            }
+            
+            setProspectsFolderId(prospectsFolder.id);
+
+            const [contactsFromDb, actionsFromDb] = await Promise.all([
+                getContacts(user.uid),
                 getAllCrmActions(user.uid),
             ]);
-            setAllLeads(leadsFromDb);
+
+            // Filter for only contacts in the Prospects folder
+            const leads = contactsFromDb.filter(c => c.folderId === prospectsFolder.id);
+            setProspects(leads);
             setAllCrmActions(actionsFromDb);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error loading data' });
-            console.error("Failed to load leads or actions from firestore:", error);
+            console.error("Failed to load CRM data:", error);
         } finally {
             setIsLoading(false);
         }
@@ -199,79 +209,68 @@ export default function CrmPlanPage() {
     loadData();
   }, [user, toast]);
 
-  const updateLeadsAndStorage = async (updatedLeads: Lead[]) => {
-      setAllLeads(updatedLeads);
-      // Here you might want to batch update positions in Firestore if needed
-  };
-  
-  const moveCard = useCallback((dragIndex: number, hoverIndex: number, sourceStatus: LeadStatus) => {
-      const leadsInColumn = allLeads.filter(lead => lead.status === sourceStatus);
-      const draggedCard = leadsInColumn[dragIndex];
-      
-      const newLeadsInColumn = [...leadsInColumn];
-      newLeadsInColumn.splice(dragIndex, 1);
-      newLeadsInColumn.splice(hoverIndex, 0, draggedCard);
+  const moveCard = useCallback((dragIndex: number, hoverIndex: number, sourceStatus: string) => {
+      setProspects(prev => {
+          const leadsInColumn = prev.filter(lead => (lead.status || 'Unscheduled Leads') === sourceStatus);
+          const otherLeads = prev.filter(lead => (lead.status || 'Unscheduled Leads') !== sourceStatus);
+          
+          const newLeadsInColumn = [...leadsInColumn];
+          const [draggedCard] = newLeadsInColumn.splice(dragIndex, 1);
+          newLeadsInColumn.splice(hoverIndex, 0, draggedCard);
 
-      const otherLeads = allLeads.filter(lead => lead.status !== sourceStatus);
-      updateLeadsAndStorage([...otherLeads, ...newLeadsInColumn]);
-  }, [allLeads]);
+          return [...otherLeads, ...newLeadsInColumn];
+      });
+  }, []);
 
-  const onDropCard = useCallback(async (lead: Lead, targetStatus: LeadStatus) => {
-    if (lead.status === targetStatus) return;
+  const onDropCard = useCallback(async (lead: Contact, targetStatus: string) => {
+    if ((lead.status || 'Unscheduled Leads') === targetStatus) return;
 
     if (targetStatus === 'Scheduled Leads') {
         const query = new URLSearchParams({
-            title: `Follow-up with ${lead.contactName}`,
-            notes: `Follow-up regarding lead from ${lead.companyName || 'N/A'}.`,
+            title: `Follow-up with ${lead.name}`,
+            notes: `Follow-up regarding potential lead from ${lead.businessName || 'N/A'}.`,
+            contactId: lead.id,
         });
+        toast({ title: 'Rescheduling...', description: 'Taking you to the scheduler to book your follow-up.' });
         router.push(`/master-mind?${query.toString()}`);
     } 
     
-    // Update status in Firestore
     try {
-        await updateLead(lead.id, { status: targetStatus });
-        setAllLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: targetStatus } : l));
+        await updateContact(lead.id, { status: targetStatus });
+        setProspects(prev => prev.map(l => l.id === lead.id ? { ...l, status: targetStatus } : l));
     } catch (error) {
         toast({ variant: 'destructive', title: 'Failed to update lead status' });
     }
   }, [router, toast]);
   
-  const handleEditLead = (lead: Lead) => {
+  const handleEditLead = (lead: Contact) => {
       router.push(`/crm/leads/create?id=${lead.id}`);
   };
 
-  const handleDeleteLead = (lead: Lead) => {
-    setLeadToDelete(lead);
-  };
-  
   const handleConfirmDelete = async () => {
     if (!leadToDelete) return;
-    
     try {
-        await deleteLead(leadToDelete.id);
-        setAllLeads(prev => prev.filter(l => l.id !== leadToDelete.id));
-        toast({
-            title: "Lead Deleted",
-            description: `The lead for "${leadToDelete.contactName}" has been removed.`,
-        });
+        await deleteContacts([leadToDelete.id]);
+        setProspects(prev => prev.filter(l => l.id !== leadToDelete.id));
+        toast({ title: "Prospect Deleted" });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Failed to delete lead' });
+        toast({ variant: 'destructive', title: 'Delete Failed' });
     } finally {
         setLeadToDelete(null);
     }
   };
 
-  const handlePlanAction = (lead: Lead) => {
-    router.push(`/crm/action-plan?leadName=${encodeURIComponent(lead.contactName)}`);
+  const handlePlanAction = (lead: Contact) => {
+    router.push(`/crm/action-plan?leadName=${encodeURIComponent(lead.name)}`);
   };
 
 
-  const columns: LeadStatus[] = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
+  const columns = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <LoaderCircle className="h-8 w-8 animate-spin" />
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -282,29 +281,30 @@ export default function CrmPlanPage() {
         <header className="flex items-center justify-between">
           <div className="w-1/4">
               <Button asChild variant="outline">
-                  <Link href="/crm">
+                  <Link href="/action-manager">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to CRM Hub
+                      Back to Dashboard
                   </Link>
               </Button>
           </div>
           <div className="text-center flex-1">
               <h1 className="text-3xl font-bold font-headline text-primary">
-                  CRM Leads
+                  CRM Leads Pipeline
               </h1>
+              <p className="text-muted-foreground text-sm">Managing Prospects from the Contacts Hub</p>
           </div>
           <div className="w-1/4 flex justify-end">
               <Button asChild>
                   <Link href="/crm/leads/create">
                       <Plus className="mr-2 h-4 w-4" />
-                      Create a Lead
+                      Add a Prospect
                   </Link>
               </Button>
           </div>
         </header>
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {columns.map(status => {
-              const leadsForColumn = allLeads.filter(l => l.status === status);
+              const leadsForColumn = prospects.filter(l => (l.status || 'Unscheduled Leads') === status);
               return (
                   <LeadColumn
                       key={status}
@@ -314,7 +314,7 @@ export default function CrmPlanPage() {
                       moveCard={moveCard}
                       onDropCard={onDropCard}
                       onEditLead={handleEditLead}
-                      onDeleteLead={handleDeleteLead}
+                      onDeleteLead={() => setLeadToDelete}
                       onPlanAction={handlePlanAction}
                   />
               );
@@ -327,7 +327,7 @@ export default function CrmPlanPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action will permanently delete the lead for "{leadToDelete?.contactName}". This cannot be undone.
+                    This will delete the contact record for "{leadToDelete?.name}". This cannot be undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

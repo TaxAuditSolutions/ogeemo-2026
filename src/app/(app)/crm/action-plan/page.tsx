@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { type Action, getActionsForLead, addAction, updateAction, deleteAction, updateActionPositions } from '@/services/crm-action-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 
 // --- Types ---
 type Status = 'To Do' | 'In Progress' | 'Done';
@@ -100,7 +101,7 @@ const ActionCard = ({ action, index, moveCard, onEdit, onDelete, onSchedule }: A
                             <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={onSchedule}>
-                            <Calendar className="mr-2 h-4 w-4" /> Schedule to calendar
+                            <Calendar className="mr-2 h-4 w-4" /> Schedule Next Step
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={onDelete} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -135,7 +136,7 @@ const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDe
     });
 
     return (
-        <Card ref={drop} className={cn("flex flex-col", isOver ? 'bg-primary/10' : '')}>
+        <Card ref={drop} className={cn("flex flex-col h-full min-h-[400px]", isOver ? 'bg-primary/10' : '')}>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
@@ -230,6 +231,7 @@ export default function CrmActionPlanPage() {
     const { toast } = useToast();
 
     const [actions, setActions] = useState<Action[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionToEdit, setActionToEdit] = useState<Action | null>(null);
     const [actionToDelete, setActionToDelete] = useState<Action | null>(null);
@@ -243,8 +245,12 @@ export default function CrmActionPlanPage() {
         const fetchActions = async () => {
             setIsLoading(true);
             try {
-                const fetchedActions = await getActionsForLead(user.uid, leadName);
+                const [fetchedActions, fetchedContacts] = await Promise.all([
+                    getActionsForLead(user.uid, leadName),
+                    getContacts(user.uid),
+                ]);
                 setActions(fetchedActions);
+                setContacts(fetchedContacts);
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load actions', description: error.message });
             } finally {
@@ -298,10 +304,11 @@ export default function CrmActionPlanPage() {
     };
     
     const handleScheduleAction = (action: Action) => {
+        const contact = contacts.find(c => c.name === leadName);
         const query = new URLSearchParams({
-            title: action.title,
+            title: `CRM: ${action.title} for ${leadName}`,
             notes: action.description || '',
-            // We could pre-fill more info here if the lead is linked to a contact
+            contactId: contact?.id || '',
         }).toString();
         router.push(`/master-mind?${query}`);
     };
@@ -314,7 +321,6 @@ export default function CrmActionPlanPage() {
 
         try {
             await updateAction(action.id, { status: targetStatus });
-            // Here you would also update positions if needed, for simplicity we are not doing that on status change for now
         } catch(error: any) {
             setActions(originalActions);
             toast({ variant: 'destructive', title: 'Move Failed', description: error.message });
@@ -343,7 +349,7 @@ export default function CrmActionPlanPage() {
     const columns: Status[] = ["To Do", "In Progress", "Done"];
 
     if (isLoading) {
-        return <div className="flex h-full items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
+        return <div className="flex h-full items-center justify-center p-12"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div>
     }
 
     return (
@@ -354,15 +360,15 @@ export default function CrmActionPlanPage() {
                         <Button asChild variant="outline">
                             <Link href="/crm/plan">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to CRM Leads
+                                Back to CRM pipeline
                             </Link>
                         </Button>
                     </div>
                     <div className="text-center flex-1">
                         <h1 className="text-3xl font-bold font-headline text-primary">
-                            CRM Action Plan: {leadName}
+                            Prospect Action Plan: {leadName}
                         </h1>
-                        <p className="text-muted-foreground">Manage the next steps for your leads.</p>
+                        <p className="text-muted-foreground">Define the next steps to win this client.</p>
                     </div>
                     <div className="w-1/4 flex justify-end">
                         <Button onClick={() => { setActionToEdit(null); setIsDialogOpen(true); }}>
@@ -407,4 +413,3 @@ export default function CrmActionPlanPage() {
         </>
     );
 }
-

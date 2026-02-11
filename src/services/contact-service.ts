@@ -65,7 +65,7 @@ const generateKeywords = (name: string, email: string, businessName?: string): s
 };
 
 
-// --- Client Account Function (New) ---
+// --- Client Account Function ---
 async function createClientAccount(userId: string, contactId: string, contactName: string): Promise<void> {
     const db = getDb();
     const q = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where("contactId", "==", contactId), where("userId", "==", userId));
@@ -85,11 +85,8 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
-  // Adding orderBy on the same field as the where clause is a common pattern
-  // to ensure Firestore can use its default indexes efficiently.
   const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
   const snapshot = await getDocs(q);
-  // Client-side sort to ensure alphabetical order for display
   return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
 }
 
@@ -113,6 +110,7 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
       businessName: contactData.businessName || '',
       email: contactData.email || '',
       industryCode: contactData.industryCode || '',
+      status: contactData.status || 'Unscheduled Leads', // Default for CRM
       keywords: generateKeywords(contactData.name, contactData.email || '', contactData.businessName),
     };
 
@@ -164,14 +162,14 @@ export async function mergeContacts(sourceContactId: string, masterContactId: st
 }
 
 
-export async function findOrCreateFolder(userId: string, folderName: string): Promise<FolderData> {
+export async function findOrCreateFolder(userId: string, folderName: string): Promise<any> {
     const db = getDb();
     const FOLDERS_COLLECTION = 'contactFolders';
     const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as FolderData;
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
     }
 
     const newFolderData = {
@@ -183,5 +181,3 @@ export async function findOrCreateFolder(userId: string, folderName: string): Pr
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
     return { id: docRef.id, ...newFolderData };
 }
-
-    

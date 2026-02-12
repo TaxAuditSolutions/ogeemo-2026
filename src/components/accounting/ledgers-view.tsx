@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from "react";
@@ -49,7 +50,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreVertical, BookOpen, Pencil, Trash2, LoaderCircle, Check, ChevronsUpDown, Plus, Calendar as CalendarIcon, X, TrendingUp, TrendingDown, DollarSign, Link as LinkIcon, UserPlus } from "lucide-react";
+import { 
+    PlusCircle, 
+    MoreVertical, 
+    BookOpen, 
+    Pencil, 
+    Trash2, 
+    LoaderCircle, 
+    Check, 
+    ChevronsUpDown, 
+    Plus, 
+    Calendar as CalendarIcon, 
+    X, 
+    TrendingUp, 
+    TrendingDown, 
+    DollarSign, 
+    Link as LinkIcon, 
+    UserPlus,
+    ArrowDownUp,
+    ArrowDownAZ,
+    ArrowUpZA
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -114,6 +135,8 @@ export function LedgersView() {
   const [contactSearchValue, setContactSearchValue] = React.useState('');
 
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  
+  const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -121,6 +144,13 @@ export function LedgersView() {
   const searchParams = useSearchParams();
   const highlightedId = searchParams.get('highlight');
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
+
+  const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
+      if (type === 'income') {
+          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+      }
+      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+  }, [incomeCategories, expenseCategories]);
 
   const loadData = React.useCallback(async () => {
     if (!user) { setIsLoading(false); return; }
@@ -157,13 +187,65 @@ export function LedgersView() {
     }
   }, [isTransactionDialogOpen, transactionToEdit, preferences?.defaultTaxRate]);
 
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+        direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const generalLedger = React.useMemo(() => {
     const combined: GeneralTransaction[] = [
       ...incomeLedger.map(item => ({ ...item, transactionType: 'income' as const })),
       ...expenseLedger.map(item => ({ ...item, transactionType: 'expense' as const })),
     ];
-    return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [incomeLedger, expenseLedger]);
+    
+    if (sortConfig !== null) {
+        combined.sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+
+            switch (sortConfig.key) {
+                case 'date':
+                    aValue = new Date(a.date).getTime();
+                    bValue = new Date(b.date).getTime();
+                    break;
+                case 'company':
+                    aValue = a.company.toLowerCase();
+                    bValue = b.company.toLowerCase();
+                    break;
+                case 'category':
+                    aValue = getCategoryName(
+                        a.transactionType === 'income' ? (a as IncomeTransaction).incomeCategory : (a as ExpenseTransaction).category, 
+                        a.transactionType
+                    ).toLowerCase();
+                    bValue = getCategoryName(
+                        b.transactionType === 'income' ? (b as IncomeTransaction).incomeCategory : (b as ExpenseTransaction).category, 
+                        b.transactionType
+                    ).toLowerCase();
+                    break;
+                case 'type':
+                    aValue = a.transactionType;
+                    bValue = b.transactionType;
+                    break;
+                default:
+                    aValue = 0;
+                    bValue = 0;
+            }
+
+            if (aValue < bValue) {
+                return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+    }
+
+    return combined;
+  }, [incomeLedger, expenseLedger, sortConfig, getCategoryName]);
 
   const incomeTotal = React.useMemo(() => incomeLedger.reduce((sum, item) => sum + item.totalAmount, 0), [incomeLedger]);
   const expenseTotal = React.useMemo(() => expenseLedger.reduce((sum, item) => sum + item.totalAmount, 0), [expenseLedger]);
@@ -280,13 +362,6 @@ export function LedgersView() {
       return val.replace(/[^-0-9.]/g, '').replace(/^-/, '');
   };
 
-  const getCategoryName = (categoryNumber: string, type: 'income' | 'expense') => {
-      if (type === 'income') {
-          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
-      }
-      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
-  };
-
   const handleSetDefaultTaxRate = () => {
       const rate = parseFloat(newTransaction.taxRate);
       if (!isNaN(rate)) {
@@ -350,7 +425,7 @@ export function LedgersView() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Transactions</CardTitle>
-                    <CardDescription>Review and manage your financial records.</CardDescription>
+                    <CardDescription>Review and manage your financial records. Click headers to sort.</CardDescription>
                 </div>
                 <Button onClick={() => { setTransactionToEdit(null); setNewTransaction(emptyTransactionForm); setIsTransactionDialogOpen(true); }}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
@@ -361,10 +436,54 @@ export function LedgersView() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Type</TableHead>
+                                <TableHead className="p-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => requestSort('date')} 
+                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
+                                    >
+                                        Date 
+                                        {sortConfig?.key === 'date' ? (
+                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
+                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="p-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => requestSort('company')} 
+                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
+                                    >
+                                        Contact
+                                        {sortConfig?.key === 'company' ? (
+                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
+                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="p-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => requestSort('category')} 
+                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
+                                    >
+                                        Category
+                                        {sortConfig?.key === 'category' ? (
+                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
+                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="p-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => requestSort('type')} 
+                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
+                                    >
+                                        Type
+                                        {sortConfig?.key === 'type' ? (
+                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
+                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                    </Button>
+                                </TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="text-center">Doc</TableHead>
                                 <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>

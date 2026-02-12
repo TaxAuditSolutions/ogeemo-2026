@@ -12,7 +12,14 @@ Key principles include:
 - **Deep Google Integration:** Leverage Google Workspace for core functionalities like authentication, email, calendar, and file storage to create a seamless user experience.
 - **AI as a Partner:** Utilize AI not just as a chatbot, but as an integrated assistant that understands context, automates tedious tasks, and provides intelligent insights.
 
-## 2. Key Modules & Managers
+## 2. Patentable Innovations
+
+Ogeemo features a proprietary architecture for **Modular Interface Synthesis** (the "Action Chip" system). Key patentable aspects include:
+- **Universal Action Wrapping:** A method for wrapping disparate internal and external protocols into a uniform interactive component.
+- **Dynamic Discovery Engine:** A system that inventories platform capabilities into an "Available" pool for user-directed workspace composition.
+- **Cognitive Load Reduction:** A technical solution to interface clutter through state-persisted functional instantiation.
+
+## 3. Key Modules & Managers
 
 The application is structured around several core hubs, each managing a distinct area of a business.
 
@@ -47,7 +54,7 @@ Organized into two main sections to cater to different user needs:
 - **Time Manager:** Track time spent on tasks, associate it with clients, and mark it as billable.
 - **Research Hub:** An AI-powered workspace to manage sources, take notes, and interact with an assistant to synthesize information.
 
-## 3. AI Integration (Firebase Genkit)
+## 4. AI Integration (Firebase Genkit)
 
 Ogeemo's intelligence is powered by Firebase Genkit. The AI is designed to be more than just a chatbot; it's an assistant integrated into the workflow.
 - **Ogeemo Assistant:** A knowledgeable chatbot trained on application documentation to help users navigate and understand features.

@@ -67,7 +67,7 @@ import {
     DollarSign, 
     Link as LinkIcon, 
     UserPlus,
-    ArrowDownUp,
+    ArrowUpDown,
     ArrowDownAZ,
     ArrowUpZA
 } from "lucide-react";
@@ -142,14 +142,14 @@ export function LedgersView() {
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   const searchParams = useSearchParams();
-  const highlightedId = searchParams.get('highlight');
+  const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
       if (type === 'income') {
-          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Uncategorized';
       }
-      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber;
+      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Uncategorized';
   }, [incomeCategories, expenseCategories]);
 
   const loadData = React.useCallback(async () => {
@@ -208,12 +208,12 @@ export function LedgersView() {
 
             switch (sortConfig.key) {
                 case 'date':
-                    aValue = new Date(a.date).getTime();
-                    bValue = new Date(b.date).getTime();
+                    aValue = new Date(a.date).getTime() || 0;
+                    bValue = new Date(b.date).getTime() || 0;
                     break;
                 case 'company':
-                    aValue = a.company.toLowerCase();
-                    bValue = b.company.toLowerCase();
+                    aValue = (a.company || '').toLowerCase();
+                    bValue = (b.company || '').toLowerCase();
                     break;
                 case 'category':
                     aValue = getCategoryName(
@@ -388,10 +388,6 @@ export function LedgersView() {
       }
   }, [newTransaction.totalAmount, newTransaction.taxRate]);
 
-  if (isLoading) {
-    return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
-  }
-
   return (
     <div className="p-4 sm:p-6 space-y-6">
         <AccountingPageHeader pageTitle="BKS Ledger" hubPath="/accounting" hubLabel="Accounting Hub" />
@@ -445,7 +441,7 @@ export function LedgersView() {
                                         Date 
                                         {sortConfig?.key === 'date' ? (
                                             sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                     </Button>
                                 </TableHead>
                                 <TableHead className="p-0">
@@ -457,7 +453,7 @@ export function LedgersView() {
                                         Contact
                                         {sortConfig?.key === 'company' ? (
                                             sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                     </Button>
                                 </TableHead>
                                 <TableHead className="p-0">
@@ -469,7 +465,7 @@ export function LedgersView() {
                                         Category
                                         {sortConfig?.key === 'category' ? (
                                             sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                     </Button>
                                 </TableHead>
                                 <TableHead className="p-0">
@@ -481,7 +477,7 @@ export function LedgersView() {
                                         Type
                                         {sortConfig?.key === 'type' ? (
                                             sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowDownUp className="ml-2 h-4 w-4 opacity-30" />}
+                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                     </Button>
                                 </TableHead>
                                 <TableHead className="text-right">Total</TableHead>

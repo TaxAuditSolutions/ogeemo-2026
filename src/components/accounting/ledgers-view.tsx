@@ -71,7 +71,7 @@ import {
     ArrowDownAZ,
     ArrowUpZA
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
@@ -137,6 +137,10 @@ export function LedgersView() {
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+
+  // New Category State
+  const [showAddCategory, setShowAddCategory] = React.useState(false);
+  const [newCategoryName, setNewCategoryName] = React.useState('');
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -373,6 +377,26 @@ export function LedgersView() {
       }
   };
 
+  const handleCreateCategory = async () => {
+    if (!user || !newCategoryName.trim()) return;
+    try {
+        if (newTransactionType === 'income') {
+            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
+            setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber! }));
+        } else {
+            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
+            setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber! }));
+        }
+        setShowAddCategory(false);
+        setNewCategoryName('');
+        toast({ title: 'Category Created' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
+    }
+  };
+
   React.useEffect(() => {
       const totalAmount = parseFloat(newTransaction.totalAmount);
       const taxRate = parseFloat(newTransaction.taxRate);
@@ -601,22 +625,38 @@ export function LedgersView() {
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Category *</Label>
-                            <div className="col-span-3">
-                                <Select 
-                                    value={newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category} 
-                                    onValueChange={v => setNewTransaction(p => ({ ...p, [newTransactionType === 'income' ? 'incomeCategory' : 'category']: v }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select tax category..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
-                                            <SelectItem key={c.id} value={c.categoryNumber || c.id}>
-                                                {c.name} {c.categoryNumber ? `(${c.categoryNumber})` : ''}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="col-span-3 space-y-2">
+                                <div className="flex gap-2">
+                                    <Select 
+                                        value={newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category} 
+                                        onValueChange={v => setNewTransaction(p => ({ ...p, [newTransactionType === 'income' ? 'incomeCategory' : 'category']: v }))}
+                                    >
+                                        <SelectTrigger className="flex-1">
+                                            <SelectValue placeholder="Select tax category..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
+                                                <SelectItem key={c.id} value={c.categoryNumber || c.id}>
+                                                    {c.name} {c.categoryNumber ? `(${c.categoryNumber})` : ''}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button variant="outline" size="icon" onClick={() => setShowAddCategory(!showAddCategory)} title="Add custom category">
+                                        <Plus className="h-4 w-4"/>
+                                    </Button>
+                                </div>
+                                {showAddCategory && (
+                                    <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                                        <Input 
+                                            placeholder="New category name..." 
+                                            value={newCategoryName} 
+                                            onChange={e => setNewCategoryName(e.target.value)} 
+                                            onKeyDown={e => e.key === 'Enter' && handleCreateCategory()}
+                                        />
+                                        <Button size="sm" onClick={handleCreateCategory}>Add</Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

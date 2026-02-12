@@ -19,6 +19,10 @@ The system treats internal routes and external deep-links as identical objects.
 The drag-and-drop layer allows users to effectively "write" their own navigation schema without modifying source code.
 *   **Patentable Angle:** A system for user-directed synthesis of an application's primary command structure, persisted via unique user-state snapshots in a cloud database.
 
+### D. The Root Orchestrator (The Master Action Chip)
+The Master Action Chip acts as the system's "single point of entry," determining the functional context of the entire session.
+*   **Patentable Angle (The Hierarchical Root):** A method for managing a multi-module business platform where a Primary Header Component serves as a gatekeeper for a Distributed Action Registry. Engagement of the component triggers a context-aware filter that instantiates domain-specific sub-navigators (e.g., switching the "Spider Web" from Project Management to BKS Accounting) without losing shared data context.
+
 ## 3. Technical Problem & Solution (Patent Nexus)
 *   **Technical Problem:** High cognitive load and operational latency caused by "screen clutter" and fragmented navigation in multi-module SaaS environments.
 *   **Technical Solution:** A modular orchestration layer that enforces selective functional visibility, reducing the active interface complexity to only those elements required by the user's specific workflow.
@@ -27,6 +31,7 @@ The drag-and-drop layer allows users to effectively "write" their own navigation
 1.  A method for dynamically generating a persistent user interface in a multi-module computer system.
 2.  An orchestration engine that inventories heterogeneous application routes into a homogeneous modular inventory.
 3.  A system for reducing navigational latency through user-directed instantiation of functional components.
+4.  **The Hierarchical Root Claim:** A computer-implemented method for navigating a unified relational database by instantiating Secondary Navigators from a persistent Master root node to filter a Functional Registry into domain-specific hubs.
 
 ## 5. Next Steps
-It is recommended to pursue a **System and Method** patent focusing on the **Instantiation Logic** rather than the visual design.
+It is recommended to pursue a **System and Method** patent focusing on the **Instantiation Logic** rather than the visual design. The Master Action Chip should be positioned as the primary catalyst for state-managed workspace synthesis.

@@ -4,7 +4,7 @@ import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
-import { Users, Target, Lightbulb, ArrowRight } from "lucide-react";
+import { Users, Target, Lightbulb, ArrowRight, Layers, Zap, ShieldCheck, MousePointerClick, CheckCircle } from "lucide-react";
 
 const teamMembers = [
     {
@@ -122,7 +122,104 @@ export default function AboutUsPage() {
                 </div>
             </section>
 
-             <section className="py-16 md:py-24">
+            <section className="py-16 md:py-24">
+                <div className="container mx-auto px-4 max-w-4xl">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">The Root Orchestrator: Our Architectural Innovation</h2>
+                    
+                    <div className="space-y-12">
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+                                <Layers className="h-6 w-6" />
+                                1. The Master Action Chip: "The Root Orchestrator"
+                            </h3>
+                            <p className="text-muted-foreground">
+                                In the Ogeemo architecture, the Master Action Chip (located in the main header) acts as the System State Manager. It is the "single point of entry" that determines the functional context of the entire application.
+                            </p>
+                            <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                <li><strong>Dynamic Discovery:</strong> When the Master Chip is engaged, it pings the Functional Registry to inventory all available modules.</li>
+                                <li><strong>Path Synthesis:</strong> It creates the initial routing to the two primary navigators: the Action Manager (The Global Web) and the Accounting Hub (The BKS Specialized Web).</li>
+                            </ul>
+                        </div>
+
+                        <Card className="bg-muted/50 border-primary/20">
+                            <CardHeader>
+                                <CardTitle className="text-xl flex items-center gap-2">
+                                    <ShieldCheck className="h-5 w-5 text-primary" />
+                                    2. Technical Patent Logic: The "Single-to-Multiple" Bridge
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 text-sm">
+                                <p>
+                                    For our patent evaluation, we frame the Master Chip as a method for <strong>Selective Functional Visibility</strong>.
+                                </p>
+                                <p className="italic border-l-4 border-primary pl-4">
+                                    <strong>The Technical Claim:</strong> A method for managing a multi-module business platform where a Primary Header Component (The Master Chip) serves as a gatekeeper for a Distributed Action Registry. Activation of the Master Component triggers a context-aware filter that instantiates a subset of "Child Action Chips" based on the user’s selected operational domain (e.g., General Management vs. BKS Financials).
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+                                <Zap className="h-6 w-6" />
+                                3. Integrated Workflow: From Master to Hub
+                            </h3>
+                            <p className="text-muted-foreground">To show the "Spider Web" in action through the Master Chip:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-4 border rounded-lg bg-background">
+                                    <h4 className="font-bold mb-1">Level 1: The Master</h4>
+                                    <p className="text-xs text-muted-foreground">The user clicks the Master Chip. The system initializes the session.</p>
+                                </div>
+                                <div className="p-4 border rounded-lg bg-background">
+                                    <h4 className="font-bold mb-1">Level 2: The Navigators</h4>
+                                    <p className="text-xs text-muted-foreground">The user chooses the Action Manager. The system pulls the "Global Inventory" (Ideas, Projects, Calendar).</p>
+                                </div>
+                                <div className="p-4 border rounded-lg bg-background">
+                                    <h4 className="font-bold mb-1">Level 3: The Hubs</h4>
+                                    <p className="text-xs text-muted-foreground">The user switches to the Accounting Hub. The Master Chip re-routes the "Action-to-Protocol Bridge" to focus specifically on BKS Evidentiary Data.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Card className="border-black border-2 shadow-lg">
+                            <CardHeader className="bg-black text-white">
+                                <CardTitle className="text-xl">Revised Patent Claim: "One Chip Rules Them All"</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <div className="text-sm font-mono leading-relaxed">
+                                    <p className="font-bold underline mb-2">Claim 4 (The Hierarchical Root):</p>
+                                    <p>A computer-implemented method for navigating a unified relational database, the method comprising:</p>
+                                    <ul className="list-disc pl-6 my-2">
+                                        <li>Providing a Master Interface Component as a persistent root node in a graphical user interface;</li>
+                                        <li>Associating said Master Interface Component with a Functional Registry containing disparate business modules (CRM, Projects, BKS Accounting);</li>
+                                        <li>Instantiating, upon engagement of the Master Interface Component, a plurality of Secondary Navigators that filter the Functional Registry into domain-specific "Hubs";</li>
+                                    </ul>
+                                    <p>Whereby the Master Interface Component centralizes the orchestration of all "Action Chips," allowing a user to toggle between high-level project management and deep-level evidentiary bookkeeping without losing the shared data context of the unified database.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="p-8 bg-primary/10 rounded-xl border border-primary/20 text-center">
+                            <h3 className="text-2xl font-bold font-headline mb-4">The "Aha!" Moment for the User</h3>
+                            <div className="grid md:grid-cols-2 gap-8 text-left">
+                                <div>
+                                    <h4 className="font-bold flex items-center gap-2 mb-2"><MousePointerClick className="h-4 w-4" /> The Experience</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        The user is deep in the "Spider Web" of a project. She needs to check her tax readiness. She doesn't "leave" the screen or open a new app; she simply hits the Master Chip, selects the Accounting Hub, and the same client data she was just looking at is now presented in a Tax-Form-Identical ledger view.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold flex items-center gap-2 mb-2"><CheckCircle className="h-4 w-4" /> The Relief</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        The "One Chip" gives her the feeling of total control. She knows that no matter where she is in Ogeemo, the Master Navigator always knows where her data is and how to get her to the next step.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             <section className="py-16 md:py-24 bg-muted">
                 <div className="container mx-auto px-4 text-center">
                      <h2 className="text-3xl md:text-4xl font-bold font-headline">A Foundation You Can Trust</h2>
                       <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -131,7 +228,7 @@ export default function AboutUsPage() {
                 </div>
             </section>
             
-            <section className="py-20 md:py-20 bg-muted">
+            <section className="py-20 md:py-20">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl font-bold font-headline">Ready to See How It Works?</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Explore the features that make Ogeemo the last business platform you'll ever need.</p>

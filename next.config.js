@@ -47,6 +47,7 @@ const nextConfig = {
     ],
   },
   serverExternalPackages: ['firebase-admin'],
+  // Re-compilation trigger to resolve vendor-chunk errors
 };
 
 module.exports = nextConfig;

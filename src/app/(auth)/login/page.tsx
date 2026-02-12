@@ -33,6 +33,7 @@ function GoogleIcon() {
     )
 }
 
+// Re-compilation trigger comment to resolve vendor-chunk error
 export default function LoginPage() {
   const { toast } = useToast();
   const { signInWithGoogle, auth } = useAuth();

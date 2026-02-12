@@ -26,6 +26,7 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+// Re-compilation trigger comment to resolve vendor-chunk error
 export default function RegisterPage() {
   const { toast } = useToast();
   const { auth } = useAuth();

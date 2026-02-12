@@ -141,27 +141,10 @@ export default function AboutUsPage() {
                             </ul>
                         </div>
 
-                        <Card className="bg-muted/50 border-primary/20">
-                            <CardHeader>
-                                <CardTitle className="text-xl flex items-center gap-2">
-                                    <ShieldCheck className="h-5 w-5 text-primary" />
-                                    2. Technical Patent Logic: The "Single-to-Multiple" Bridge
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4 text-sm">
-                                <p>
-                                    For our patent evaluation, we frame the Master Chip as a method for <strong>Selective Functional Visibility</strong>.
-                                </p>
-                                <p className="italic border-l-4 border-primary pl-4">
-                                    <strong>The Technical Claim:</strong> A method for managing a multi-module business platform where a Primary Header Component (The Master Chip) serves as a gatekeeper for a Distributed Action Registry. Activation of the Master Component triggers a context-aware filter that instantiates a subset of "Child Action Chips" based on the user’s selected operational domain (e.g., General Management vs. BKS Financials).
-                                </p>
-                            </CardContent>
-                        </Card>
-
                         <div className="space-y-4">
                             <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
                                 <Zap className="h-6 w-6" />
-                                3. Integrated Workflow: From Master to Hub
+                                2. Integrated Workflow: From Master to Hub
                             </h3>
                             <p className="text-muted-foreground">To show the "Spider Web" in action through the Master Chip:</p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -185,15 +185,16 @@ export default function AboutUsPage() {
                                 <CardTitle className="text-xl text-white">"One Action Chip To Rule Them All"</CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6">
-                                <div className="text-sm font-mono leading-relaxed">
-                                    <p className="font-bold underline mb-2">Claim 4 (The Hierarchical Root):</p>
-                                    <p>A computer-implemented method for navigating a unified relational database, the method comprising:</p>
-                                    <ul className="list-disc pl-6 my-2">
-                                        <li>Providing a Master Interface Component as a persistent root node in a graphical user interface;</li>
-                                        <li>Associating said Master Interface Component with a Functional Registry containing disparate business modules (CRM, Projects, BKS Accounting);</li>
-                                        <li>Instantiating, upon engagement of the Master Interface Component, a plurality of Secondary Navigators that filter the Functional Registry into domain-specific "Hubs";</li>
+                                <div className="text-base leading-relaxed space-y-4">
+                                    <p className="font-semibold italic">A computer-implemented method for navigating a unified relational database, made simple:</p>
+                                    <ul className="list-disc pl-6 space-y-3">
+                                        <li><strong>One Master Chip:</strong> A single button that can call up any and all desired actions across the entire platform instantly.</li>
+                                        <li><strong>The Action Manager:</strong> A dedicated space where you can collect all your favorites. You build your own command center by choosing exactly what you need to see.</li>
+                                        <li><strong>Beyond Ogeemo:</strong> The system allows you to create custom chips that connect to any URL or app outside the Ogeemo world, making it a true gateway for your entire business.</li>
                                     </ul>
-                                    <p>Whereby the Master Interface Component centralizes the orchestration of all "Action Chips," allowing a user to toggle between high-level project management and deep-level evidentiary bookkeeping without losing the shared data context of the unified database.</p>
+                                    <p className="font-medium">
+                                        This architecture gets rid of screen clutter and reduces user time, allowing you to toggle between high-level project management and detailed bookkeeping without losing your place.
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>

@@ -40,7 +40,7 @@ const principles = [
     },
     {
         icon: Lightbulb,
-        title: "AI as a True Partner",
+        title: "AI as a Partner",
         description: "We leverage artificial intelligence not to replace human intuition, but to augment it. Ogeemo acts as your smart assistant, automating mundane tasks, providing timely insights, and connecting the dots across your entire workflow so you can focus on the meaningful decisions that drive growth."
     }
 ];
@@ -182,7 +182,7 @@ export default function AboutUsPage() {
 
                         <Card className="border-black border-2 shadow-lg">
                             <CardHeader className="bg-black text-white">
-                                <CardTitle className="text-xl">Revised Patent Claim: "One Chip Rules Them All"</CardTitle>
+                                <CardTitle className="text-xl text-white">"One Action Chip To Rule Them All"</CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="text-sm font-mono leading-relaxed">
@@ -208,9 +208,9 @@ export default function AboutUsPage() {
                                     </p>
                                 </div>
                                 <div>
-                                    <h4 className="font-bold flex items-center gap-2 mb-2"><CheckCircle className="h-4 w-4" /> The Relief</h4>
+                                    <h4 className="font-bold flex items-center gap-2 mb-2"><MousePointerClick className="h-4 w-4" /> The Relief</h4>
                                     <p className="text-sm text-muted-foreground">
-                                        The "One Chip" gives her the feeling of total control. She knows that no matter where she is in Ogeemo, the Master Navigator always knows where her data is and how to get her to the next step.
+                                        The "One Action Chip" gives her the feeling of total control. She knows that no matter where she is in Ogeemo, the Master Navigator always knows where her data is and how to get her to the next step.
                                     </p>
                                 </div>
                             </div>

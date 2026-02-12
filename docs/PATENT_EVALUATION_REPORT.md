@@ -19,7 +19,7 @@ The system treats internal routes and external deep-links as identical objects.
 The drag-and-drop layer allows users to effectively "write" their own navigation schema without modifying source code.
 *   **Patentable Angle:** A system for user-directed synthesis of an application's primary command structure, persisted via unique user-state snapshots in a cloud database.
 
-### D. The Root Orchestrator (The Master Action Chip)
+### D. The Root Orchestrator: "One Action Chip To Rule Them All"
 The Master Action Chip acts as the system's "single point of entry," determining the functional context of the entire session.
 *   **Patentable Angle (The Hierarchical Root):** A method for managing a multi-module business platform where a Primary Header Component serves as a gatekeeper for a Distributed Action Registry. Engagement of the component triggers a context-aware filter that instantiates domain-specific sub-navigators (e.g., switching the "Spider Web" from Project Management to BKS Accounting) without losing shared data context.
 

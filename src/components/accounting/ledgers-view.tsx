@@ -88,7 +88,7 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfYear, endOfYear } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
@@ -156,7 +156,6 @@ export function LedgersView() {
   const { handlePrint, contentRef } = useReactToPrint();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
-  const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
       if (type === 'income') {
@@ -267,6 +266,14 @@ export function LedgersView() {
   const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
   const netIncome = incomeTotal - expenseTotal;
 
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const handleSaveTransaction = async () => {
       if (!user) return;
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
@@ -347,9 +354,56 @@ export function LedgersView() {
       setIsTransactionDialogOpen(true);
   };
 
+  const handleConfirmDelete = async () => {
+    if (!transactionToDelete || !user) return;
+    try {
+        if (transactionToDelete.transactionType === 'income') {
+            await deleteIncomeTransaction(transactionToDelete.id);
+            setIncomeLedger(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+        } else {
+            await deleteExpenseTransaction(transactionToDelete.id);
+            setExpenseLedger(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+        }
+        toast({ title: 'Transaction Deleted' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally {
+        setTransactionToDelete(null);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!user || !newCategoryName.trim()) return;
+    try {
+        if (newTransactionType === 'income') {
+            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
+            setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber || newCat.id }));
+        } else {
+            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
+            setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
+        }
+        setShowAddCategory(false);
+        setNewCategoryName('');
+        toast({ title: 'Category Created' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
+    }
+  };
+
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
+  };
+
+  const handleContactSave = (contact: Contact, isEditing: boolean) => {
+      if (isEditing) {
+          setContacts(prev => prev.map(c => c.id === contact.id ? contact : c));
+      } else {
+          setContacts(prev => [...prev, contact]);
+      }
+      setIsContactFormOpen(false);
   };
 
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
@@ -621,7 +675,7 @@ export function LedgersView() {
                             <Label className="text-right">Amount *</Label>
                             <div className="relative col-span-3">
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                <Input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value.replace(/[^-0-9.]/g, '').replace(/^-/, '') }))} className="pl-7" placeholder="0.00" />
+                                <input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value.replace(/[^-0-9.]/g, '').replace(/^-/, '') }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-7" placeholder="0.00" />
                             </div>
                         </div>
 

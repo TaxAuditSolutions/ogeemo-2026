@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -69,7 +68,9 @@ import {
     UserPlus,
     ArrowUpDown,
     ArrowDownAZ,
-    ArrowUpZA
+    ArrowUpZA,
+    Printer,
+    FilterX
 } from "lucide-react";
 import { cn, formatTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -87,12 +88,13 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfYear, endOfYear } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { useReactToPrint } from "@/hooks/use-react-to-print";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -138,6 +140,12 @@ export function LedgersView() {
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
+  // Filter State
+  const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
+  const [isStartFilterOpen, setIsStartFilterOpen] = React.useState(false);
+  const [isEndFilterOpen, setIsEndFilterOpen] = React.useState(false);
+
   // New Category State
   const [showAddCategory, setShowAddCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState('');
@@ -145,6 +153,7 @@ export function LedgersView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
+  const { handlePrint, contentRef } = useReactToPrint();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const rowRefs = React.useRef<Map<string, HTMLTableRowElement | null>>(new Map());
@@ -182,27 +191,30 @@ export function LedgersView() {
 
   React.useEffect(() => { loadData(); }, [loadData]);
 
-  React.useEffect(() => {
-    if (isTransactionDialogOpen && !transactionToEdit && preferences?.defaultTaxRate !== undefined) {
-        setNewTransaction(prev => ({
-            ...prev,
-            taxRate: String(preferences.defaultTaxRate)
-        }));
-    }
-  }, [isTransactionDialogOpen, transactionToEdit, preferences?.defaultTaxRate]);
+  const filteredIncome = React.useMemo(() => {
+    if (!startDate && !endDate) return incomeLedger;
+    return incomeLedger.filter(tx => {
+        const txDate = new Date(tx.date);
+        const start = startDate ? startOfDay(startDate) : new Date(0);
+        const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
+        return isWithinInterval(txDate, { start, end });
+    });
+  }, [incomeLedger, startDate, endDate]);
 
-  const requestSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-        direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
+  const filteredExpenses = React.useMemo(() => {
+    if (!startDate && !endDate) return expenseLedger;
+    return expenseLedger.filter(tx => {
+        const txDate = new Date(tx.date);
+        const start = startDate ? startOfDay(startDate) : new Date(0);
+        const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
+        return isWithinInterval(txDate, { start, end });
+    });
+  }, [expenseLedger, startDate, endDate]);
 
   const generalLedger = React.useMemo(() => {
     const combined: GeneralTransaction[] = [
-      ...incomeLedger.map(item => ({ ...item, transactionType: 'income' as const })),
-      ...expenseLedger.map(item => ({ ...item, transactionType: 'expense' as const })),
+      ...filteredIncome.map(item => ({ ...item, transactionType: 'income' as const })),
+      ...filteredExpenses.map(item => ({ ...item, transactionType: 'expense' as const })),
     ];
     
     if (sortConfig !== null) {
@@ -249,10 +261,10 @@ export function LedgersView() {
     }
 
     return combined;
-  }, [incomeLedger, expenseLedger, sortConfig, getCategoryName]);
+  }, [filteredIncome, filteredExpenses, sortConfig, getCategoryName]);
 
-  const incomeTotal = React.useMemo(() => incomeLedger.reduce((sum, item) => sum + item.totalAmount, 0), [incomeLedger]);
-  const expenseTotal = React.useMemo(() => expenseLedger.reduce((sum, item) => sum + item.totalAmount, 0), [expenseLedger]);
+  const incomeTotal = React.useMemo(() => filteredIncome.reduce((sum, item) => sum + item.totalAmount, 0), [filteredIncome]);
+  const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
   const netIncome = incomeTotal - expenseTotal;
 
   const handleSaveTransaction = async () => {
@@ -310,33 +322,6 @@ export function LedgersView() {
       }
   };
 
-  const handleConfirmDelete = async () => {
-      if (!transactionToDelete) return;
-      try {
-          if (transactionToDelete.transactionType === 'income') {
-              await deleteIncomeTransaction(transactionToDelete.id);
-          } else {
-              await deleteExpenseTransaction(transactionToDelete.id);
-          }
-          toast({ title: "Transaction Deleted" });
-          loadData();
-      } catch (error: any) {
-          toast({ variant: "destructive", title: "Delete Failed", description: error.message });
-      } finally {
-          setTransactionToDelete(null);
-      }
-  };
-
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      if (isEditing) {
-          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-      } else {
-          setContacts(prev => [...prev, savedContact]);
-      }
-      setNewTransaction(prev => ({ ...prev, company: savedContact.name }));
-      setIsContactFormOpen(false);
-  };
-
   const handleEditTransaction = (tx: GeneralTransaction) => {
       setTransactionToEdit(tx);
       setNewTransactionType(tx.transactionType);
@@ -362,61 +347,99 @@ export function LedgersView() {
       setIsTransactionDialogOpen(true);
   };
 
-  const sanitizePositiveNumber = (val: string) => {
-      return val.replace(/[^-0-9.]/g, '').replace(/^-/, '');
+  const clearFilters = () => {
+      setStartDate(undefined);
+      setEndDate(undefined);
   };
 
-  const handleSetDefaultTaxRate = () => {
-      const rate = parseFloat(newTransaction.taxRate);
-      if (!isNaN(rate)) {
-          updatePreferences({ defaultTaxRate: rate });
-          toast({
-              title: "Default Rate Saved",
-              description: `${rate}% is now your default tax rate.`
-          });
-      }
-  };
-
-  const handleCreateCategory = async () => {
-    if (!user || !newCategoryName.trim()) return;
-    try {
-        if (newTransactionType === 'income') {
-            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
-            setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
-            setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber! }));
-        } else {
-            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
-            setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
-            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber! }));
-        }
-        setShowAddCategory(false);
-        setNewCategoryName('');
-        toast({ title: 'Category Created' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
-    }
-  };
-
-  React.useEffect(() => {
-      const totalAmount = parseFloat(newTransaction.totalAmount);
-      const taxRate = parseFloat(newTransaction.taxRate);
-
-      if (!isNaN(totalAmount) && !isNaN(taxRate) && taxRate > 0) {
-          const preTax = totalAmount / (1 + taxRate / 100);
-          const tax = totalAmount - preTax;
-          setNewTransaction(prev => ({ ...prev, preTaxAmount: preTax.toFixed(2), taxAmount: tax.toFixed(2) }));
-      } else if (!isNaN(totalAmount)) {
-           setNewTransaction(prev => ({ ...prev, preTaxAmount: totalAmount.toFixed(2), taxAmount: '0.00' }));
-      } else {
-          setNewTransaction(prev => ({ ...prev, preTaxAmount: '', taxAmount: '' }));
-      }
-  }, [newTransaction.totalAmount, newTransaction.taxRate]);
+  const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
+    <div className="border rounded-md overflow-hidden bg-card">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="p-0">
+                        <Button variant="ghost" onClick={() => requestSort('date')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                            Date {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                        </Button>
+                    </TableHead>
+                    <TableHead className="p-0">
+                        <Button variant="ghost" onClick={() => requestSort('company')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                            Contact {sortConfig?.key === 'company' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                        </Button>
+                    </TableHead>
+                    <TableHead className="p-0">
+                        <Button variant="ghost" onClick={() => requestSort('category')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                            Category {sortConfig?.key === 'category' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                        </Button>
+                    </TableHead>
+                    {type === 'all' && (
+                        <TableHead className="p-0">
+                            <Button variant="ghost" onClick={() => requestSort('type')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                Type {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                            </Button>
+                        </TableHead>
+                    )}
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center print:hidden">Doc</TableHead>
+                    <TableHead className="w-12 print:hidden"><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {data.map(item => (
+                    <TableRow key={item.id} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse")}>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell className="font-medium">{item.company}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                            {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
+                        </TableCell>
+                        {type === 'all' && <TableCell><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>}
+                        <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
+                            ${item.totalAmount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center print:hidden">
+                            {item.documentUrl ? (
+                                <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                    <LinkIcon className="h-4 w-4 mx-auto" />
+                                </a>
+                            ) : '-'}
+                        </TableCell>
+                        <TableCell className="print:hidden">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                ))}
+                {data.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={type === 'all' ? 7 : 6} className="h-32 text-center text-muted-foreground">No transactions found for the selected criteria.</TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+            <TableFooter>
+                <TableRow>
+                    <TableCell colSpan={type === 'all' ? 4 : 3} className="text-right font-bold">Total</TableCell>
+                    <TableCell className={cn("text-right font-bold font-mono", type === 'expense' ? "text-red-600" : type === 'income' ? "text-green-600" : (netIncome >= 0 ? "text-green-600" : "text-red-600"))}>
+                        ${(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="print:hidden" colSpan={2}/>
+                </TableRow>
+            </TableFooter>
+        </Table>
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
         <AccountingPageHeader pageTitle="BKS Ledger" hubPath="/accounting" hubLabel="Accounting Hub" />
         
-        <header className="text-center relative">
+        <header className="text-center relative print:hidden">
             <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
             <p className="text-muted-foreground">Comprehensive record of all business income and expenses.</p>
             <div className="absolute top-0 right-0">
@@ -426,7 +449,59 @@ export function LedgersView() {
             </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+        {/* Filter & Print Bar */}
+        <Card className="print:hidden">
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b bg-muted/30">
+                <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm font-medium">Filter & Report Options</CardTitle>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
+                        <Printer className="mr-2 h-4 w-4" /> Print Ledger
+                    </Button>
+                    <Button onClick={() => { setTransactionToEdit(null); setNewTransaction(emptyTransactionForm); setIsTransactionDialogOpen(true); }} size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 flex flex-wrap items-end justify-center gap-4">
+                <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
+                    <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartFilterOpen(false); }} initialFocus />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
+                    <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !endDate && "text-muted-foreground")} disabled={!startDate}>
+                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} disabled={(date) => startDate ? date < startDate : false} initialFocus />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <Button variant="ghost" onClick={clearFilters} disabled={!startDate && !endDate}>
+                    <FilterX className="mr-2 h-4 w-4"/> Clear
+                </Button>
+            </CardContent>
+        </Card>
+
+        {/* Quick Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto print:hidden">
             <Card className="bg-green-50 dark:bg-green-900/20 border-green-200">
                 <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600"/> Total Income</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-0"><p className="text-2xl font-bold text-green-600">${incomeTotal.toFixed(2)}</p></CardContent>
@@ -441,115 +516,42 @@ export function LedgersView() {
             </Card>
         </div>
 
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Transactions</CardTitle>
-                    <CardDescription>Review and manage your financial records. Click headers to sort.</CardDescription>
-                </div>
-                <Button onClick={() => { setTransactionToEdit(null); setNewTransaction(emptyTransactionForm); setIsTransactionDialogOpen(true); }}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
-                </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="p-0">
-                                    <Button 
-                                        variant="ghost" 
-                                        onClick={() => requestSort('date')} 
-                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
-                                    >
-                                        Date 
-                                        {sortConfig?.key === 'date' ? (
-                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="p-0">
-                                    <Button 
-                                        variant="ghost" 
-                                        onClick={() => requestSort('company')} 
-                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
-                                    >
-                                        Contact
-                                        {sortConfig?.key === 'company' ? (
-                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="p-0">
-                                    <Button 
-                                        variant="ghost" 
-                                        onClick={() => requestSort('category')} 
-                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
-                                    >
-                                        Category
-                                        {sortConfig?.key === 'category' ? (
-                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="p-0">
-                                    <Button 
-                                        variant="ghost" 
-                                        onClick={() => requestSort('type')} 
-                                        className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none"
-                                    >
-                                        Type
-                                        {sortConfig?.key === 'type' ? (
-                                            sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />
-                                        ) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                                <TableHead className="text-center">Doc</TableHead>
-                                <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {generalLedger.map(item => (
-                                <TableRow key={item.id} ref={el => rowRefs.current.set(item.id, el)} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse")}>
-                                    <TableCell>{item.date}</TableCell>
-                                    <TableCell className="font-medium">{item.company}</TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">
-                                        {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
-                                    </TableCell>
-                                    <TableCell><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>
-                                    <TableCell className="text-right font-mono font-semibold">${item.totalAmount.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">
-                                        {item.documentUrl ? (
-                                            <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                                                <LinkIcon className="h-4 w-4 mx-auto" />
-                                            </a>
-                                        ) : <span className="text-muted-foreground text-xs">-</span>}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {generalLedger.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">No transactions found. Post your first entry to get started.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+        {/* Main Content Area */}
+        <div className="space-y-6" ref={contentRef}>
+            {/* Print Header */}
+            <div className="hidden print:block text-center mb-8 border-b pb-4">
+                <h1 className="text-3xl font-bold">BKS General Ledger Report</h1>
+                <p className="text-muted-foreground mt-2">
+                    Period: {startDate ? format(startDate, 'PP') : 'Beginning'} to {endDate ? format(endDate, 'PP') : 'Present'}
+                </p>
+                <p className="text-xs mt-1">Generated on {format(new Date(), 'PPPP')}</p>
+            </div>
 
+            <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto print:hidden">
+                    <TabsTrigger value="all">General Ledger</TabsTrigger>
+                    <TabsTrigger value="income">Income</TabsTrigger>
+                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all" className="mt-6 space-y-4">
+                    <div className="hidden print:block mb-4"><h3 className="text-xl font-bold">Consolidated Transaction Registry</h3></div>
+                    {isLoading ? <div className="flex justify-center p-12"><LoaderCircle className="h-8 w-8 animate-spin" /></div> : renderTable(generalLedger, 'all')}
+                </TabsContent>
+                
+                <TabsContent value="income" className="mt-6 space-y-4">
+                    <div className="hidden print:block mb-4"><h3 className="text-xl font-bold">Income Registry</h3></div>
+                    {isLoading ? <div className="flex justify-center p-12"><LoaderCircle className="h-8 w-8 animate-spin" /></div> : renderTable(filteredIncome.map(i => ({ ...i, transactionType: 'income' as const })), 'income')}
+                </TabsContent>
+                
+                <TabsContent value="expenses" className="mt-6 space-y-4">
+                    <div className="hidden print:block mb-4"><h3 className="text-xl font-bold">Expense Registry</h3></div>
+                    {isLoading ? <div className="flex justify-center p-12"><LoaderCircle className="h-8 w-8 animate-spin" /></div> : renderTable(filteredExpenses.map(e => ({ ...e, transactionType: 'expense' as const })), 'expense')}
+                </TabsContent>
+            </Tabs>
+        </div>
+
+        {/* Transaction Dialog */}
         <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
             <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
                 <DialogHeader className="text-center shrink-0">
@@ -619,7 +621,7 @@ export function LedgersView() {
                             <Label className="text-right">Amount *</Label>
                             <div className="relative col-span-3">
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                <Input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: sanitizePositiveNumber(e.target.value) }))} className="pl-7" placeholder="0.00" />
+                                <Input type="number" step="0.01" min="0" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({ ...p, totalAmount: e.target.value.replace(/[^-0-9.]/g, '').replace(/^-/, '') }))} className="pl-7" placeholder="0.00" />
                             </div>
                         </div>
 
@@ -667,7 +669,13 @@ export function LedgersView() {
                                     type="button" 
                                     variant="link" 
                                     className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary"
-                                    onClick={handleSetDefaultTaxRate}
+                                    onClick={() => {
+                                        const rate = parseFloat(newTransaction.taxRate);
+                                        if (!isNaN(rate)) {
+                                            updatePreferences({ defaultTaxRate: rate });
+                                            toast({ title: "Default Rate Saved", description: `${rate}% is now your default tax rate.` });
+                                        }
+                                    }}
                                 >
                                     Set as default
                                 </Button>
@@ -680,7 +688,7 @@ export function LedgersView() {
                                     max="100" 
                                     step="0.1" 
                                     value={newTransaction.taxRate} 
-                                    onChange={e => setNewTransaction(p => ({ ...p, taxRate: sanitizePositiveNumber(e.target.value) }))} 
+                                    onChange={e => setNewTransaction(p => ({ ...p, taxRate: e.target.value.replace(/[^-0-9.]/g, '').replace(/^-/, '') }))} 
                                     className="pr-8" 
                                     placeholder="e.g., 15" 
                                 />

@@ -57,5 +57,8 @@ A method for GUI composition comprising:
 *   Permitting a user to move functional units from the "Available" pool to a "Selected" state;
 *   Persisting the "Selected" state as a unique user-navigation schema in a cloud database.
 
----
-**Confidentiality Notice:** This document is intended for patent filing purposes only.
+**Claim 4 (One Action Chip To Rule Them All):**
+A computer-implemented method for navigating a unified relational database, the method comprising:
+*   Having one Master Chip that can call up any and all desired actions.
+*   Where the user can collect all their favorites in one Action Manager to eliminate interface clutter.
+*   The Action manager allows the user to connect to any URL outside the Ogeemo World, maintaining a uniform workflow across internal and external applications.

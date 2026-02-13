@@ -233,6 +233,19 @@ export default function ClientTimeLogReportPage() {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     };
 
+    const workersForSelection = useMemo(() => {
+        const adminWorker: Worker = {
+            id: user?.uid || '',
+            name: `${adminName} (Me)`,
+            email: user?.email || '',
+            workerType: 'employee',
+            payType: 'salary',
+            payRate: 0,
+            userId: user?.uid || '',
+        };
+        return [adminWorker, ...workers];
+    }, [workers, user, adminName]);
+
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -285,6 +298,10 @@ export default function ClientTimeLogReportPage() {
 
                             <Button variant="ghost" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
+                            </Button>
+
+                            <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
                         </div>
                     </CardHeader>
@@ -385,9 +402,10 @@ export default function ClientTimeLogReportPage() {
                         setEntryToEdit(null);
                     }
                 }}
-                workers={[]} // Workers loaded inside dialog if needed
+                workers={workersForSelection}
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
+                preselectedContactId={selectedContactId}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

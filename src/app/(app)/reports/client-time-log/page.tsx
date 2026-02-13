@@ -296,10 +296,6 @@ export default function ClientTimeLogReportPage() {
                                 </Popover>
                            </div>
 
-                            <Button variant="ghost" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear
-                            </Button>
-
                             <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>

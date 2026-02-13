@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FilterX } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/context/auth-context';
@@ -235,10 +235,6 @@ export default function WorkerTimeLogReportPage() {
         return [adminWorker, ...workers];
     }, [workers, user, adminName, adminIdNumber]);
 
-    const formatCurrency = (amount: number) => {
-        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-    };
-
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
@@ -295,14 +291,6 @@ export default function WorkerTimeLogReportPage() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} 
-                                disabled={!selectedWorkerId && !dateRange}
-                            >
-                                <FilterX className="mr-2 h-4 w-4" /> Clear
-                            </Button>
                         </div>
                     </CardContent>
                     <CardContent className="p-0 border-t">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -49,8 +49,8 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
-import { LogTimeDialog } from './log-time-dialog';
-import { WorkerSelector } from './WorkerSelector';
+import { LogTimeDialog } from '@/components/reports/log-time-dialog';
+import { WorkerSelector } from '@/components/reports/WorkerSelector';
 import type { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -193,10 +193,19 @@ export default function WorkerTimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
+    const handleScheduleEvent = (entry: any) => {
+        const query = new URLSearchParams({
+            title: entry.subject || entry.title || '',
+            notes: entry.details || '',
+            contactId: entry.contactId || '',
+        });
+        router.push(`/master-mind?${query.toString()}`);
+    };
+
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Admin)`,
+            name: `${adminName} (Me)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
@@ -213,14 +222,14 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
+                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4 border-b">
+                    <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
                         <div className="flex items-center gap-4 flex-1">
                             <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
                             <WorkerSelector
@@ -294,14 +303,14 @@ export default function WorkerTimeLogReportPage() {
                                                         {entry.isBillable ? `Billable` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.subject}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?title=${encodeURIComponent(entry.subject)}&notes=${encodeURIComponent(entry.details)}&contactId=${entry.contactId || ''}`)}>
-                                                                <CalendarIcon className="mr-2 h-4 w-4" /> Schedule an event
+                                                            <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
+                                                                <Clock className="mr-2 h-4 w-4" /> Schedule an event
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (

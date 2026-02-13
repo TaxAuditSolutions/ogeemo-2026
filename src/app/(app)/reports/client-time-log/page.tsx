@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit, Clock } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -218,6 +218,15 @@ export default function ClientTimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
+    const handleScheduleEvent = (entry: any) => {
+        const query = new URLSearchParams({
+            title: entry.subject || entry.title || '',
+            notes: entry.details || '',
+            contactId: entry.contactId || '',
+        });
+        router.push(`/master-mind?${query.toString()}`);
+    };
+
     const handleCreateInvoice = (contactId: string | null) => {
         if (!contactId) return;
         router.push(`/accounting/invoices/create?contactId=${contactId}`);
@@ -351,8 +360,8 @@ export default function ClientTimeLogReportPage() {
                                                             <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
                                                                 <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?title=${encodeURIComponent(entry.subject)}&notes=${encodeURIComponent(entry.details)}&contactId=${entry.contactId || ''}`)}>
-                                                                <CalendarIcon className="mr-2 h-4 w-4" /> Schedule an event
+                                                            <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
+                                                                <Clock className="mr-2 h-4 w-4" /> Schedule an event
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (

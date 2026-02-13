@@ -256,8 +256,19 @@ export default function ClientTimeLogReportPage() {
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b">
-                        <CardTitle>Report Filters</CardTitle>
+                    <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
+                            <CardTitle>Report Filters</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Filter by Client</Label>
+                                <ContactSelector
+                                    contacts={contacts}
+                                    selectedContactId={selectedContactId}
+                                    onSelectContact={setSelectedContactId}
+                                    className="w-64"
+                                />
+                            </div>
+                        </div>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                         </Button>
@@ -265,19 +276,10 @@ export default function ClientTimeLogReportPage() {
                     <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
-                                <Label>Filter by Client</Label>
-                                <ContactSelector
-                                    contacts={contacts}
-                                    selectedContactId={selectedContactId}
-                                    onSelectContact={setSelectedContactId}
-                                    className="w-full sm:w-64"
-                                />
-                           </div>
-                           <div className="space-y-2">
                                 <Label>Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
@@ -291,7 +293,7 @@ export default function ClientTimeLogReportPage() {
                                 <Label>End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>

@@ -75,6 +75,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
+import { CreateEmailDialog } from './create-email-dialog';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -189,8 +190,8 @@ const FolderTreeItem = ({
                     autoFocus 
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
-                    onBlur={onRenameConfirm} 
-                    onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
+                    onBlur={handleRenameConfirm} 
+                    onKeyDown={e => { if (e.key === 'Enter') handleRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 
                   />
@@ -265,6 +266,9 @@ export function ContactsView() {
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
   
+  const [isCreateEmailDialogOpen, setIsCreateEmailDialogOpen] = useState(false);
+  const [contactForEmail, setContactForEmail] = useState<Contact | null>(null);
+
   // For pre-populating from other modules
   const [initialContactData, setInitialDialogData] = useState<Partial<Contact>>({});
 
@@ -520,22 +524,26 @@ export function ContactsView() {
       setIsNewFolderDialogOpen(true);
   };
 
-  const handleSendEmail = useCallback((contact: Contact) => {
-    if (!contact.email) {
-      toast({
-        variant: 'destructive',
-        title: "No Email Found",
-        description: `"${contact.name}" does not have an email address recorded.`,
-      });
-      return;
-    }
-    // Navigate to Ogeemo's internal drafting composer
-    router.push(`/ogeemail/compose?contactId=${contact.id}`);
-  }, [router, toast]);
+  const handleCreateEmail = (contact: Contact) => {
+    setContactForEmail(contact);
+    setIsCreateEmailDialogOpen(true);
+  };
 
-  const handleCreateEmail = useCallback((contact: Contact) => {
-    toast({ title: "Create Email", description: `Starting email process for ${contact.name}` });
-  }, [toast]);
+  const handleEmailSend = (subject: string, content: string) => {
+    if (!contactForEmail?.email) {
+        toast({ variant: 'destructive', title: "No Email Address", description: "This contact does not have an email address." });
+        return;
+    }
+    const mailSubject = encodeURIComponent(subject);
+    const mailBody = encodeURIComponent(content);
+    const recipient = encodeURIComponent(contactForEmail.email);
+    
+    // Hand off to Gmail via URL
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipient}&su=${mailSubject}&body=${mailBody}`;
+    window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+    
+    toast({ title: "Email Prepared", description: "Opening Gmail compose window..." });
+  };
 
   const handleScheduleTask = useCallback((contact: Contact) => {
     router.push(`/master-mind?contactId=${contact.id}&title=${encodeURIComponent(`Meeting with ${contact.name}`)}`);
@@ -674,7 +682,6 @@ export function ContactsView() {
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem onSelect={() => handleCreateEmail(contact)}><Mail className="mr-2 h-4 w-4" /> Create Email</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => handleSendEmail(contact)}><Mail className="mr-2 h-4 w-4" /> Send Email</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleScheduleTask(contact)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleCreateInvoice(contact)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleStartProject(contact)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
@@ -713,6 +720,13 @@ export function ContactsView() {
             onCustomIndustriesChange={setCustomIndustries} 
         />
       )}
+
+      <CreateEmailDialog
+        isOpen={isCreateEmailDialogOpen}
+        onOpenChange={setIsCreateEmailDialogOpen}
+        contact={contactForEmail}
+        onSend={handleEmailSend}
+      />
 
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md">
@@ -756,7 +770,7 @@ export function ContactsView() {
             <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} contact(s)?</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

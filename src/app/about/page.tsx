@@ -124,7 +124,7 @@ export default function AboutUsPage() {
 
             <section className="py-16 md:py-24">
                 <div className="container mx-auto px-4 max-w-4xl">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">Architectural Innovation: The Ogeemo Difference</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">Architectural Defensibility: The SaaS Moat</h2>
                     
                     <div className="space-y-12">
                         <div className="space-y-4">

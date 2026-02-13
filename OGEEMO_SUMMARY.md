@@ -12,9 +12,11 @@ Key principles include:
 - **Deep Google Integration:** Leverage Google Workspace for core functionalities like authentication, email, calendar, and file storage to create a seamless user experience.
 - **AI as a Partner:** Utilize AI not just as a chatbot, but as an integrated assistant that understands context, automates tedious tasks, and provides intelligent insights.
 
-## 2. Patentable Innovations
+## 2. Proprietary Innovations (The "Black Box" Shield)
 
-Ogeemo features a proprietary architecture for **Modular Interface Synthesis** and **Temporal Grid Orchestration**. Key patentable aspects include:
+Ogeemo features a proprietary architecture for **Modular Interface Synthesis** and **Temporal Grid Orchestration**. Our defensibility relies on the "Black Box" SaaS model, where core orchestration logic is secured server-side.
+
+Key proprietary aspects include:
 - **Universal Action Wrapping:** A method for wrapping disparate internal and external protocols into a uniform interactive component ("Action Chip").
 - **Dynamic Discovery Engine:** A system that inventories platform capabilities into an "Available" pool for user-directed workspace composition.
 - **Dynamic Temporal Granularity:** A unique calendar mechanism allowing users to scale hourly time-slots (1-12 slots per hour) to manage high-density micro-tasks.

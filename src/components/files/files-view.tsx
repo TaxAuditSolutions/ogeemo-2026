@@ -11,20 +11,28 @@ import {
   ChevronRight,
   ExternalLink,
   MoreVertical,
-  Pencil,
   Trash2,
-  BookOpen,
-  Link as LinkIcon,
-  Info,
+  Users,
+  Plus,
+  GitMerge,
+  Pencil,
   Files,
+  Check,
+  ChevronsUpDown,
+  X,
+  Mail,
+  Calendar,
+  FileDigit,
+  Briefcase,
   FilePlus,
   FileText,
   Sheet,
   Presentation,
-  Plus,
   ArrowDownAZ,
   ArrowUpZA,
   ArrowDownUp,
+  Link as LinkIcon,
+  Info,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -96,6 +104,12 @@ const newFileSchema = z.object({
 });
 
 type NewFileFormData = z.infer<typeof newFileSchema>;
+
+const googleDriveFileTypes = [
+  { label: 'Google Doc', value: 'doc', icon: FileText },
+  { label: 'Google Sheet', value: 'sheet', icon: Sheet },
+  { label: 'Google Slide', value: 'slide', icon: Presentation },
+];
 
 // --- Externalized Sub-components ---
 
@@ -698,21 +712,30 @@ export function FilesView() {
     <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
 
     <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
-            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFile} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDeleteFile} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
 
     <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Delete Multiple Files?</AlertDialogTitle><AlertDialogDescription>Delete {selectedFileIds.length} selected file(s)?</AlertDialogDescription></AlertDialogHeader>
-            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction></AlertDialogFooter>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction>
+            </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
 

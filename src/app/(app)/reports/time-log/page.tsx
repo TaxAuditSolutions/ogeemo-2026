@@ -224,7 +224,7 @@ export default function WorkerTimeLogReportPage() {
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Admin)`,
+            name: `${adminName} (Me)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
@@ -234,6 +234,10 @@ export default function WorkerTimeLogReportPage() {
         };
         return [adminWorker, ...workers];
     }, [workers, user, adminName, adminIdNumber]);
+
+    const formatCurrency = (amount: number) => {
+        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    };
 
     return (
         <>
@@ -252,7 +256,7 @@ export default function WorkerTimeLogReportPage() {
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
                                 <Label>Select Worker</Label>
                                 <WorkerSelector
@@ -300,7 +304,7 @@ export default function WorkerTimeLogReportPage() {
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
                             </Button>
                         </div>
-                    </CardHeader>
+                    </CardContent>
                     <CardContent>
                         <div className="border rounded-md">
                             <Table>

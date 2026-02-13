@@ -256,14 +256,14 @@ export default function ClientTimeLogReportPage() {
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b">
                         <CardTitle>Report Filters</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                         </Button>
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-wrap items-end gap-4">
+                    <CardContent className="p-4">
+                        <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
                                 <Label>Filter by Client</Label>
                                 <ContactSelector
@@ -310,9 +310,9 @@ export default function ClientTimeLogReportPage() {
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
                             </Button>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="border rounded-md">
+                    </CardContent>
+                    <CardContent className="p-0 border-t">
+                        <div className="border-x-0">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -390,7 +390,7 @@ export default function ClientTimeLogReportPage() {
                         </div>
                     </CardContent>
                     {selectedContactId && clientEntries.length > 0 && (
-                        <CardFooter className="justify-end">
+                        <CardFooter className="justify-end border-t p-4">
                             <Button onClick={() => handleCreateInvoice(selectedContactId)}>
                                 <FileDigit className="mr-2 h-4 w-4" />
                                 Create Invoice for {contacts.find(c => c.id === selectedContactId)?.name}

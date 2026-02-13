@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FilterX } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -245,9 +245,14 @@ export default function WorkerTimeLogReportPage() {
                 </header>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Filters</CardTitle>
-                        <div className="flex flex-wrap items-end gap-4 pt-2">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+                        <CardTitle>Report Filters</CardTitle>
+                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap items-end gap-4">
                            <div className="space-y-2">
                                 <Label>Select Worker</Label>
                                 <WorkerSelector
@@ -255,13 +260,14 @@ export default function WorkerTimeLogReportPage() {
                                     selectedWorkerId={selectedWorkerId}
                                     onSelect={setSelectedWorkerId}
                                     isLoading={isLoading}
+                                    className="w-full sm:w-64"
                                 />
                            </div>
                            <div className="space-y-2">
                                 <Label>Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
@@ -275,7 +281,7 @@ export default function WorkerTimeLogReportPage() {
                                 <Label>End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                        <Button variant="outline" className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
@@ -285,9 +291,13 @@ export default function WorkerTimeLogReportPage() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-
-                            <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Log Time
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} 
+                                disabled={!selectedWorkerId && !dateRange}
+                            >
+                                <FilterX className="mr-2 h-4 w-4" /> Clear
                             </Button>
                         </div>
                     </CardHeader>

@@ -190,6 +190,7 @@ const FolderTreeItem = ({
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
                     onBlur={onRenameConfirm} 
+                    onRenameConfirm={() => onRenameConfirm()}
                     onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 
@@ -529,9 +530,9 @@ export function ContactsView() {
       });
       return;
     }
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, [toast]);
+    // Navigate to Ogeemo's internal drafting composer
+    router.push(`/ogeemail/compose?contactId=${contact.id}`);
+  }, [router, toast]);
 
   const handleScheduleTask = useCallback((contact: Contact) => {
     router.push(`/master-mind?contactId=${contact.id}&title=${encodeURIComponent(`Meeting with ${contact.name}`)}`);

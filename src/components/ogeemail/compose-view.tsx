@@ -3,6 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,7 +59,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { Textarea } from '@/components/ui/textarea';
 import { type Contact, type FolderData } from '@/data/contacts';
 import { getContacts, getFolders, addContact } from '@/services/contact-service';
 import { saveEmailForContact } from '@/services/file-service';
@@ -89,6 +89,9 @@ const newContactSchema = z.object({
 });
 
 export function ComposeEmailView() {
+  const searchParams = useSearchParams();
+  const contactIdParam = searchParams.get('contactId');
+
   const [recipient, setRecipient] = React.useState('');
   const [cc, setCc] = React.useState('');
   const [bcc, setBcc] = React.useState('');
@@ -161,6 +164,15 @@ export function ComposeEmailView() {
             ]);
             setAllContacts(contacts);
             setAllFolders(folders);
+
+            // If contactId is provided in URL, pre-resolve it
+            if (contactIdParam) {
+                const contact = contacts.find(c => c.id === contactIdParam);
+                if (contact) {
+                    setRecipient(`"${contact.name}" <${contact.email}>`);
+                    setResolvedContact(contact);
+                }
+            }
         } catch (error) {
             console.error("Failed to load contact data:", error);
             toast({ variant: 'destructive', title: "Error", description: "Could not load contact data." });
@@ -169,7 +181,7 @@ export function ComposeEmailView() {
         }
     }
     loadContactData();
-  }, [user, toast]);
+  }, [user, toast, contactIdParam]);
 
   const handleRecipientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -244,10 +256,10 @@ export function ComposeEmailView() {
     }
   }
 
-  const handleSaveToContactFolder = async () => {
+  const handleLogEmail = async () => {
     if (!user) {
         toast({ variant: "destructive", title: "Not logged in", description: "You must be logged in to save emails." });
-        return;
+        return false;
     }
     if (!resolvedContact) {
         toast({
@@ -255,7 +267,7 @@ export function ComposeEmailView() {
             title: "No Contact Selected",
             description: "Please enter a valid contact in the 'To' field first.",
         });
-        return;
+        return false;
     }
 
     const currentBody = editorRef.current?.innerHTML || body;
@@ -266,19 +278,22 @@ export function ComposeEmailView() {
             title: "Empty Email",
             description: "Please provide a subject or body before saving.",
         });
-        return;
+        return false;
     }
 
     setIsSaving(true);
     try {
         await saveEmailForContact(user.uid, resolvedContact.name, {
+            to: resolvedContact.name,
+            from: user.email || '',
             subject: subject || 'Untitled Email',
             body: currentBody,
         });
         toast({
-            title: "Email Saved",
-            description: `A copy of this email has been saved to the "${resolvedContact.name}" folder in your File Manager.`,
+            title: "Email Logged",
+            description: `A copy of this email has been saved to the "${resolvedContact.name}" folder in your Document Manager.`,
         });
+        return true;
     } catch (error: any) {
         console.error("Failed to save email to contact folder:", error);
         toast({
@@ -286,9 +301,31 @@ export function ComposeEmailView() {
             title: "Save Failed",
             description: error.message || "An unexpected error occurred.",
         });
+        return false;
     } finally {
         setIsSaving(false);
     }
+  };
+
+  const handleOpenGmail = async () => {
+      if (!resolvedContact) {
+          toast({ variant: 'destructive', title: 'Contact Required', description: 'Please select a valid recipient before opening Gmail.' });
+          return;
+      }
+
+      // First, log the email in Ogeemo records
+      const loggedSuccessfully = await handleLogEmail();
+      if (!loggedSuccessfully) return;
+
+      // Construct Gmail URL
+      const currentBodyText = editorRef.current?.innerText || "";
+      const mailSubject = encodeURIComponent(subject || '');
+      const mailBody = encodeURIComponent(currentBodyText);
+      const recipientEmail = encodeURIComponent(resolvedContact.email);
+
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipientEmail}&su=${mailSubject}&body=${mailBody}`;
+      
+      window.open(gmailUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleFormat = (command: string, value?: string) => {
@@ -308,7 +345,6 @@ export function ComposeEmailView() {
     setIsGeneratingImage(true);
     setGeneratedImageUrl(null);
     try {
-      // Use the server action directly
       const result = await generateImage({ prompt: imagePrompt });
       setGeneratedImageUrl(result.imageUrl);
     } catch (error: any) {
@@ -368,11 +404,11 @@ export function ComposeEmailView() {
       
       <header className="relative text-center">
         <Button asChild variant="ghost" className="absolute left-0 top-1/2 -translate-y-1/2">
-            <Link href="/ogeemail">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Inbox
+            <Link href="/contacts">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Contacts
             </Link>
         </Button>
-        <h1 className="text-3xl font-bold font-headline text-primary">Compose Email</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">Email Composer</h1>
       </header>
       
       <div className="flex-1 min-h-0">
@@ -391,6 +427,7 @@ export function ComposeEmailView() {
                     onBlur={handleRecipientBlur}
                     onFocus={handleRecipientChange}
                     autoComplete="off"
+                    placeholder="Search or enter email..."
                   />
                   {showSuggestions && suggestions.length > 0 && (
                     <div className="absolute top-full left-0 w-full bg-background border rounded-md shadow-lg z-10 mt-1">
@@ -496,11 +533,13 @@ export function ComposeEmailView() {
                 </Dialog>
             </div>
             <div className="flex items-center gap-2">
-                <Button onClick={handleSaveToContactFolder} disabled={isSaving || !resolvedContact} className="bg-[#3B2F4A] hover:bg-[#3B2F4A]/90 text-white">
+                <Button onClick={handleLogEmail} disabled={isSaving || !resolvedContact} variant="outline" className="border-[#3B2F4A] text-[#3B2F4A] hover:bg-[#3B2F4A]/10">
                     {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
-                    {isSaving ? "Saving..." : "Save to Contact Folder"}
+                    {isSaving ? "Saving..." : "Just Log Record"}
                 </Button>
-                <Button className="bg-[#3B2F4A] hover:bg-[#3B2F4A]/90 text-white"><Send className="mr-2 h-4 w-4" /> Send</Button>
+                <Button onClick={handleOpenGmail} disabled={isSaving || !resolvedContact} className="bg-[#3B2F4A] hover:bg-[#3B2F4A]/90 text-white">
+                    <Send className="mr-2 h-4 w-4" /> Open Gmail & Log Record
+                </Button>
             </div>
           </CardFooter>
         </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -54,7 +54,7 @@ import { useAuth } from '@/context/auth-context';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 
-export default function CreateProjectPage() {
+function ProjectCreateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -449,4 +449,16 @@ export default function CreateProjectPage() {
       </AlertDialog>
     </>
   );
+}
+
+export default function CreateProjectPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center p-4">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        }>
+            <ProjectCreateForm />
+        </Suspense>
+    );
 }

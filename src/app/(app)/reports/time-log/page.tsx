@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/context/auth-context';
@@ -189,8 +189,6 @@ export default function WorkerTimeLogReportPage() {
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
-    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
-    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -215,11 +213,6 @@ export default function WorkerTimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
-    const handleCreateInvoice = (contactId: string | null) => {
-        if (!contactId) return;
-        router.push(`/accounting/invoices/create?contactId=${contactId}`);
-    };
-
     const requestSort = (key: 'workerName' | 'contactName' | 'startTime') => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -242,14 +235,10 @@ export default function WorkerTimeLogReportPage() {
         return [adminWorker, ...workers];
     }, [workers, user, adminName, adminIdNumber]);
 
-    const formatCurrency = (amount: number) => {
-        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-    };
-
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" />
+                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report (Payroll)</h1>
                   <p className="text-muted-foreground">Comprehensive record of all hours worked across the organization for internal payroll reconciling.</p>
@@ -297,10 +286,6 @@ export default function WorkerTimeLogReportPage() {
                                 </Popover>
                            </div>
 
-                            <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear
-                            </Button>
-                            
                             <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
@@ -352,14 +337,6 @@ export default function WorkerTimeLogReportPage() {
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            {entry.contactId && (
-                                                                <>
-                                                                    <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
-                                                                        <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                </>
-                                                            )}
                                                             {entry.source === 'log' ? (
                                                                 <>
                                                                     <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>

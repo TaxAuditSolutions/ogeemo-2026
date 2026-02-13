@@ -37,9 +37,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -52,7 +54,6 @@ import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { WorkerSelector } from '@/components/reports/WorkerSelector';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export default function TimeLogReportPage() {
@@ -242,7 +243,7 @@ export default function TimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/action-manager" />
+                <ReportsPageHeader pageTitle="Time Log Report" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>

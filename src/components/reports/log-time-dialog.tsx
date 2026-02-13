@@ -174,7 +174,7 @@ export function LogTimeDialog({
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{entryToEdit ? 'Edit' : 'Log'} Time Card Entry</DialogTitle>
-                    <DialogDescription> retrospective recording of a work session.</DialogDescription>
+                    <DialogDescription>A retrospective recording of a work session.</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

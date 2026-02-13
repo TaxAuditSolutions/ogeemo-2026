@@ -1,4 +1,3 @@
-
 import type { ReactNode } from "react";
 import { Inter, Orbitron } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';

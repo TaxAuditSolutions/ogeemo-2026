@@ -1,7 +1,7 @@
 
 'use client';
 
-import { redirect, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import { ProjectTasksView, ACTION_ITEMS_PROJECT_ID } from '@/components/tasks/project-tasks-view';
 
@@ -16,13 +16,23 @@ function InboxRedirect() {
     router.replace(`/projects/${ACTION_ITEMS_PROJECT_ID}/tasks?${newParams.toString()}`);
   }, [searchParams, router]);
 
-  return null; // This component doesn't render anything, it just redirects.
+  return (
+    <div className="flex h-full w-full items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="text-muted-foreground text-sm font-medium">Redirecting to Inbox...</p>
+      </div>
+    </div>
+  );
 }
 
-// The Inbox now uses the main ProjectTasksView component, passing a special projectId.
 export default function InboxPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center p-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
+        }>
             <InboxRedirect />
         </Suspense>
     );

@@ -1,7 +1,6 @@
 
 'use client';
 
-// Force re-compilation to resolve ChunkLoadError.
 import Link from 'next/link';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
@@ -19,7 +18,6 @@ import {
 import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 
-// Recompilation trigger comment
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
@@ -126,11 +124,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   {children}
               </main>
             </div>
-          </div>
-          {/* Preload key routes */}
-          <div style={{ display: 'none' }}>
-              <Link href="/action-manager" prefetch={true} />
-              <Link href="/settings" prefetch={true} />
           </div>
           <ActiveTimerIndicator />
         </SidebarViewProvider>

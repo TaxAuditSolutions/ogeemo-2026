@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export default function NewReminderPage() {
+function NewReminderForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
     
@@ -27,12 +27,12 @@ export default function NewReminderPage() {
     const [notes, setNotes] = useState("");
     
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-    const [startHour, setStartHour] = useState<string>(String(new Date().getHours()));
-    const [startMinute, setStartMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+    const [startHour, setStartHour] = useState<string>(String(new Date().getHours()).padStart(2, '0'));
+    const [startMinute, setStartMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
 
     const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-    const [endHour, setEndHour] = useState<string>(String(new Date().getHours() + 1));
-    const [endMinute, setEndMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+    const [endHour, setEndHour] = useState<string>(String(new Date().getHours() + 1).padStart(2, '0'));
+    const [endMinute, setEndMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
 
     const [isStartPopoverOpen, setIsStartPopoverOpen] = useState(false);
     const [isEndPopoverOpen, setIsEndPopoverOpen] = useState(false);
@@ -51,12 +51,12 @@ export default function NewReminderPage() {
 
     const hourOptions = Array.from({ length: 24 }, (_, i) => {
         const d = set(new Date(), { hours: i });
-        return { value: String(i), label: format(d, 'h a') };
+        return { value: String(i).padStart(2, '0'), label: format(d, 'h a') };
     });
 
     const minuteOptions = Array.from({ length: 12 }, (_, i) => {
         const minutes = i * 5;
-        return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` };
+        return { value: String(minutes).padStart(2, '0'), label: `:${minutes.toString().padStart(2, '0')}` };
     });
     
     const handleSaveReminder = async () => {
@@ -77,7 +77,7 @@ export default function NewReminderPage() {
             finalEndDate = set(finalEndDateDatePart, { hours: parseInt(finalEndHour), minutes: parseInt(finalEndMinute) });
 
             if (finalEndDate <= finalStartDate) {
-                finalEndDate = new Date(finalStartDate.getTime() + 30 * 60000); // Default to 30 min duration if end is before start
+                finalEndDate = new Date(finalStartDate.getTime() + 30 * 60000); // Default to 30 min duration
             }
 
             const reminderData = {
@@ -131,7 +131,7 @@ export default function NewReminderPage() {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={startDate} onSelect={(date) => { setStartDate(date); setIsStartPopoverOpen(false); }} initialFocus /></PopoverContent>
                             </Popover>
-                            <div className="flex-1 flex gap-2">
+                            <div className="flex gap-2">
                                 <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                                 <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                             </div>
@@ -147,9 +147,9 @@ export default function NewReminderPage() {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={endDate} onSelect={(date) => { setEndDate(date); setIsEndPopoverOpen(false); }} initialFocus /></PopoverContent>
                             </Popover>
-                            <div className="flex-1 flex gap-2">
+                            <div className="flex gap-2">
                                 <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
-                                <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                                <Select value={endMinute} onValueChange={setValue => setEndMinute(setValue)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
                     </div>
@@ -172,5 +172,17 @@ export default function NewReminderPage() {
                 </CardFooter>
             </Card>
         </div>
+    );
+}
+
+export default function NewReminderPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center p-4">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        }>
+            <NewReminderForm />
+        </Suspense>
     );
 }

@@ -39,7 +39,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/context/auth-context';
@@ -124,8 +124,7 @@ export default function WorkerTimeLogReportPage() {
                 id: tl.id,
                 workerId: tl.workerId,
                 workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
-                contactName: contact ? contact.name : (tl.contactName || 'Internal'),
-                contactId: tl.contactId || null,
+                contactName: contact ? contact.name : 'Internal',
                 startTime: new Date(tl.startTime),
                 durationSeconds: tl.durationSeconds,
                 source: 'log',
@@ -190,6 +189,8 @@ export default function WorkerTimeLogReportPage() {
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -301,7 +302,7 @@ export default function WorkerTimeLogReportPage() {
                             </Button>
                             
                             <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Log Retrospective Time
+                                <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
                         </div>
                     </CardHeader>

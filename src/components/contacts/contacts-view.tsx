@@ -24,6 +24,7 @@ import {
   Calendar,
   FileDigit,
   Briefcase,
+  Clock,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,9 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
+import { LogTimeDialog } from '../reports/log-time-dialog';
+import { getWorkers, type Worker } from '@/services/payroll-service';
+import { getUserProfile } from '@/services/user-profile-service';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -189,8 +193,8 @@ const FolderTreeItem = ({
                     autoFocus 
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
-                    onBlur={handleRenameConfirm} 
-                    onKeyDown={e => { if (e.key === 'Enter') handleRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
+                    onBlur={onRenameConfirm} 
+                    onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 
                   />
@@ -265,7 +269,10 @@ export function ContactsView() {
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
   
-  // For pre-populating from other modules
+  const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
+  const [preselectedContactId, setPreselectedContactId] = useState<string | null>(null);
+  const [workersForDialog, setWorkersForSelection] = useState<Worker[]>([]);
+
   const [initialContactData, setInitialDialogData] = useState<Partial<Contact>>({});
 
   const { toast } = useToast();
@@ -280,19 +287,33 @@ export function ContactsView() {
     }
     setIsLoading(true);
     try {
-        // Ensure system folders exist first
         const allFolders = await ensureSystemFolders(user.uid);
-        const [fetchedContacts, fetchedCompanies, fetchedIndustries] = await Promise.all([
+        const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers, profile] = await Promise.all([
             getContacts(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
+            getWorkers(user.uid),
+            getUserProfile(user.uid)
         ]);
         setFolders(allFolders);
         setContacts(fetchedContacts);
         setCompanies(fetchedCompanies);
         setCustomIndustries(fetchedIndustries);
 
-        // Expand relevant folders by default
+        const adminName = profile?.displayName || user.displayName || user.email || 'Admin';
+        const adminIdNumber = profile?.employeeNumber || '';
+        const adminWorker: Worker = {
+            id: user?.uid || '',
+            name: `${adminName} (Admin)`,
+            email: user?.email || '',
+            workerType: 'employee',
+            payType: 'salary',
+            payRate: 0,
+            userId: user?.uid || '',
+            workerIdNumber: adminIdNumber,
+        };
+        setWorkersForSelection([adminWorker, ...fetchedWorkers]);
+
         const workersFolder = allFolders.find(f => f.name === 'Workers' && f.isSystem);
         if (workersFolder) {
             setExpandedFolders(new Set([workersFolder.id]));
@@ -308,7 +329,6 @@ export function ContactsView() {
     loadData();
   }, [loadData]);
 
-  // Handle URL actions (e.g., from Lead Hub or User List)
   useEffect(() => {
     if (!isLoading && folders.length > 0) {
         const action = searchParams.get('action');
@@ -332,8 +352,6 @@ export function ContactsView() {
             setInitialDialogData(data);
             setContactToEdit(null);
             setIsContactFormOpen(true);
-            
-            // Clear URL params to avoid re-opening on refresh
             router.replace('/contacts');
         }
     }
@@ -532,6 +550,11 @@ export function ContactsView() {
     router.push(`/projects/create?contactId=${contact.id}`);
   }, [router]);
 
+  const handleLogTimeRetrospective = useCallback((contact: Contact) => {
+    setPreselectedContactId(contact.id);
+    setIsLogTimeDialogOpen(true);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -545,9 +568,9 @@ export function ContactsView() {
       <div className="flex flex-col h-full">
         <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Ogeemo Contact Manager
+            Contacts Hub
           </h1>
-          <p className="text-muted-foreground">Manage your contacts and client relationships</p>
+          <p className="text-muted-foreground">Manage your contacts, workers, and client relationships</p>
           <div className="absolute top-4 right-4">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <X className="h-5 w-5" />
@@ -656,6 +679,7 @@ export function ContactsView() {
                                               <DropdownMenuContent align="end">
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
+                                                  <DropdownMenuItem onSelect={() => handleLogTimeRetrospective(contact)}><Clock className="mr-2 h-4 w-4" /> Log Retrospective Time</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleScheduleTask(contact)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleCreateInvoice(contact)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleStartProject(contact)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
@@ -750,6 +774,16 @@ export function ContactsView() {
           allContacts={contacts}
           onMergeConfirm={handleMergeConfirm}
         />
+      )}
+
+      {isLogTimeDialogOpen && (
+          <LogTimeDialog
+            isOpen={isLogTimeDialogOpen}
+            onOpenChange={setIsLogTimeDialogOpen}
+            workers={workersForDialog}
+            onTimeLogged={loadData}
+            preselectedContactId={preselectedContactId}
+          />
       )}
     </>
   );

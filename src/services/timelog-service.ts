@@ -19,6 +19,8 @@ export interface TimeLog {
   id: string;
   workerId: string;
   workerName: string;
+  contactId?: string | null;
+  contactName?: string | null;
   startTime: Date;
   endTime: Date;
   durationSeconds: number;
@@ -49,6 +51,8 @@ const docToTimeLog = (doc: any): TimeLog => {
     isBillable: data.isBillable || false,
     billableRate: data.billableRate || 0,
     subject: data.subject || '',
+    contactId: data.contactId || null,
+    contactName: data.contactName || null,
   } as TimeLog;
 };
 

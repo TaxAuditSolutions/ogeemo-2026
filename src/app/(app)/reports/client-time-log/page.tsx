@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit, Briefcase } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -52,17 +52,16 @@ import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
-import { WorkerSelector } from '@/components/reports/WorkerSelector';
+import { ContactSelector } from '@/components/contacts/contact-selector';
 import { Label } from '@/components/ui/label';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
-export default function WorkerTimeLogReportPage() {
+export default function ClientTimeLogReportPage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
-    const [adminIdNumber, setAdminIdNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -71,9 +70,8 @@ export default function WorkerTimeLogReportPage() {
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
-    const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
     
-    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+    const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
@@ -97,7 +95,6 @@ export default function WorkerTimeLogReportPage() {
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
-            setAdminIdNumber(profile?.employeeNumber || '');
 
             setWorkers(fetchedWorkers);
             setContacts(fetchedContacts);
@@ -114,52 +111,56 @@ export default function WorkerTimeLogReportPage() {
         loadData();
     }, [loadData]);
 
-    const allMergedEntries = useMemo(() => {
-        const fromLogs = timeLogs.map(tl => {
-            const worker = workers.find(w => w.id === tl.workerId);
-            const contact = contacts.find(c => c.id === tl.contactId);
-            
-            return {
-                ...tl,
-                id: tl.id,
-                workerId: tl.workerId,
-                workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
-                contactName: contact ? contact.name : (tl.contactName || 'Internal'),
-                contactId: tl.contactId || null,
-                startTime: new Date(tl.startTime),
-                durationSeconds: tl.durationSeconds,
-                source: 'log',
-                isBillable: tl.isBillable || false,
-                billableRate: tl.billableRate || 0,
-                subject: tl.subject || '',
-            };
-        });
+    const clientEntries = useMemo(() => {
+        const fromLogs = timeLogs
+            .filter(tl => !!tl.contactId)
+            .map(tl => {
+                const worker = workers.find(w => w.id === tl.workerId);
+                const contact = contacts.find(c => c.id === tl.contactId);
+                
+                return {
+                    ...tl,
+                    id: tl.id,
+                    workerId: tl.workerId,
+                    workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
+                    contactName: contact ? contact.name : (tl.contactName || 'Client'),
+                    contactId: tl.contactId,
+                    startTime: new Date(tl.startTime),
+                    durationSeconds: tl.durationSeconds,
+                    source: 'log',
+                    isBillable: tl.isBillable || false,
+                    billableRate: tl.billableRate || 0,
+                    subject: tl.subject || '',
+                };
+            });
 
-        const fromTasks = tasks.map(t => {
-            const workerId = t.workerId || user?.uid;
-            const worker = workers.find(w => w.id === workerId);
-            const contact = contacts.find(c => c.id === t.contactId);
-            
-            return {
-                ...t,
-                id: t.id,
-                workerId: workerId,
-                workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
-                contactName: contact ? contact.name : 'Internal',
-                contactId: t.contactId || null,
-                startTime: new Date(t.start),
-                durationSeconds: t.duration || 0,
-                source: 'calendar',
-                isBillable: t.isBillable || false,
-                billableRate: t.billableRate || 0,
-                subject: t.title || '',
-            };
-        });
+        const fromTasks = tasks
+            .filter(t => !!t.contactId)
+            .map(t => {
+                const workerId = t.workerId || user?.uid;
+                const worker = workers.find(w => w.id === workerId);
+                const contact = contacts.find(c => c.id === t.contactId);
+                
+                return {
+                    ...t,
+                    id: t.id,
+                    workerId: workerId,
+                    workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
+                    contactName: contact ? contact.name : 'Client',
+                    contactId: t.contactId,
+                    startTime: new Date(t.start),
+                    durationSeconds: t.duration || 0,
+                    source: 'calendar',
+                    isBillable: t.isBillable || false,
+                    billableRate: t.billableRate || 0,
+                    subject: t.title || '',
+                };
+            });
 
         let combined = [...fromLogs, ...fromTasks];
 
-        if (selectedWorkerId) {
-            combined = combined.filter(e => e.workerId === selectedWorkerId);
+        if (selectedContactId) {
+            combined = combined.filter(e => e.contactId === selectedContactId);
         }
 
         if (dateRange?.from) {
@@ -187,9 +188,10 @@ export default function WorkerTimeLogReportPage() {
         }
 
         return combined;
-    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
+    }, [timeLogs, tasks, workers, contacts, selectedContactId, dateRange, user, adminName, sortConfig]);
 
-    const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
+    const totalBillableDuration = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [clientEntries]);
+    const totalBillableAmount = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [clientEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -227,20 +229,6 @@ export default function WorkerTimeLogReportPage() {
         setSortConfig({ key, direction });
     };
 
-    const workersForSelection = useMemo(() => {
-        const adminWorker: Worker = {
-            id: user?.uid || '',
-            name: `${adminName} (Admin)`,
-            email: user?.email || '',
-            workerType: 'employee',
-            payType: 'salary',
-            payRate: 0,
-            userId: user?.uid || '',
-            workerIdNumber: adminIdNumber,
-        };
-        return [adminWorker, ...workers];
-    }, [workers, user, adminName, adminIdNumber]);
-
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     };
@@ -248,10 +236,10 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" />
+                <ReportsPageHeader pageTitle="Client Time Log Report" />
                 <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report (Payroll)</h1>
-                  <p className="text-muted-foreground">Comprehensive record of all hours worked across the organization for internal payroll reconciling.</p>
+                  <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report (Billing)</h1>
+                  <p className="text-muted-foreground">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
                 </header>
 
                 <Card>
@@ -259,12 +247,11 @@ export default function WorkerTimeLogReportPage() {
                         <CardTitle>Filters</CardTitle>
                         <div className="flex flex-wrap items-end gap-4 pt-2">
                            <div className="space-y-2">
-                                <Label>Select Worker</Label>
-                                <WorkerSelector
-                                    workers={workersForSelection}
-                                    selectedWorkerId={selectedWorkerId}
-                                    onSelect={setSelectedWorkerId}
-                                    isLoading={isLoading}
+                                <Label>Filter by Client</Label>
+                                <ContactSelector
+                                    contacts={contacts}
+                                    selectedContactId={selectedContactId}
+                                    onSelectContact={setSelectedContactId}
                                 />
                            </div>
                            <div className="space-y-2">
@@ -296,12 +283,8 @@ export default function WorkerTimeLogReportPage() {
                                 </Popover>
                            </div>
 
-                            <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                            <Button variant="ghost" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
-                            </Button>
-                            
-                            <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Log Retrospective Time
                             </Button>
                         </div>
                     </CardHeader>
@@ -311,13 +294,13 @@ export default function WorkerTimeLogReportPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                             </Button>
                                         </TableHead>
                                         <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                             </Button>
                                         </TableHead>
                                         <TableHead className="p-0">
@@ -325,40 +308,34 @@ export default function WorkerTimeLogReportPage() {
                                                 Date {sortConfig?.key === 'startTime' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                             </Button>
                                         </TableHead>
-                                        <TableHead>Billing</TableHead>
                                         <TableHead>Subject</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
+                                        <TableHead className="text-right">Billable Amt</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
                                         <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                                    ) : allMergedEntries.length > 0 ? (
-                                        allMergedEntries.map(entry => (
+                                    ) : clientEntries.length > 0 ? (
+                                        clientEntries.map(entry => (
                                             <TableRow key={entry.id}>
-                                                <TableCell className="font-medium">{entry.workerName}</TableCell>
-                                                <TableCell>{entry.contactName || 'Internal'}</TableCell>
+                                                <TableCell className="font-medium">{entry.contactName}</TableCell>
+                                                <TableCell>{entry.workerName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={entry.isBillable ? "default" : "secondary"}>
-                                                        {entry.isBillable ? `Billable` : 'Non-Billable'}
-                                                    </Badge>
-                                                </TableCell>
                                                 <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
+                                                <TableCell className="text-right font-mono">
+                                                    {entry.isBillable ? formatCurrency((entry.durationSeconds / 3600) * (entry.billableRate || 0)) : '-'}
+                                                </TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            {entry.contactId && (
-                                                                <>
-                                                                    <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
-                                                                        <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                </>
-                                                            )}
+                                                            <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
+                                                                <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
                                                                     <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
@@ -373,14 +350,15 @@ export default function WorkerTimeLogReportPage() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No client-attributed entries found.</TableCell></TableRow>
                                     )}
                                 </TableBody>
-                                {allMergedEntries.length > 0 && (
+                                {clientEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-right font-bold">Total Hours (All Entries):</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
+                                            <TableCell colSpan={4} className="text-right font-bold">Billable Totals:</TableCell>
+                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalBillableDuration)}</TableCell>
+                                            <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
                                             <TableCell />
                                         </TableRow>
                                     </TableFooter>
@@ -388,6 +366,14 @@ export default function WorkerTimeLogReportPage() {
                             </Table>
                         </div>
                     </CardContent>
+                    {selectedContactId && clientEntries.length > 0 && (
+                        <CardFooter className="justify-end">
+                            <Button onClick={() => handleCreateInvoice(selectedContactId)}>
+                                <FileDigit className="mr-2 h-4 w-4" />
+                                Create Invoice for {contacts.find(c => c.id === selectedContactId)?.name}
+                            </Button>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
             
@@ -397,13 +383,11 @@ export default function WorkerTimeLogReportPage() {
                     setIsLogTimeDialogOpen(isOpen);
                     if (!isOpen) {
                         setEntryToEdit(null);
-                        setPreselectedWorkerId(null);
                     }
                 }}
-                workers={workersForSelection}
+                workers={[]} // Workers loaded inside dialog if needed
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
-                preselectedWorkerId={preselectedWorkerId}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

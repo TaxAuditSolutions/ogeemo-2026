@@ -133,6 +133,7 @@ export default function TimeLogReportPage() {
                 source: 'log',
                 isBillable: tl.isBillable || false,
                 billableRate: tl.billableRate || 0,
+                subject: tl.subject || '',
             };
         });
 
@@ -153,6 +154,7 @@ export default function TimeLogReportPage() {
                 source: 'calendar',
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
+                subject: t.title || '',
             };
         });
 
@@ -332,7 +334,7 @@ export default function TimeLogReportPage() {
                                             </Button>
                                         </TableHead>
                                         <TableHead>Billing</TableHead>
-                                        <TableHead>Notes</TableHead>
+                                        <TableHead>Subject</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
@@ -351,7 +353,7 @@ export default function TimeLogReportPage() {
                                                         {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>

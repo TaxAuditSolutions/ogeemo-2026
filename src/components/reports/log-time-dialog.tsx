@@ -48,6 +48,7 @@ export function LogTimeDialog({
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [startTime, setStartTime] = useState({ hour: '09', minute: '00' });
     const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
+    const [subject, setSubject] = useState('');
     const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     const [isBillable, setIsBillable] = useState(false);
@@ -67,6 +68,7 @@ export function LogTimeDialog({
                 setDate(start);
                 setStartTime({ hour: String(start.getHours()).padStart(2, '0'), minute: String(start.getMinutes()).padStart(2, '0') });
                 setEndTime({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
+                setSubject(entryToEdit.subject || '');
                 setNotes(entryToEdit.notes || '');
                 setSelectedWorkerId(entryToEdit.workerId);
                 setIsBillable(entryToEdit.isBillable || false);
@@ -75,6 +77,7 @@ export function LogTimeDialog({
                 setDate(new Date());
                 setStartTime({ hour: '09', minute: '00' });
                 setEndTime({ hour: '17', minute: '00' });
+                setSubject('');
                 setNotes('');
                 setSelectedWorkerId(preselectedWorkerId);
                 setIsBillable(false);
@@ -90,7 +93,7 @@ export function LogTimeDialog({
         }
 
         if (!notes.trim()) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a description of the work done.' });
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide details of the work done.' });
             return;
         }
 
@@ -118,6 +121,7 @@ export function LogTimeDialog({
                 startTime: finalStartTime,
                 endTime: finalEndTime,
                 durationSeconds,
+                subject: subject.trim(),
                 notes: notes,
                 isBillable,
                 billableRate: isBillable ? Number(billableRate) || 0 : 0,
@@ -229,9 +233,14 @@ export function LogTimeDialog({
                             </div>
                         )}
                     </div>
-                    <div className="space-y-2 border-t pt-4">
-                        <Label htmlFor="description">Description of work done *</Label>
-                        <Textarea id="description" placeholder="e.g., On-site client meeting, regular shift, etc." value={notes} onChange={(e) => setNotes(e.target.value)} />
+                    <Separator />
+                    <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
+                        <Input id="subject" placeholder="Summary of the session..." value={subject} onChange={(e) => setSubject(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Details *</Label>
+                        <Textarea id="description" placeholder="Expanded details about this work session..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
                     </div>
                 </div>
                 <DialogFooter>

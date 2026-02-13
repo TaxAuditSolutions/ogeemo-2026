@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -24,6 +23,7 @@ export interface TimeLog {
   endTime: Date;
   durationSeconds: number;
   location?: string;
+  subject?: string;
   notes: string;
   userId: string;
   status: 'unprocessed' | 'processed' | 'ready-for-payroll';
@@ -48,6 +48,7 @@ const docToTimeLog = (doc: any): TimeLog => {
     status: data.status || 'unprocessed',
     isBillable: data.isBillable || false,
     billableRate: data.billableRate || 0,
+    subject: data.subject || '',
   } as TimeLog;
 };
 

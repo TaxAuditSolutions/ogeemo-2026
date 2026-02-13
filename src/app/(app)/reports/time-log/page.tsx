@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -38,10 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { type DateRange } from 'react-day-picker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -51,9 +49,11 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
-import { LogTimeDialog } from '@/components/reports/log-time-dialog';
-import { WorkerSelector } from '@/components/reports/WorkerSelector';
+import { LogTimeDialog } from './log-time-dialog';
+import { WorkerSelector } from './WorkerSelector';
+import type { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 export default function WorkerTimeLogReportPage() {
@@ -62,7 +62,6 @@ export default function WorkerTimeLogReportPage() {
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
-    const [adminIdNumber, setAdminIdNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -95,7 +94,6 @@ export default function WorkerTimeLogReportPage() {
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
-            setAdminIdNumber(profile?.employeeNumber || '');
 
             setWorkers(fetchedWorkers);
             setContacts(fetchedContacts);
@@ -129,6 +127,7 @@ export default function WorkerTimeLogReportPage() {
                 isBillable: tl.isBillable || false,
                 billableRate: tl.billableRate || 0,
                 subject: tl.subject || '',
+                details: tl.notes || '',
             };
         });
 
@@ -149,6 +148,7 @@ export default function WorkerTimeLogReportPage() {
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
                 subject: t.title || '',
+                details: t.description || '',
             };
         });
 
@@ -167,6 +167,8 @@ export default function WorkerTimeLogReportPage() {
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -194,16 +196,15 @@ export default function WorkerTimeLogReportPage() {
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Me)`,
+            name: `${adminName} (Admin)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
-            workerIdNumber: adminIdNumber,
         };
         return [adminWorker, ...workers];
-    }, [workers, user, adminName, adminIdNumber]);
+    }, [workers, user, adminName]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -212,25 +213,22 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
+                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report (Payroll)</h1>
-                  <p className="text-muted-foreground">Comprehensive record of all hours worked across the organization for internal payroll reconciling.</p>
+                  <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
+                  <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
-                            <CardTitle>Report Filters</CardTitle>
-                            <div className="flex items-center gap-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Select Worker</Label>
-                                <WorkerSelector
-                                    workers={workersForSelection}
-                                    selectedWorkerId={selectedWorkerId}
-                                    onSelect={setSelectedWorkerId}
-                                    isLoading={isLoading}
-                                />
-                            </div>
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4 border-b">
+                        <div className="flex items-center gap-4 flex-1">
+                            <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
+                            <WorkerSelector
+                                workers={workersForSelection}
+                                selectedWorkerId={selectedWorkerId}
+                                onSelect={setSelectedWorkerId}
+                                isLoading={isLoading}
+                            />
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time
@@ -239,7 +237,7 @@ export default function WorkerTimeLogReportPage() {
                     <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
-                                <Label>Start Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
@@ -253,7 +251,7 @@ export default function WorkerTimeLogReportPage() {
                                 </Popover>
                            </div>
                            <div className="space-y-2">
-                                <Label>End Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
@@ -296,12 +294,16 @@ export default function WorkerTimeLogReportPage() {
                                                         {entry.isBillable ? `Billable` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.subject}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?title=${encodeURIComponent(entry.subject)}&notes=${encodeURIComponent(entry.details)}&contactId=${entry.contactId || ''}`)}>
+                                                                <CalendarIcon className="mr-2 h-4 w-4" /> Schedule an event
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
                                                                     <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
@@ -324,6 +326,16 @@ export default function WorkerTimeLogReportPage() {
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-right font-bold">Total Hours (All Entries):</TableCell>
                                             <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        <TableRow className="bg-muted/30">
+                                            <TableCell colSpan={5} className="text-right font-semibold">Billable Hours Only:</TableCell>
+                                            <TableCell className="text-right font-semibold font-mono text-primary">{formatTime(billableDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        <TableRow className="text-lg bg-primary/5">
+                                            <TableCell colSpan={5} className="text-right font-bold text-primary">Total Billable Amount (to Client):</TableCell>
+                                            <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
                                             <TableCell />
                                         </TableRow>
                                     </TableFooter>

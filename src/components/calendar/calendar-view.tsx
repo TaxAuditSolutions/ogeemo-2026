@@ -117,9 +117,14 @@ const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDro
         <div 
             ref={drop} 
             onClick={onClick}
-            className={cn("h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
+            className={cn("relative h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors group", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
         >
-            {children}
+            <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <Plus className="h-5 w-5"/>
+            </Button>
+            <div className="relative z-10 flex flex-col gap-1">
+                {children}
+            </div>
         </div>
     );
 };

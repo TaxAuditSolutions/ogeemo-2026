@@ -20,11 +20,11 @@ export default function ContactPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        const recipient = 'dan@ogeemo.com';
+        // The recipient is now dynamically set to the email entered in the form
+        const recipient = email.trim() || 'dan@ogeemo.com';
         const mailSubject = encodeURIComponent(`[Ogeemo Inquiry] ${subject || 'General Question'}`);
         const body = encodeURIComponent(
-            `Name: ${name}\n` +
-            `Reply-To: ${email}\n\n` +
+            `From: ${name}\n` +
             `Message:\n${message}`
         );
 
@@ -99,11 +99,11 @@ export default function ContactPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="email">Email</Label>
+                                            <Label htmlFor="email">To (Email Address)</Label>
                                             <Input 
                                                 id="email" 
                                                 type="email" 
-                                                placeholder="Your Email" 
+                                                placeholder="Recipient Email" 
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 required

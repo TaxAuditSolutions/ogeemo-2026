@@ -39,7 +39,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FilterX } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/context/auth-context';
@@ -249,13 +249,13 @@ export default function WorkerTimeLogReportPage() {
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b">
                         <CardTitle>Report Filters</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                         </Button>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
                                 <Label>Select Worker</Label>
@@ -305,8 +305,8 @@ export default function WorkerTimeLogReportPage() {
                             </Button>
                         </div>
                     </CardContent>
-                    <CardContent>
-                        <div className="border rounded-md">
+                    <CardContent className="p-0 border-t">
+                        <div className="border-x-0">
                             <Table>
                                 <TableHeader>
                                     <TableRow>

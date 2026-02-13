@@ -131,6 +131,7 @@ export default function ClientTimeLogReportPage() {
                     isBillable: tl.isBillable || false,
                     billableRate: tl.billableRate || 0,
                     subject: tl.subject || '',
+                    details: tl.notes || '',
                 };
             });
 
@@ -154,6 +155,7 @@ export default function ClientTimeLogReportPage() {
                     isBillable: t.isBillable || false,
                     billableRate: t.billableRate || 0,
                     subject: t.title || '',
+                    details: t.description || '',
                 };
             });
 
@@ -257,17 +259,14 @@ export default function ClientTimeLogReportPage() {
 
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
-                            <CardTitle>Report Filters</CardTitle>
-                            <div className="flex items-center gap-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Filter by Client</Label>
-                                <ContactSelector
-                                    contacts={contacts}
-                                    selectedContactId={selectedContactId}
-                                    onSelectContact={setSelectedContactId}
-                                    className="w-64"
-                                />
-                            </div>
+                        <div className="flex flex-row items-center gap-4 flex-1">
+                            <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
+                            <ContactSelector
+                                contacts={contacts}
+                                selectedContactId={selectedContactId}
+                                onSelectContact={setSelectedContactId}
+                                className="w-64"
+                            />
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time
@@ -276,7 +275,7 @@ export default function ClientTimeLogReportPage() {
                     <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
-                                <Label>Start Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
@@ -290,7 +289,7 @@ export default function ClientTimeLogReportPage() {
                                 </Popover>
                            </div>
                            <div className="space-y-2">
-                                <Label>End Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
@@ -351,6 +350,9 @@ export default function ClientTimeLogReportPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
                                                                 <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?title=${encodeURIComponent(entry.subject)}&notes=${encodeURIComponent(entry.details)}&contactId=${entry.contactId || ''}`)}>
+                                                                <CalendarIcon className="mr-2 h-4 w-4" /> Schedule an event
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -418,8 +419,10 @@ export function CalendarView() {
             </Button>
           </div>
         </header>
-        <div className="flex items-center justify-between flex-wrap gap-4 pb-4">
-          <div className="flex items-center gap-2">
+
+        <div className="flex flex-col space-y-4 pb-4">
+          {/* Row 1: Navigation Hub - Center Justified */}
+          <div className="flex items-center justify-center gap-2">
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -453,183 +456,187 @@ export function CalendarView() {
                 </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="flex-1 flex justify-center items-center gap-2">
-            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  className={cn(
-                    'w-[280px] justify-center text-center font-normal bg-card text-card-foreground',
-                    !currentDate && 'text-muted-foreground'
-                  )}
-                >
-                  <ChevronLeft
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePrev();
+
+          {/* Row 2: Date Controls & Utility Icons */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex-1 flex justify-center items-center gap-2">
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    className={cn(
+                      'w-[280px] justify-center text-center font-normal bg-card text-card-foreground',
+                      !currentDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <ChevronLeft
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrev();
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <span className="mx-2">
+                      {format(currentDate, 'cccc, LLLL do')}
+                    </span>
+                    <ChevronRight
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNext();
+                      }}
+                      className="h-4 w-4"
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CustomCalendar
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setCurrentDate(date);
+                        setIsDatePickerOpen(false);
+                      }
                     }}
-                    className="h-4 w-4"
+                    initialFocus
                   />
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  <span className="mx-2">
-                    {format(currentDate, 'cccc, LLLL do')}
-                  </span>
-                  <ChevronRight
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleNext();
-                    }}
-                    className="h-4 w-4"
-                  />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CustomCalendar
-                  mode="single"
-                  selected={currentDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setCurrentDate(date);
-                      setIsDatePickerOpen(false);
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={handleToday} className="bg-card text-card-foreground">
-              Today
-            </Button>
-            <Select value={String(dayCount)} onValueChange={handleDayCountChange}>
-              <SelectTrigger className="w-[110px] bg-card text-card-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {dayOptions.map((day) => (
-                  <SelectItem key={day} value={String(day)}>
-                    {day} Day{day > 1 ? 's' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild variant="ghost" size="icon">
-                    <Link href="/settings/rituals">
-                      <BrainCircuit className="h-4 w-4" />
-                    </Link>
+                </PopoverContent>
+              </Popover>
+              <Button onClick={handleToday} className="bg-card text-card-foreground">
+                Today
+              </Button>
+              <Select value={String(dayCount)} onValueChange={handleDayCountChange}>
+                <SelectTrigger className="w-[110px] bg-card text-card-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dayOptions.map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      {day} Day{day > 1 ? 's' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href="/settings/rituals">
+                        <BrainCircuit className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Planning Rituals</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href="/calendar/reminders">
+                        <BellRing className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Create a Reminder</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href="/master-mind/gtd-instructions">
+                        <BookOpen className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>The Ogeemo Method (TOM)</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href="/calendar/instructions">
+                        <Info className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>How to use the calendar</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Settings">
+                    <Settings className="h-4 w-4" />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Planning Rituals</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild variant="ghost" size="icon">
-                    <Link href="/calendar/reminders">
-                      <BellRing className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Create a Reminder</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild variant="ghost" size="icon">
-                    <Link href="/master-mind/gtd-instructions">
-                      <BookOpen className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>The Ogeemo Method (TOM)</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild variant="ghost" size="icon">
-                    <Link href="/calendar/instructions">
-                      <Info className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>How to use the calendar</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Settings">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div>
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium leading-none">
-                        Display Settings
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Set the visible hours for your calendar day.
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="start-time">Start Time</Label>
-                        <Select
-                          value={String(startHour)}
-                          onValueChange={handleStartHourChange}
-                        >
-                          <SelectTrigger
-                            id="start-time"
-                            className="col-span-2 h-8"
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div>
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium leading-none">
+                          Display Settings
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Set the visible hours for your calendar day.
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="start-time">Start Time</Label>
+                          <Select
+                            value={String(startHour)}
+                            onValueChange={handleStartHourChange}
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {hourOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="end-time">End Time</Label>
-                        <Select
-                          value={String(endHour)}
-                          onValueChange={handleEndHourChange}
-                        >
-                          <SelectTrigger id="end-time" className="col-span-2 h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {hourOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger
+                              id="start-time"
+                              className="col-span-2 h-8"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {hourOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="end-time">End Time</Label>
+                          <Select
+                            value={String(endHour)}
+                            onValueChange={handleEndHourChange}
+                          >
+                            <SelectTrigger id="end-time" className="col-span-2 h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {hourOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex justify-end pt-4">
+                      <PopoverClose asChild>
+                        <Button>Save</Button>
+                      </PopoverClose>
+                    </div>
                   </div>
-                  <div className="flex justify-end pt-4">
-                    <PopoverClose asChild>
-                      <Button>Save</Button>
-                    </PopoverClose>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
@@ -720,7 +727,7 @@ export function CalendarView() {
         </div>
       </div>
 
-      <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
+      <AlertDialog open={!!eventToDelete} onOpenChange={setEventToDelete} >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

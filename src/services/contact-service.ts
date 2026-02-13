@@ -1,4 +1,3 @@
-
 'use client';
 
 import { 
@@ -14,7 +13,6 @@ import {
     writeBatch,
     Timestamp,
     getDoc,
-    orderBy,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import type { Contact } from '@/data/contacts';
@@ -85,7 +83,8 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
-  const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), orderBy("userId"));
+  // Removed redundant orderBy("userId") which can cause index errors when combined with equality filters
+  const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
 }

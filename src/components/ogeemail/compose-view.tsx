@@ -60,8 +60,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { type Contact, type FolderData } from '@/data/contacts';
-import { getContacts, getFolders, addContact } from '@/services/contact-service';
+import { type Contact } from '@/data/contacts';
+import { getContacts, addContact } from '@/services/contact-service';
+import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { saveEmailForContact } from '@/services/file-service';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { cn } from '@/lib/utils';

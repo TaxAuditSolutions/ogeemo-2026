@@ -36,7 +36,7 @@ Organized into two main sections to cater to different user needs:
 
 ### Project & Task Management
 - **Project Manager:** A hub for viewing and managing all projects.
-- **Task Board:** A Kanban-style board for managing day-to-day tasks within a specific project.
+- **Task Board:** A Kanban-style board for managing tasks within a specific project.
 - **Project Planning:** A dedicated view for defining the steps and timeline of a project.
 
 ### Communications & Relationships

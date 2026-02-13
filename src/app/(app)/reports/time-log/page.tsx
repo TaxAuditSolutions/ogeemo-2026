@@ -24,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -37,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA, FileDigit } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -126,6 +127,7 @@ export default function TimeLogReportPage() {
                 workerId: tl.workerId,
                 workerName: worker ? worker.name : (tl.workerId === user?.uid ? adminName : tl.workerName || 'Unknown'),
                 contactName: contact ? contact.name : 'Internal',
+                contactId: tl.contactId || null,
                 startTime: new Date(tl.startTime),
                 durationSeconds: tl.durationSeconds,
                 source: 'log',
@@ -145,6 +147,7 @@ export default function TimeLogReportPage() {
                 workerId: workerId,
                 workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
                 contactName: contact ? contact.name : 'Internal',
+                contactId: t.contactId || null,
                 startTime: new Date(t.start),
                 durationSeconds: t.duration || 0,
                 source: 'calendar',
@@ -212,6 +215,14 @@ export default function TimeLogReportPage() {
     const handleOpenLogTimeDialog = (entry: any) => {
         setEntryToEdit(entry);
         setIsLogTimeDialogOpen(true);
+    };
+
+    const handleCreateInvoice = (contactId: string | null) => {
+        if (!contactId) {
+            toast({ variant: 'destructive', title: 'No Client Linked', description: 'This entry is not linked to a client.' });
+            return;
+        }
+        router.push(`/accounting/invoices/create?contactId=${contactId}`);
     };
 
     const requestSort = (key: 'workerName' | 'contactName' | 'startTime') => {
@@ -346,6 +357,14 @@ export default function TimeLogReportPage() {
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            {entry.contactId && (
+                                                                <>
+                                                                    <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
+                                                                        <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                </>
+                                                            )}
                                                             {entry.source === 'log' ? (
                                                                 <>
                                                                     <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>

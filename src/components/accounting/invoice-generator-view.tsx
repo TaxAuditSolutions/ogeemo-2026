@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,7 +50,6 @@ const formatCurrency = (amount: number) => {
 };
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
-const PRESELECTED_CONTACT_ID_KEY = 'ogeemo-preselected-contact-id';
 const INVOICE_PREVIEW_KEY = 'invoicePreviewData';
 
 
@@ -59,6 +57,7 @@ export function InvoiceGeneratorView() {
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -71,7 +70,7 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -164,15 +163,14 @@ export function InvoiceGeneratorView() {
           return;
         }
 
-        const preselectedContactId = sessionStorage.getItem(PRESELECTED_CONTACT_ID_KEY);
-        if (preselectedContactId) {
-          setSelectedContactId(preselectedContactId);
-          sessionStorage.removeItem(PRESELECTED_CONTACT_ID_KEY);
-          setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+        const contactIdParam = searchParams.get('contactId');
+        if (contactIdParam) {
+          setSelectedContactId(contactIdParam);
         } else {
           setSelectedContactId(null);
-          setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
         }
+        
+        setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -181,7 +179,7 @@ export function InvoiceGeneratorView() {
       }
     }
     initializeView();
-  }, [user, toast, loadInvoiceForEditing]);
+  }, [user, toast, loadInvoiceForEditing, searchParams]);
 
   useEffect(() => {
     const contact = contacts.find(c => c.id === selectedContactId);

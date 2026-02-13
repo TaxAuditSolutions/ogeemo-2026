@@ -538,8 +538,7 @@ export function ContactsView() {
   }, [router]);
 
   const handleCreateInvoice = useCallback((contact: Contact) => {
-    sessionStorage.setItem('ogeemo-preselected-contact-id', contact.id);
-    router.push('/accounting/invoices/create');
+    router.push(`/accounting/invoices/create?contactId=${contact.id}`);
   }, [router]);
 
   const handleStartProject = useCallback((contact: Contact) => {
@@ -563,10 +562,9 @@ export function ContactsView() {
           </h1>
           <p className="text-muted-foreground">Manage your contacts and client relationships</p>
           <div className="absolute top-4 right-4">
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/action-manager" aria-label="Close Contact Manager">
-                    <X className="h-5 w-5" />
-                </Link>
+            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
             </Button>
           </div>
         </header>

@@ -29,6 +29,9 @@ import {
   Plus,
   ChevronDown,
   ArrowRight,
+  ListTodo,
+  Briefcase,
+  Lightbulb,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -416,7 +419,40 @@ export function CalendarView() {
           </div>
         </header>
         <div className="flex items-center justify-between flex-wrap gap-4 pb-4">
-          <div />
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" asChild size="sm">
+                            <Link href="/to-do">
+                                <ListTodo className="mr-2 h-4 w-4" /> To-Do List
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>View your unassigned tasks</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" asChild size="sm">
+                            <Link href="/projects/all">
+                                <Briefcase className="mr-2 h-4 w-4" /> Project List
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Manage your multi-step projects</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" asChild size="sm">
+                            <Link href="/idea-board">
+                                <Lightbulb className="mr-2 h-4 w-4" /> Idea Board
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Capture and triage your ideas</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex-1 flex justify-center items-center gap-2">
             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
               <PopoverTrigger asChild>

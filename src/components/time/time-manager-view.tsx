@@ -607,7 +607,7 @@ export function TimeManagerView() {
                             </TooltipProvider>
                         </div>
                         <div className="text-center absolute left-1/2 -translate-x-1/2">
-                            <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Time &amp; Event Scheduler</h1>
+                            <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
                             <p className="text-muted-foreground whitespace-nowrap">Your central hub for tasks and calendar entries.</p>
                         </div>
                         <div className="flex-1 flex justify-end items-center gap-2">

@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -77,8 +77,6 @@ export default function WorkerTimeLogReportPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
-
-    const [sortConfig, setSortConfig] = useState<{ key: 'workerName' | 'contactName' | 'startTime'; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -145,7 +143,6 @@ export default function WorkerTimeLogReportPage() {
                 workerId: workerId,
                 workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
                 contactName: contact ? contact.name : 'Internal',
-                contactId: t.contactId || null,
                 startTime: new Date(t.start),
                 durationSeconds: t.duration || 0,
                 source: 'calendar',
@@ -166,27 +163,8 @@ export default function WorkerTimeLogReportPage() {
             combined = combined.filter(e => isWithinInterval(e.startTime, { start: startOfDay(dateRange.from!), end: rangeEnd }));
         }
 
-        if (sortConfig) {
-            combined.sort((a, b) => {
-                let aValue: any = a[sortConfig.key];
-                let bValue: any = b[sortConfig.key];
-
-                if (sortConfig.key === 'startTime') {
-                    aValue = a.startTime.getTime();
-                    bValue = b.startTime.getTime();
-                } else {
-                    aValue = String(aValue || '').toLowerCase();
-                    bValue = String(bValue || '').toLowerCase();
-                }
-
-                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        return combined;
-    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
+        return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
 
@@ -213,14 +191,6 @@ export default function WorkerTimeLogReportPage() {
         setIsLogTimeDialogOpen(true);
     };
 
-    const requestSort = (key: 'workerName' | 'contactName' | 'startTime') => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
@@ -234,6 +204,10 @@ export default function WorkerTimeLogReportPage() {
         };
         return [adminWorker, ...workers];
     }, [workers, user, adminName, adminIdNumber]);
+
+    const formatCurrency = (amount: number) => {
+        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    };
 
     return (
         <>
@@ -299,21 +273,9 @@ export default function WorkerTimeLogReportPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('startTime')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Date {sortConfig?.key === 'startTime' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
+                                        <TableHead>Worker</TableHead>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Date</TableHead>
                                         <TableHead>Billing</TableHead>
                                         <TableHead>Subject</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
@@ -327,7 +289,7 @@ export default function WorkerTimeLogReportPage() {
                                         allMergedEntries.map(entry => (
                                             <TableRow key={entry.id}>
                                                 <TableCell className="font-medium">{entry.workerName}</TableCell>
-                                                <TableCell>{entry.contactName || 'Internal'}</TableCell>
+                                                <TableCell>{entry.contactName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={entry.isBillable ? "default" : "secondary"}>

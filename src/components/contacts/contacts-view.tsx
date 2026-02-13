@@ -562,7 +562,7 @@ export function ContactsView() {
           </h1>
           <p className="text-muted-foreground">Manage your contacts and client relationships</p>
           <div className="absolute top-4 right-4">
-            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <X className="h-5 w-5" />
                 <span className="sr-only">Close</span>
             </Button>

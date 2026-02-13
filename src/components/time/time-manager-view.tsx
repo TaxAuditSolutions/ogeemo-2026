@@ -51,7 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { getUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -490,7 +490,7 @@ export function TimeManagerView() {
         } finally {
             setIsLoadingData(false);
         }
-    }, [user, searchParams, toast]);
+    }, [user, searchParams, toast, router]);
 
     useEffect(() => {
         loadData();
@@ -635,7 +635,7 @@ export function TimeManagerView() {
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
-                            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                            <Button variant="ghost" size="icon" onClick={() => router.back()}>
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>

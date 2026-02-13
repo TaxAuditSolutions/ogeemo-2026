@@ -121,6 +121,10 @@ export default function CreateProjectPage() {
     if (isAuthLoading || isLoadingData) return;
 
     const projectId = searchParams.get('projectId');
+    const contactId = searchParams.get('contactId');
+    const initialTitle = searchParams.get('title');
+    const initialDesc = searchParams.get('description');
+
     if (projectId && user) {
       setProjectToEditId(projectId);
       setCreationStep('form');
@@ -137,6 +141,11 @@ export default function CreateProjectPage() {
         }
       };
       loadProject();
+    } else if (contactId || initialTitle || initialDesc) {
+        if (contactId) setSelectedContactId(contactId);
+        if (initialTitle) setProjectName(initialTitle);
+        if (initialDesc) setDescription(initialDesc);
+        setCreationStep('form');
     }
   }, [searchParams, user, isAuthLoading, isLoadingData, toast]);
 

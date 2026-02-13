@@ -20,6 +20,10 @@ import {
   Check,
   ChevronsUpDown,
   X,
+  Mail,
+  Calendar,
+  FileDigit,
+  Briefcase,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -186,6 +190,7 @@ const FolderTreeItem = ({
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
                     onBlur={onRenameConfirm} 
+                    onRenameConfirm={onRenameConfirm}
                     onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 
@@ -516,6 +521,32 @@ export function ContactsView() {
       setIsNewFolderDialogOpen(true);
   };
 
+  const handleSendEmail = useCallback((contact: Contact) => {
+    if (!contact.email) {
+      toast({
+        variant: 'destructive',
+        title: "No Email Found",
+        description: `"${contact.name}" does not have an email address recorded.`,
+      });
+      return;
+    }
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, [toast]);
+
+  const handleScheduleTask = useCallback((contact: Contact) => {
+    router.push(`/master-mind?contactId=${contact.id}&title=${encodeURIComponent(`Meeting with ${contact.name}`)}`);
+  }, [router]);
+
+  const handleCreateInvoice = useCallback((contact: Contact) => {
+    sessionStorage.setItem('ogeemo-preselected-contact-id', contact.id);
+    router.push('/accounting/invoices/create');
+  }, [router]);
+
+  const handleStartProject = useCallback((contact: Contact) => {
+    router.push(`/projects/create?contactId=${contact.id}`);
+  }, [router]);
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -639,10 +670,16 @@ export function ContactsView() {
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                  <DropdownMenuSeparator />
+                                                  <DropdownMenuItem onSelect={() => handleSendEmail(contact)}><Mail className="mr-2 h-4 w-4" /> Send Email</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => handleScheduleTask(contact)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => handleCreateInvoice(contact)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => handleStartProject(contact)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
+                                                  <DropdownMenuSeparator />
                                                   <DropdownMenuItem onSelect={() => { setContactToMerge(contact); setIsMergeDialogOpen(true); }}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
-                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}> <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}> <Trash2 className="mr-2 h-4 w-4" />Delete Contact</DropdownMenuItem>
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>

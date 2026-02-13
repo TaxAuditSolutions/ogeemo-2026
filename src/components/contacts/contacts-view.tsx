@@ -190,7 +190,6 @@ const FolderTreeItem = ({
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
                     onBlur={onRenameConfirm} 
-                    onRenameConfirm={() => onRenameConfirm()}
                     onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 
@@ -534,6 +533,10 @@ export function ContactsView() {
     router.push(`/ogeemail/compose?contactId=${contact.id}`);
   }, [router, toast]);
 
+  const handleCreateEmail = useCallback((contact: Contact) => {
+    toast({ title: "Create Email", description: `Starting email process for ${contact.name}` });
+  }, [toast]);
+
   const handleScheduleTask = useCallback((contact: Contact) => {
     router.push(`/master-mind?contactId=${contact.id}&title=${encodeURIComponent(`Meeting with ${contact.name}`)}`);
   }, [router]);
@@ -670,6 +673,7 @@ export function ContactsView() {
                                               <DropdownMenuContent align="end">
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
+                                                  <DropdownMenuItem onSelect={() => handleCreateEmail(contact)}><Mail className="mr-2 h-4 w-4" /> Create Email</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleSendEmail(contact)}><Mail className="mr-2 h-4 w-4" /> Send Email</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleScheduleTask(contact)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
                                                   <DropdownMenuItem onSelect={() => handleCreateInvoice(contact)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>

@@ -14,9 +14,10 @@ Key principles include:
 
 ## 2. Patentable Innovations
 
-Ogeemo features a proprietary architecture for **Modular Interface Synthesis** (the "Action Chip" system). Key patentable aspects include:
-- **Universal Action Wrapping:** A method for wrapping disparate internal and external protocols into a uniform interactive component.
+Ogeemo features a proprietary architecture for **Modular Interface Synthesis** and **Temporal Grid Orchestration**. Key patentable aspects include:
+- **Universal Action Wrapping:** A method for wrapping disparate internal and external protocols into a uniform interactive component ("Action Chip").
 - **Dynamic Discovery Engine:** A system that inventories platform capabilities into an "Available" pool for user-directed workspace composition.
+- **Dynamic Temporal Granularity:** A unique calendar mechanism allowing users to scale hourly time-slots (1-12 slots per hour) to manage high-density micro-tasks.
 - **Cognitive Load Reduction:** A technical solution to interface clutter through state-persisted functional instantiation.
 
 ## 3. Key Modules & Managers
@@ -31,28 +32,18 @@ The application is structured around several core hubs, each managing a distinct
 ### Accounting Hub
 Organized into two main sections to cater to different user needs:
 - **BKS (Bookkeeping Kept Simple):** A simplified, cash-based accounting system focused on core income and expense ledgers. Designed to be intuitive for non-accountants and ensure books are audit-ready by default.
-- **Advanced Tools:** A comprehensive suite of traditional accounting modules, including:
-  - **Accounts Receivable & Invoicing:** Manage client invoices and payments.
-  - **Accounts Payable:** Track and manage bills from vendors.
-  - **Payroll:** Handle employee compensation and reporting.
-  - **Asset Management:** Track capital assets and depreciation.
-  - **Reporting:** Generate financial statements and tax forms (e.g., T2125).
+- **Advanced Tools:** A comprehensive suite of traditional accounting modules, including Accounts Receivable, Accounts Payable, Payroll, and Asset Management.
 
 ### Project & Task Management
 - **Project Manager:** A hub for viewing and managing all projects.
-- **Task Board:** A Kanban-style board (To Do, In Progress, Done) for managing the day-to-day tasks within a specific project.
-- **Project Planning:** A dedicated view for defining the steps and timeline of a project, which can then generate tasks on the Task Board and events in the Calendar.
+- **Task Board:** A Kanban-style board for managing day-to-day tasks within a specific project.
+- **Project Planning:** A dedicated view for defining the steps and timeline of a project.
 
 ### Communications & Relationships
 - **OgeeMail:** An integrated email client for managing business communications.
-- **Contacts Manager:** A central database for all clients, vendors, and personal contacts, organized into folders.
-- **Calendar:** A tool for managing schedules, appointments, and events, linked to projects and contacts.
-- **CRM (Customer Relationship Manager):** A planned module to track the entire customer journey, from lead to loyal client, integrated with all other modules.
-
-### Utility Managers
-- **File Manager:** A secure place for document storage and organization.
-- **Time Manager:** Track time spent on tasks, associate it with clients, and mark it as billable.
-- **Research Hub:** An AI-powered workspace to manage sources, take notes, and interact with an assistant to synthesize information.
+- **Contacts Manager:** A central database for all clients, vendors, and personal contacts.
+- **Calendar (The Temporal Matrix):** An execution-focused calendar allowing for 5-minute task precision and drag-and-drop orchestration.
+- **CRM (Customer Relationship Manager):** A planned module to track the entire customer journey.
 
 ## 4. AI Integration (Firebase Genkit)
 

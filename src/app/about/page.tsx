@@ -4,7 +4,7 @@ import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
-import { Users, Target, Lightbulb, ArrowRight, Layers, Zap, ShieldCheck, MousePointerClick, CheckCircle } from "lucide-react";
+import { Users, Target, Lightbulb, ArrowRight, Layers, Zap, ShieldCheck, MousePointerClick, CheckCircle, Clock, Calendar } from "lucide-react";
 
 const teamMembers = [
     {
@@ -124,7 +124,7 @@ export default function AboutUsPage() {
 
             <section className="py-16 md:py-24">
                 <div className="container mx-auto px-4 max-w-4xl">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">The Root Orchestrator: Our Architectural Innovation</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">Architectural Innovation: The Ogeemo Difference</h2>
                     
                     <div className="space-y-12">
                         <div className="space-y-4">
@@ -143,8 +143,23 @@ export default function AboutUsPage() {
 
                         <div className="space-y-4">
                             <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+                                <Clock className="h-6 w-6" />
+                                2. The Temporal Matrix: More Than Just a Calendar
+                            </h3>
+                            <p className="text-muted-foreground">
+                                Most calendars are built for appointments; Ogeemo is built for <strong>execution</strong>. We introduce <strong>Dynamic Temporal Granularity</strong>, allowing you to reconfigure the resolution of your day.
+                            </p>
+                            <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                <li><strong>5-Minute Precision:</strong> Unlike competitors limited to 15 or 30-minute blocks, Ogeemo allows you to divide every hour into up to 12 discrete slots.</li>
+                                <li><strong>Task Organizer:</strong> This allows business owners to visually manage the dozens of small, high-value actions (emails, approvals, checks) that usually fall through the cracks of a standard calendar.</li>
+                                <li><strong>Command Surface:</strong> The calendar acts as the visual destination where intentions from the Idea Board and Project Planner are converted into timed reality through drag-and-drop orchestration.</li>
+                            </ul>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
                                 <Zap className="h-6 w-6" />
-                                2. Integrated Workflow: From Master to Hub
+                                3. Integrated Workflow: From Master to Hub
                             </h3>
                             <p className="text-muted-foreground">To show the "Spider Web" in action through the Master Chip:</p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -173,7 +188,7 @@ export default function AboutUsPage() {
                                     <ul className="list-disc pl-6 space-y-3">
                                         <li><strong>One Master Chip:</strong> A single button that can call up any and all desired actions across the entire platform instantly.</li>
                                         <li><strong>The Action Manager:</strong> A dedicated space where you can collect all your favorites. You build your own command center by choosing exactly what you need to see.</li>
-                                        <li><strong>Beyond Ogeemo:</strong> The system allows you to create custom chips that connect to any URL or app outside the Ogeemo world, making it a true gateway for your entire business.</li>
+                                        <li><strong>Beyond Ogeemo:</strong> The system allows you to create custom chips that connect to any URL or app outside the Ogeemo world, maintaining a uniform workflow across internal and external applications.</li>
                                     </ul>
                                     <p className="font-medium">
                                         This architecture gets rid of screen clutter and reduces user time, allowing you to toggle between high-level project management and detailed bookkeeping without losing your place.

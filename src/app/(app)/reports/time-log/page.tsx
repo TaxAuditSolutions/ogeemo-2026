@@ -205,7 +205,7 @@ export default function WorkerTimeLogReportPage() {
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Me)`,
+            name: `${adminName} (Admin)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
@@ -222,7 +222,7 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
+                <ReportsPageHeader pageTitle="Worker Time Log Report" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
@@ -230,7 +230,7 @@ export default function WorkerTimeLogReportPage() {
 
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
-                        <div className="flex items-center gap-4 flex-1">
+                        <div className="flex flex-row items-center gap-4 flex-1">
                             <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
                             <WorkerSelector
                                 workers={workersForSelection}
@@ -240,7 +240,7 @@ export default function WorkerTimeLogReportPage() {
                             />
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time
+                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time Event
                         </Button>
                     </CardHeader>
                     <CardContent className="p-4">

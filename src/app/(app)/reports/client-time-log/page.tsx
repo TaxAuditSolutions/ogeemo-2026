@@ -247,7 +247,7 @@ export default function ClientTimeLogReportPage() {
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Me)`,
+            name: `${adminName} (Admin)`,
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
@@ -278,7 +278,7 @@ export default function ClientTimeLogReportPage() {
                             />
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time
+                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time Event
                         </Button>
                     </CardHeader>
                     <CardContent className="p-4">

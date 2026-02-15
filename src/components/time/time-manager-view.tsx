@@ -7,7 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Clock, Play, Pause, Trash2, MoreVertical, Pencil, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle, User, Square } from 'lucide-react';
+import { 
+    LoaderCircle, 
+    Save, 
+    ChevronsUpDown, 
+    Check, 
+    Plus, 
+    X, 
+    Info, 
+    Clock, 
+    Play, 
+    Pause, 
+    Trash2, 
+    MoreVertical, 
+    Pencil, 
+    MessageSquare, 
+    RefreshCw, 
+    BellRing, 
+    Mail, 
+    CheckCircle, 
+    User, 
+    Square,
+    Calendar as CalendarIcon 
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
@@ -54,8 +76,8 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
-import { Checkbox } from '../ui/checkbox';
-import { Separator } from '../ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 
 export interface StoredTimerState {

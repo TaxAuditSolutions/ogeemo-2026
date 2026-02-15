@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -126,8 +127,7 @@ export default function WorkerTimeLogReportPage() {
                 source: 'log',
                 isBillable: tl.isBillable || false,
                 billableRate: tl.billableRate || 0,
-                subject: tl.subject || '',
-                details: tl.notes || '',
+                notes: tl.notes || tl.description || tl.subject || '',
             };
         });
 
@@ -147,8 +147,7 @@ export default function WorkerTimeLogReportPage() {
                 source: 'calendar',
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
-                subject: t.title || '',
-                details: t.description || '',
+                notes: t.description || t.title || '',
             };
         });
 
@@ -195,8 +194,8 @@ export default function WorkerTimeLogReportPage() {
 
     const handleScheduleEvent = (entry: any) => {
         const query = new URLSearchParams({
-            title: entry.subject || entry.title || '',
-            notes: entry.details || entry.notes || '',
+            title: entry.title || entry.subject || '',
+            notes: entry.notes || entry.details || entry.description || '',
             contactId: entry.contactId || '',
         });
         router.push(`/master-mind?${query.toString()}`);
@@ -222,11 +221,11 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
+                <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
                     <div className="text-left flex-1">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
-                        <p className="text-muted-foreground text-sm">Review work sessions. Attribution shows who did the work and which client was served.</p>
+                        <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                        <p className="text-muted-foreground text-sm">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-3">
                         <WorkerSelector
@@ -242,14 +241,14 @@ export default function WorkerTimeLogReportPage() {
                 </header>
 
                 <Card>
-                    <CardContent className="p-4">
+                    <CardHeader className="p-4 bg-muted/30">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -263,7 +262,7 @@ export default function WorkerTimeLogReportPage() {
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -273,10 +272,10 @@ export default function WorkerTimeLogReportPage() {
                                 </Popover>
                            </div>
                            <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                                <FilterX className="mr-2 h-4 w-4" /> Clear
                             </Button>
                         </div>
-                    </CardContent>
+                    </CardHeader>
                     <CardContent className="p-0 border-t">
                         <div className="border-x-0">
                             <Table>
@@ -302,10 +301,10 @@ export default function WorkerTimeLogReportPage() {
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={entry.isBillable ? "default" : "secondary"}>
-                                                        {entry.isBillable ? `Billable` : 'Non-Billable'}
+                                                        {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title || entry.subject}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
@@ -317,7 +316,7 @@ export default function WorkerTimeLogReportPage() {
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
@@ -329,7 +328,7 @@ export default function WorkerTimeLogReportPage() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found for the current selection.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                                 {allMergedEntries.length > 0 && (

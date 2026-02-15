@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -79,6 +80,7 @@ import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, 
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '../ui/badge';
 
 
 export interface StoredTimerState {
@@ -162,6 +164,7 @@ export function TimeManagerView() {
     const [isReviewMode, setIsReviewMode] = useState(false);
 
     const hasStartedTimerRef = useRef(false);
+    const subjectInputRef = useRef<HTMLInputElement>(null);
 
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
@@ -190,10 +193,17 @@ export function TimeManagerView() {
         return totalAccumulatedSeconds + elapsedSeconds;
     }, [totalAccumulatedSeconds, elapsedSeconds]);
 
+    // Focus Subject Input when timer starts
+    useEffect(() => {
+        if (timerState?.isActive && !subject) {
+            subjectInputRef.current?.focus();
+        }
+    }, [timerState?.isActive, subject]);
+
     const createAndSaveNewEvent = useCallback(async (): Promise<TaskEvent | null> => {
         if (!user) return null;
 
-        const finalSubject = subject.trim() || "Active Session";
+        const finalSubject = subject.trim() || "Untitled Session";
 
         const eventData: Omit<TaskEvent, 'id'> = {
             title: finalSubject,
@@ -211,8 +221,7 @@ export function TimeManagerView() {
         try {
             const newEvent = await addTask(eventData);
             setEventToEdit(newEvent);
-            if (!subject.trim()) setSubject(finalSubject);
-            toast({ title: "Session Started", description: `Clocked into "${finalSubject}".` });
+            toast({ title: "Session Started", description: `Clocked into your work.` });
             return newEvent;
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to start session", description: error.message });
@@ -685,8 +694,8 @@ export function TimeManagerView() {
                         </div>
                         
                         <div className="flex flex-col items-center text-center px-4">
-                            <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
-                            <p className="text-muted-foreground text-sm font-medium mt-1 leading-tight">
+                            <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
+                            <p className="text-sm font-medium mt-1 leading-tight text-muted-foreground">
                                 This is your Master-Mind for creating records and getting things done.
                             </p>
                         </div>
@@ -729,8 +738,21 @@ export function TimeManagerView() {
                     <Card>
                         <CardContent className="pt-6 space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="subject">Subject Title <span className="text-destructive">*</span></Label>
-                                <Input id="subject" placeholder="What is the main task or event?" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="subject">Subject Title <span className="text-destructive">*</span></Label>
+                                    {timerState?.isActive && (
+                                        <Badge variant="outline" className="h-5 px-1.5 py-0 border-primary/50 text-[10px] uppercase font-bold text-primary animate-pulse bg-primary/5">
+                                            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-primary" /> Live Recording
+                                        </Badge>
+                                    )}
+                                </div>
+                                <Input 
+                                    id="subject" 
+                                    placeholder={timerState?.isActive ? "Recording live session... enter title" : "What is the main task or event?"} 
+                                    value={subject} 
+                                    onChange={(e) => setSubject(e.target.value)} 
+                                    ref={subjectInputRef}
+                                />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card>

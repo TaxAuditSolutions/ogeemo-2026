@@ -76,7 +76,7 @@ export default function ClientTimeLogReportPage() {
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
-    const [sortConfig, setSortConfig] = setSortConfig = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -269,7 +269,7 @@ export default function ClientTimeLogReportPage() {
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
                         <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium whitespace-nowrap">Client Selector</CardTitle>
+                            <CardTitle className="text-sm font-medium whitespace-nowrap">Filter by Client</CardTitle>
                             <ContactSelector
                                 contacts={contacts}
                                 selectedContactId={selectedContactId}

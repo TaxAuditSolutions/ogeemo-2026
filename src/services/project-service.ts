@@ -550,7 +550,7 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
         dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
         accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-    }[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
+    }[type] || AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION;
 
     // Load existing custom configurations
     let [activeChips, availableChips] = await Promise.all([

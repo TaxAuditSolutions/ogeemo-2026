@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Timer, Play, Pause, Trash2, MoreVertical, Pencil, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle, User } from 'lucide-react';
+import { LoaderCircle, Save, ChevronsUpDown, Check, Plus, X, Info, Clock, Play, Pause, Trash2, MoreVertical, Pencil, MessageSquare, RefreshCw, BellRing, Mail, CheckCircle, User, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
@@ -56,6 +56,7 @@ import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, 
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
+import { Separator } from '../ui/separator';
 
 
 export interface StoredTimerState {
@@ -590,7 +591,7 @@ export function TimeManagerView() {
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
                     <div className="flex justify-between items-center relative">
-                        <div className="flex-1 flex justify-start gap-2">
+                        <div className="flex-1 flex justify-start gap-2 items-center">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -604,7 +605,7 @@ export function TimeManagerView() {
                                         <p>Instructions</p>
                                     </TooltipContent>
                                 </Tooltip>
-                                {!timerState?.isActive && (
+                                {!timerState?.isActive ? (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button 
@@ -619,6 +620,24 @@ export function TimeManagerView() {
                                             <p>{subject.trim() ? "Start tracking time for this session" : "Enter a subject title to enable the timer."}</p>
                                         </TooltipContent>
                                     </Tooltip>
+                                ) : (
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                                        <Clock className="h-4 w-4 animate-pulse" />
+                                        <span className="font-mono font-bold text-sm">{formatTime(elapsedSeconds)}</span>
+                                        <Separator orientation="vertical" className="h-4 mx-1" />
+                                        {timerState.isPaused ? (
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleResumeTimer} title="Resume">
+                                                <Play className="h-3 w-3" />
+                                            </Button>
+                                        ) : (
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handlePauseTimer} title="Pause">
+                                                <Pause className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={handleLogCurrentSession} title="Log Session & Stop">
+                                            <Square className="h-3 w-3 fill-current" />
+                                        </Button>
+                                    </div>
                                 )}
                             </TooltipProvider>
                         </div>

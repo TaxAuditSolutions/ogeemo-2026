@@ -39,14 +39,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, Clock, Landmark } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
@@ -234,7 +234,7 @@ export default function WorkerTimeLogReportPage() {
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
                         <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium whitespace-nowrap">Worker Selector</CardTitle>
+                            <CardTitle className="text-sm font-medium whitespace-nowrap">Filter by Worker</CardTitle>
                             <WorkerSelector
                                 workers={workersForSelection}
                                 selectedWorkerId={selectedWorkerId}

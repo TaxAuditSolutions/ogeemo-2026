@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, Clock, Landmark } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -196,7 +196,7 @@ export default function WorkerTimeLogReportPage() {
     const handleScheduleEvent = (entry: any) => {
         const query = new URLSearchParams({
             title: entry.subject || entry.title || '',
-            notes: entry.details || '',
+            notes: entry.details || entry.notes || '',
             contactId: entry.contactId || '',
         });
         router.push(`/master-mind?${query.toString()}`);
@@ -222,7 +222,7 @@ export default function WorkerTimeLogReportPage() {
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6">
-                <ReportsPageHeader pageTitle="Worker Time Log Report" />
+                <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
                   <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
@@ -231,7 +231,7 @@ export default function WorkerTimeLogReportPage() {
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
                         <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
+                            <CardTitle className="text-sm font-medium whitespace-nowrap">Worker Selector</CardTitle>
                             <WorkerSelector
                                 workers={workersForSelection}
                                 selectedWorkerId={selectedWorkerId}
@@ -284,7 +284,7 @@ export default function WorkerTimeLogReportPage() {
                                         <TableHead>Client</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Billing</TableHead>
-                                        <TableHead>Subject</TableHead>
+                                        <TableHead>Notes</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
@@ -303,7 +303,7 @@ export default function WorkerTimeLogReportPage() {
                                                         {entry.isBillable ? `Billable` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
@@ -315,11 +315,11 @@ export default function WorkerTimeLogReportPage() {
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
-                                                                <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

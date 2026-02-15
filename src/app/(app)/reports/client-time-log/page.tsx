@@ -221,7 +221,7 @@ export default function ClientTimeLogReportPage() {
     const handleScheduleEvent = (entry: any) => {
         const query = new URLSearchParams({
             title: entry.subject || entry.title || '',
-            notes: entry.details || '',
+            notes: entry.details || entry.notes || '',
             contactId: entry.contactId || '',
         });
         router.push(`/master-mind?${query.toString()}`);
@@ -269,7 +269,7 @@ export default function ClientTimeLogReportPage() {
                 <Card>
                     <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
                         <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium">Report Filters</CardTitle>
+                            <CardTitle className="text-sm font-medium whitespace-nowrap">Client Selector</CardTitle>
                             <ContactSelector
                                 contacts={contacts}
                                 selectedContactId={selectedContactId}

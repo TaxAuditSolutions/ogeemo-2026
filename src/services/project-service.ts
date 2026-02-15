@@ -4,6 +4,7 @@ import {
   getFirestore,
   collection,
   getDocs,
+  getDoc,
   doc,
   addDoc,
   updateDoc,
@@ -12,7 +13,7 @@ import {
   where,
   writeBatch,
   Timestamp,
-  getDoc,
+  getArea,
   setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
@@ -536,9 +537,36 @@ export async function deleteActionChips(userId: string, chipIds: string[]): Prom
 }
 
 export async function updateActionChip(userId: string, chip: ActionChipData, type: string = 'dashboard'): Promise<void> {
-    const currentChips = await getActionChips(userId, type);
-    const updatedChips = currentChips.map(c => c.id === chip.id ? chip : c);
-    await updateActionChips(userId, updatedChips, type);
+    const activeCollection = {
+        dashboard: ACTION_CHIPS_COLLECTION,
+        accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
+        hr: HR_QUICK_NAV_ITEMS_COLLECTION,
+    }[type] || ACTION_CHIPS_COLLECTION;
+
+    const availableCollection = {
+        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
+    }[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
+
+    const [activeChips, availableChips] = await Promise.all([
+        getChipsFromCollection(userId, activeCollection),
+        getChipsFromCollection(userId, availableCollection)
+    ]);
+
+    const activeIndex = activeChips.findIndex(c => c.id === chip.id);
+    if (activeIndex !== -1) {
+        activeChips[activeIndex] = chip;
+        await updateChipsInCollection(userId, activeCollection, activeChips);
+        return;
+    }
+
+    const availableIndex = availableChips.findIndex(c => c.id === chip.id);
+    if (availableIndex !== -1) {
+        availableChips[availableIndex] = chip;
+        await updateChipsInCollection(userId, availableCollection, availableChips);
+        return;
+    }
 }
 
 export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {

@@ -590,20 +590,36 @@ export function TimeManagerView() {
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
                     <div className="flex justify-between items-center relative">
-                        <div className="flex-1 flex justify-start">
+                        <div className="flex-1 flex justify-start gap-2">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button asChild variant="outline">
+                                        <Button asChild variant="outline" size="icon">
                                             <Link href="/master-mind/instructions">
-                                                <Info className="mr-2 h-4 w-4" /> Instructions
+                                                <Info className="h-4 w-4" />
                                             </Link>
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <p>Learn how to use this manager effectively.</p>
+                                        <p>Instructions</p>
                                     </TooltipContent>
                                 </Tooltip>
+                                {!timerState?.isActive && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                onClick={handleStartTimer} 
+                                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                                disabled={!subject.trim()}
+                                            >
+                                                <Play className="mr-2 h-4 w-4" /> Start Timer
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{subject.trim() ? "Start tracking time for this session" : "Enter a subject title to enable the timer."}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
                             </TooltipProvider>
                         </div>
                         <div className="text-center absolute left-1/2 -translate-x-1/2">
@@ -712,7 +728,7 @@ export function TimeManagerView() {
                                         <div className="space-y-2">
                                             <RadioGroup onValueChange={(value) => setProjectAction(value)} value={projectAction} className="flex space-x-4">
                                                 <div className="flex items-center space-x-2"><RadioGroupItem value="select" id="select-project" /><Label htmlFor="select-project">Select/Search</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-project" /><Label htmlFor="add-project">Add New</Label></div>
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="add" id="add-project" /><Label htmlFor="add-contact">Add New</Label></div>
                                             </RadioGroup>
 
                                             {projectAction === 'select' ? (

@@ -76,7 +76,7 @@ export default function ClientTimeLogReportPage() {
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
-    const [sortConfig, setSortConfig] = useState<{ key: 'workerName' | 'contactName' | 'startTime'; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
+    const [sortConfig, setSortConfig] = setSortConfig = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -232,7 +232,7 @@ export default function ClientTimeLogReportPage() {
         router.push(`/accounting/invoices/create?contactId=${contactId}`);
     };
 
-    const requestSort = (key: 'workerName' | 'contactName' | 'startTime') => {
+    const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
@@ -262,7 +262,7 @@ export default function ClientTimeLogReportPage() {
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Client Time Log Report" />
                 <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report (Billing)</h1>
+                  <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report</h1>
                   <p className="text-muted-foreground">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
                 </header>
 
@@ -366,7 +366,7 @@ export default function ClientTimeLogReportPage() {
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (

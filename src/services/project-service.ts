@@ -128,7 +128,7 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     
-    // Clean and validate chips to prevent "id of undefined" errors during reordering or updates
+    // Clean and validate chips to prevent "id of undefined" errors
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
     
     const serializedChips = validChips.map(chip => {
@@ -496,7 +496,7 @@ export async function trashActionChips(userId: string, chips: ActionChipData[], 
     };
     
     const collectionName = collectionNameMap[type] || ACTION_CHIPS_COLLECTION;
-    const availableCollectionName = availableCollectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
+    const availableCollectionName = availableCollectionNameMap[type] || AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION;
 
     const [currentChips, currentAvailable, currentTrashed] = await Promise.all([
         getChipsFromCollection(userId, collectionName),

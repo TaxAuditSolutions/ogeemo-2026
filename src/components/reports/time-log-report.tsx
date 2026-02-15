@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -25,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth } from 'date-fns';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -126,6 +126,7 @@ export function TimeLogReport() {
                 source: 'log',
                 isBillable: tl.isBillable || false,
                 billableRate: tl.billableRate || 0,
+                notes: tl.notes || tl.description || tl.subject || '',
             };
         });
 
@@ -145,6 +146,7 @@ export function TimeLogReport() {
                 source: 'calendar',
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
+                notes: t.description || t.title || '',
             };
         });
 
@@ -189,6 +191,15 @@ export function TimeLogReport() {
         setIsLogTimeDialogOpen(true);
     };
 
+    const handleScheduleEvent = (entry: any) => {
+        const query = new URLSearchParams({
+            title: entry.title || entry.subject || '',
+            notes: entry.notes || entry.details || entry.description || '',
+            contactId: entry.contactId || '',
+        });
+        router.push(`/master-mind?${query.toString()}`);
+    };
+
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
@@ -198,7 +209,6 @@ export function TimeLogReport() {
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
-            workerIdNumber: profile?.employeeNumber || '', // Use standardized ID
         };
         return [adminWorker, ...workers];
     }, [workers, user, adminName]);
@@ -211,30 +221,33 @@ export function TimeLogReport() {
         <>
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
-                <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
-                  <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
+                <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
+                    <div className="text-left flex-1">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Time Log Report</h1>
+                        <p className="text-muted-foreground text-sm">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <WorkerSelector
+                            workers={workersForSelection}
+                            selectedWorkerId={selectedWorkerId}
+                            onSelect={setSelectedWorkerId}
+                            isLoading={isLoading}
+                        />
+                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
+                        </Button>
+                    </div>
                 </header>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Filters</CardTitle>
-                        <div className="flex flex-wrap items-end gap-4 pt-2">
+                    <CardHeader className="p-4 bg-muted/30">
+                        <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
-                                <Label>Select Worker</Label>
-                                <WorkerSelector
-                                    workers={workersForSelection}
-                                    selectedWorkerId={selectedWorkerId}
-                                    onSelect={setSelectedWorkerId}
-                                    isLoading={isLoading}
-                                />
-                           </div>
-                           <div className="space-y-2">
-                                <Label>Start Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -244,11 +257,11 @@ export function TimeLogReport() {
                                 </Popover>
                            </div>
                            <div className="space-y-2">
-                                <Label>End Date</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -257,18 +270,13 @@ export function TimeLogReport() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-
-                            <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                           <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear
-                            </Button>
-                            
-                            <Button variant="outline" onClick={() => setIsLogTimeDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Log Time
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="border rounded-md">
+                    <CardContent className="p-0 border-t">
+                        <div className="border-x-0">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -295,15 +303,19 @@ export function TimeLogReport() {
                                                         {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
+                                                                <Clock className="mr-2 h-4 w-4" /> Schedule an event
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
@@ -315,7 +327,7 @@ export function TimeLogReport() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No entries found for the current selection.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                                 {allMergedEntries.length > 0 && (

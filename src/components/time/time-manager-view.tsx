@@ -631,8 +631,8 @@ export function TimeManagerView() {
         <>
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
-                    <div className="grid grid-cols-3 items-center w-full relative">
-                        <div className="flex justify-start items-center gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 items-center w-full relative gap-4">
+                        <div className="flex justify-center md:justify-start items-center gap-2">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -684,14 +684,14 @@ export function TimeManagerView() {
                             </TooltipProvider>
                         </div>
                         
-                        <div className="flex flex-col items-center text-center px-4 overflow-hidden">
-                            <h1 className="text-xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
-                            <p className="text-muted-foreground text-[10px] leading-tight max-w-[200px] sm:max-w-none">
+                        <div className="flex flex-col items-center text-center px-4">
+                            <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
+                            <p className="text-muted-foreground text-sm font-medium mt-1 leading-tight">
                                 This is your Master-Mind for creating records and getting things done.
                             </p>
                         </div>
 
-                        <div className="flex justify-end items-center gap-2">
+                        <div className="flex justify-center md:justify-end items-center gap-2">
                             <TooltipProvider>
                                 {eventToEdit && (
                                     <Tooltip>

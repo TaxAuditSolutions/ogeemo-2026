@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -536,7 +535,7 @@ export async function deleteActionChips(userId: string, chipIds: string[]): Prom
     await updateChipsInCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION, newTrashed);
 }
 
-export async function updateActionChipData(userId: string, chip: ActionChipData, type: string = 'dashboard'): Promise<void> {
+export async function updateActionChip(userId: string, chip: ActionChipData, type: string = 'dashboard'): Promise<void> {
     const currentChips = await getActionChips(userId, type);
     const updatedChips = currentChips.map(c => c.id === chip.id ? chip : c);
     await updateActionChips(userId, updatedChips, type);

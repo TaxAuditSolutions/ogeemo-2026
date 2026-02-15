@@ -385,6 +385,16 @@ export function TimeManagerView() {
         }
     };
 
+    const handleOpenGmail = () => {
+        const selectedContact = contacts.find(c => c.id === selectedContactId);
+        const recipient = selectedContact?.email || "";
+        const mailSubject = encodeURIComponent(subject);
+        const mailBody = encodeURIComponent(notes);
+        
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipient}&su=${mailSubject}&body=${mailBody}`;
+        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+    };
+
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -600,6 +610,16 @@ export function TimeManagerView() {
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>Instructions</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" onClick={handleOpenGmail}>
+                                            <Mail className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Compose Gmail from details</p>
                                     </TooltipContent>
                                 </Tooltip>
                                 {!timerState?.isActive ? (

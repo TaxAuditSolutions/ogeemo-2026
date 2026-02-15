@@ -54,7 +54,6 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Separator } from '../ui/separator';
 
@@ -395,8 +394,16 @@ export function TimeManagerView() {
         window.open(gmailUrl, '_blank', 'noopener,noreferrer');
     };
 
+    const handleSetCurrentTime = () => {
+        const now = new Date();
+        setStartDate(now);
+        setStartHour(formatDate(now, 'HH'));
+        setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
+        setIsAllDay(false);
+    };
 
-    const loadData = React.useCallback(async () => {
+
+    const loadInitialData = React.useCallback(async () => {
         if (!user) {
             setIsLoadingData(false);
             return;
@@ -501,8 +508,8 @@ export function TimeManagerView() {
     }, [user, searchParams, toast, router]);
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        loadInitialData();
+    }, [loadInitialData]);
     
     useEffect(() => {
         const startTimerParam = searchParams.get('startTimer');
@@ -838,7 +845,20 @@ export function TimeManagerView() {
                     </Card>
 
                     <Card>
-                        <CardHeader><CardTitle className="text-base">Scheduling</CardTitle></CardHeader>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base">Scheduling</CardTitle>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary gap-1"
+                                    onClick={handleSetCurrentTime}
+                                >
+                                    <Clock className="h-3 w-3" />
+                                    Select Current Time
+                                </Button>
+                            </div>
+                        </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="all-day" checked={isAllDay} onCheckedChange={(checked) => setIsAllDay(!!checked)} />

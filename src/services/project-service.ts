@@ -131,13 +131,17 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     // Clean and validate chips to prevent "id of undefined" errors during reordering or updates
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
     
-    const serializedChips = validChips.map(chip => ({
-        id: chip.id,
-        label: chip.label,
-        href: chip.href,
-        userId: chip.userId || userId,
-        iconName: (chip.icon as any).displayName || (chip.icon as any).name || 'Wand2'
-    }));
+    const serializedChips = validChips.map(chip => {
+        const iconSource = chip.icon as any;
+        const iconName = iconSource?.displayName || iconSource?.name || 'Wand2';
+        return {
+            id: chip.id,
+            label: chip.label,
+            href: chip.href,
+            userId: chip.userId || userId,
+            iconName: iconName
+        };
+    });
     await setDoc(docRef, { chips: serializedChips }, { merge: true });
 }
 

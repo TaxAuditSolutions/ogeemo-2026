@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -42,7 +41,7 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
   { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
   { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
   { label: 'Projects', icon: Briefcase, href: '/projects/all' },
-  { label: 'Time & Event Scheduler', icon: BrainCircuit, href: '/master-mind'},
+  { label: 'Master Mind', icon: BrainCircuit, href: '/master-mind'},
 ];
 
 const iconMap: { [key: string]: LucideIcon } = {
@@ -436,13 +435,25 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     const combined = [...filteredCustomAvailable];
     const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
     
-    getDefaultsNotUsed().forEach(item => {
+    getDefaultDefaultsNotUsed().forEach(item => {
         if (!customHrefs.has(item.href)) {
             combined.push(item as any);
         }
     });
     
     return combined.sort((a,b) => a.label.localeCompare(b.label));
+}
+
+function getDefaultsNotUsedForAvailable(userId: string, type: string, usedHrefs: Set<string>) {
+    const defaultSourceMap: Record<string, any[]> = {
+        dashboard: allMenuItems,
+        accounting: accountingMenuItems,
+        hr: hrMenuItems,
+    };
+    const defaultSource = defaultSourceMap[type] || allMenuItems;
+    return defaultSource
+        .filter(item => !usedHrefs.has(item.href))
+        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
 }
 
 export async function updateActionChips(userId: string, chips: ActionChipData[], type: string = 'dashboard'): Promise<void> {

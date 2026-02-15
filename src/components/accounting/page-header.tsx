@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -38,10 +37,16 @@ export function AccountingPageHeader({ pageTitle, hubPath = '/accounting', hubLa
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={hubPath}>{hubLabel}</Link>
+              <Link href="/accounting">Accounting</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+                <Link href={hubPath}>{hubLabel}</Link>
+             </BreadcrumbLink>
+          </BreadcrumbItem>
+           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
           </BreadcrumbItem>

@@ -728,7 +728,7 @@ export function TimeManagerView() {
                         <div className="flex flex-col items-center text-center px-4">
                             <h1 className="text-5xl font-bold font-headline text-primary whitespace-nowrap">Master Mind</h1>
                             <p className="text-sm font-medium mt-1 leading-tight text-muted-foreground">
-                                This is your Master-Mind for creating records and getting things done.
+                                The ultimate command center for orchestrating your vision into high-impact action.
                             </p>
                         </div>
 

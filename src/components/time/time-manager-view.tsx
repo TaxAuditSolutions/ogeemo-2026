@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -348,6 +347,39 @@ export function TimeManagerView() {
         }
     }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
 
+    const handleSaveAndNew = async () => {
+        await handleSaveEvent(false);
+        
+        // Reset local form state
+        setSubject("");
+        setNotes("");
+        setSelectedProjectId(null);
+        setSelectedContactId(null);
+        setIsBillable(false);
+        setBillableRate(100);
+        setStartDate(new Date());
+        setStartHour(formatDate(new Date(), 'HH'));
+        setStartMinute(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
+        setEndDate(undefined);
+        setEndHour(undefined);
+        setEndMinute(undefined);
+        setIsAllDay(false);
+        setSessions([]);
+        setEventToEdit(null);
+        
+        // Clear global timer
+        localStorage.removeItem(TIMER_STORAGE_KEY);
+        window.dispatchEvent(new Event('storage'));
+
+        // Clear URL
+        router.replace('/master-mind');
+        
+        toast({ title: "Event Saved", description: "Starting a fresh session." });
+        
+        // Focus subject
+        setTimeout(() => subjectInputRef.current?.focus(), 100);
+    };
+
     const handleLogCurrentSession = async () => {
         if (!timerState || !timerState.isActive || elapsedSeconds <= 0) {
             toast({ variant: 'destructive', title: 'No Time to Log', description: 'The timer is not running or has no elapsed time.' });
@@ -694,7 +726,7 @@ export function TimeManagerView() {
                         </div>
                         
                         <div className="flex flex-col items-center text-center px-4">
-                            <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
+                            <h1 className="text-5xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
                             <p className="text-sm font-medium mt-1 leading-tight text-muted-foreground">
                                 This is your Master-Mind for creating records and getting things done.
                             </p>
@@ -702,6 +734,14 @@ export function TimeManagerView() {
 
                         <div className="flex justify-center md:justify-end items-center gap-2">
                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 border-black" onClick={handleSaveAndNew}>
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Save and create another</p></TooltipContent>
+                                </Tooltip>
                                 {eventToEdit && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -748,7 +788,7 @@ export function TimeManagerView() {
                                 </div>
                                 <Input 
                                     id="subject" 
-                                    placeholder={timerState?.isActive ? "Recording live session... enter title" : "What is the main task or event?"} 
+                                    placeholder={timerState?.isActive ? "Recording active session... enter title" : "What is the main task or event?"} 
                                     value={subject} 
                                     onChange={(e) => setSubject(e.target.value)} 
                                     ref={subjectInputRef}

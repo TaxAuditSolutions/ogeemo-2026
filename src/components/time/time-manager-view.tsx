@@ -396,7 +396,7 @@ export function TimeManagerView() {
     };
 
 
-    const loadData = useCallback(async () => {
+    const loadData = React.useCallback(async () => {
         if (!user) {
             setIsLoadingData(false);
             return;
@@ -598,7 +598,7 @@ export function TimeManagerView() {
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
                     <div className="flex justify-between items-center relative">
-                        <div className="flex-1 flex justify-start gap-2 items-center">
+                        <div className="flex-1 flex justify-start gap-2 items-center z-10">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -657,11 +657,11 @@ export function TimeManagerView() {
                                 )}
                             </TooltipProvider>
                         </div>
-                        <div className="text-center absolute left-1/2 -translate-x-1/2">
+                        <div className="text-center absolute left-1/2 -translate-x-1/2 z-0 px-10 max-w-[50%]">
                             <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
-                            <p className="text-muted-foreground whitespace-nowrap">This is your Master-Mind for creating records and getting things done.</p>
+                            <p className="text-muted-foreground text-sm line-clamp-2">This is your Master-Mind for creating records and getting things done.</p>
                         </div>
-                        <div className="flex-1 flex justify-end items-center gap-2">
+                        <div className="flex-1 flex justify-end items-center gap-2 z-10">
                             <TooltipProvider>
                                 {eventToEdit && (
                                     <Tooltip>

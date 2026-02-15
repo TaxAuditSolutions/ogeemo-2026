@@ -128,6 +128,7 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     
+    // Clean and validate chips to prevent "id of undefined" errors during reordering or updates
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
     
     const serializedChips = validChips.map(chip => ({

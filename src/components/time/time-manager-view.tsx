@@ -25,6 +25,7 @@ import {
     RefreshCw, 
     BellRing, 
     Mail, 
+    Inbox,
     CheckCircle, 
     User, 
     Square,
@@ -416,6 +417,10 @@ export function TimeManagerView() {
         window.open(gmailUrl, '_blank', 'noopener,noreferrer');
     };
 
+    const handleOpenInbox = () => {
+        window.open('https://mail.google.com/mail/u/0/#inbox', '_blank', 'noopener,noreferrer');
+    };
+
     const handleSetCurrentTime = () => {
         const now = new Date();
         setStartDate(now);
@@ -639,6 +644,16 @@ export function TimeManagerView() {
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>Instructions</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" onClick={handleOpenInbox}>
+                                            <Inbox className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Open Gmail Inbox</p>
                                     </TooltipContent>
                                 </Tooltip>
                                 <Tooltip>

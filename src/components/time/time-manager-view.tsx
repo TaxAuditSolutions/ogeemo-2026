@@ -631,106 +631,83 @@ export function TimeManagerView() {
         <>
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
                 <header className="w-full max-w-5xl">
-                    <div className="flex justify-between items-center relative">
-                        <div className="flex-1 flex justify-start gap-2 items-center z-10">
+                    <div className="grid grid-cols-3 items-center w-full relative">
+                        <div className="flex justify-start items-center gap-2">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button asChild variant="outline" size="icon">
+                                        <Button asChild variant="outline" size="icon" className="h-9 w-9">
                                             <Link href="/master-mind/instructions">
                                                 <Info className="h-4 w-4" />
                                             </Link>
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Instructions</p>
-                                    </TooltipContent>
+                                    <TooltipContent><p>Instructions</p></TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" onClick={handleOpenInbox}>
+                                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleOpenInbox}>
                                             <Inbox className="h-4 w-4" />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Open Gmail Inbox</p>
-                                    </TooltipContent>
+                                    <TooltipContent><p>Open Gmail Inbox</p></TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" onClick={handleOpenGmail}>
+                                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleOpenGmail}>
                                             <Mail className="h-4 w-4" />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Compose Gmail from details</p>
-                                    </TooltipContent>
+                                    <TooltipContent><p>Compose Gmail from details</p></TooltipContent>
                                 </Tooltip>
+                                
                                 {!timerState?.isActive ? (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button 
-                                                onClick={handleStartTimer} 
-                                                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                                            >
-                                                <Play className="mr-2 h-4 w-4" /> Start Timer
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Start tracking time for this session</p>
-                                        </TooltipContent>
-                                    </Tooltip>
+                                    <Button 
+                                        onClick={handleStartTimer} 
+                                        className="h-9 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm px-3"
+                                    >
+                                        <Play className="mr-2 h-4 w-4" /> Start Timer
+                                    </Button>
                                 ) : (
-                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
-                                        <Clock className="h-4 w-4 animate-pulse" />
-                                        <span className="font-mono font-bold text-sm">{formatTime(elapsedSeconds)}</span>
-                                        <Separator orientation="vertical" className="h-4 mx-1" />
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary h-9">
+                                        <Clock className="h-3.5 w-3.5 animate-pulse" />
+                                        <span className="font-mono font-bold text-xs">{formatTime(elapsedSeconds)}</span>
+                                        <Separator orientation="vertical" className="h-3 mx-0.5" />
                                         {timerState.isPaused ? (
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleResumeTimer} title="Resume">
-                                                <Play className="h-3 w-3" />
-                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={handleResumeTimer}><Play className="h-3 w-3" /></Button>
                                         ) : (
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handlePauseTimer} title="Pause">
-                                                <Pause className="h-3 w-3" />
-                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={handlePauseTimer}><Pause className="h-3 w-3" /></Button>
                                         )}
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={handleLogCurrentSession} title="Log Session & Stop">
-                                            <Square className="h-3 w-3 fill-current" />
-                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full text-destructive" onClick={handleLogCurrentSession}><Square className="h-2.5 w-2.5 fill-current" /></Button>
                                     </div>
                                 )}
                             </TooltipProvider>
                         </div>
-                        <div className="text-center absolute left-1/2 -translate-x-1/2 z-0 px-10 max-w-[50%]">
-                            <h1 className="text-2xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
-                            <p className="text-muted-foreground text-sm line-clamp-2">This is your Master-Mind for creating records and getting things done.</p>
+                        
+                        <div className="flex flex-col items-center text-center px-4 overflow-hidden">
+                            <h1 className="text-xl font-bold font-headline text-primary whitespace-nowrap">Scheduler</h1>
+                            <p className="text-muted-foreground text-[10px] leading-tight max-w-[200px] sm:max-w-none">
+                                This is your Master-Mind for creating records and getting things done.
+                            </p>
                         </div>
-                        <div className="flex-1 flex justify-end items-center gap-2 z-10">
+
+                        <div className="flex justify-end items-center gap-2">
                             <TooltipProvider>
                                 {eventToEdit && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button variant="outline" size="icon" className="bg-card text-card-foreground hover:bg-card/90 border border-black" onClick={() => setIsDeleteDialogOpen(true)}>
+                                            <Button variant="outline" size="icon" className="h-9 w-9 border-black" onClick={() => setIsDeleteDialogOpen(true)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Delete Event</p>
-                                        </TooltipContent>
+                                        <TooltipContent><p>Delete Event</p></TooltipContent>
                                     </Tooltip>
                                 )}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button className="bg-card text-card-foreground hover:bg-card/90 border border-black" onClick={() => handleSaveEvent(true)}>
-                                            <Save className="mr-2 h-4 w-4" /> Save &amp; Close
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Save all changes and close the manager.</p>
-                                    </TooltipContent>
-                                </Tooltip>
+                                <Button className="h-9 border-black bg-card text-card-foreground hover:bg-card/90" onClick={() => handleSaveEvent(true)}>
+                                    <Save className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Save &amp; Close</span>
+                                </Button>
                             </TooltipProvider>
-                            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => router.back()}>
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>
@@ -740,13 +717,12 @@ export function TimeManagerView() {
                 <div className="w-full max-w-4xl space-y-6">
                     {isReviewMode && (
                         <Card className="bg-primary/10 border-primary">
-                            <CardHeader className="text-center">
+                            <CardHeader className="text-center p-4">
                                 <div className="flex justify-center items-center gap-2">
-                                <CheckCircle className="h-6 w-6 text-primary" />
-                                <CheckCircle className="h-6 w-6 text-primary" />
-                                <CardTitle>Final Step: Review &amp; Schedule Your Logged Email</CardTitle>
+                                <CheckCircle className="h-5 w-5 text-primary" />
+                                <CardTitle className="text-lg">Review &amp; Schedule Your Logged Email</CardTitle>
                                 </div>
-                                <CardDescription>Confirm the details below are correct. You can add more information or adjust the schedule before saving.</CardDescription>
+                                <CardDescription className="text-xs">Confirm the details and adjust the schedule before saving.</CardDescription>
                             </CardHeader>
                         </Card>
                     )}

@@ -13,7 +13,6 @@ import {
   where,
   writeBatch,
   Timestamp,
-  getArea,
   setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
@@ -128,11 +127,15 @@ const docToActionChip = (doc: any): ActionChipData => {
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
-    const serializedChips = chips.map(chip => ({
+    
+    // Crucial: Filter out any undefined or null entries to prevent "id of undefined" errors
+    const validChips = (chips || []).filter(Boolean);
+    
+    const serializedChips = validChips.map(chip => ({
         id: chip.id,
         label: chip.label,
         href: chip.href,
-        userId: chip.userId,
+        userId: chip.userId || userId,
         iconName: (chip.icon as any).displayName || (chip.icon as any).name || 'Wand2'
     }));
     await setDoc(docRef, { chips: serializedChips }, { merge: true });
@@ -388,7 +391,7 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
             ...c, 
             id: `default-${typeof c.href === 'string' ? c.href : (c.href as any).pathname}`, 
             userId
-        }));
+        })) as ActionChipData[];
     }
     return getChipsFromCollection(userId, collectionName);
 }
@@ -419,7 +422,7 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     const docSnap = await getDoc(docRef);
     
     if (!docSnap.exists()) {
-        return getDefaultsNotUsed();
+        return getDefaultsNotUsed() as ActionChipData[];
     }
     
     const customAvailable = await getChipsFromCollection(userId, collectionName);
@@ -430,7 +433,7 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     
     getDefaultsNotUsed().forEach(item => {
         if (!customHrefs.has(item.href)) {
-            combined.push(item);
+            combined.push(item as any);
         }
     });
     
@@ -549,10 +552,18 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     }[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
 
-    const [activeChips, availableChips] = await Promise.all([
+    // Load existing custom configurations
+    let [activeChips, availableChips] = await Promise.all([
         getChipsFromCollection(userId, activeCollection),
         getChipsFromCollection(userId, availableCollection)
     ]);
+
+    // If both are empty, it means the user is still on defaults. 
+    // We should initialize with defaults to allow the update to succeed.
+    if (activeChips.length === 0 && availableChips.length === 0) {
+        activeChips = await getActionChips(userId, type);
+        availableChips = await getAvailableActionChips(userId, type);
+    }
 
     const activeIndex = activeChips.findIndex(c => c.id === chip.id);
     if (activeIndex !== -1) {

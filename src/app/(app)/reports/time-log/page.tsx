@@ -62,6 +62,7 @@ export default function WorkerTimeLogReportPage() {
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
+    const [adminIdNumber, setAdminIdNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -94,6 +95,7 @@ export default function WorkerTimeLogReportPage() {
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
+            setAdminIdNumber(profile?.employeeNumber || '');
 
             setWorkers(fetchedWorkers);
             setContacts(fetchedContacts);
@@ -211,9 +213,10 @@ export default function WorkerTimeLogReportPage() {
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
+            workerIdNumber: adminIdNumber,
         };
         return [adminWorker, ...workers];
-    }, [workers, user, adminName]);
+    }, [workers, user, adminName, adminIdNumber]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });

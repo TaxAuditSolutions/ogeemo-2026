@@ -650,12 +650,12 @@ export function TimeManagerView() {
                                 {eventToEdit && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button variant="outline" className="bg-card text-card-foreground hover:bg-card/90 border border-black" onClick={() => setIsDeleteDialogOpen(true)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Event
+                                            <Button variant="outline" size="icon" className="bg-card text-card-foreground hover:bg-card/90 border border-black" onClick={() => setIsDeleteDialogOpen(true)}>
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>Permanently delete this event and all its time logs.</p>
+                                            <p>Delete Event</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 )}

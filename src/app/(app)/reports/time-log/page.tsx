@@ -46,7 +46,7 @@ import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUserProfile } from '@/services/user-profile-service';
 import { formatTime, cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
@@ -226,26 +226,25 @@ export default function WorkerTimeLogReportPage() {
         <>
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Worker Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
-                <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
-                  <p className="text-muted-foreground">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
-                </header>
-
-                <Card>
-                    <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
-                        <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium whitespace-nowrap">Filter by Worker</CardTitle>
-                            <WorkerSelector
-                                workers={workersForSelection}
-                                selectedWorkerId={selectedWorkerId}
-                                onSelect={setSelectedWorkerId}
-                                isLoading={isLoading}
-                            />
-                        </div>
+                <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
+                    <div className="text-left flex-1">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Worker Time Log Report</h1>
+                        <p className="text-muted-foreground text-sm">Review work sessions. Attribution shows who did the work and which client was served.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <WorkerSelector
+                            workers={workersForSelection}
+                            selectedWorkerId={selectedWorkerId}
+                            onSelect={setSelectedWorkerId}
+                            isLoading={isLoading}
+                        />
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Log Time Event
                         </Button>
-                    </CardHeader>
+                    </div>
+                </header>
+
+                <Card>
                     <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">

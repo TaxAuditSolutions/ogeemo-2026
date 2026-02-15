@@ -261,26 +261,25 @@ export default function ClientTimeLogReportPage() {
         <>
             <div className="p-4 sm:p-6 space-y-6">
                 <ReportsPageHeader pageTitle="Client Time Log Report" />
-                <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report</h1>
-                  <p className="text-muted-foreground">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
+                <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
+                    <div className="text-left flex-1">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report</h1>
+                        <p className="text-muted-foreground text-sm">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <ContactSelector
+                            contacts={contacts}
+                            selectedContactId={selectedContactId}
+                            onSelectContact={setSelectedContactId}
+                            className="w-64"
+                        />
+                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
+                        </Button>
+                    </div>
                 </header>
 
                 <Card>
-                    <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b">
-                        <div className="flex flex-row items-center gap-4 flex-1">
-                            <CardTitle className="text-sm font-medium whitespace-nowrap">Filter by Client</CardTitle>
-                            <ContactSelector
-                                contacts={contacts}
-                                selectedContactId={selectedContactId}
-                                onSelectContact={setSelectedContactId}
-                                className="w-64"
-                            />
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time Event
-                        </Button>
-                    </CardHeader>
                     <CardContent className="p-4">
                         <div className="flex flex-wrap items-end justify-center gap-4">
                            <div className="space-y-2">
@@ -366,7 +365,7 @@ export default function ClientTimeLogReportPage() {
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (

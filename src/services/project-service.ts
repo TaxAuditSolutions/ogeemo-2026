@@ -128,7 +128,6 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     
-    // Safety check to filter out non-object or incomplete entries
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
     
     const serializedChips = validChips.map(chip => ({
@@ -552,14 +551,11 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     }[type] || AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION;
 
-    // Load existing custom configurations
     let [activeChips, availableChips] = await Promise.all([
         getChipsFromCollection(userId, activeCollection),
         getChipsFromCollection(userId, availableCollection)
     ]);
 
-    // If both are empty, it means the user is still on defaults. 
-    // We should initialize with defaults to allow the update to succeed.
     if (activeChips.length === 0 && availableChips.length === 0) {
         activeChips = await getActionChips(userId, type);
         availableChips = await getAvailableActionChips(userId, type);

@@ -144,7 +144,6 @@ export function TimeManagerView() {
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
     
-    // Logic to calculate worker list from Contact Hub
     const workerContacts = useMemo(() => {
         const workersFolder = contactFolders.find(f => f.name === 'Workers' && f.isSystem);
         if (!workersFolder) return [];
@@ -170,13 +169,12 @@ export function TimeManagerView() {
     }, [totalAccumulatedSeconds, elapsedSeconds]);
 
     const createAndSaveNewEvent = useCallback(async (): Promise<TaskEvent | null> => {
-        if (!user || !subject.trim()) {
-            toast({ variant: 'destructive', title: 'Subject Required', description: 'Please enter a subject before starting the timer.' });
-            return null;
-        }
+        if (!user) return null;
+
+        const finalSubject = subject.trim() || "Active Session";
 
         const eventData: Omit<TaskEvent, 'id'> = {
-            title: subject,
+            title: finalSubject,
             description: notes,
             status: 'inProgress',
             position: 0,
@@ -191,10 +189,11 @@ export function TimeManagerView() {
         try {
             const newEvent = await addTask(eventData);
             setEventToEdit(newEvent);
-            toast({ title: "Event Created", description: `"${newEvent.title}" has been saved and is now being tracked.` });
+            if (!subject.trim()) setSubject(finalSubject);
+            toast({ title: "Session Started", description: `Clocked into "${finalSubject}".` });
             return newEvent;
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Failed to create event", description: error.message });
+            toast({ variant: "destructive", title: "Failed to start session", description: error.message });
             return null;
         }
     }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, toast]);
@@ -407,10 +406,8 @@ export function TimeManagerView() {
             setCompanies(fetchedCompanies);
             setCustomIndustries(fetchedIndustries);
             
-            // Set default worker to current user
             setSelectedWorkerId(user.uid);
 
-            // Set a default date if one isn't passed from URL
             if (!searchParams.get('start') && !searchParams.get('eventId')) {
                 setStartDate(new Date());
             }
@@ -611,13 +608,12 @@ export function TimeManagerView() {
                                             <Button 
                                                 onClick={handleStartTimer} 
                                                 className="bg-primary text-primary-foreground hover:bg-primary/90"
-                                                disabled={!subject.trim()}
                                             >
                                                 <Play className="mr-2 h-4 w-4" /> Start Timer
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>{subject.trim() ? "Start tracking time for this session" : "Enter a subject title to enable the timer."}</p>
+                                            <p>Start tracking time for this session</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 ) : (

@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, PlusCircle, Clock, Landmark } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,6 @@ export default function WorkerTimeLogReportPage() {
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
     const [adminName, setAdminName] = useState<string>('Admin');
-    const [adminIdNumber, setAdminIdNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -95,7 +94,6 @@ export default function WorkerTimeLogReportPage() {
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
             setAdminName(name);
-            setAdminIdNumber(profile?.employeeNumber || '');
 
             setWorkers(fetchedWorkers);
             setContacts(fetchedContacts);
@@ -213,10 +211,9 @@ export default function WorkerTimeLogReportPage() {
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
-            workerIdNumber: adminIdNumber,
         };
         return [adminWorker, ...workers];
-    }, [workers, user, adminName, adminIdNumber]);
+    }, [workers, user, adminName]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -239,7 +236,7 @@ export default function WorkerTimeLogReportPage() {
                             isLoading={isLoading}
                         />
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Log Time Event
+                            <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
                         </Button>
                     </div>
                 </header>
@@ -275,6 +272,9 @@ export default function WorkerTimeLogReportPage() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
+                           <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                            </Button>
                         </div>
                     </CardContent>
                     <CardContent className="p-0 border-t">
@@ -305,7 +305,7 @@ export default function WorkerTimeLogReportPage() {
                                                         {entry.isBillable ? `Billable` : 'Non-Billable'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{entry.notes || entry.description || entry.title || entry.subject}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                                 <TableCell>
                                                      <DropdownMenu>
@@ -317,7 +317,7 @@ export default function WorkerTimeLogReportPage() {
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (
                                                                 <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (

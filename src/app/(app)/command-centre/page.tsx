@@ -48,15 +48,15 @@ import { cn } from '@/lib/utils';
 import { processCommand, type CommandResult } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 
-const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV2';
+const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV3';
 
 const discoverableIntents = [
+    { label: "Action Manager", cmd: "Action Manager" },
     { label: "Check Ledger", cmd: "Go to ledger" },
     { label: "New Project", cmd: "New project" },
     { label: "New Contact", cmd: "New contact" },
     { label: "Track Meeting", cmd: "Track meeting" },
-    { label: "View Statement", cmd: "Client statement" },
-    { label: "Check Snapshot", cmd: "Snapshot" },
+    { label: "Accounting", cmd: "Accounting" },
 ];
 
 export default function OgeemoAiPage() {
@@ -106,7 +106,7 @@ export default function OgeemoAiPage() {
 
   const handleExecuteCommand = () => {
     if (!commandResult || commandResult.type === 'unknown') {
-        toast({ variant: 'destructive', title: "Command Not Recognized", description: "Refine your input or use the global search tool in the top bar." });
+        toast({ variant: 'destructive', title: "Command Not Recognized", description: "Try words like 'Ledger', 'Contacts', or 'Accounting'." });
         return;
     }
     
@@ -145,7 +145,7 @@ export default function OgeemoAiPage() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.2</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.5</span>
           </div>
       </div>
 
@@ -174,13 +174,13 @@ export default function OgeemoAiPage() {
                   <Terminal className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Intent Terminal</CardTitle>
               </div>
-              <CardDescription>Type or dictate a keyword, a page name, or a specific business action.</CardDescription>
+              <CardDescription>Type a hub name (e.g., "Accounting") or action (e.g., "New project").</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative group">
                   <Input
                     ref={inputRef}
-                    placeholder={isListening ? "Listening... speak now" : "e.g., 'Accounting', 'New contact Sarah', 'Snapshot'..."}
+                    placeholder={isListening ? "Listening... speak now" : "e.g., 'Action Manager', 'Accounting', 'New contact Sarah'..."}
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
                     className={cn(
@@ -307,10 +307,10 @@ export default function OgeemoAiPage() {
                             The Ogeemo AI Brain is currently undergoing high-level contextual training to provide more precise answers regarding your private business data.
                         </p>
                     </div>
-                    <Alert className="bg-background/50 border-amber-200 py-3">
+                    <Alert className="bg-background/50 border-amber-200 py-3 text-left">
                         <Info className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                            Conversational reasoning will be enabled in v2.1.
+                            Conversational reasoning and knowledge-base lookups will be enabled in v2.1.
                         </AlertDescription>
                     </Alert>
                 </div>

@@ -3,6 +3,8 @@
  * Maps natural language keywords, verbs, and parameters to structured application actions.
  */
 
+import { allMenuItems } from './menu-items';
+
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
     target?: string;
@@ -13,6 +15,15 @@ export interface CommandResult {
 }
 
 const commandMap: Record<string, { target: string; label: string; category: string }> = {
+    // Workspace & Core Hubs
+    'action manager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'action-manager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'hub': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'command centre': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
+    'command center': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
+    'master mind': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
+    
     // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
     'account': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -68,8 +79,6 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'settings': { target: '/settings', label: 'Settings', category: 'Admin' },
     'profile': { target: '/settings', label: 'My Profile', category: 'Admin' },
     'images': { target: '/image-manager', label: 'Image Manager', category: 'Admin' },
-    'hub': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
     'search': { target: '/reports/search', label: 'Global Search', category: 'Reports' },
     'reports': { target: '/reports/search', label: 'Advanced Search', category: 'Reports' },
     'help': { target: '/master-mind/gtd-instructions', label: 'Ogeemo Method', category: 'Admin' },
@@ -85,7 +94,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
  * Normalizes input and processes it through hierarchical intent matching.
  */
 export function processCommand(input: string): CommandResult {
-    const cleanInput = input.toLowerCase().trim();
+    const cleanInput = input.toLowerCase().trim().replace(/[?]/g, '');
     if (!cleanInput) return { type: 'unknown', message: 'Awaiting Input...' };
 
     const tokens = cleanInput.split(/\s+/).filter(Boolean);
@@ -110,10 +119,27 @@ export function processCommand(input: string): CommandResult {
         };
     }
 
-    // 2. VERB-BASED ACTIONS
+    // 2. PAGE TITLE MATCH (Scan all menu items)
+    const menuItemMatch = allMenuItems.find(item => 
+        item.label.toLowerCase() === cleanInput || 
+        item.label.toLowerCase().includes(cleanInput) && cleanInput.length > 3
+    );
+    if (menuItemMatch) {
+        return {
+            type: 'navigation',
+            target: menuItemMatch.href,
+            message: `Launcher: [${menuItemMatch.label}]`,
+            description: `Opening ${menuItemMatch.label}.`,
+            category: 'Navigation'
+        };
+    }
+
+    // 3. VERB-BASED ACTIONS
     // Handle "Go [Place]"
     if ((verb === 'go' || verb === 'open' || verb === 'show') && remaining) {
         const searchTarget = remaining.startsWith('to ') ? remaining.replace('to ', '') : remaining;
+        
+        // Check command map
         const cmd = commandMap[searchTarget];
         if (cmd) {
             return {
@@ -123,6 +149,18 @@ export function processCommand(input: string): CommandResult {
                 message: `Executing: [${cmd.label}]`,
                 description: `Opening the requested hub.`,
                 category: cmd.category
+            };
+        }
+
+        // Check menu items
+        const menuMatch = allMenuItems.find(item => item.label.toLowerCase().includes(searchTarget));
+        if (menuMatch) {
+            return {
+                type: 'navigation',
+                target: menuMatch.href,
+                message: `Go To: [${menuMatch.label}]`,
+                description: `Opening requested page.`,
+                category: 'Navigation'
             };
         }
     }
@@ -181,8 +219,7 @@ export function processCommand(input: string): CommandResult {
         };
     }
 
-    // 3. WORD-BOUNDARY FUZZY MATCH (Lower Priority)
-    // We check if any of the keywords in our map are present as a full word in the input
+    // 4. WORD-BOUNDARY FUZZY MATCH (Lower Priority)
     for (const keyword of Object.keys(commandMap)) {
         const regex = new RegExp(`\\b${keyword}\\b`, 'i');
         if (regex.test(cleanInput)) {
@@ -191,19 +228,16 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: cmd.target,
                 isExternal: cmd.target.startsWith('http'),
-                message: `Jump To: [${cmd.label}]`,
-                description: `Recognized keyword "${keyword}".`,
+                message: `Recognized: [${cmd.label}]`,
+                description: `Signal detected for hub navigation.`,
                 category: cmd.category
             };
         }
     }
 
-    // 4. NO SEARCH FALLBACK
-    // We stay on the page if the command is not recognized to avoid confusing navigation.
-
     return {
         type: 'unknown',
         message: `Command Not Recognized`,
-        description: "Try typing 'Ledger', 'Contacts', or 'New project'. Use the global search in the header for content search.",
+        description: "Refine your command or use the Global Search in the top bar.",
     };
 }

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { LoaderCircle, Search as SearchIcon, Briefcase, User, Book } from 'lucide-react';
+import { LoaderCircle, Search as SearchIcon, Briefcase, User, Book, Mic, Square } from 'lucide-react';
 
 import { ReportsPageHeader } from "@/components/reports/page-header";
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-context';
+import { useSpeechToText } from '@/hooks/use-speech-to-text';
+import { cn } from '@/lib/utils';
 
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getProjects, type Project } from '@/services/project-service';
@@ -38,6 +40,27 @@ export default function AdvancedSearchPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
+
+  const searchInputRef = React.useRef<HTMLTextAreaElement>(null);
+  const baseTextRef = React.useRef('');
+
+  // Voice Recognition Logic
+  const { isListening, startListening, stopListening, isSupported } = useSpeechToText({
+    onTranscript: (transcript) => {
+      const newText = baseTextRef.current ? `${baseTextRef.current} ${transcript}` : transcript;
+      setSearchQuery(newText);
+    },
+  });
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      baseTextRef.current = searchQuery.trim();
+      startListening();
+      searchInputRef.current?.focus();
+    }
+  };
 
   // State to hold all searchable data
   const [searchableData, setSearchableData] = React.useState<SearchResult[]>([]);
@@ -72,6 +95,8 @@ export default function AdvancedSearchPage() {
   }, [user, toast]);
   
   const handleSearch = async () => {
+    if (isListening) stopListening();
+    
     if (!searchQuery.trim()) {
         toast({ variant: 'destructive', title: "Search query cannot be empty." });
         return;
@@ -140,7 +165,7 @@ export default function AdvancedSearchPage() {
           Global Search
         </h1>
         <p className="text-muted-foreground">
-          Find anything across Ogeemo.
+          Find anything across Ogeemo using text or voice.
         </p>
       </header>
 
@@ -149,13 +174,14 @@ export default function AdvancedSearchPage() {
           <CardHeader>
             <CardTitle>Search Ogeemo</CardTitle>
             <CardDescription>
-              Enter a search query to find menu items, contacts, projects, and more.
+              Enter a search query or use the microphone to find menu items, contacts, and projects.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="relative">
                 <Textarea
-                    placeholder="e.g., 'invoice' or 'project phoenix'"
+                    ref={searchInputRef}
+                    placeholder={isListening ? "Listening..." : "e.g., 'invoice' or 'project phoenix'"}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
@@ -166,8 +192,24 @@ export default function AdvancedSearchPage() {
                     }}
                     rows={2}
                     disabled={isSearching || isDataLoading}
-                    className="pr-12"
+                    className={cn(
+                        "pr-12 resize-none transition-all",
+                        isListening && "border-destructive ring-destructive shadow-destructive/10"
+                    )}
                 />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                        "absolute right-2 top-2 h-8 w-8 rounded-full",
+                        isListening ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "text-muted-foreground hover:text-primary"
+                    )}
+                    onClick={handleMicClick}
+                    disabled={isSearching || isDataLoading || isSupported === false}
+                    title={isListening ? "Stop listening" : "Search by voice"}
+                >
+                    {isListening ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
+                </Button>
             </div>
           </CardContent>
           <CardFooter>
@@ -211,7 +253,7 @@ export default function AdvancedSearchPage() {
                             }
                             
                             return (
-                            <TableRow key={`${item.resultType}-${index}`} onClick={() => handleResultClick(item)} className="cursor-pointer">
+                            <TableRow key={`${item.resultType}-${index}`} onClick={() => handleResultClick(item)} className="cursor-pointer hover:bg-muted/50">
                                 <TableCell>
                                     <ResultIcon type={item.resultType} />
                                 </TableCell>

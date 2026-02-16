@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
@@ -15,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { 
     ArrowLeft, 
     Bot, 

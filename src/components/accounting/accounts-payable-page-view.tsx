@@ -1,7 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -23,6 +23,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getExpenseTransactions, type ExpenseTransaction } from '@/services/accounting-service';
 import { AccountingPageHeader } from './page-header';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -33,6 +34,8 @@ export function AccountsPayablePageView() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const highlightedId = searchParams.get('highlight');
 
   useEffect(() => {
     if (!user) {
@@ -56,6 +59,18 @@ export function AccountsPayablePageView() {
     };
     loadData();
   }, [user, toast]);
+
+  useEffect(() => {
+    if (highlightedId && !isLoading) {
+        const timeoutId = setTimeout(() => {
+            const rowElement = document.getElementById(`row-${highlightedId}`);
+            if (rowElement) {
+                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedId, isLoading]);
 
   const totalExpenses = useMemo(() => {
       return expenseTransactions.reduce((sum, tx) => sum + tx.totalAmount, 0);
@@ -100,7 +115,11 @@ export function AccountsPayablePageView() {
                         </TableHeader>
                         <TableBody>
                             {expenseTransactions.length > 0 ? expenseTransactions.map(tx => (
-                                <TableRow key={tx.id}>
+                                <TableRow 
+                                    key={tx.id} 
+                                    id={`row-${tx.id}`}
+                                    className={cn(highlightedId === tx.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}
+                                >
                                     <TableCell>{format(new Date(tx.date), 'PP')}</TableCell>
                                     <TableCell>{tx.company}</TableCell>
                                     <TableCell>{tx.description}</TableCell>

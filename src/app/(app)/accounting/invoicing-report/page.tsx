@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -69,6 +68,8 @@ export default function InvoicingReportPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const highlightedId = searchParams.get('highlight');
 
     useEffect(() => {
         if (!user) {
@@ -88,6 +89,18 @@ export default function InvoicingReportPage() {
             setIsLoading(false);
         });
     }, [user, toast]);
+
+    useEffect(() => {
+        if (highlightedId && !isLoading) {
+            const timeoutId = setTimeout(() => {
+                const rowElement = document.getElementById(`row-${highlightedId}`);
+                if (rowElement) {
+                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [highlightedId, isLoading]);
 
     const filteredInvoices = useMemo(() => {
         return invoices
@@ -181,7 +194,11 @@ export default function InvoicingReportPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredInvoices.length > 0 ? filteredInvoices.map(invoice => (
-                                        <TableRow key={invoice.id}>
+                                        <TableRow 
+                                            key={invoice.id} 
+                                            id={`row-${invoice.id}`}
+                                            className={cn(highlightedId === invoice.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}
+                                        >
                                             <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                                             <TableCell>{invoice.companyName}</TableCell>
                                             <TableCell>{format(invoice.invoiceDate, 'PP')}</TableCell>

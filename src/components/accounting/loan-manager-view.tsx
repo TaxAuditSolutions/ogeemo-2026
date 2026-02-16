@@ -1,7 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -51,7 +51,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/auth-context";
 import { getLoans, addLoan, updateLoan, deleteLoan, type Loan } from "@/services/accounting-service";
-import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -72,6 +72,8 @@ export function LoanManagerView() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const highlightedId = searchParams.get('highlight');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loanToEdit, setLoanToEdit] = useState<Loan | null>(null);
@@ -99,6 +101,18 @@ export function LoanManagerView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (highlightedId && !isLoading) {
+        const timeoutId = setTimeout(() => {
+            const rowElement = document.getElementById(`row-${highlightedId}`);
+            if (rowElement) {
+                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedId, isLoading]);
 
   const { loansPayable, loansReceivable, totalPayable, totalReceivable } = useMemo(() => {
     const payables = loans.filter(l => l.loanType === 'payable');
@@ -202,7 +216,11 @@ export function LoanManagerView() {
                 </TableHeader>
                 <TableBody>
                     {loanData.length > 0 ? loanData.map(loan => (
-                        <TableRow key={loan.id}>
+                        <TableRow 
+                            key={loan.id} 
+                            id={`row-${loan.id}`}
+                            className={cn(highlightedId === loan.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}
+                        >
                             <TableCell className="font-medium">{loan.counterparty}</TableCell>
                             <TableCell className="text-right font-mono">{formatCurrency(loan.originalAmount)}</TableCell>
                             <TableCell className="text-right font-mono">{formatCurrency(loan.outstandingBalance)}</TableCell>

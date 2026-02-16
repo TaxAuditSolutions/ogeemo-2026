@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/context/auth-context";
 import { getAssets, addAsset, updateAsset, deleteAsset, type Asset } from "@/services/accounting-service";
+import { cn } from "@/lib/utils";
 
 
 const formatCurrency = (amount: number) => {
@@ -54,6 +55,8 @@ export function AssetManagementView() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const highlightedId = searchParams.get('highlight');
   
   const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
@@ -79,6 +82,18 @@ export function AssetManagementView() {
     };
     loadData();
   }, [user, toast]);
+
+  useEffect(() => {
+    if (highlightedId && !isLoading) {
+        const timeoutId = setTimeout(() => {
+            const rowElement = document.getElementById(`row-${highlightedId}`);
+            if (rowElement) {
+                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedId, isLoading]);
 
   const assetClassSummary = useMemo(() => {
     const summary: Record<string, { count: number; totalCost: number; totalUCC: number }> = {};
@@ -265,7 +280,11 @@ export function AssetManagementView() {
                         </TableHeader>
                         <TableBody>
                         {sortedAssets.map((asset) => (
-                            <TableRow key={asset.id}>
+                            <TableRow 
+                                key={asset.id} 
+                                id={`row-${asset.id}`}
+                                className={cn(highlightedId === asset.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}
+                            >
                             <TableCell className="font-medium">{asset.name}</TableCell>
                             <TableCell>{asset.assetClass || 'N/A'}</TableCell>
                             <TableCell>{asset.purchaseDate}</TableCell>

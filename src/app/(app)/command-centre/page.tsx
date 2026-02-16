@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Mic, Bot, Send, BrainCircuit, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function CommandCentrePage() {
+export default function OgeemoAiPage() {
   const [command, setCommand] = useState('');
   const [question, setQuestion] = useState('');
   const { toast } = useToast();
@@ -53,7 +52,7 @@ export default function CommandCentrePage() {
             </Button>
         </div>
         <h1 className="text-2xl font-bold font-headline text-primary">
-          Ogeemo Command Centre
+          Ogeemo Assistant (AI)
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Interact with your AI-powered assistant. Give a command or ask a question.

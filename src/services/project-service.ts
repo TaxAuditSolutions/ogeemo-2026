@@ -41,7 +41,7 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
   { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
   { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
   { label: 'Projects', icon: Briefcase, href: '/projects/all' },
-  { label: 'Master Mind', icon: BrainCircuit, href: '/master-mind'},
+  { label: 'Command Centre', icon: BrainCircuit, href: '/master-mind'},
 ];
 
 const iconMap: { [key: string]: LucideIcon } = {
@@ -399,18 +399,6 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
     return getChipsFromCollection(userId, collectionName);
 }
 
-function getDefaultsNotUsedForAvailable(userId: string, type: string, usedHrefs: Set<string>) {
-    const defaultSourceMap: Record<string, any[]> = {
-        dashboard: allMenuItems,
-        accounting: accountingMenuItems,
-        hr: hrMenuItems,
-    };
-    const defaultSource = defaultSourceMap[type] || allMenuItems;
-    return defaultSource
-        .filter(item => !usedHrefs.has(item.href))
-        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
-}
-
 export async function getAvailableActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {
     const collectionNameMap: Record<string, string> = {
         dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
@@ -425,7 +413,20 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
     
-    const defaultsNotUsed = getDefaultsNotUsedForAvailable(userId, type, usedHrefs);
+    // Helper to get defaults not in used list
+    const getDefaultsNotUsed = (type: string, used: Set<string>) => {
+        const defaultSourceMap: Record<string, any[]> = {
+            dashboard: allMenuItems,
+            accounting: accountingMenuItems,
+            hr: hrMenuItems,
+        };
+        const defaultSource = defaultSourceMap[type] || allMenuItems;
+        return defaultSource
+            .filter(item => !used.has(item.href))
+            .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+    };
+
+    const defaultsNotUsed = getDefaultsNotUsed(type, usedHrefs);
     
     if (!docSnap.exists()) {
         return defaultsNotUsed as ActionChipData[];

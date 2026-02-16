@@ -118,9 +118,9 @@ export function TimeManagerView() {
     const [billableRate, setBillableRate] = React.useState<number | ''>(100);
     
     // Scheduling state
-    const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
-    const [startHour, setStartHour] = React.useState<string | undefined>(undefined);
-    const [startMinute, setStartMinute] = React.useState<string | undefined>(undefined);
+    const [startDate, setStartDate] = React.useState<Date | undefined>(new Date());
+    const [startHour, setStartHour] = React.useState<string | undefined>(formatDate(new Date(), 'HH'));
+    const [startMinute, setStartMinute] = React.useState<string | undefined>(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
     const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
     const [endHour, setEndHour] = React.useState<string | undefined>(undefined);
     const [endMinute, setEndMinute] = React.useState<string | undefined>(undefined);
@@ -644,8 +644,8 @@ export function TimeManagerView() {
                         </div>
                         
                         <div className="flex flex-col items-center text-center px-4">
-                            <h1 className="text-5xl font-bold font-headline text-primary whitespace-nowrap">Master Mind</h1>
-                            <p className="text-sm font-medium mt-1 leading-tight text-muted-foreground">The ultimate command center for orchestrating your vision into high-impact action.</p>
+                            <h1 className="text-5xl font-bold font-headline text-primary whitespace-nowrap">Command Centre</h1>
+                            <p className="text-sm font-medium mt-1 leading-tight text-muted-foreground">The flagship engine for orchestrating your vision into high-impact action.</p>
                         </div>
 
                         <div className="flex justify-center md:justify-end items-center gap-2">

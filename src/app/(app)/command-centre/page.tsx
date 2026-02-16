@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { cn } from '@/lib/utils';
+import { ogeemoAgent } from '@/ai/flows/ogeemo-chat';
 
 interface Message {
     id: string;
@@ -63,21 +64,16 @@ export default function OgeemoAiPage() {
             content: [{ text: m.text }]
         }));
 
-        const response = await fetch('/api/genkit/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text.trim(), history }),
+        // Call the server action directly instead of using an API route
+        const result = await ogeemoAgent({
+            message: text.trim(),
+            history
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.details || data.error || "Agent communication error.");
-        }
-
-        const ogeemoMsg: Message = { id: (Date.now() + 1).toString(), text: data.reply, sender: 'ogeemo' };
+        const ogeemoMsg: Message = { id: (Date.now() + 1).toString(), text: result.reply, sender: 'ogeemo' };
         setMessages(prev => [...prev, ogeemoMsg]);
     } catch (error: any) {
+        console.error("[Ogeemo AI UI] Agent Error:", error);
         toast({ variant: 'destructive', title: "Agent Error", description: error.message });
     } finally {
         setIsLoading(false);

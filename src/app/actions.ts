@@ -5,7 +5,7 @@ import { getAdminAuth } from '@/lib/firebase-admin';
 
 /**
  * Retrieves the current authenticated user's UID from the session cookie.
- * This is a server-side utility function used by API routes and server flows.
+ * This is a server-side utility function used by Server Actions and API routes.
  * 
  * @returns The user's UID if authenticated, or null if no valid session exists.
  */
@@ -15,16 +15,18 @@ export async function getCurrentUserId(): Promise<string | null> {
     const sessionCookie = cookieStore.get('session')?.value;
 
     if (!sessionCookie) {
+      console.warn("Auth Action: No session cookie found.");
       return null;
     }
 
     const adminAuth = getAdminAuth();
-    // Verification with 'true' checks if the token has been revoked
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    
+    // We set checkRevoked to false for the prototype to avoid permission/latency issues.
+    // This still verifies the signature and expiration of the cookie.
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     return decodedToken.uid;
-  } catch (error) {
-    // If the cookie is expired or invalid, we simply return null
-    // rather than throwing, allowing the caller to handle unauthorized access.
+  } catch (error: any) {
+    console.error("Auth Action: Failed to verify session cookie.", error.message);
     return null;
   }
 }

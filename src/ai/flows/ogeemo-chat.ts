@@ -9,6 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { getCurrentUserId } from '@/app/actions';
 import fs from 'fs';
 import path from 'path';
 
@@ -20,7 +21,6 @@ const clientMessageSchema = z.object({
 });
 
 const OgeemoAgentInputSchema = z.object({
-  userId: z.string(),
   message: z.string(),
   history: z.array(clientMessageSchema).optional(),
 });
@@ -197,13 +197,18 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 `;
 
 export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
-    return ogeemoAgentFlow(input);
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        throw new Error("Unauthorized: Please ensure you are logged in to use Ogeemo AI.");
+    }
+    return ogeemoAgentFlow({ ...input, userId });
 }
 
+// Internal flow definition (still requires userId)
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
-    inputSchema: OgeemoAgentInputSchema,
+    inputSchema: OgeemoAgentInputSchema.extend({ userId: z.string() }),
     outputSchema: z.object({ reply: z.string() }),
   },
   async (input) => {
@@ -236,7 +241,7 @@ const ogeemoAgentFlow = ai.defineFlow(
         return { reply: result.text || "I processed your request but have no text response." };
     } catch (error: any) {
         console.error("[ogeemoAgentFlow] Critical Error:", error);
-        throw error; // Let the API route catch this for detailed reporting
+        throw error;
     }
   }
 );

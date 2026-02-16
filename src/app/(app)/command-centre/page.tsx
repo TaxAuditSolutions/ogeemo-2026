@@ -34,6 +34,7 @@ import {
     Briefcase,
     Book,
     Database,
+    X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -51,10 +52,10 @@ const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV5';
 const discoverableIntents = [
     { label: "Go to Ledger", cmd: "Go to Ledger" },
     { label: "New Contact...", cmd: "New Contact named " },
-    { label: "Track Meeting", cmd: "Track Meeting" },
-    { label: "Create Project", cmd: "Create Project called " },
     { label: "Open Calendar", cmd: "Open Calendar" },
     { label: "Make Invoice", cmd: "Make Invoice" },
+    { label: "Find Jane...", cmd: "Find Jane" },
+    { label: "Track Meeting", cmd: "Track Meeting" },
 ];
 
 type SearchResult = 
@@ -240,7 +241,7 @@ export default function OgeemoAiPage() {
                   <Terminal className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Action Launcher</CardTitle>
               </div>
-              <CardDescription>Dictate verbs like "Go to", "New", or "Track".</CardDescription>
+              <CardDescription>Dictate verbs like "Go to", "Open", "Make", or "Find".</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative">

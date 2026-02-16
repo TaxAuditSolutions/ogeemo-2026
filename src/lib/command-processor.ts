@@ -174,6 +174,18 @@ export function processCommand(input: string): CommandResult {
         }
     }
 
+    // Search: "Find", "Search", "Lookup"
+    if (['find', 'search', 'lookup'].includes(verb) && remaining) {
+        const query = cleanParam(remaining);
+        return {
+            type: 'navigation',
+            target: `/reports/search?q=${encodeURIComponent(query)}`,
+            message: `Search: [${query}]`,
+            description: `Searching the global database for "${query}".`,
+            category: 'Intelligence'
+        };
+    }
+
     // Live State: "Track", "Time", "Start"
     if (['track', 'time', 'start'].includes(verb) && remaining) {
         const target = cleanParam(remaining);

@@ -158,6 +158,7 @@ export function LedgersView() {
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const initialTab = searchParams ? searchParams.get('tab') : 'all';
+  const autoEdit = searchParams ? searchParams.get('edit') === 'true' : false;
   
   const [activeTab, setActiveTab] = React.useState(initialTab || 'all');
 
@@ -193,26 +194,6 @@ export function LedgersView() {
   }, [user, toast]);
 
   React.useEffect(() => { loadData(); }, [loadData]);
-
-  // Deep linking and scroll effect
-  React.useEffect(() => {
-    if (highlightedId && !isLoading) {
-        // Switch tab if needed
-        if (initialTab && initialTab !== activeTab) {
-            setActiveTab(initialTab);
-        }
-        
-        // Use a short timeout to ensure the DOM has rendered the specific tab content
-        const timeoutId = setTimeout(() => {
-            const rowElement = document.getElementById(`row-${highlightedId}`);
-            if (rowElement) {
-                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 300);
-        
-        return () => clearTimeout(timeoutId);
-    }
-  }, [highlightedId, isLoading, initialTab]);
 
   const filteredIncome = React.useMemo(() => {
     if (!startDate && !endDate) return incomeLedger;
@@ -286,6 +267,59 @@ export function LedgersView() {
     return combined;
   }, [filteredIncome, filteredExpenses, sortConfig, getCategoryName]);
 
+  const handleEditTransaction = (tx: GeneralTransaction) => {
+      setTransactionToEdit(tx);
+      setNewTransactionType(tx.transactionType);
+      
+      const currentCatNum = tx.transactionType === 'income' ? (tx as IncomeTransaction).incomeCategory : (tx as ExpenseTransaction).category;
+
+      setNewTransaction({
+          date: tx.date,
+          company: tx.company,
+          description: tx.description,
+          totalAmount: String(tx.totalAmount),
+          taxRate: String(tx.taxRate || ''),
+          preTaxAmount: String(tx.preTaxAmount || ''),
+          taxAmount: String(tx.taxAmount || ''),
+          incomeCategory: tx.transactionType === 'income' ? currentCatNum : '',
+          category: tx.transactionType === 'expense' ? currentCatNum : '',
+          explanation: tx.explanation || '',
+          documentNumber: tx.documentNumber || '',
+          documentUrl: tx.documentUrl || '',
+          type: tx.type,
+          depositedTo: tx.transactionType === 'income' ? (tx as IncomeTransaction).depositedTo : '',
+      });
+      setIsTransactionDialogOpen(true);
+  };
+
+  // Deep linking and scroll effect
+  React.useEffect(() => {
+    if (highlightedId && !isLoading) {
+        // Switch tab if needed
+        if (initialTab && initialTab !== activeTab) {
+            setActiveTab(initialTab);
+        }
+        
+        // Handle "One-Click Edit"
+        if (autoEdit) {
+            const tx = generalLedger.find(t => t.id === highlightedId);
+            if (tx) {
+                handleEditTransaction(tx);
+            }
+        }
+        
+        // Use a short timeout to ensure the DOM has rendered the specific tab content
+        const timeoutId = setTimeout(() => {
+            const rowElement = document.getElementById(`row-${highlightedId}`);
+            if (rowElement) {
+                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+        
+        return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedId, isLoading, initialTab, autoEdit, generalLedger, activeTab]);
+
   const incomeTotal = React.useMemo(() => filteredIncome.reduce((sum, item) => sum + item.totalAmount, 0), [filteredIncome]);
   const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
   const netIncome = incomeTotal - expenseTotal;
@@ -353,31 +387,6 @@ export function LedgersView() {
       }
   };
 
-  const handleEditTransaction = (tx: GeneralTransaction) => {
-      setTransactionToEdit(tx);
-      setNewTransactionType(tx.transactionType);
-      
-      const currentCatNum = tx.transactionType === 'income' ? (tx as IncomeTransaction).incomeCategory : (tx as ExpenseTransaction).category;
-
-      setNewTransaction({
-          date: tx.date,
-          company: tx.company,
-          description: tx.description,
-          totalAmount: String(tx.totalAmount),
-          taxRate: String(tx.taxRate || ''),
-          preTaxAmount: String(tx.preTaxAmount || ''),
-          taxAmount: String(tx.taxAmount || ''),
-          incomeCategory: tx.transactionType === 'income' ? currentCatNum : '',
-          category: tx.transactionType === 'expense' ? currentCatNum : '',
-          explanation: tx.explanation || '',
-          documentNumber: tx.documentNumber || '',
-          documentUrl: tx.documentUrl || '',
-          type: tx.type,
-          depositedTo: tx.transactionType === 'income' ? (tx as IncomeTransaction).depositedTo : '',
-      });
-      setIsTransactionDialogOpen(true);
-  };
-
   const handleConfirmDelete = async () => {
     if (!transactionToDelete || !user) return;
     try {
@@ -400,11 +409,11 @@ export function LedgersView() {
     if (!user || !newCategoryName.trim()) return;
     try {
         if (newTransactionType === 'income') {
-            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
+            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid, categoryNumber: '' });
             setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
             setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber || newCat.id }));
         } else {
-            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
+            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid, categoryNumber: '' });
             setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
             setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
         }
@@ -591,7 +600,6 @@ export function LedgersView() {
             <Card className={cn("border-primary/20", netIncome >= 0 ? "bg-primary/5" : "bg-red-50")}>
                 <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary"/> Net Position</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-0"><p className={cn("text-2xl font-bold", netIncome >= 0 ? "text-primary" : "text-destructive")}>${netIncome.toFixed(2)}</p></CardContent>
-            </Card>
         </div>
 
         {/* Main Content Area */}

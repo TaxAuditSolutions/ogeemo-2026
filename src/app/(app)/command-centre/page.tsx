@@ -229,15 +229,15 @@ export default function OgeemoAiPage() {
     if (item.resultType === 'Menu Item') {
         path = item.href;
     } else if (item.resultType === 'Contact') {
-        path = `/contacts?highlight=${item.id}`;
+        path = `/contacts?highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Project') {
         path = `/projects/${item.id}/tasks`;
     } else if (item.resultType === 'Invoice') {
         path = `/accounting/invoices/preview?action=print&invoiceId=${item.id}`;
     } else if (item.resultType === 'Income') {
-        path = `/accounting/ledgers?tab=income&highlight=${item.id}`;
+        path = `/accounting/ledgers?tab=income&highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Expense') {
-        path = `/accounting/ledgers?tab=expenses&highlight=${item.id}`;
+        path = `/accounting/ledgers?tab=expenses&highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Task') {
         path = `/master-mind?eventId=${item.id}`;
     }

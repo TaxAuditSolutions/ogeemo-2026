@@ -281,6 +281,7 @@ export function ContactsView() {
   const router = useRouter();
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
+  const autoEdit = searchParams ? searchParams.get('edit') === 'true' : false;
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -339,6 +340,12 @@ export function ContactsView() {
             // Auto-select the folder
             setSelectedFolderId(contact.folderId);
             
+            // Handle "One-Click Edit"
+            if (autoEdit) {
+                setContactToEdit(contact);
+                setIsContactFormOpen(true);
+            }
+
             // Expand the parent if needed
             const folder = folders.find(f => f.id === contact.folderId);
             if (folder && folder.parentId) {
@@ -356,7 +363,7 @@ export function ContactsView() {
             return () => clearTimeout(timeoutId);
         }
     }
-  }, [highlightedId, isLoading, contacts, folders]);
+  }, [highlightedId, isLoading, contacts, folders, autoEdit]);
 
   useEffect(() => {
     if (!isLoading && folders.length > 0) {

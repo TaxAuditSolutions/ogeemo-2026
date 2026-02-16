@@ -8,7 +8,6 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { MessageData } from 'genkit';
 import { getAdminDb } from '@/lib/firebase-admin';
 import fs from 'fs';
 import path from 'path';
@@ -49,7 +48,7 @@ const searchContactsTool = ai.defineTool(
     try {
       const db = getAdminDb();
       const term = input.searchTerm.toLowerCase();
-      // Simple search implementation
+      
       const snapshot = await db.collection('contacts')
         .where('userId', '==', userId)
         .get();
@@ -68,6 +67,7 @@ const searchContactsTool = ai.defineTool(
         message: `Found ${results.length} matching contacts.`,
       };
     } catch (error: any) {
+      console.error("[searchContactsTool] Error:", error);
       return { success: false, contacts: [], message: error.message };
     }
   }
@@ -115,6 +115,7 @@ const createTaskTool = ai.defineTool(
         message: `Successfully created task: "${input.title}"`,
       };
     } catch (error: any) {
+      console.error("[createTaskTool] Error:", error);
       return { success: false, message: error.message };
     }
   }
@@ -147,7 +148,7 @@ const addContactTool = ai.defineTool(
         ...input,
         userId,
         createdAt: new Date(),
-        folderId: '', // Root folder
+        folderId: '', // Default to root
       };
 
       const docRef = await db.collection('contacts').add(contactData);
@@ -157,6 +158,7 @@ const addContactTool = ai.defineTool(
         message: `Successfully added contact: "${input.name}"`,
       };
     } catch (error: any) {
+      console.error("[addContactTool] Error:", error);
       return { success: false, message: error.message };
     }
   }
@@ -167,8 +169,11 @@ const addContactTool = ai.defineTool(
 function getKnowledgeBase(): string {
   try {
     const summaryPath = path.join(process.cwd(), 'OGEEMO_SUMMARY.md');
-    const summaryContent = fs.readFileSync(summaryPath, 'utf-8');
-    return `<knowledge_base><document name="OGEEMO_SUMMARY.md">${summaryContent}</document></knowledge_base>`;
+    if (fs.existsSync(summaryPath)) {
+        const summaryContent = fs.readFileSync(summaryPath, 'utf-8');
+        return `<knowledge_base><document name="OGEEMO_SUMMARY.md">${summaryContent}</document></knowledge_base>`;
+    }
+    return "<knowledge_base>Information about Ogeemo features is currently unavailable.</knowledge_base>";
   } catch (error) {
     return "<knowledge_base>Error: Could not load application documentation.</knowledge_base>";
   }
@@ -204,15 +209,14 @@ const ogeemoAgentFlow = ai.defineFlow(
   async (input) => {
     const { userId, message, history } = input;
 
-    const conversationHistory: MessageData[] = history?.map(msg => new MessageData({
+    // Format history for Gemini
+    const messages: any[] = history?.map(msg => ({
         role: msg.role,
         content: msg.content.map(c => ({ text: c.text }))
     })) || [];
 
-    const messages: MessageData[] = [
-      ...conversationHistory,
-      { role: 'user', content: [{ text: message }] }
-    ];
+    // Add current message
+    messages.push({ role: 'user', content: [{ text: message }] });
 
     const knowledgeBase = getKnowledgeBase();
     const finalSystemPrompt = systemPromptTemplate.replace('{{{knowledgeBase}}}', knowledgeBase);
@@ -229,10 +233,10 @@ const ogeemoAgentFlow = ai.defineFlow(
           config: { temperature: 0.1 },
         });
 
-        return { reply: result.text };
+        return { reply: result.text || "I processed your request but have no text response." };
     } catch (error: any) {
-        console.error("[ogeemoAgentFlow] Error:", error);
-        return { reply: "I'm sorry, I encountered an internal error. Please try again or rephrase your request." };
+        console.error("[ogeemoAgentFlow] Critical Error:", error);
+        throw error; // Let the API route catch this for detailed reporting
     }
   }
 );

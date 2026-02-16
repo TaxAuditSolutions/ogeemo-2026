@@ -33,7 +33,6 @@ export default function OgeemoAiPage() {
   const { isListening, startListening, stopListening, isSupported, status: speechStatus } = useSpeechToText({
     onTranscript: (transcript) => {
       const newText = chatBaseTextRef.current ? `${chatBaseTextRef.current} ${transcript}` : transcript;
-      // We'll update the command field by default if using voice
       setCommand(newText);
     },
   });
@@ -70,9 +69,12 @@ export default function OgeemoAiPage() {
             body: JSON.stringify({ message: text.trim(), history }),
         });
 
-        if (!response.ok) throw new Error("Agent communication error.");
-
         const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.details || data.error || "Agent communication error.");
+        }
+
         const ogeemoMsg: Message = { id: (Date.now() + 1).toString(), text: data.reply, sender: 'ogeemo' };
         setMessages(prev => [...prev, ogeemoMsg]);
     } catch (error: any) {

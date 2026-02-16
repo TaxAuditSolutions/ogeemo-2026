@@ -1,6 +1,5 @@
-
 import {NextRequest, NextResponse} from 'next/server';
-import {ogeemoAgent} from '@/ai/flows/ogeemo-chat'; // Ensure we import the new wrapper function
+import {ogeemoAgent} from '@/ai/flows/ogeemo-chat';
 import {getCurrentUserId} from '@/app/actions';
 
 export async function POST(req: NextRequest) {
@@ -16,14 +15,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({error: 'Message is required.'}, {status: 400});
     }
 
-    // Call the exported wrapper function, which will in turn run the Genkit flow.
+    // Call the ogeemoAgent wrapper function
     const result = await ogeemoAgent({userId, message, history: history || []});
     
-    // The result is now guaranteed to be a JSON-serializable object.
     return NextResponse.json(result);
     
   } catch (error: any) {
     console.error("[Ogeemo Agent API Error]", error);
-    return NextResponse.json({error: error.message || 'An unexpected error occurred.'}, {status: 500});
+    // Return specific error details to the frontend
+    return NextResponse.json({
+        error: 'Agent communication error.',
+        details: error.message || 'An unexpected error occurred during the AI interaction.',
+        code: error.code || 'UNKNOWN'
+    }, {status: 500});
   }
 }

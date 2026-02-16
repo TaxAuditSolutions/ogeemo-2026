@@ -33,7 +33,8 @@ import {
     Cpu,
     Construction,
     Wand2,
-    Compass
+    Compass,
+    Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -46,12 +47,12 @@ import { processCommand, type CommandResult } from '@/lib/command-processor';
 const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV2';
 
 const discoverableIntents = [
-    { label: "Go to Ledger", cmd: "Go to ledger" },
+    { label: "Check Ledger", cmd: "Go to ledger" },
     { label: "New Project", cmd: "New project" },
     { label: "New Contact", cmd: "New contact" },
     { label: "Track Meeting", cmd: "Track meeting" },
-    { label: "Open CRM", cmd: "CRM" },
-    { label: "View Payroll", cmd: "Payroll" },
+    { label: "View Statement", cmd: "Client statement" },
+    { label: "Check Snapshot", cmd: "Snapshot" },
 ];
 
 export default function OgeemoAiPage() {
@@ -81,7 +82,7 @@ export default function OgeemoAiPage() {
 
   const handleExecuteCommand = () => {
     if (!commandResult || commandResult.type === 'unknown') {
-        toast({ variant: 'destructive', title: "Command not recognized", description: "Try one of the suggested keywords below." });
+        toast({ variant: 'destructive', title: "Signal Weak", description: "The system cannot lock onto this command. Refine your input." });
         return;
     }
     
@@ -93,7 +94,7 @@ export default function OgeemoAiPage() {
         } else {
             router.push(commandResult.target);
         }
-        toast({ title: "Executing Command", description: commandResult.message });
+        toast({ title: "Signal Locked", description: `Executing: ${commandResult.message}` });
     }
   };
 
@@ -104,22 +105,22 @@ export default function OgeemoAiPage() {
           <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                   <User className="h-3.5 w-3.5 text-primary" />
-                  <span className="font-semibold">Operator:</span>
-                  <span className="text-muted-foreground">{user?.displayName || user?.email}</span>
+                  <span className="font-semibold uppercase tracking-wider">Operator:</span>
+                  <span className="text-muted-foreground font-mono">{user?.displayName || user?.email}</span>
               </div>
               <div className="flex items-center gap-2 border-l pl-4">
-                  <Cpu className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="font-semibold">System State:</span>
+                  <Target className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="font-semibold uppercase tracking-wider">Context:</span>
                   <span className={cn(
-                      "font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
+                      "font-mono font-bold uppercase px-1.5 py-0.5 rounded",
                       commandResult.type === 'unknown' ? "text-muted-foreground bg-muted" : "text-green-600 bg-green-500/10"
                   )}>
-                      {commandResult.type === 'unknown' ? "Listening" : "Locked"}
+                      {commandResult.type === 'unknown' ? "Listening" : commandResult.category || "Active"}
                   </span>
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo Deterministic OS v2.0</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.0</span>
           </div>
       </div>
 
@@ -132,7 +133,7 @@ export default function OgeemoAiPage() {
             </Button>
         </div>
         <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Command Centre</h1>
-        <p className="text-muted-foreground mt-1">Zero-latency navigation terminal. Speak or type your intent.</p>
+        <p className="text-muted-foreground mt-1">High-fidelity navigation terminal. Logic-first orchestration.</p>
       </header>
 
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
@@ -141,57 +142,57 @@ export default function OgeemoAiPage() {
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <Card className={cn(
               "border-2 transition-all duration-300 shadow-xl overflow-hidden",
-              commandResult.type !== 'unknown' ? "border-primary shadow-primary/10" : "border-primary/20"
+              commandResult.type !== 'unknown' ? "border-primary shadow-primary/10 scale-[1.01]" : "border-primary/20"
           )}>
             <CardHeader className="bg-primary/5 border-b pb-4">
               <div className="flex items-center gap-2">
                   <Terminal className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Command Terminal</CardTitle>
+                  <CardTitle className="text-lg">Intent Terminal</CardTitle>
               </div>
-              <CardDescription>Enter a hub name, a page keyword, or a complex action.</CardDescription>
+              <CardDescription>Enter a keyword, a page name, or a specific business action.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative group">
                   <Input
-                    placeholder="e.g., 'Accounting', 'New contact Dan', 'Go to Ledger'..."
+                    placeholder="e.g., 'Accounting', 'New contact Dan', 'Snapshot'..."
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
-                    className="h-16 text-xl pr-14 focus-visible:ring-primary border-primary/30 rounded-xl"
+                    className="h-16 text-xl pr-14 focus-visible:ring-primary border-primary/30 rounded-xl font-medium"
                     onKeyDown={(e) => e.key === 'Enter' && handleExecuteCommand()}
                     autoFocus
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
                       <Zap className={cn(
                           "h-6 w-6 transition-colors duration-300",
-                          commandResult.type !== 'unknown' ? "text-primary animate-pulse" : "text-muted-foreground/30"
+                          commandResult.type !== 'unknown' ? "text-primary animate-pulse" : "text-muted-foreground/20"
                       )} />
                   </div>
               </div>
 
               {/* Real-time Intent Preview */}
-              <div className="min-h-[120px] flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-colors bg-muted/5">
+              <div className="min-h-[120px] flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all bg-muted/5">
                   {commandInput.trim() === '' ? (
                       <div className="text-center space-y-3 opacity-40">
                           <BrainCircuit className="h-10 w-10 mx-auto" />
-                          <p className="text-sm font-medium">Awaiting input signal...</p>
+                          <p className="text-sm font-medium tracking-wide">Signal Awaiting Input...</p>
                       </div>
                   ) : (
-                      <div className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-300">
                           <div className="flex items-start gap-4">
                               <div className={cn(
-                                  "p-3 rounded-full shrink-0",
+                                  "p-3 rounded-full shrink-0 transition-colors",
                                   commandResult.type === 'unknown' ? "bg-muted" : "bg-primary/10"
                               )}>
                                   {commandResult.type === 'unknown' ? <HelpCircle className="h-6 w-6 text-muted-foreground" /> : <Wand2 className="h-6 w-6 text-primary" />}
                               </div>
                               <div className="flex-1">
-                                  <h4 className="text-2xl font-bold text-foreground leading-tight">{commandResult.message}</h4>
+                                  <h4 className="text-2xl font-bold text-foreground leading-tight tracking-tight">{commandResult.message}</h4>
                                   <p className="text-muted-foreground text-sm mt-1">{commandResult.description}</p>
                               </div>
                           </div>
                           {commandResult.type !== 'unknown' && (
                               <Button className="w-full h-12 text-lg font-bold group shadow-lg" onClick={handleExecuteCommand}>
-                                  Execute Launch <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                  Launch Command <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                               </Button>
                           )}
                       </div>
@@ -201,12 +202,12 @@ export default function OgeemoAiPage() {
             <CardFooter className="bg-muted/30 border-t py-3 flex justify-between items-center px-6">
                 <div className="flex items-center gap-2">
                     <History className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recents</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recent Actions</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                     {recentCommands.length > 0 ? recentCommands.map((cmd, i) => (
-                        <Button key={i} variant="ghost" className="h-7 px-3 text-[10px] border bg-background hover:bg-muted" onClick={() => setCommandInput(cmd)}>{cmd}</Button>
-                    )) : <span className="text-[10px] text-muted-foreground italic">Terminal history clear</span>}
+                        <Button key={i} variant="ghost" className="h-7 px-3 text-[10px] border bg-background hover:bg-muted whitespace-nowrap" onClick={() => setCommandInput(cmd)}>{cmd}</Button>
+                    )) : <span className="text-[10px] text-muted-foreground italic">Terminal memory clear</span>}
                 </div>
             </CardFooter>
           </Card>
@@ -215,13 +216,13 @@ export default function OgeemoAiPage() {
           <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                   <Compass className="h-4 w-4 text-primary" />
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Discoverable Intents</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Standard Signal Map</h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {discoverableIntents.map((intent) => (
                       <Card 
                         key={intent.label} 
-                        className="cursor-pointer hover:border-primary/50 transition-colors group"
+                        className="cursor-pointer hover:border-primary/50 transition-all group hover:shadow-md"
                         onClick={() => setCommandInput(intent.cmd)}
                       >
                           <CardContent className="p-3 flex items-center justify-between">
@@ -240,7 +241,7 @@ export default function OgeemoAiPage() {
             <CardHeader className="border-b bg-muted/20 py-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <HelpCircle className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm">Ask a Question</CardTitle>
+                    <CardTitle className="text-sm">Knowledge Base</CardTitle>
                 </div>
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">BETA</Badge>
             </CardHeader>
@@ -251,15 +252,15 @@ export default function OgeemoAiPage() {
                         <Construction className="h-16 w-16 text-amber-500 relative z-10" />
                     </div>
                     <div className="space-y-2">
-                        <h3 className="text-xl font-bold">Feature Under Development</h3>
+                        <h3 className="text-xl font-bold">Neural Tuning in Progress</h3>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            The Ogeemo AI Brain is currently undergoing high-level contextual training to provide more precise answers regarding your data.
+                            The Ogeemo AI Brain is currently undergoing high-level contextual training to provide more precise answers regarding your private business data.
                         </p>
                     </div>
                     <Alert className="bg-background/50 border-amber-200 py-3">
                         <Info className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                            This section will be fully enabled in Ogeemo v2.1.
+                            Conversational reasoning will be enabled in v2.1.
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -267,7 +268,7 @@ export default function OgeemoAiPage() {
             <CardFooter className="border-t p-3 bg-muted/20">
                 <form className="flex w-full gap-2 opacity-50 pointer-events-none">
                     <Input
-                        placeholder="Currently unavailable..."
+                        placeholder="Neural link offline..."
                         disabled
                         className="h-10 text-xs"
                     />

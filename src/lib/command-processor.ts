@@ -13,6 +13,7 @@ export interface CommandResult {
 }
 
 const commandMap: Record<string, { target: string; label: string; category: string }> = {
+    // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
     'account': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
     'finance': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -29,7 +30,11 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'payable': { target: '/accounting/accounts-payable', label: 'Accounts Payable', category: 'Finances' },
     'invoice': { target: '/accounting/invoices/create', label: 'Invoice Generator', category: 'Finances' },
     'invoices': { target: '/accounting/accounts-receivable', label: 'Invoice Registry', category: 'Finances' },
+    'statement': { target: '/reports/client-statement', label: 'Client Statement', category: 'Reports' },
+    'snapshot': { target: '/accounting/financial-snapshot', label: 'Financial Snapshot', category: 'Finances' },
+    'loan': { target: '/accounting/loan-manager', label: 'Loan Manager', category: 'Finances' },
     
+    // Relationships
     'contact': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'contacts': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'client': { target: '/contacts', label: 'Client Directory', category: 'Relationships' },
@@ -38,48 +43,61 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'workers': { target: '/contacts', label: 'Worker Directory', category: 'HR' },
     'crm': { target: '/crm/plan', label: 'CRM Pipeline', category: 'Relationships' },
     'pipeline': { target: '/crm/plan', label: 'CRM Pipeline', category: 'Relationships' },
+    'leads': { target: '/crm/plan', label: 'Leads', category: 'Relationships' },
+    'prospects': { target: '/crm/plan', label: 'Prospects', category: 'Relationships' },
     
+    // Projects & Tasks
     'project': { target: '/projects/all', label: 'Project List', category: 'Operations' },
     'projects': { target: '/projects/all', label: 'Project List', category: 'Operations' },
     'board': { target: '/project-status', label: 'Project Status Board', category: 'Operations' },
     'status': { target: '/project-status', label: 'Project Status Board', category: 'Operations' },
+    'tasks': { target: '/to-do', label: 'Task List', category: 'Operations' },
+    'todo': { target: '/to-do', label: 'To-Do List', category: 'Operations' },
+    'inbox': { target: '/projects/inbox/tasks', label: 'Inbox', category: 'Workspace' },
     
+    // Workspace & Utils
     'calendar': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
     'schedule': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
     'event': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
-    
     'inventory': { target: '/inventory-manager/track', label: 'Inventory Central', category: 'Growth' },
     'stock': { target: '/inventory-manager/track', label: 'Inventory Central', category: 'Growth' },
     'pos': { target: '/inventory-manager/pos', label: 'Point of Sale', category: 'Growth' },
-    
     'marketing': { target: '/marketing-manager', label: 'Marketing Manager', category: 'Growth' },
     'hytexercise': { target: '/hytexercise', label: 'Wellness Manager', category: 'Operations' },
     'wellness': { target: '/hytexercise', label: 'Wellness Manager', category: 'Operations' },
     'settings': { target: '/settings', label: 'Settings', category: 'Admin' },
     'profile': { target: '/settings', label: 'My Profile', category: 'Admin' },
+    'images': { target: '/image-manager', label: 'Image Manager', category: 'Admin' },
     'hub': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
     'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'search': { target: '/reports/search', label: 'Advanced Search', category: 'Reports' },
+    'search': { target: '/reports/search', label: 'Global Search', category: 'Reports' },
     'reports': { target: '/reports/search', label: 'Advanced Search', category: 'Reports' },
     'help': { target: '/master-mind/gtd-instructions', label: 'Ogeemo Method', category: 'Admin' },
+    'backup': { target: '/backup', label: 'Backup Manager', category: 'Admin' },
+    'feedback': { target: '/feedback', label: 'Feedback Form', category: 'Support' },
+    
+    // External
     'drive': { target: 'https://drive.google.com', label: 'Google Drive', category: 'External' },
     'gmail': { target: 'https://mail.google.com', label: 'Google Mail', category: 'External' },
 };
 
+/**
+ * Normalizes input and processes it through hierarchical intent matching.
+ */
 export function processCommand(input: string): CommandResult {
     const cleanInput = input.toLowerCase().trim();
     if (!cleanInput) return { type: 'unknown', message: 'Awaiting Input...' };
 
-    const parts = cleanInput.split(/\s+/);
-    const verb = parts[0];
-    const remainingRaw = parts.slice(1).join(' ');
+    const tokens = cleanInput.split(/\s+/).filter(Boolean);
+    const verb = tokens[0];
+    const remainingRaw = tokens.slice(1).join(' ');
     
-    // Remove filler words for better extraction (e.g., "for", "named", "called", "to")
+    // Remove filler words for parameter extraction
     const remaining = remainingRaw
-        .replace(/^(for|named|called|to)\s+/i, '')
+        .replace(/^(for|named|called|to|about|at)\s+/i, '')
         .trim();
 
-    // 1. Direct Keyword Match (Strict)
+    // 1. EXACT MATCH (Highest Priority)
     if (commandMap[cleanInput]) {
         const cmd = commandMap[cleanInput];
         return {
@@ -87,13 +105,14 @@ export function processCommand(input: string): CommandResult {
             target: cmd.target,
             isExternal: cmd.target.startsWith('http'),
             message: `Launcher: [${cmd.label}]`,
-            description: `Navigating to ${cmd.label} in ${cmd.category}.`,
+            description: `Navigating directly to ${cmd.label}.`,
             category: cmd.category
         };
     }
 
-    // 2. Verb: "Go"
-    if (verb === 'go' && remaining) {
+    // 2. VERB-BASED ACTIONS
+    // Handle "Go [Place]"
+    if ((verb === 'go' || verb === 'open' || verb === 'show') && remaining) {
         const searchTarget = remaining.startsWith('to ') ? remaining.replace('to ', '') : remaining;
         const cmd = commandMap[searchTarget];
         if (cmd) {
@@ -101,32 +120,32 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: cmd.target,
                 isExternal: cmd.target.startsWith('http'),
-                message: `Navigating: [${cmd.label}]`,
-                description: `Executing direct launch to ${cmd.label}.`,
+                message: `Executing: [${cmd.label}]`,
+                description: `Opening the requested hub.`,
                 category: cmd.category
             };
         }
     }
 
-    // 3. Verb: "New"
+    // Handle "New [Entity] [Name]"
     if (verb === 'new' && remaining) {
         if (remaining.includes('contact')) {
-            const name = remaining.replace('contact', '').replace(/^(named|called)\s+/i, '').trim();
+            const name = remaining.replace('contact', '').trim();
             return {
                 type: 'navigation',
                 target: `/contacts?action=new${name ? `&name=${encodeURIComponent(name)}` : ''}`,
                 message: `Action: [New Contact]`,
-                description: name ? `Preparing record for "${name}".` : "Opening the contact creator.",
+                description: name ? `Creating record for "${name}".` : "Opening contact creator.",
                 category: 'Relationships'
             };
         }
         if (remaining.includes('project')) {
-            const name = remaining.replace('project', '').replace(/^(named|called|for)\s+/i, '').trim();
+            const name = remaining.replace('project', '').trim();
             return {
                 type: 'navigation',
                 target: `/projects/create${name ? `?title=${encodeURIComponent(name)}` : ''}`,
                 message: `Action: [New Project]`,
-                description: name ? `Initializing plan for "${name}".` : "Opening the project planner.",
+                description: name ? `Starting project "${name}".` : "Opening project planner.",
                 category: 'Operations'
             };
         }
@@ -135,50 +154,65 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: '/accounting/invoices/create',
                 message: 'Action: [New Invoice]',
-                description: "Preparing to bill a client.",
+                description: "Opening invoice generator.",
                 category: 'Finances'
             };
         }
-        if (remaining.includes('task') || remaining.includes('event') || remaining.includes('reminder')) {
-            const title = remaining.replace(/(task|event|reminder)/g, '').replace(/^(named|called|for)\s+/i, '').trim();
+        if (remaining.match(/(task|event|reminder)/)) {
+            const title = remaining.replace(/(task|event|reminder)/g, '').trim();
             return {
                 type: 'navigation',
                 target: `/master-mind${title ? `?title=${encodeURIComponent(title)}` : ''}`,
                 message: `Action: [New Entry]`,
-                description: title ? `Adding "${title}" to your timeline.` : "Opening the scheduler.",
+                description: title ? `Adding "${title}" to timeline.` : "Opening scheduler.",
                 category: 'Workspace'
             };
         }
     }
 
-    // 4. Verb: "Track"
+    // Handle "Track [Something]"
     if (verb === 'track' && remaining) {
         return {
             type: 'navigation',
             target: `/master-mind?title=${encodeURIComponent(remaining)}&startTimer=true`,
             message: `Timer: [${remaining}]`,
-            description: `Initializing live session for "${remaining}".`,
+            description: `Starting live session for "${remaining}".`,
             category: 'Workspace'
         };
     }
 
-    // 5. Fuzzy Match (Fallback)
-    const fuzzyMatchKey = Object.keys(commandMap).find(key => cleanInput.includes(key));
-    if (fuzzyMatchKey) {
-        const cmd = commandMap[fuzzyMatchKey];
+    // 3. WORD-BOUNDARY FUZZY MATCH (Lower Priority)
+    // We check if any of the keywords in our map are present as a full word in the input
+    for (const keyword of Object.keys(commandMap)) {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        if (regex.test(cleanInput)) {
+            const cmd = commandMap[keyword];
+            return {
+                type: 'navigation',
+                target: cmd.target,
+                isExternal: cmd.target.startsWith('http'),
+                message: `Jump To: [${cmd.label}]`,
+                description: `Recognized keyword "${keyword}".`,
+                category: cmd.category
+            };
+        }
+    }
+
+    // 4. SEARCH FALLBACK
+    // If the input is long enough and doesn't match a command, suggest global search
+    if (tokens.length >= 2) {
         return {
             type: 'navigation',
-            target: cmd.target,
-            isExternal: cmd.target.startsWith('http'),
-            message: `Detected Intent: ${cmd.label}`,
-            description: `We've matched your input to ${cmd.label}.`,
-            category: cmd.category
+            target: `/reports/search?q=${encodeURIComponent(cleanInput)}`,
+            message: `Global Search`,
+            description: `Searching Ogeemo for "${cleanInput}"...`,
+            category: 'Reports'
         };
     }
 
     return {
         type: 'unknown',
         message: `Command Not Recognized`,
-        description: "Try keywords like 'Ledger', 'Contacts', or 'New project'.",
+        description: "Try typing 'Ledger', 'Contacts', or 'New project'.",
     };
 }

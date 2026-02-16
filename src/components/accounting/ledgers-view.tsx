@@ -600,6 +600,7 @@ export function LedgersView() {
             <Card className={cn("border-primary/20", netIncome >= 0 ? "bg-primary/5" : "bg-red-50")}>
                 <CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary"/> Net Position</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-0"><p className={cn("text-2xl font-bold", netIncome >= 0 ? "text-primary" : "text-destructive")}>${netIncome.toFixed(2)}</p></CardContent>
+            </Card>
         </div>
 
         {/* Main Content Area */}

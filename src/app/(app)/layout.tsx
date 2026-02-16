@@ -70,7 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
-                                <Link href="/command-centre">
+                                <Link href="/ai-dispatch">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                                         <span className="font-bold uppercase text-xs">AI Dispatch</span>

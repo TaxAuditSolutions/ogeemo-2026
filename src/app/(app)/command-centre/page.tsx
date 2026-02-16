@@ -1,246 +1,307 @@
+
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { 
+    Card, 
+    CardContent, 
+    CardDescription, 
+    CardHeader, 
+    CardTitle, 
+    CardFooter 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Mic, Bot, Send, BrainCircuit, HelpCircle, Info, LoaderCircle, User, Square, X, RefreshCw } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    Bot, 
+    Send, 
+    BrainCircuit, 
+    HelpCircle, 
+    Info, 
+    LoaderCircle, 
+    User, 
+    X, 
+    RefreshCw, 
+    Terminal, 
+    Play, 
+    ArrowRight,
+    Search,
+    History,
+    Zap
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
-import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { cn } from '@/lib/utils';
+import { processCommand, type CommandResult } from '@/lib/command-processor';
 import { ogeemoAgent } from '@/ai/flows/ogeemo-chat';
 
-interface Message {
-    id: string;
-    text: string;
-    sender: 'user' | 'ogeemo';
-}
+const RECENT_COMMANDS_KEY = 'ogeemoRecentCommands';
 
 export default function OgeemoAiPage() {
-  const [command, setCommand] = useState('');
-  const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [commandInput, setCommandInput] = useState('');
+  const [questionInput, setQuestionInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [commandResult, setCommandResult] = useState<CommandResult | null>(null);
+  const [recentCommands, setRecentCommands] = useState<string[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const chatBaseTextRef = useRef("");
 
-  const { isListening, startListening, stopListening, isSupported, status: speechStatus } = useSpeechToText({
-    onTranscript: (transcript) => {
-      const newText = chatBaseTextRef.current ? `${chatBaseTextRef.current} ${transcript}` : transcript;
-      setCommand(newText);
-    },
-  });
+  // Load recent commands
+  useEffect(() => {
+    const saved = localStorage.getItem(RECENT_COMMANDS_KEY);
+    if (saved) setRecentCommands(JSON.parse(saved));
+  }, []);
 
+  // Sync scroll
   useEffect(() => {
     if (scrollRef.current) {
         scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages, isLoading]);
+  }, [chatMessages, isAiLoading]);
 
-  const handleClear = () => {
-      setMessages([]);
-      toast({ title: "Session Cleared" });
+  // Command Processing (Deterministic)
+  useEffect(() => {
+    if (commandInput.trim()) {
+        const result = processCommand(commandInput);
+        setCommandResult(result);
+    } else {
+        setCommandResult(null);
+    }
+  }, [commandInput]);
+
+  const saveCommandToHistory = (cmd: string) => {
+      const updated = [cmd, ...recentCommands.filter(c => c !== cmd)].slice(0, 5);
+      setRecentCommands(updated);
+      localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(updated));
   };
 
-  const submitToAgent = async (text: string) => {
-    if (!text.trim() || isLoading || !user) return;
-
-    if (isListening) stopListening();
-
-    const userMsg: Message = { id: Date.now().toString(), text: text.trim(), sender: 'user' };
-    setMessages(prev => [...prev, userMsg]);
-    setIsLoading(true);
-
-    try {
-        const history = messages.map(m => ({
-            role: m.sender === 'user' ? 'user' as const : 'model' as const,
-            content: [{ text: m.text }]
-        }));
-
-        // Call the server action directly with a clientUserId fallback
-        const result = await ogeemoAgent({
-            message: text.trim(),
-            history,
-            clientUserId: user.uid
-        });
-
-        const ogeemoMsg: Message = { id: (Date.now() + 1).toString(), text: result.reply, sender: 'ogeemo' };
-        setMessages(prev => [...prev, ogeemoMsg]);
-    } catch (error: any) {
-        console.error("[Ogeemo AI UI] Agent Error:", error);
-        toast({ variant: 'destructive', title: "Agent Error", description: error.message });
-    } finally {
-        setIsLoading(false);
+  const handleExecuteCommand = () => {
+    if (!commandResult || commandResult.type === 'unknown') return;
+    
+    saveCommandToHistory(commandInput);
+    
+    if (commandResult.target) {
+        if (commandResult.isExternal) {
+            window.open(commandResult.target, '_blank');
+        } else {
+            router.push(commandResult.target);
+        }
+        toast({ title: commandResult.message });
     }
   };
 
-  const handleCommandSubmit = (e: React.FormEvent) => {
+  const handleAskQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    submitToAgent(command);
-    setCommand('');
+    if (!questionInput.trim() || isAiLoading || !user) return;
+
+    const text = questionInput.trim();
+    const userMsg = { id: Date.now(), text, sender: 'user' };
+    setChatMessages(prev => [...prev, userMsg]);
+    setQuestionInput('');
+    setIsAiLoading(true);
+
+    try {
+        const result = await ogeemoAgent({
+            message: text,
+            clientUserId: user.uid
+        });
+        const ogeemoMsg = { id: Date.now() + 1, text: result.reply, sender: 'ogeemo' };
+        setChatMessages(prev => [...prev, ogeemoMsg]);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: "Assistant Error", description: "AI service currently busy. Please try again." });
+    } finally {
+        setIsAiLoading(false);
+    }
   };
 
-  const handleQuestionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitToAgent(question);
-    setQuestion('');
-  };
-
-  const handleMicClick = () => {
-      if (isListening) stopListening();
-      else {
-          chatBaseTextRef.current = command || question;
-          startListening();
-      }
+  const handleClearHistory = () => {
+      setChatMessages([]);
+      toast({ title: "Conversation Cleared" });
   };
 
   return (
     <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full items-center">
-      <header className="relative text-center w-full max-w-5xl">
+      {/* Context Bar */}
+      <div className="w-full max-w-5xl flex items-center justify-between px-4 py-2 bg-muted/50 border rounded-lg text-xs">
+          <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                  <User className="h-3 w-3 text-primary" />
+                  <span className="font-semibold">Active User:</span>
+                  <span className="text-muted-foreground">{user?.displayName || user?.email}</span>
+              </div>
+              <div className="flex items-center gap-2 border-l pl-4">
+                  <Zap className="h-3 w-3 text-amber-500" />
+                  <span className="font-semibold">System:</span>
+                  <span className="text-muted-foreground text-green-600 font-mono">Deterministic Launcher Active</span>
+              </div>
+          </div>
+          <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo v1.5 Stable</span>
+          </div>
+      </div>
+
+      <header className="relative text-center w-full max-w-5xl pt-4">
         <div className="absolute left-0 top-1/2 -translate-y-1/2">
             <Button asChild variant="outline" size="sm">
                 <Link href="/action-manager">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Link>
             </Button>
         </div>
-        <h1 className="text-3xl font-bold font-headline text-primary">
-          Ogeemo AI Assistant
-        </h1>
-        <p className="text-muted-foreground">
-          Your proactive business partner. Give a command or ask a question.
-        </p>
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <Button variant="ghost" size="sm" onClick={handleClear}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Clear Chat
-            </Button>
-        </div>
+        <h1 className="text-4xl font-bold font-headline text-primary">Command Centre</h1>
+        <p className="text-muted-foreground mt-1">Instant operational launcher. Navigate and act at the speed of thought.</p>
       </header>
 
-      <Alert className="max-w-4xl mx-auto bg-primary/5 border-primary/20">
-        <Info className="h-4 w-4 text-primary" />
-        <AlertTitle>Developer Preview</AlertTitle>
-        <AlertDescription>
-          Ogeemo AI can now schedule tasks, search your contacts, and answer questions. We are continuously adding more operational capabilities.
-        </AlertDescription>
-      </Alert>
-
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-        <div className="lg:col-span-4 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                  <BrainCircuit className="h-5 w-5 text-primary" />
-                  Give a Command
-              </CardTitle>
-              <CardDescription className="text-xs">
-                "Schedule a meeting with Dan tomorrow at 3pm."
-              </CardDescription>
+        {/* Launcher Side */}
+        <div className="lg:col-span-7 space-y-6 flex flex-col">
+          <Card className="border-2 border-primary/20 shadow-xl overflow-hidden">
+            <CardHeader className="bg-primary/5 border-b pb-4">
+              <div className="flex items-center gap-2">
+                  <Terminal className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Command Launcher</CardTitle>
+              </div>
+              <CardDescription>Enter a hub name, a page keyword, or a complex action.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCommandSubmit} className="flex gap-2">
+            <CardContent className="pt-6 space-y-6">
+              <div className="relative">
                   <Input
-                    placeholder="Tell Ogeemo to do something..."
-                    value={command}
-                    onChange={(e) => setCommand(e.target.value)}
-                    disabled={isLoading}
+                    placeholder="e.g., 'Contact', 'Go to Ledger', 'New project Website', 'Track Call'..."
+                    value={commandInput}
+                    onChange={(e) => setCommandInput(e.target.value)}
+                    className="h-14 text-lg pr-12 focus-visible:ring-primary border-primary/30"
+                    onKeyDown={(e) => e.key === 'Enter' && handleExecuteCommand()}
+                    autoFocus
                   />
-                  <Button type="submit" size="icon" disabled={!command.trim() || isLoading}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-              </form>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <Search className="h-5 w-5 text-muted-foreground" />
+                  </div>
+              </div>
+
+              <div className="min-h-[140px] flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 transition-colors">
+                  {!commandResult ? (
+                      <div className="text-center space-y-2 opacity-40">
+                          <BrainCircuit className="h-8 w-8 mx-auto" />
+                          <p className="text-sm">Listening for operational intent...</p>
+                      </div>
+                  ) : (
+                      <div className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                          <div className="flex items-start gap-4">
+                              <div className={cn(
+                                  "p-3 rounded-full shrink-0",
+                                  commandResult.type === 'unknown' ? "bg-muted" : "bg-primary/10"
+                              )}>
+                                  {commandResult.type === 'unknown' ? <HelpCircle className="h-6 w-6 text-muted-foreground" /> : <Zap className="h-6 w-6 text-primary" />}
+                              </div>
+                              <div>
+                                  <h4 className="text-xl font-bold text-foreground">{commandResult.message}</h4>
+                                  <p className="text-muted-foreground text-sm">{commandResult.description}</p>
+                              </div>
+                          </div>
+                          {commandResult.type !== 'unknown' && (
+                              <Button className="w-full h-12 text-lg font-bold group" onClick={handleExecuteCommand}>
+                                  Execute & Launch <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                              </Button>
+                          )}
+                      </div>
+                  )}
+              </div>
             </CardContent>
+            <CardFooter className="bg-muted/30 border-t py-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <History className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recents:</span>
+                </div>
+                <div className="flex gap-2">
+                    {recentCommands.length > 0 ? recentCommands.map((cmd, i) => (
+                        <Button key={i} variant="ghost" className="h-6 px-2 text-[10px] border" onClick={() => setCommandInput(cmd)}>{cmd}</Button>
+                    )) : <span className="text-[10px] text-muted-foreground italic">No history yet</span>}
+                </div>
+            </CardFooter>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5 text-primary" />
-                  Ask a Question
-              </CardTitle>
-              <CardDescription className="text-xs">
-                "What is the BKS accounting method?"
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleQuestionSubmit} className="flex gap-2">
-                  <Input
-                    placeholder="Ask Ogeemo for info..."
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <Button type="submit" size="icon" variant="secondary" disabled={!question.trim() || isLoading}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-              </form>
-            </CardContent>
-          </Card>
-          
-          <Button 
-            variant={isListening ? "destructive" : "outline"} 
-            className="w-full h-12 gap-2"
-            onClick={handleMicClick}
-            disabled={!isSupported}
-          >
-            {isListening ? <Square className="h-4 w-4 animate-pulse" /> : <Mic className="h-4 w-4" />}
-            {isListening ? "Stop Dictating" : "Use Voice Input"}
-          </Button>
+          <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800 dark:text-amber-400">Deterministic Engine Active</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-500">
+              The launcher is running in "Zero-Latency" mode. Keywords like <strong>ar</strong>, <strong>payroll</strong>, <strong>new contact</strong>, and <strong>track</strong> work instantly.
+            </AlertDescription>
+          </Alert>
         </div>
 
-        <Card className="lg:col-span-8 flex flex-col min-h-0">
-            <CardHeader className="border-b bg-muted/30 py-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Bot className="h-4 w-4 text-primary" />
-                    Assistant Activity
-                </CardTitle>
+        {/* Question Side */}
+        <div className="lg:col-span-5 flex flex-col min-h-0">
+          <Card className="flex-1 flex flex-col min-h-0">
+            <CardHeader className="border-b bg-muted/30 py-3 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm">Ask a Question</CardTitle>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClearHistory} title="Clear conversation">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
             </CardHeader>
             <CardContent className="flex-1 min-h-0 p-0">
                 <ScrollArea className="h-full" ref={scrollRef}>
                     <div className="p-4 space-y-4">
-                        {messages.length === 0 && !isLoading && (
-                            <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground opacity-50">
-                                <Bot className="h-12 w-12 mb-2" />
-                                <p className="text-sm">Ready for your commands and questions.</p>
+                        {chatMessages.length === 0 && !isAiLoading && (
+                            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground opacity-50">
+                                <Bot className="h-10 w-10 mb-2" />
+                                <p className="text-xs">Ask Ogeemo about features,<br/>tax categories, or help.</p>
                             </div>
                         )}
-                        {messages.map((m) => (
+                        {chatMessages.map((m: any) => (
                             <div key={m.id} className={cn("flex gap-3", m.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
-                                <Avatar className="h-8 w-8 shrink-0">
-                                    <AvatarFallback className={cn(m.sender === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                                        {m.sender === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                                <Avatar className="h-7 w-7 shrink-0 border">
+                                    <AvatarFallback className={cn("text-[10px]", m.sender === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                                        {m.sender === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className={cn(
-                                    "rounded-lg px-4 py-2 text-sm max-w-[85%]",
-                                    m.sender === 'user' ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted border"
+                                    "rounded-lg px-3 py-1.5 text-xs max-w-[85%] border shadow-sm",
+                                    m.sender === 'user' ? "bg-primary text-primary-foreground border-primary" : "bg-card"
                                 )}>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: m.text.replace(/\n/g, '<br />') }} />
+                                    <p className="whitespace-pre-wrap">{m.text}</p>
                                 </div>
                             </div>
                         ))}
-                        {isLoading && (
-                            <div className="flex gap-3 items-start animate-pulse">
-                                <Avatar className="h-8 w-8 shrink-0">
-                                    <AvatarFallback className="bg-muted"><Bot className="h-4 w-4" /></AvatarFallback>
-                                </Avatar>
-                                <div className="bg-muted border rounded-lg px-4 py-3 h-10 w-24 flex items-center justify-center">
-                                    <LoaderCircle className="h-4 w-4 animate-spin text-primary" />
+                        {isAiLoading && (
+                            <div className="flex gap-3 items-center animate-pulse">
+                                <Avatar className="h-7 w-7 shrink-0 border"><AvatarFallback className="bg-muted"><Bot className="h-3.5 w-3.5 text-primary" /></AvatarFallback></Avatar>
+                                <div className="bg-muted border rounded-lg px-3 py-2 h-8 w-16 flex items-center justify-center">
+                                    <LoaderCircle className="h-3.5 w-3.5 animate-spin text-primary" />
                                 </div>
                             </div>
                         )}
                     </div>
                 </ScrollArea>
             </CardContent>
-        </Card>
+            <CardFooter className="border-t p-3">
+                <form onSubmit={handleAskQuestion} className="flex w-full gap-2">
+                    <Input
+                        placeholder="Type a question..."
+                        value={questionInput}
+                        onChange={(e) => setQuestionInput(e.target.value)}
+                        disabled={isAiLoading}
+                        className="h-9 text-xs"
+                    />
+                    <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={!questionInput.trim() || isAiLoading}>
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </form>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     </div>
   );

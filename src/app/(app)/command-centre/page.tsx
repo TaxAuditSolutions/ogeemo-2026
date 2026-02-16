@@ -35,6 +35,10 @@ import {
     Book,
     Database,
     X,
+    FileDigit,
+    TrendingUp,
+    TrendingDown,
+    CheckCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,7 +47,8 @@ import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getProjects, type Project } from '@/services/project-service';
+import { getProjects, type Project, getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
+import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction, getExpenseTransactions, type ExpenseTransaction } from '@/services/accounting-service';
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 
@@ -61,13 +66,21 @@ const discoverableIntents = [
 type SearchResult = 
     | ({ resultType: 'Menu Item' } & MenuItem)
     | ({ resultType: 'Contact' } & Contact)
-    | ({ resultType: 'Project' } & Project);
+    | ({ resultType: 'Project' } & Project)
+    | ({ resultType: 'Invoice' } & Invoice)
+    | ({ resultType: 'Task' } & TaskEvent)
+    | ({ resultType: 'Income' } & IncomeTransaction)
+    | ({ resultType: 'Expense' } & ExpenseTransaction);
 
 const ResultIcon = ({ type }: { type: SearchResult['resultType'] }) => {
     switch (type) {
         case 'Menu Item': return <Book className="h-4 w-4 text-muted-foreground" />;
         case 'Contact': return <User className="h-4 w-4 text-muted-foreground" />;
         case 'Project': return <Briefcase className="h-4 w-4 text-muted-foreground" />;
+        case 'Invoice': return <FileDigit className="h-4 w-4 text-muted-foreground" />;
+        case 'Task': return <CheckCircle className="h-4 w-4 text-muted-foreground" />;
+        case 'Income': return <TrendingUp className="h-4 w-4 text-green-500" />;
+        case 'Expense': return <TrendingDown className="h-4 w-4 text-red-500" />;
         default: return <Search className="h-4 w-4 text-muted-foreground" />;
     }
 };
@@ -111,14 +124,30 @@ export default function OgeemoAiPage() {
     async function loadSearchData() {
         if (!user) return;
         try {
-            const [contactsData, projectsData] = await Promise.all([
+            const [
+                contactsData, 
+                projectsData, 
+                invoicesData, 
+                incomeData, 
+                expenseData, 
+                tasksData
+            ] = await Promise.all([
                 getContacts(user.uid),
                 getProjects(user.uid),
+                getInvoices(user.uid),
+                getIncomeTransactions(user.uid),
+                getExpenseTransactions(user.uid),
+                getTasksForUser(user.uid),
             ]);
+
             const combined: SearchResult[] = [
                 ...allMenuItems.map(item => ({ ...item, resultType: 'Menu Item' as const })),
                 ...contactsData.map(item => ({ ...item, resultType: 'Contact' as const })),
                 ...projectsData.map(item => ({ ...item, resultType: 'Project' as const })),
+                ...invoicesData.map(item => ({ ...item, resultType: 'Invoice' as const })),
+                ...incomeData.map(item => ({ ...item, resultType: 'Income' as const })),
+                ...expenseData.map(item => ({ ...item, resultType: 'Expense' as const })),
+                ...tasksData.map(item => ({ ...item, resultType: 'Task' as const })),
             ];
             setSearchableData(combined);
         } catch (error) {
@@ -140,11 +169,24 @@ export default function OgeemoAiPage() {
     const keywords = term.split(/\s+/).filter(Boolean);
     return searchableData.filter(item => {
         let text = '';
-        if (item.resultType === 'Menu Item') text = item.label;
-        else if (item.resultType === 'Contact') text = `${item.name} ${item.email} ${item.businessName || ''}`;
-        else if (item.resultType === 'Project') text = `${item.name} ${item.description || ''}`;
+        if (item.resultType === 'Menu Item') {
+            text = item.label;
+        } else if (item.resultType === 'Contact') {
+            text = `${item.name} ${item.email} ${item.businessName || ''}`;
+        } else if (item.resultType === 'Project') {
+            text = `${item.name} ${item.description || ''}`;
+        } else if (item.resultType === 'Invoice') {
+            text = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''}`;
+        } else if (item.resultType === 'Income') {
+            text = `${item.company} ${item.description} ${item.explanation || ''}`;
+        } else if (item.resultType === 'Expense') {
+            text = `${item.company} ${item.description} ${item.explanation || ''}`;
+        } else if (item.resultType === 'Task') {
+            text = `${item.title} ${item.description || ''}`;
+        }
+        
         return keywords.every(k => text.toLowerCase().includes(k));
-    }).slice(0, 15);
+    }).slice(0, 30); // Show up to 30 matches for "everywhere" coverage
   }, [searchQuery, searchableData]);
 
   const handleMicClick = (target: 'launcher' | 'search') => {
@@ -184,10 +226,26 @@ export default function OgeemoAiPage() {
 
   const handleResultClick = (item: SearchResult) => {
     let path = '';
-    if (item.resultType === 'Menu Item') path = item.href;
-    else if (item.resultType === 'Contact') path = '/contacts';
-    else if (item.resultType === 'Project') path = `/projects/${item.id}/tasks`;
-    if (path) router.push(path);
+    if (item.resultType === 'Menu Item') {
+        path = item.href;
+    } else if (item.resultType === 'Contact') {
+        path = '/contacts';
+    } else if (item.resultType === 'Project') {
+        path = `/projects/${item.id}/tasks`;
+    } else if (item.resultType === 'Invoice') {
+        path = `/accounting/invoices/preview?action=print&invoiceId=${item.id}`;
+    } else if (item.resultType === 'Income') {
+        path = `/accounting/ledgers?tab=income&highlight=${item.id}`;
+    } else if (item.resultType === 'Expense') {
+        path = `/accounting/ledgers?tab=expenses&highlight=${item.id}`;
+    } else if (item.resultType === 'Task') {
+        path = `/master-mind?eventId=${item.id}`;
+    }
+    
+    if (path) {
+        if (path.startsWith('http')) window.open(path, '_blank');
+        else router.push(path);
+    }
   };
 
   return (
@@ -345,7 +403,7 @@ export default function OgeemoAiPage() {
                     <Search className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Quick Data Lookup</CardTitle>
                 </div>
-                <CardDescription>Find contacts, projects, or specific tools.</CardDescription>
+                <CardDescription>Search everywhere for names, numbers, or topics.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 flex flex-col gap-4 flex-1 min-h-0">
                 <div className="relative">
@@ -376,28 +434,46 @@ export default function OgeemoAiPage() {
                     {isDataLoading ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-2">
                             <LoaderCircle className="h-8 w-8 animate-spin" />
-                            <p className="text-sm">Indexing records...</p>
+                            <p className="text-sm">Indexing database...</p>
                         </div>
                     ) : searchQuery.trim() ? (
                         searchResults.length > 0 ? (
                             <Table>
                                 <TableBody>
-                                    {searchResults.map((item, i) => (
-                                        <TableRow key={i} onClick={() => handleResultClick(item)} className="cursor-pointer hover:bg-primary/5">
-                                            <TableCell className="w-10 p-3"><ResultIcon type={item.resultType} /></TableCell>
-                                            <TableCell className="p-3">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold truncate">
-                                                        {item.resultType === 'Menu Item' ? item.label : item.name}
-                                                    </span>
-                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">
-                                                        {item.resultType}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="p-3 text-right"><ArrowRight className="h-3 w-3 inline opacity-20" /></TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {searchResults.map((item, i) => {
+                                        let title = '';
+                                        let subtitle = '';
+                                        if (item.resultType === 'Menu Item') title = item.label;
+                                        else if (item.resultType === 'Contact') { title = item.name; subtitle = item.email || item.businessName || ''; }
+                                        else if (item.resultType === 'Project') { title = item.name; subtitle = item.description || ''; }
+                                        else if (item.resultType === 'Invoice') { title = `Invoice #${item.invoiceNumber}`; subtitle = item.companyName; }
+                                        else if (item.resultType === 'Income' || item.resultType === 'Expense') { title = item.company; subtitle = item.description || ''; }
+                                        else if (item.resultType === 'Task') { title = item.title; subtitle = item.description || ''; }
+
+                                        return (
+                                            <TableRow key={i} onClick={() => handleResultClick(item)} className="cursor-pointer hover:bg-primary/5">
+                                                <TableCell className="w-10 p-3"><ResultIcon type={item.resultType} /></TableCell>
+                                                <TableCell className="p-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold truncate">
+                                                            {title}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[9px] uppercase font-bold text-primary/70 tracking-tighter bg-primary/5 px-1 rounded">
+                                                                {item.resultType}
+                                                            </span>
+                                                            {subtitle && (
+                                                                <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                                                                    {subtitle}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="p-3 text-right"><ArrowRight className="h-3 w-3 inline opacity-20" /></TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         ) : (
@@ -408,8 +484,8 @@ export default function OgeemoAiPage() {
                     ) : (
                         <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
                             <Database className="h-10 w-10 opacity-10" />
-                            <p className="text-sm font-medium">Noun index idle.</p>
-                            <p className="text-[10px] uppercase tracking-widest">Search for a name or project</p>
+                            <p className="text-sm font-medium">Database index idle.</p>
+                            <p className="text-[10px] uppercase tracking-widest text-center">Search for a name, invoice, or project</p>
                         </div>
                     )}
                 </ScrollArea>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -30,7 +29,8 @@ import {
     ArrowRight,
     Search,
     History,
-    Zap
+    Zap,
+    Cpu
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -140,13 +140,17 @@ export default function OgeemoAiPage() {
                   <span className="text-muted-foreground">{user?.displayName || user?.email}</span>
               </div>
               <div className="flex items-center gap-2 border-l pl-4">
-                  <Zap className="h-3 w-3 text-amber-500" />
-                  <span className="font-semibold">System:</span>
-                  <span className="text-muted-foreground text-green-600 font-mono">Deterministic Launcher Active</span>
+                  <Cpu className="h-3 w-3 text-amber-500" />
+                  <span className="font-semibold">Operational Context:</span>
+                  <span className="text-muted-foreground text-green-600 font-mono">
+                      {commandResult && commandResult.type !== 'unknown' 
+                        ? `Awaiting Launch: ${commandResult.message}` 
+                        : "Ready for Input"}
+                  </span>
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo v1.5 Stable</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo v1.6 (Stable Context)</span>
           </div>
       </div>
 
@@ -176,7 +180,7 @@ export default function OgeemoAiPage() {
             <CardContent className="pt-6 space-y-6">
               <div className="relative">
                   <Input
-                    placeholder="e.g., 'Contact', 'Go to Ledger', 'New project Website', 'Track Call'..."
+                    placeholder="e.g., 'Accounting', 'New contact', 'Go to Ledger', 'Track Call'..."
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
                     className="h-14 text-lg pr-12 focus-visible:ring-primary border-primary/30"
@@ -232,9 +236,9 @@ export default function OgeemoAiPage() {
 
           <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30">
             <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800 dark:text-amber-400">Deterministic Engine Active</AlertTitle>
+            <AlertTitle className="text-amber-800 dark:text-amber-400">Context-Aware Engine Active</AlertTitle>
             <AlertDescription className="text-amber-700 dark:text-amber-500">
-              The launcher is running in "Zero-Latency" mode. Keywords like <strong>ar</strong>, <strong>payroll</strong>, <strong>new contact</strong>, and <strong>track</strong> work instantly.
+              The launcher now supports fuzzy matching. Typing <strong>"Account"</strong> or <strong>"Finances"</strong> will correctly detect the <strong>Accounting Hub</strong>.
             </AlertDescription>
           </Alert>
         </div>

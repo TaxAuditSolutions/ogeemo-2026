@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Deterministic Command Processor for Ogeemo.
  * Maps natural language keywords and "verbs" to structured application actions.
@@ -13,6 +12,13 @@ export interface CommandResult {
 }
 
 const commandMap: Record<string, string> = {
+    'accounting': '/accounting',
+    'account': '/accounting',
+    'finance': '/accounting',
+    'money': '/accounting',
+    'tax': '/accounting/tax',
+    'tax center': '/accounting/tax',
+    'categories': '/accounting/tax/categories',
     'contact': '/contacts',
     'contacts': '/contacts',
     'client': '/contacts',
@@ -37,15 +43,22 @@ const commandMap: Record<string, string> = {
     'payable': '/accounting/accounts-payable',
     'invoice': '/accounting/invoices/create',
     'invoices': '/accounting/accounts-receivable',
+    'inventory': '/inventory-manager/track',
+    'stock': '/inventory-manager/track',
+    'pos': '/inventory-manager/pos',
+    'marketing': '/marketing-manager',
     'settings': '/settings',
     'profile': '/settings',
     'hub': '/action-manager',
     'dashboard': '/action-manager',
     'ai': '/command-centre',
     'search': '/reports/search',
+    'reports': '/reports/search',
     'help': '/master-mind/gtd-instructions',
     'drive': 'https://drive.google.com',
     'gmail': 'https://mail.google.com',
+    'hytexercise': '/hytexercise',
+    'wellness': '/hytexercise',
 };
 
 export function processCommand(input: string): CommandResult {
@@ -54,7 +67,7 @@ export function processCommand(input: string): CommandResult {
     const verb = parts[0];
     const remaining = parts.slice(1).join(' ');
 
-    // 1. Direct Keyword Match
+    // 1. Direct Keyword Match (Strict)
     if (commandMap[cleanInput]) {
         const target = commandMap[cleanInput];
         return {
@@ -62,13 +75,25 @@ export function processCommand(input: string): CommandResult {
             target,
             isExternal: target.startsWith('http'),
             message: `Recognized intent: ${cleanInput.charAt(0).toUpperCase() + cleanInput.slice(1)} Hub`,
-            description: `I will take you to the ${cleanInput} area of the application.`,
+            description: `Navigating to the ${cleanInput} section.`,
         };
     }
 
-    // 2. Verb: "Go"
+    // 2. Fuzzy Keyword Match (Contains) - Provide context if we're "close"
+    const fuzzyMatchKey = Object.keys(commandMap).find(key => cleanInput.includes(key));
+    if (fuzzyMatchKey) {
+        const target = commandMap[fuzzyMatchKey];
+        return {
+            type: 'navigation',
+            target,
+            isExternal: target.startsWith('http'),
+            message: `Did you mean: ${fuzzyMatchKey.charAt(0).toUpperCase() + fuzzyMatchKey.slice(1)}?`,
+            description: `I've detected a request for ${fuzzyMatchKey}.`,
+        };
+    }
+
+    // 3. Verb: "Go"
     if (verb === 'go' && remaining) {
-        // Clean up "to" if present
         const searchTarget = remaining.startsWith('to ') ? remaining.replace('to ', '') : remaining;
         const target = commandMap[searchTarget];
         if (target) {
@@ -76,13 +101,13 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target,
                 isExternal: target.startsWith('http'),
-                message: `Going to ${searchTarget}...`,
-                description: `Navigating directly to ${searchTarget}.`,
+                message: `Navigating to ${searchTarget}...`,
+                description: `Executing direct launch to ${searchTarget}.`,
             };
         }
     }
 
-    // 3. Verb: "New"
+    // 4. Verb: "New"
     if (verb === 'new' && remaining) {
         if (remaining.includes('contact')) {
             const name = remaining.replace('contact', '').trim();
@@ -90,7 +115,7 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: `/contacts?action=new${name ? `&name=${encodeURIComponent(name)}` : ''}`,
                 message: `Opening New Contact Form`,
-                description: name ? `Preparing contact record for "${name}".` : "Starting a fresh contact record.",
+                description: name ? `Preparing record for "${name}".` : "Starting a fresh contact record.",
             };
         }
         if (remaining.includes('project')) {
@@ -99,7 +124,7 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: `/projects/create${name ? `?title=${encodeURIComponent(name)}` : ''}`,
                 message: `Creating New Project`,
-                description: name ? `Starting the "${name}" project plan.` : "Creating a new multi-step project.",
+                description: name ? `Initializing plan for "${name}".` : "Opening the project creator.",
             };
         }
         if (remaining.includes('invoice')) {
@@ -116,12 +141,12 @@ export function processCommand(input: string): CommandResult {
                 type: 'navigation',
                 target: `/master-mind${title ? `?title=${encodeURIComponent(title)}` : ''}`,
                 message: `Scheduling Commitment`,
-                description: title ? `Adding "${title}" to your timeline.` : "Scheduling a new item in the Command Centre.",
+                description: title ? `Adding "${title}" to your timeline.` : "Opening the Command Centre scheduler.",
             };
         }
     }
 
-    // 4. Verb: "Track"
+    // 5. Verb: "Track"
     if (verb === 'track' && remaining) {
         return {
             type: 'navigation',
@@ -133,7 +158,7 @@ export function processCommand(input: string): CommandResult {
 
     return {
         type: 'unknown',
-        message: `Unknown Command: "${input}"`,
-        description: "Try typing 'Contact', 'Go to Ledger', 'New project Website', or 'Track Client Call'.",
+        message: `Command Not Recognized: "${input}"`,
+        description: "Try typing 'Accounting', 'New contact', 'Go to Ledger', or 'Track Client Call'.",
     };
 }

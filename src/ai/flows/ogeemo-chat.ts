@@ -10,6 +10,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
+import { gemini15Flash } from '@genkit-ai/google-genai';
 import fs from 'fs';
 import path from 'path';
 
@@ -235,7 +236,7 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     try {
         const result = await ai.generate({
-          model: 'googleai/gemini-1.5-flash',
+          model: gemini15Flash,
           messages: messages,
           tools: [searchContactsTool, createTaskTool, addContactTool],
           context: { userId },

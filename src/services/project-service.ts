@@ -128,7 +128,6 @@ async function updateChipsInCollection(userId: string, collectionName: string, c
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     
-    // Clean and validate chips to prevent "id of undefined" errors
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
     
     const serializedChips = validChips.map(chip => {
@@ -400,50 +399,6 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
     return getChipsFromCollection(userId, collectionName);
 }
 
-export async function getAvailableActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {
-    const collectionNameMap: Record<string, string> = {
-        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
-        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
-        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
-    };
-    const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
-    const userActionChips = await getActionChips(userId, type);
-    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
-    
-    const defaultSourceMap: Record<string, any[]> = {
-        dashboard: allMenuItems,
-        accounting: accountingMenuItems,
-        hr: hrMenuItems,
-    };
-    const defaultSource = defaultSourceMap[type] || allMenuItems;
-    
-    const getDefaultsNotUsed = () => defaultSource
-        .filter(item => !usedHrefs.has(item.href))
-        .map(item => ({ ...item, id: `default-${item.href}`, userId }));
-
-    const db = getDb();
-    const docRef = doc(db, collectionName, userId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-        return getDefaultsNotUsed() as ActionChipData[];
-    }
-    
-    const customAvailable = await getChipsFromCollection(userId, collectionName);
-    const filteredCustomAvailable = customAvailable.filter(item => !usedHrefs.has(typeof item.href === 'string' ? item.href : (item.href as any).pathname));
-    
-    const combined = [...filteredCustomAvailable];
-    const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
-    
-    getDefaultDefaultsNotUsed().forEach(item => {
-        if (!customHrefs.has(item.href)) {
-            combined.push(item as any);
-        }
-    });
-    
-    return combined.sort((a,b) => a.label.localeCompare(b.label));
-}
-
 function getDefaultsNotUsedForAvailable(userId: string, type: string, usedHrefs: Set<string>) {
     const defaultSourceMap: Record<string, any[]> = {
         dashboard: allMenuItems,
@@ -454,6 +409,41 @@ function getDefaultsNotUsedForAvailable(userId: string, type: string, usedHrefs:
     return defaultSource
         .filter(item => !usedHrefs.has(item.href))
         .map(item => ({ ...item, id: `default-${item.href}`, userId }));
+}
+
+export async function getAvailableActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {
+    const collectionNameMap: Record<string, string> = {
+        dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
+        accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
+        hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
+    };
+    const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
+    const userActionChips = await getActionChips(userId, type);
+    const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
+    
+    const db = getDb();
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+    
+    const defaultsNotUsed = getDefaultsNotUsedForAvailable(userId, type, usedHrefs);
+    
+    if (!docSnap.exists()) {
+        return defaultsNotUsed as ActionChipData[];
+    }
+    
+    const customAvailable = await getChipsFromCollection(userId, collectionName);
+    const filteredCustomAvailable = customAvailable.filter(item => !usedHrefs.has(typeof item.href === 'string' ? item.href : (item.href as any).pathname));
+    
+    const combined = [...filteredCustomAvailable];
+    const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
+    
+    defaultsNotUsed.forEach(item => {
+        if (!customHrefs.has(item.href)) {
+            combined.push(item as any);
+        }
+    });
+    
+    return combined.sort((a,b) => a.label.localeCompare(b.label));
 }
 
 export async function updateActionChips(userId: string, chips: ActionChipData[], type: string = 'dashboard'): Promise<void> {

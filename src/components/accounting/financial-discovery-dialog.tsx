@@ -117,16 +117,16 @@ export function FinancialDiscoveryDialog({ isOpen, onOpenChange }: FinancialDisc
         return data.filter(item => {
             let searchableText = '';
             if (item.resultType === 'Invoice') {
-                searchableText = `${item.invoiceNumber} ${item.companyName} ${item.originalAmount} ${item.amountPaid} ${item.notes || ''} ${item.businessNumber || ''}`;
+                searchableText = `${item.invoiceNumber} ${item.companyName} ${item.originalAmount.toFixed(2)} ${item.amountPaid.toFixed(2)} ${item.notes || ''} ${item.businessNumber || ''}`;
             } else if (item.resultType === 'Income' || item.resultType === 'Expense') {
                 const catNum = item.resultType === 'Income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
-                searchableText = `${item.company} ${item.description} ${item.totalAmount} ${item.explanation || ''} ${item.documentNumber || ''} ${catNum}`;
+                searchableText = `${item.company} ${item.description} ${item.totalAmount.toFixed(2)} ${item.explanation || ''} ${item.documentNumber || ''} ${catNum}`;
             } else if (item.resultType === 'Payable') {
-                searchableText = `${item.vendor} ${item.description} ${item.totalAmount} ${item.invoiceNumber || ''} ${item.category}`;
+                searchableText = `${item.vendor} ${item.description} ${item.totalAmount.toFixed(2)} ${item.invoiceNumber || ''} ${item.category}`;
             } else if (item.resultType === 'Asset') {
-                searchableText = `${item.name} ${item.assetClass || ''} ${item.cost} ${item.undepreciatedCapitalCost} ${item.description || ''}`;
+                searchableText = `${item.name} ${item.assetClass || ''} ${item.cost.toFixed(2)} ${item.undepreciatedCapitalCost.toFixed(2)} ${item.description || ''}`;
             } else if (item.resultType === 'Loan') {
-                searchableText = `${item.counterparty} ${item.originalAmount} ${item.outstandingBalance} ${item.loanType}`;
+                searchableText = `${item.counterparty} ${item.originalAmount.toFixed(2)} ${item.outstandingBalance.toFixed(2)} ${item.loanType}`;
             }
             return keywords.every(k => searchableText.toLowerCase().includes(k));
         }).slice(0, 50);

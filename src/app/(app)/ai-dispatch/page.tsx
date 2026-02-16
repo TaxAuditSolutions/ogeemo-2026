@@ -183,9 +183,9 @@ export default function OgeemoAiDispatchPage() {
         } else if (item.resultType === 'Project') {
             searchableText = `${item.name} ${item.description || ''}`;
         } else if (item.resultType === 'Invoice') {
-            searchableText = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount} ${item.businessNumber || ''}`;
+            searchableText = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount.toFixed(2)} ${item.businessNumber || ''}`;
         } else if (item.resultType === 'Income' || item.resultType === 'Expense') {
-            searchableText = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount} ${item.documentNumber || ''}`;
+            searchableText = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount.toFixed(2)} ${item.documentNumber || ''}`;
         } else if (item.resultType === 'Task') {
             searchableText = `${item.title} ${item.description || ''}`;
         } else if (item.resultType === 'File') {

@@ -115,19 +115,20 @@ export function FinancialDiscoveryDialog({ isOpen, onOpenChange }: FinancialDisc
         const keywords = term.split(/\s+/).filter(Boolean);
 
         return data.filter(item => {
-            let text = '';
+            let searchableText = '';
             if (item.resultType === 'Invoice') {
-                text = `${item.invoiceNumber} ${item.companyName} ${item.originalAmount} ${item.notes || ''}`;
+                searchableText = `${item.invoiceNumber} ${item.companyName} ${item.originalAmount} ${item.amountPaid} ${item.notes || ''} ${item.businessNumber || ''}`;
             } else if (item.resultType === 'Income' || item.resultType === 'Expense') {
-                text = `${item.company} ${item.description} ${item.totalAmount} ${item.explanation || ''} ${item.documentNumber || ''}`;
+                const catNum = item.resultType === 'Income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
+                searchableText = `${item.company} ${item.description} ${item.totalAmount} ${item.explanation || ''} ${item.documentNumber || ''} ${catNum}`;
             } else if (item.resultType === 'Payable') {
-                text = `${item.vendor} ${item.description} ${item.totalAmount} ${item.invoiceNumber || ''}`;
+                searchableText = `${item.vendor} ${item.description} ${item.totalAmount} ${item.invoiceNumber || ''} ${item.category}`;
             } else if (item.resultType === 'Asset') {
-                text = `${item.name} ${item.assetClass || ''} ${item.cost} ${item.description || ''}`;
+                searchableText = `${item.name} ${item.assetClass || ''} ${item.cost} ${item.undepreciatedCapitalCost} ${item.description || ''}`;
             } else if (item.resultType === 'Loan') {
-                text = `${item.counterparty} ${item.originalAmount} ${item.outstandingBalance}`;
+                searchableText = `${item.counterparty} ${item.originalAmount} ${item.outstandingBalance} ${item.loanType}`;
             }
-            return keywords.every(k => text.toLowerCase().includes(k));
+            return keywords.every(k => searchableText.toLowerCase().includes(k));
         }).slice(0, 50);
     }, [query, data]);
 

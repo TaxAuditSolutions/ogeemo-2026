@@ -113,7 +113,7 @@ const googleDriveFileTypes = [
 
 // --- Externalized Sub-components ---
 
-const DraggableFileRow = ({ file, children }: { file: FileItem, children: React.ReactNode }) => {
+const DraggableFileRow = ({ file, isHighlighted, children }: { file: FileItem, isHighlighted?: boolean, children: React.ReactNode }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.FILE,
         item: file,
@@ -123,7 +123,7 @@ const DraggableFileRow = ({ file, children }: { file: FileItem, children: React.
     }), [file]);
 
     return (
-        <div ref={drag} className={cn(isDragging && 'opacity-50')}>
+        <div ref={drag} className={cn(isDragging && 'opacity-50', isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
             {children}
         </div>
     );
@@ -292,6 +292,8 @@ export function FilesView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const form = useForm<NewFileFormData>({
@@ -328,6 +330,25 @@ export function FilesView() {
   }, [files, selectedFolderId, fileSortConfig]);
 
   const allVisibleSelected = filesInSelectedFolder.length > 0 && selectedFileIds.length === filesInSelectedFolder.length;
+
+  useEffect(() => {
+    if (highlightedId && !isLoading && files.length > 0) {
+        const file = files.find(f => f.id === highlightedId);
+        if (file) {
+            setSelectedFolderId(file.folderId);
+            const folder = folders.find(f => f.id === file.folderId);
+            if (folder?.parentId) setExpandedFolders(p => new Set([...p, folder.parentId!]));
+            
+            const timeoutId = setTimeout(() => {
+                const rowElement = fileRefs.current.get(highlightedId);
+                if (rowElement) {
+                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }
+  }, [highlightedId, isLoading, files, folders]);
 
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolderId(folderId);
@@ -595,7 +616,7 @@ export function FilesView() {
                   <div className="p-0">
                     {filesInSelectedFolder.length > 0 ? (
                         filesInSelectedFolder.map((file) => (
-                           <DraggableFileRow key={file.id} file={file}>
+                           <DraggableFileRow key={file.id} file={file} isHighlighted={highlightedId === file.id}>
                             <div className="flex items-center border-b h-8 group p-2" ref={(el) => fileRefs.current.set(file.id, el)}>
                                 <Checkbox
                                     checked={selectedFileIds.includes(file.id)}

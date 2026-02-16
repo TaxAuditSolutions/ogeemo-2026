@@ -39,6 +39,7 @@ import {
     TrendingUp,
     TrendingDown,
     CheckCircle,
+    Files,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,6 +50,7 @@ import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getProjects, type Project, getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
 import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction, getExpenseTransactions, type ExpenseTransaction } from '@/services/accounting-service';
+import { getFiles, type FileItem } from '@/services/file-service';
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 
@@ -70,7 +72,8 @@ type SearchResult =
     | ({ resultType: 'Invoice' } & Invoice)
     | ({ resultType: 'Task' } & TaskEvent)
     | ({ resultType: 'Income' } & IncomeTransaction)
-    | ({ resultType: 'Expense' } & ExpenseTransaction);
+    | ({ resultType: 'Expense' } & ExpenseTransaction)
+    | ({ resultType: 'File' } & FileItem);
 
 const ResultIcon = ({ type }: { type: SearchResult['resultType'] }) => {
     switch (type) {
@@ -81,6 +84,7 @@ const ResultIcon = ({ type }: { type: SearchResult['resultType'] }) => {
         case 'Task': return <CheckCircle className="h-4 w-4 text-muted-foreground" />;
         case 'Income': return <TrendingUp className="h-4 w-4 text-green-500" />;
         case 'Expense': return <TrendingDown className="h-4 w-4 text-red-500" />;
+        case 'File': return <Files className="h-4 w-4 text-muted-foreground" />;
         default: return <Search className="h-4 w-4 text-muted-foreground" />;
     }
 };
@@ -130,7 +134,8 @@ export default function OgeemoAiDispatchPage() {
                 invoicesData, 
                 incomeData, 
                 expenseData, 
-                tasksData
+                tasksData,
+                filesData
             ] = await Promise.all([
                 getContacts(user.uid),
                 getProjects(user.uid),
@@ -138,6 +143,7 @@ export default function OgeemoAiDispatchPage() {
                 getIncomeTransactions(user.uid),
                 getExpenseTransactions(user.uid),
                 getTasksForUser(user.uid),
+                getFiles(user.uid),
             ]);
 
             const combined: SearchResult[] = [
@@ -148,6 +154,7 @@ export default function OgeemoAiDispatchPage() {
                 ...incomeData.map(item => ({ ...item, resultType: 'Income' as const })),
                 ...expenseData.map(item => ({ ...item, resultType: 'Expense' as const })),
                 ...tasksData.map(item => ({ ...item, resultType: 'Task' as const })),
+                ...filesData.map(item => ({ ...item, resultType: 'File' as const })),
             ];
             setSearchableData(combined);
         } catch (error) {
@@ -168,24 +175,24 @@ export default function OgeemoAiDispatchPage() {
     const term = searchQuery.toLowerCase().trim();
     const keywords = term.split(/\s+/).filter(Boolean);
     return searchableData.filter(item => {
-        let text = '';
+        let searchableText = '';
         if (item.resultType === 'Menu Item') {
-            text = item.label;
+            searchableText = item.label;
         } else if (item.resultType === 'Contact') {
-            text = `${item.name} ${item.email} ${item.businessName || ''}`;
+            searchableText = `${item.name} ${item.email} ${item.businessName || ''}`;
         } else if (item.resultType === 'Project') {
-            text = `${item.name} ${item.description || ''}`;
+            searchableText = `${item.name} ${item.description || ''}`;
         } else if (item.resultType === 'Invoice') {
-            text = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount}`;
-        } else if (item.resultType === 'Income') {
-            text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
-        } else if (item.resultType === 'Expense') {
-            text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
+            searchableText = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount} ${item.businessNumber || ''}`;
+        } else if (item.resultType === 'Income' || item.resultType === 'Expense') {
+            searchableText = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount} ${item.documentNumber || ''}`;
         } else if (item.resultType === 'Task') {
-            text = `${item.title} ${item.description || ''}`;
+            searchableText = `${item.title} ${item.description || ''}`;
+        } else if (item.resultType === 'File') {
+            searchableText = `${item.name} ${item.type} ${item.driveLink || ''}`;
         }
         
-        return keywords.every(k => text.toLowerCase().includes(k));
+        return keywords.every(k => searchableText.toLowerCase().includes(k));
     }).slice(0, 30);
   }, [searchQuery, searchableData]);
 
@@ -233,13 +240,19 @@ export default function OgeemoAiDispatchPage() {
     } else if (item.resultType === 'Project') {
         path = `/projects/${item.id}/tasks`;
     } else if (item.resultType === 'Invoice') {
-        path = `/accounting/invoices/preview?action=print&invoiceId=${item.id}`;
+        path = `/accounting/invoicing-report?highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Income') {
         path = `/accounting/ledgers?tab=income&highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Expense') {
         path = `/accounting/ledgers?tab=expenses&highlight=${item.id}&edit=true`;
     } else if (item.resultType === 'Task') {
         path = `/master-mind?eventId=${item.id}`;
+    } else if (item.resultType === 'File') {
+        if (item.driveLink) {
+            window.open(item.driveLink, '_blank');
+            return;
+        }
+        path = `/document-manager?highlight=${item.id}`;
     }
     
     if (path) {
@@ -449,6 +462,7 @@ export default function OgeemoAiDispatchPage() {
                                         else if (item.resultType === 'Invoice') { title = `Invoice #${item.invoiceNumber}`; subtitle = `${item.companyName} • ${item.originalAmount.toFixed(2)}`; }
                                         else if (item.resultType === 'Income' || item.resultType === 'Expense') { title = item.company; subtitle = `${item.description || ''} • ${item.totalAmount.toFixed(2)}`; }
                                         else if (item.resultType === 'Task') { title = item.title; subtitle = item.description || ''; }
+                                        else if (item.resultType === 'File') { title = item.name; subtitle = `Stored in ${item.folderId || 'Root'}`; }
 
                                         return (
                                             <TableRow key={i} onClick={() => handleResultClick(item)} className="cursor-pointer hover:bg-primary/5">

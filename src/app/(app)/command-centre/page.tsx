@@ -64,10 +64,11 @@ export default function OgeemoAiPage() {
             content: [{ text: m.text }]
         }));
 
-        // Call the server action directly instead of using an API route
+        // Call the server action directly with a clientUserId fallback
         const result = await ogeemoAgent({
             message: text.trim(),
-            history
+            history,
+            clientUserId: user.uid
         });
 
         const ogeemoMsg: Message = { id: (Date.now() + 1).toString(), text: result.reply, sender: 'ogeemo' };

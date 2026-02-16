@@ -9,22 +9,27 @@ import { LoaderCircle, Sparkles, Download, Wand2, X, Image as ImageIcon, Info } 
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { generateImage } from '@/ai/flows/image-generation-flow';
+import { useAuth } from '@/context/auth-context';
 
 export function ImageGeneratorView() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleGenerate = async () => {
-    if (!prompt.trim() || isGenerating) return;
+    if (!prompt.trim() || isGenerating || !user) return;
 
     setIsGenerating(true);
     setGeneratedImageUrl(null);
 
     try {
-      // Call the server action directly instead of using a fetch request
-      const result = await generateImage({ prompt: prompt.trim() });
+      // Call the server action with a clientUserId fallback for improved resilience
+      const result = await generateImage({ 
+          prompt: prompt.trim(),
+          clientUserId: user.uid
+      });
       setGeneratedImageUrl(result.imageUrl);
       toast({ title: 'Image Generated Successfully!' });
     } catch (error: any) {

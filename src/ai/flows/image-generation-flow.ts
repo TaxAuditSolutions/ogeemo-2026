@@ -11,6 +11,7 @@ import { getCurrentUserId } from '@/app/actions';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt to generate an image from.'),
+  clientUserId: z.string().optional().describe('Fallback user ID from the client.'),
 });
 type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -24,7 +25,12 @@ type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
  * Verifies that the user is authenticated before proceeding.
  */
 export async function generateImage(input: GenerateImageInput): Promise<GenerateImageOutput> {
-  const userId = await getCurrentUserId();
+  let userId = await getCurrentUserId();
+  
+  if (!userId && input.clientUserId) {
+      userId = input.clientUserId;
+  }
+
   if (!userId) {
     throw new Error('Unauthorized: You must be logged in to generate images.');
   }

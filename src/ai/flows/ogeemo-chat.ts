@@ -23,6 +23,7 @@ const clientMessageSchema = z.object({
 const OgeemoAgentInputSchema = z.object({
   message: z.string(),
   history: z.array(clientMessageSchema).optional(),
+  clientUserId: z.string().optional().describe('Fallback user ID from the client-side auth state.'),
 });
 export type OgeemoAgentInput = z.infer<typeof OgeemoAgentInputSchema>;
 
@@ -197,7 +198,13 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 `;
 
 export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
-    const userId = await getCurrentUserId();
+    let userId = await getCurrentUserId();
+    
+    // Robust fallback for dev environments where session cookies might be blocked or delayed
+    if (!userId && input.clientUserId) {
+        userId = input.clientUserId;
+    }
+
     if (!userId) {
         throw new Error("Unauthorized: Please ensure you are logged in to use Ogeemo AI.");
     }

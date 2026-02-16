@@ -15,14 +15,14 @@ export async function getCurrentUserId(): Promise<string | null> {
     const sessionCookie = cookieStore.get('session')?.value;
 
     if (!sessionCookie) {
-      console.warn("Auth Action: No session cookie found.");
+      console.warn("Auth Action: No 'session' cookie found in request.");
       return null;
     }
 
     const adminAuth = getAdminAuth();
     
-    // We set checkRevoked to false for the prototype to avoid permission/latency issues.
-    // This still verifies the signature and expiration of the cookie.
+    // Signature verification only (checkRevoked: false) for maximum performance 
+    // and resilience in development/prototyping environments.
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     return decodedToken.uid;
   } catch (error: any) {

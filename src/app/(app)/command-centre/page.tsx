@@ -229,7 +229,7 @@ export default function OgeemoAiPage() {
     if (item.resultType === 'Menu Item') {
         path = item.href;
     } else if (item.resultType === 'Contact') {
-        path = '/contacts';
+        path = `/contacts?highlight=${item.id}`;
     } else if (item.resultType === 'Project') {
         path = `/projects/${item.id}/tasks`;
     } else if (item.resultType === 'Invoice') {

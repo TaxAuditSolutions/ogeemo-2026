@@ -102,7 +102,7 @@ type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'f
 
 // --- Externalized Sub-components ---
 
-const DraggableTableRow = ({ contact, children }: { contact: Contact, children: React.ReactNode }) => {
+const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
@@ -110,7 +110,7 @@ const DraggableTableRow = ({ contact, children }: { contact: Contact, children: 
     }), [contact]);
 
     return (
-      <TableRow ref={drag} className={cn(isDragging && "opacity-50", "cursor-grab")}>
+      <TableRow id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
         {children}
       </TableRow>
     );
@@ -279,6 +279,8 @@ export function ContactsView() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  const highlightedId = searchParams ? searchParams.get('highlight') : null;
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -328,6 +330,33 @@ export function ContactsView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Deep linking and scroll effect
+  useEffect(() => {
+    if (highlightedId && !isLoading && contacts.length > 0) {
+        const contact = contacts.find(c => c.id === highlightedId);
+        if (contact) {
+            // Auto-select the folder
+            setSelectedFolderId(contact.folderId);
+            
+            // Expand the parent if needed
+            const folder = folders.find(f => f.id === contact.folderId);
+            if (folder && folder.parentId) {
+                setExpandedFolders(prev => new Set([...prev, folder.parentId!]));
+            }
+
+            // Use a short timeout to ensure the DOM has rendered the specific row
+            const timeoutId = setTimeout(() => {
+                const rowElement = document.getElementById(`row-${highlightedId}`);
+                if (rowElement) {
+                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            
+            return () => clearTimeout(timeoutId);
+        }
+    }
+  }, [highlightedId, isLoading, contacts, folders]);
 
   useEffect(() => {
     if (!isLoading && folders.length > 0) {
@@ -663,6 +692,7 @@ export function ContactsView() {
                                   <DraggableTableRow 
                                     key={contact.id} 
                                     contact={contact} 
+                                    isHighlighted={highlightedId === contact.id}
                                   >
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">

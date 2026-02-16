@@ -154,8 +154,12 @@ export function LedgersView() {
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   const { handlePrint, contentRef } = useReactToPrint();
+  
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
+  const initialTab = searchParams ? searchParams.get('tab') : 'all';
+  
+  const [activeTab, setActiveTab] = React.useState(initialTab || 'all');
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
       if (type === 'income') {
@@ -189,6 +193,26 @@ export function LedgersView() {
   }, [user, toast]);
 
   React.useEffect(() => { loadData(); }, [loadData]);
+
+  // Deep linking and scroll effect
+  React.useEffect(() => {
+    if (highlightedId && !isLoading) {
+        // Switch tab if needed
+        if (initialTab && initialTab !== activeTab) {
+            setActiveTab(initialTab);
+        }
+        
+        // Use a short timeout to ensure the DOM has rendered the specific tab content
+        const timeoutId = setTimeout(() => {
+            const rowElement = document.getElementById(`row-${highlightedId}`);
+            if (rowElement) {
+                rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+        
+        return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedId, isLoading, initialTab]);
 
   const filteredIncome = React.useMemo(() => {
     if (!startDate && !endDate) return incomeLedger;
@@ -440,7 +464,7 @@ export function LedgersView() {
             </TableHeader>
             <TableBody>
                 {data.map(item => (
-                    <TableRow key={item.id} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse")}>
+                    <TableRow id={`row-${item.id}`} key={item.id} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
                         <TableCell>{item.date}</TableCell>
                         <TableCell className="font-medium">{item.company}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
@@ -581,7 +605,7 @@ export function LedgersView() {
                 <p className="text-xs mt-1">Generated on {format(new Date(), 'PPPP')}</p>
             </div>
 
-            <Tabs defaultValue="all" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto print:hidden">
                     <TabsTrigger value="all">General Ledger</TabsTrigger>
                     <TabsTrigger value="income">Income</TabsTrigger>

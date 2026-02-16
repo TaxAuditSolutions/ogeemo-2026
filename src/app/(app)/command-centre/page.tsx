@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Mic, Bot, Send, BrainCircuit, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, Send, BrainCircuit, HelpCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function OgeemoAiPage() {
   const [command, setCommand] = useState('');
@@ -17,8 +18,8 @@ export default function OgeemoAiPage() {
     e.preventDefault();
     console.log('Command submitted:', command);
     toast({
-      title: "Command Sent (Placeholder)",
-      description: `Your command "${command}" would be processed here.`,
+      title: "Command Sent (Under Development)",
+      description: `Your command "${command}" will be processable once the AI core update is complete.`,
     });
     setCommand('');
   };
@@ -27,8 +28,8 @@ export default function OgeemoAiPage() {
     e.preventDefault();
     console.log('Question submitted:', question);
     toast({
-      title: "Question Asked (Placeholder)",
-      description: `Your question "${question}" would be answered here.`,
+      title: "Question Asked (Under Development)",
+      description: `The knowledge base integration for "${question}" is currently being optimized.`,
     });
     setQuestion('');
   };
@@ -36,7 +37,7 @@ export default function OgeemoAiPage() {
   const handleMicClick = (inputType: 'command' | 'question') => {
       toast({
           title: "Voice Input",
-          description: `Voice-to-text for the ${inputType} field would be activated here.`,
+          description: `Voice-to-text for the ${inputType} field is coming soon in the next update.`,
       })
   }
 
@@ -58,6 +59,14 @@ export default function OgeemoAiPage() {
           Interact with your AI-powered assistant. Give a command or ask a question.
         </p>
       </header>
+
+      <Alert className="max-w-4xl mx-auto bg-primary/5 border-primary/20">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertTitle>Development Notice</AlertTitle>
+        <AlertDescription>
+          The Ogeemo Assistant (AI) is currently in active development. We are fine-tuning our natural language understanding to ensure your commands are executed with 100% precision.
+        </AlertDescription>
+      </Alert>
 
       <div className="max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -30,6 +30,7 @@ import {
   ArrowDownAZ,
   ArrowUpZA,
   Database,
+  PlayCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -43,9 +44,9 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
-  { href: "/about", label: "About Ogeemo", icon: Globe },
-  { href: "/master-mind", label: "Command Centre", icon: BrainCircuit },
+  { href: "/master-mind", label: "Command Centre", icon: PlayCircle },
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
+  { href: "/about", label: "About Ogeemo", icon: Globe },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },

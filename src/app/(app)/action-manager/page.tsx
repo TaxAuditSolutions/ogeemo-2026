@@ -121,9 +121,22 @@ export default function ActionManagerDashboardPage() {
             <CardHeader className="flex-row items-center justify-center p-4">
                 <div className="flex items-center gap-2">
                     <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button asChild className="h-9 bg-black text-primary-foreground hover:bg-black/90">
+                              <Link href="/master-mind">
+                                  <PlayCircle className="mr-2 h-4 w-4" />
+                                  Command Centre
+                              </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Go to your primary execution hub (Master Mind)</p>
+                        </TooltipContent>
+                      </Tooltip>
                        <Tooltip>
                         <TooltipTrigger asChild>
-                           <Button asChild className="h-9">
+                           <Button asChild variant="outline" className="h-9">
                                 <Link href="/master-mind/gtd-instructions">
                                     <BookOpen className="mr-2 h-4 w-4" />
                                     TOM
@@ -136,7 +149,7 @@ export default function ActionManagerDashboardPage() {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button onClick={toggleAboutPanel} className="h-9">
+                            <Button variant="outline" onClick={toggleAboutPanel} className="h-9">
                                 <Info className="mr-2 h-4 w-4" />
                                 About
                             </Button>
@@ -147,15 +160,15 @@ export default function ActionManagerDashboardPage() {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button asChild className="h-9">
+                            <Button asChild variant="outline" className="h-9">
                                 <Link href="/action-manager/manage">
                                     <Settings className="mr-2 h-4 w-4" />
-                                    Manage Action Chips
+                                    Manage Actions
                                 </Link>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Manage your actions with action chips.</p>
+                          <p>Manage your custom action chips.</p>
                         </TooltipContent>
                       </Tooltip>
                 </TooltipProvider>

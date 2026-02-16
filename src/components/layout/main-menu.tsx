@@ -9,7 +9,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2 } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
@@ -19,11 +19,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useSidebarView } from '@/context/sidebar-view-context';
 
 const groupedMenuItems = {
-    Workspace: { icon: Briefcase, items: ['/action-manager', '/calendar', '/all-project-tasks', '/document-manager', '/email-hub'] },
-    Relationships: { icon: Users, items: ['/contacts', '/crm', '/crm/action-manager'] },
-    Operations: { icon: Bot, items: ['/projects', '/master-mind', '/accounting'] },
-    Growth: { icon: BarChart3, items: ['/reports', '/marketing-manager', '/research', '/idea-board'] },
-    Administration: { icon: Settings, items: ['/hr-manager', '/legal-hub', '/backup', '/tools/image-generator'] },
+    Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
+    Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
+    Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting'] },
+    Growth: { icon: BarChart3, items: ['/reports/search', '/marketing-manager', '/idea-board'] },
+    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator'] },
 };
 
 const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (

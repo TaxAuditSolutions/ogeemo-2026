@@ -10,7 +10,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
-import { gemini15Flash } from '@genkit-ai/google-genai';
 import fs from 'fs';
 import path from 'path';
 
@@ -201,7 +200,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
     let userId = await getCurrentUserId();
     
-    // Robust fallback for dev environments where session cookies might be blocked or delayed
+    // Fallback for cases where session cookie is not yet synced
     if (!userId && input.clientUserId) {
         userId = input.clientUserId;
     }
@@ -212,7 +211,7 @@ export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: str
     return ogeemoAgentFlow({ ...input, userId });
 }
 
-// Internal flow definition (still requires userId)
+// Internal flow definition
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
@@ -222,13 +221,11 @@ const ogeemoAgentFlow = ai.defineFlow(
   async (input) => {
     const { userId, message, history } = input;
 
-    // Format history for Gemini
     const messages: any[] = history?.map(msg => ({
         role: msg.role,
         content: msg.content.map(c => ({ text: c.text }))
     })) || [];
 
-    // Add current message
     messages.push({ role: 'user', content: [{ text: message }] });
 
     const knowledgeBase = getKnowledgeBase();
@@ -236,7 +233,7 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     try {
         const result = await ai.generate({
-          model: gemini15Flash,
+          model: 'googleai/gemini-1.5-flash',
           messages: messages,
           tools: [searchContactsTool, createTaskTool, addContactTool],
           context: { userId },

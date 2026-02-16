@@ -2,7 +2,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from "zod";
-import { gemini15Flash } from '@genkit-ai/google-genai';
 
 const summarizeDatabaseFlowInputSchema = z.object({
   databaseDescription: z.string(),
@@ -19,7 +18,7 @@ export const summarizeDatabaseFlow = ai.defineFlow(
   },
   async ({ databaseDescription, collectionsDescription }) => {
     const result = await ai.generate({
-      model: gemini15Flash,
+      model: 'googleai/gemini-1.5-flash',
       prompt: `
         You are a database analyst.
         Based on the following descriptions, generate a high-level executive summary of the database.

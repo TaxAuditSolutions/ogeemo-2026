@@ -74,13 +74,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <Link href="/command-centre">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                        <span className="font-bold">OGEEMO</span>
+                                        <span className="font-bold uppercase">Ogeemo AI</span>
                                     </div>
                                 </Link>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Open Command Centre</p>
+                              <p>Open Ogeemo AI Assistant</p>
                             </TooltipContent>
                           </Tooltip>
                           
@@ -104,13 +104,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">
                                     <div className="flex items-center gap-2">
                                         <Bot className="h-4 w-4" />
-                                        <span className="font-bold">Gemini</span>
+                                        <span className="font-bold">Gemini AI</span>
                                     </div>
                                 </a>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Open Gemini</p>
+                              <p>Open Gemini AI</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

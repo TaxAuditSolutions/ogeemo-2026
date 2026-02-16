@@ -29,7 +29,7 @@ import {
     CheckCircle, 
     User, 
     Square,
-    Calendar
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -160,7 +160,6 @@ export function TimeManagerView() {
     const [editSessionNotes, setEditSessionNotes] = React.useState('');
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [isReviewMode, setIsReviewMode] = useState(false);
 
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
@@ -443,6 +442,16 @@ export function TimeManagerView() {
         setStartHour(formatDate(now, 'HH'));
         setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
         setIsAllDay(false);
+    };
+
+    const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+        if (isEditing) {
+            setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+        } else {
+            setContacts(prev => [...prev, savedContact]);
+        }
+        setSelectedContactId(savedContact.id);
+        setIsContactFormOpen(false);
     };
 
 
@@ -728,14 +737,14 @@ export function TimeManagerView() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2"><Label>Start Time</Label>
                                     <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, "PPP") : <span>Pick a start date</span>}</Button></PopoverTrigger>
+                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{startDate ? formatDate(startDate, "PPP") : <span>Pick a start date</span>}</Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2"><Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
                                 </div>
                                 <div className="space-y-2"><Label>End Time</Label>
                                     <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, "PPP") : <span>Pick an end date</span>}</Button></PopoverTrigger>
+                                        <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{endDate ? formatDate(endDate, "PPP") : <span>Pick an end date</span>}</Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
                                     </Popover>
                                     <div className="flex gap-2"><Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Hour"/></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={endMinute} onValueChange={setEndMinute} disabled={isAllDay}><SelectTrigger><SelectValue placeholder="Min"/></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>

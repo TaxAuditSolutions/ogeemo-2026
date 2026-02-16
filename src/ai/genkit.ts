@@ -1,8 +1,5 @@
-
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
-// The firebase plugin has been removed to resolve a persistent dependency error.
-// Core AI functionality is not affected.
+import { googleAI } from '@genkit-ai/google-genai';
 
 export const ai = genkit({
   plugins: [

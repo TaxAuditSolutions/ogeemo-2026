@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -19,6 +18,7 @@ export const summarizeDatabaseFlow = ai.defineFlow(
   },
   async ({ databaseDescription, collectionsDescription }) => {
     const result = await ai.generate({
+      model: 'googleai/gemini-1.5-flash',
       prompt: `
         You are a database analyst.
         Based on the following descriptions, generate a high-level executive summary of the database.

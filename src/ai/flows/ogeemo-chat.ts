@@ -238,9 +238,7 @@ const ogeemoAgentFlow = ai.defineFlow(
           model: 'googleai/gemini-1.5-flash',
           messages: messages,
           tools: [searchContactsTool, createTaskTool, addContactTool],
-          toolConfig: {
-            commonData: { userId },
-          },
+          context: { userId },
           system: finalSystemPrompt,
           config: { temperature: 0.1 },
         });

@@ -8,7 +8,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getCurrentUserId } from '@/app/actions';
-import { imagen3 } from '@genkit-ai/google-genai';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt to generate an image from.'),
@@ -46,7 +45,7 @@ const generateImageFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: imagen3,
+      model: 'googleai/imagen-3',
       prompt: input.prompt,
     });
 

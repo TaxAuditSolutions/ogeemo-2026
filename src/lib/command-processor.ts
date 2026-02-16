@@ -1,6 +1,7 @@
 /**
  * @fileOverview Enhanced Deterministic Command Processor for Ogeemo.
  * Maps natural language keywords, verbs, and parameters to structured application actions.
+ * Features robust normalization to handle spaces, hyphens, and punctuation variations.
  */
 
 import { allMenuItems } from './menu-items';
@@ -14,15 +15,23 @@ export interface CommandResult {
     category?: string;
 }
 
+/**
+ * Normalizes a string for matching by removing non-alphanumeric characters 
+ * and converting to lowercase.
+ */
+function normalize(str: string): string {
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 const commandMap: Record<string, { target: string; label: string; category: string }> = {
     // Workspace & Core Hubs
-    'action manager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'action-manager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'actionmanager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
     'hub': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
     'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'command centre': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
-    'command center': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
-    'master mind': { target: '/master-mind', label: 'Command Centre', category: 'Workspace' },
+    'commandcentre': { target: '/command-centre', label: 'Ogeemo AI', category: 'Intelligence' },
+    'commandcenter': { target: '/command-centre', label: 'Ogeemo AI', category: 'Intelligence' },
+    'ogeemoai': { target: '/command-centre', label: 'Ogeemo AI', category: 'Intelligence' },
+    'mastermind': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
     
     // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -44,6 +53,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'statement': { target: '/reports/client-statement', label: 'Client Statement', category: 'Reports' },
     'snapshot': { target: '/accounting/financial-snapshot', label: 'Financial Snapshot', category: 'Finances' },
     'loan': { target: '/accounting/loan-manager', label: 'Loan Manager', category: 'Finances' },
+    'services': { target: '/accounting/service-items', label: 'Products & Services', category: 'Finances' },
     
     // Relationships
     'contact': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
@@ -52,7 +62,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'clients': { target: '/contacts', label: 'Client Directory', category: 'Relationships' },
     'worker': { target: '/contacts', label: 'Worker Directory', category: 'HR' },
     'workers': { target: '/contacts', label: 'Worker Directory', category: 'HR' },
-    'crm': { target: '/crm/plan', label: 'CRM Pipeline', category: 'Relationships' },
+    'crm': { target: '/crm/plan', label: 'CRM Hub', category: 'Relationships' },
     'pipeline': { target: '/crm/plan', label: 'CRM Pipeline', category: 'Relationships' },
     'leads': { target: '/crm/plan', label: 'Leads', category: 'Relationships' },
     'prospects': { target: '/crm/plan', label: 'Prospects', category: 'Relationships' },
@@ -60,18 +70,19 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     // Projects & Tasks
     'project': { target: '/projects/all', label: 'Project List', category: 'Operations' },
     'projects': { target: '/projects/all', label: 'Project List', category: 'Operations' },
-    'board': { target: '/project-status', label: 'Project Status Board', category: 'Operations' },
-    'status': { target: '/project-status', label: 'Project Status Board', category: 'Operations' },
+    'board': { target: '/project-status', label: 'Project Board', category: 'Operations' },
+    'status': { target: '/project-status', label: 'Project Board', category: 'Operations' },
     'tasks': { target: '/to-do', label: 'Task List', category: 'Operations' },
     'todo': { target: '/to-do', label: 'To-Do List', category: 'Operations' },
     'inbox': { target: '/projects/inbox/tasks', label: 'Inbox', category: 'Workspace' },
+    'plan': { target: '/projects/all', label: 'Projects', category: 'Operations' },
     
     // Workspace & Utils
     'calendar': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
     'schedule': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
     'event': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
-    'inventory': { target: '/inventory-manager/track', label: 'Inventory Central', category: 'Growth' },
-    'stock': { target: '/inventory-manager/track', label: 'Inventory Central', category: 'Growth' },
+    'inventory': { target: '/inventory-manager/track', label: 'Inventory', category: 'Growth' },
+    'stock': { target: '/inventory-manager/track', label: 'Inventory', category: 'Growth' },
     'pos': { target: '/inventory-manager/pos', label: 'Point of Sale', category: 'Growth' },
     'marketing': { target: '/marketing-manager', label: 'Marketing Manager', category: 'Growth' },
     'hytexercise': { target: '/hytexercise', label: 'Wellness Manager', category: 'Operations' },
@@ -94,10 +105,11 @@ const commandMap: Record<string, { target: string; label: string; category: stri
  * Normalizes input and processes it through hierarchical intent matching.
  */
 export function processCommand(input: string): CommandResult {
-    const cleanInput = input.toLowerCase().trim().replace(/[?]/g, '');
-    if (!cleanInput) return { type: 'unknown', message: 'Awaiting Input...' };
+    const rawInput = input.toLowerCase().trim();
+    if (!rawInput) return { type: 'unknown', message: 'Awaiting Input...' };
 
-    const tokens = cleanInput.split(/\s+/).filter(Boolean);
+    const normalizedInput = normalize(rawInput);
+    const tokens = rawInput.split(/\s+/).filter(Boolean);
     const verb = tokens[0];
     const remainingRaw = tokens.slice(1).join(' ');
     
@@ -106,9 +118,9 @@ export function processCommand(input: string): CommandResult {
         .replace(/^(for|named|called|to|about|at)\s+/i, '')
         .trim();
 
-    // 1. EXACT MATCH (Highest Priority)
-    if (commandMap[cleanInput]) {
-        const cmd = commandMap[cleanInput];
+    // 1. NORMALIZED EXACT MATCH (Handles "To Do", "To-Do", "Todo")
+    if (commandMap[normalizedInput]) {
+        const cmd = commandMap[normalizedInput];
         return {
             type: 'navigation',
             target: cmd.target,
@@ -119,10 +131,10 @@ export function processCommand(input: string): CommandResult {
         };
     }
 
-    // 2. PAGE TITLE MATCH (Scan all menu items)
+    // 2. PAGE TITLE MATCH (Scan all menu items with normalization)
     const menuItemMatch = allMenuItems.find(item => 
-        item.label.toLowerCase() === cleanInput || 
-        item.label.toLowerCase().includes(cleanInput) && cleanInput.length > 3
+        normalize(item.label) === normalizedInput || 
+        (normalizedInput.length > 3 && normalize(item.label).includes(normalizedInput))
     );
     if (menuItemMatch) {
         return {
@@ -137,11 +149,11 @@ export function processCommand(input: string): CommandResult {
     // 3. VERB-BASED ACTIONS
     // Handle "Go [Place]"
     if ((verb === 'go' || verb === 'open' || verb === 'show') && remaining) {
-        const searchTarget = remaining.startsWith('to ') ? remaining.replace('to ', '') : remaining;
+        const searchTarget = normalize(remaining.startsWith('to ') ? remaining.replace('to ', '') : remaining);
         
         // Check command map
-        const cmd = commandMap[searchTarget];
-        if (cmd) {
+        if (commandMap[searchTarget]) {
+            const cmd = commandMap[searchTarget];
             return {
                 type: 'navigation',
                 target: cmd.target,
@@ -153,7 +165,7 @@ export function processCommand(input: string): CommandResult {
         }
 
         // Check menu items
-        const menuMatch = allMenuItems.find(item => item.label.toLowerCase().includes(searchTarget));
+        const menuMatch = allMenuItems.find(item => normalize(item.label).includes(searchTarget));
         if (menuMatch) {
             return {
                 type: 'navigation',
@@ -167,8 +179,10 @@ export function processCommand(input: string): CommandResult {
 
     // Handle "New [Entity] [Name]"
     if (verb === 'new' && remaining) {
-        if (remaining.includes('contact')) {
-            const name = remaining.replace('contact', '').trim();
+        const normalizedRemaining = normalize(remaining);
+        
+        if (normalizedRemaining.includes('contact')) {
+            const name = remaining.replace(/contact/i, '').trim();
             return {
                 type: 'navigation',
                 target: `/contacts?action=new${name ? `&name=${encodeURIComponent(name)}` : ''}`,
@@ -177,8 +191,8 @@ export function processCommand(input: string): CommandResult {
                 category: 'Relationships'
             };
         }
-        if (remaining.includes('project')) {
-            const name = remaining.replace('project', '').trim();
+        if (normalizedRemaining.includes('project')) {
+            const name = remaining.replace(/project/i, '').trim();
             return {
                 type: 'navigation',
                 target: `/projects/create${name ? `?title=${encodeURIComponent(name)}` : ''}`,
@@ -187,7 +201,7 @@ export function processCommand(input: string): CommandResult {
                 category: 'Operations'
             };
         }
-        if (remaining.includes('invoice')) {
+        if (normalizedRemaining.includes('invoice')) {
             return {
                 type: 'navigation',
                 target: '/accounting/invoices/create',
@@ -196,8 +210,8 @@ export function processCommand(input: string): CommandResult {
                 category: 'Finances'
             };
         }
-        if (remaining.match(/(task|event|reminder)/)) {
-            const title = remaining.replace(/(task|event|reminder)/g, '').trim();
+        if (normalizedRemaining.match(/(task|event|reminder)/)) {
+            const title = remaining.replace(/(task|event|reminder)/gi, '').trim();
             return {
                 type: 'navigation',
                 target: `/master-mind${title ? `?title=${encodeURIComponent(title)}` : ''}`,
@@ -221,8 +235,8 @@ export function processCommand(input: string): CommandResult {
 
     // 4. WORD-BOUNDARY FUZZY MATCH (Lower Priority)
     for (const keyword of Object.keys(commandMap)) {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-        if (regex.test(cleanInput)) {
+        // We check if the normalized input contains the normalized keyword as a distinct word-like entity
+        if (normalizedInput.includes(keyword) && (normalizedInput.length - keyword.length < 3)) {
             const cmd = commandMap[keyword];
             return {
                 type: 'navigation',
@@ -238,6 +252,6 @@ export function processCommand(input: string): CommandResult {
     return {
         type: 'unknown',
         message: `Command Not Recognized`,
-        description: "Refine your command or use the Global Search in the top bar.",
+        description: "Refine your command or use the Quick Search panel.",
     };
 }

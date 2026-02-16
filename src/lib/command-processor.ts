@@ -198,21 +198,12 @@ export function processCommand(input: string): CommandResult {
         }
     }
 
-    // 4. SEARCH FALLBACK
-    // If the input is long enough and doesn't match a command, suggest global search
-    if (tokens.length >= 2) {
-        return {
-            type: 'navigation',
-            target: `/reports/search?q=${encodeURIComponent(cleanInput)}`,
-            message: `Global Search`,
-            description: `Searching Ogeemo for "${cleanInput}"...`,
-            category: 'Reports'
-        };
-    }
+    // 4. NO SEARCH FALLBACK
+    // We stay on the page if the command is not recognized to avoid confusing navigation.
 
     return {
         type: 'unknown',
         message: `Command Not Recognized`,
-        description: "Try typing 'Ledger', 'Contacts', or 'New project'.",
+        description: "Try typing 'Ledger', 'Contacts', or 'New project'. Use the global search in the header for content search.",
     };
 }

@@ -106,7 +106,7 @@ export default function OgeemoAiPage() {
 
   const handleExecuteCommand = () => {
     if (!commandResult || commandResult.type === 'unknown') {
-        toast({ variant: 'destructive', title: "Signal Weak", description: "The system cannot lock onto this command. Refine your input." });
+        toast({ variant: 'destructive', title: "Command Not Recognized", description: "Refine your input or use the global search tool in the top bar." });
         return;
     }
     
@@ -145,7 +145,7 @@ export default function OgeemoAiPage() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.1</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.2</span>
           </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function OgeemoAiPage() {
               <div className="relative group">
                   <Input
                     ref={inputRef}
-                    placeholder={isListening ? "Listening... speak now" : "e.g., 'Accounting', 'New contact Dan', 'Snapshot'..."}
+                    placeholder={isListening ? "Listening... speak now" : "e.g., 'Accounting', 'New contact Sarah', 'Snapshot'..."}
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
                     className={cn(

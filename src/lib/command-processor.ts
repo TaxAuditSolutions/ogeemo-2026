@@ -27,7 +27,7 @@ function normalize(str: string): string {
  */
 function cleanParam(param: string): string {
     return param
-        .replace(/\b(to|a|an|the|new|named|called|for|about|at|with|page|hub|manager)\b/gi, '')
+        .replace(/\b(to|a|an|the|new|named|called|for|about|at|with|page|hub|manager|list)\b/gi, '')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -60,17 +60,25 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'inventory': { target: '/inventory-manager/track', label: 'Inventory', category: 'Operations' },
     
     // Relationships
+    'contact': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'contacts': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
+    'contactlist': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'clients': { target: '/contacts', label: 'Clients', category: 'Relationships' },
+    'clientlist': { target: '/contacts', label: 'Clients', category: 'Relationships' },
+    'directory': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
+    'people': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'workers': { target: '/contacts', label: 'Workers', category: 'HR' },
     'crm': { target: '/crm/plan', label: 'CRM Hub', category: 'Relationships' },
     'leads': { target: '/crm/plan', label: 'Leads', category: 'Relationships' },
     
     // Projects & Tasks
     'projects': { target: '/projects/all', label: 'Project List', category: 'Operations' },
+    'projectlist': { target: '/projects/all', label: 'Project List', category: 'Operations' },
     'board': { target: '/project-status', label: 'Project Board', category: 'Operations' },
     'todo': { target: '/to-do', label: 'To-Do List', category: 'Workspace' },
+    'todolist': { target: '/to-do', label: 'To-Do List', category: 'Workspace' },
     'tasks': { target: '/to-do', label: 'Tasks', category: 'Workspace' },
+    'tasklist': { target: '/to-do', label: 'Tasks', category: 'Workspace' },
     'calendar': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
 
     // Administration

@@ -176,11 +176,14 @@ export default function OgeemoAiPage() {
         } else if (item.resultType === 'Project') {
             text = `${item.name} ${item.description || ''}`;
         } else if (item.resultType === 'Invoice') {
-            text = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''}`;
+            // Include amount in searchable text
+            text = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount}`;
         } else if (item.resultType === 'Income') {
-            text = `${item.company} ${item.description} ${item.explanation || ''}`;
+            // Include amount in searchable text
+            text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
         } else if (item.resultType === 'Expense') {
-            text = `${item.company} ${item.description} ${item.explanation || ''}`;
+            // Include amount in searchable text
+            text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
         } else if (item.resultType === 'Task') {
             text = `${item.title} ${item.description || ''}`;
         }
@@ -446,8 +449,8 @@ export default function OgeemoAiPage() {
                                         if (item.resultType === 'Menu Item') title = item.label;
                                         else if (item.resultType === 'Contact') { title = item.name; subtitle = item.email || item.businessName || ''; }
                                         else if (item.resultType === 'Project') { title = item.name; subtitle = item.description || ''; }
-                                        else if (item.resultType === 'Invoice') { title = `Invoice #${item.invoiceNumber}`; subtitle = item.companyName; }
-                                        else if (item.resultType === 'Income' || item.resultType === 'Expense') { title = item.company; subtitle = item.description || ''; }
+                                        else if (item.resultType === 'Invoice') { title = `Invoice #${item.invoiceNumber}`; subtitle = `${item.companyName} • ${item.originalAmount.toFixed(2)}`; }
+                                        else if (item.resultType === 'Income' || item.resultType === 'Expense') { title = item.company; subtitle = `${item.description || ''} • ${item.totalAmount.toFixed(2)}`; }
                                         else if (item.resultType === 'Task') { title = item.title; subtitle = item.description || ''; }
 
                                         return (

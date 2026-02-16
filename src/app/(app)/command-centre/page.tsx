@@ -118,7 +118,12 @@ export default function OgeemoAiPage() {
         const ogeemoMsg = { id: Date.now() + 1, text: result.reply, sender: 'ogeemo' };
         setChatMessages(prev => [...prev, ogeemoMsg]);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: "Assistant Error", description: "AI service currently busy. Please try again." });
+        console.error("[Ogeemo Agent Error]", error);
+        toast({ 
+            variant: 'destructive', 
+            title: "Assistant Error", 
+            description: error.message || "AI service encountered an error. Please try again." 
+        });
     } finally {
         setIsAiLoading(false);
     }

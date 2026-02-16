@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -34,7 +35,9 @@ import {
     Construction,
     Wand2,
     Compass,
-    Target
+    Target,
+    Mic,
+    Square
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,6 +46,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { processCommand, type CommandResult } from '@/lib/command-processor';
+import { useSpeechToText } from '@/hooks/use-speech-to-text';
 
 const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV2';
 
@@ -62,6 +66,26 @@ export default function OgeemoAiPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const baseTextRef = useRef('');
+
+  // Voice-to-Text Integration
+  const { isListening, startListening, stopListening, isSupported, status: speechStatus } = useSpeechToText({
+    onTranscript: (transcript) => {
+      const newText = baseTextRef.current ? `${baseTextRef.current} ${transcript}` : transcript;
+      setCommandInput(newText);
+    },
+  });
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      baseTextRef.current = commandInput.trim();
+      startListening();
+      inputRef.current?.focus();
+    }
+  };
 
   // Load recent commands
   useEffect(() => {
@@ -86,6 +110,7 @@ export default function OgeemoAiPage() {
         return;
     }
     
+    if (isListening) stopListening();
     saveCommandToHistory(commandInput);
     
     if (commandResult.target) {
@@ -120,7 +145,7 @@ export default function OgeemoAiPage() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.0</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Deterministic Core v3.1</span>
           </div>
       </div>
 
@@ -133,7 +158,7 @@ export default function OgeemoAiPage() {
             </Button>
         </div>
         <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Command Centre</h1>
-        <p className="text-muted-foreground mt-1">High-fidelity navigation terminal. Logic-first orchestration.</p>
+        <p className="text-muted-foreground mt-1">High-fidelity navigation terminal. Voice & Logic orchestration.</p>
       </header>
 
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
@@ -149,19 +174,44 @@ export default function OgeemoAiPage() {
                   <Terminal className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Intent Terminal</CardTitle>
               </div>
-              <CardDescription>Enter a keyword, a page name, or a specific business action.</CardDescription>
+              <CardDescription>Type or dictate a keyword, a page name, or a specific business action.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative group">
                   <Input
-                    placeholder="e.g., 'Accounting', 'New contact Dan', 'Snapshot'..."
+                    ref={inputRef}
+                    placeholder={isListening ? "Listening... speak now" : "e.g., 'Accounting', 'New contact Dan', 'Snapshot'..."}
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
-                    className="h-16 text-xl pr-14 focus-visible:ring-primary border-primary/30 rounded-xl font-medium"
+                    className={cn(
+                        "h-16 text-xl pr-24 focus-visible:ring-primary border-primary/30 rounded-xl font-medium transition-all",
+                        isListening && "border-destructive ring-destructive shadow-destructive/10"
+                    )}
                     onKeyDown={(e) => e.key === 'Enter' && handleExecuteCommand()}
                     autoFocus
                   />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "h-10 w-10 rounded-full transition-all",
+                            isListening ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        )}
+                        onClick={handleMicClick}
+                        disabled={isSupported === false}
+                        title={isListening ? "Stop listening" : "Start dictation"}
+                      >
+                        {speechStatus === 'activating' ? (
+                            <LoaderCircle className="h-5 w-5 animate-spin" />
+                        ) : isListening ? (
+                            <Square className="h-5 w-5 animate-pulse fill-current" />
+                        ) : (
+                            <Mic className="h-5 w-5" />
+                        )}
+                      </Button>
+                      <Separator orientation="vertical" className="h-6" />
                       <Zap className={cn(
                           "h-6 w-6 transition-colors duration-300",
                           commandResult.type !== 'unknown' ? "text-primary animate-pulse" : "text-muted-foreground/20"
@@ -241,7 +291,7 @@ export default function OgeemoAiPage() {
             <CardHeader className="border-b bg-muted/20 py-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <HelpCircle className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm">Knowledge Base</CardTitle>
+                    <CardTitle className="text-sm">Ask a Question</CardTitle>
                 </div>
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">BETA</Badge>
             </CardHeader>

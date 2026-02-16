@@ -44,17 +44,17 @@ import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getProjects, type Project } from '@/services/project-service';
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 
-const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV4';
+const RECENT_COMMANDS_KEY = 'ogeemoRecentCommandsV5';
 
 const discoverableIntents = [
-    { label: "Action Manager", cmd: "Action Manager" },
-    { label: "Check Ledger", cmd: "Go to ledger" },
-    { label: "New Project", cmd: "New project" },
-    { label: "New Contact", cmd: "New contact" },
-    { label: "Track Meeting", cmd: "Track meeting" },
-    { label: "Accounting", cmd: "Accounting" },
+    { label: "Go to Ledger", cmd: "Go to Ledger" },
+    { label: "New Contact...", cmd: "New Contact named " },
+    { label: "Track Meeting", cmd: "Track Meeting" },
+    { label: "Create Project", cmd: "Create Project called " },
+    { label: "Open Calendar", cmd: "Open Calendar" },
+    { label: "Make Invoice", cmd: "Make Invoice" },
 ];
 
 type SearchResult = 
@@ -201,17 +201,17 @@ export default function OgeemoAiPage() {
               </div>
               <div className="flex items-center gap-2 border-l pl-4">
                   <Target className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="font-semibold uppercase tracking-wider">Context:</span>
+                  <span className="font-semibold uppercase tracking-wider">Logic Context:</span>
                   <span className={cn(
                       "font-mono font-bold uppercase px-1.5 py-0.5 rounded",
                       commandResult.type === 'unknown' ? "text-muted-foreground bg-muted" : "text-green-600 bg-green-500/10"
                   )}>
-                      {commandResult.type === 'unknown' ? "Listening" : commandResult.category || "Active"}
+                      {commandResult.type === 'unknown' ? "Awaiting Signal" : commandResult.category || "Active"}
                   </span>
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo Logic Engine v4.0</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo Logic Engine v5.0</span>
           </div>
       </div>
 
@@ -224,12 +224,12 @@ export default function OgeemoAiPage() {
             </Button>
         </div>
         <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Command Centre</h1>
-        <p className="text-muted-foreground mt-1">High-fidelity logic terminal. Deterministic orchestration.</p>
+        <p className="text-muted-foreground mt-1">Hands-free navigation and discovery terminal.</p>
       </header>
 
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
         
-        {/* LEFT: Intent Launcher */}
+        {/* LEFT: Action Launcher */}
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <Card className={cn(
               "border-2 transition-all duration-300 shadow-xl overflow-hidden h-fit",
@@ -238,9 +238,9 @@ export default function OgeemoAiPage() {
             <CardHeader className="bg-primary/5 border-b pb-4">
               <div className="flex items-center gap-2">
                   <Terminal className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Launcher Terminal</CardTitle>
+                  <CardTitle className="text-lg">Action Launcher</CardTitle>
               </div>
-              <CardDescription>Type a hub (e.g., "Accounting") or action (e.g., "New project").</CardDescription>
+              <CardDescription>Dictate verbs like "Go to", "New", or "Track".</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative">
@@ -279,7 +279,7 @@ export default function OgeemoAiPage() {
                   {commandInput.trim() === '' ? (
                       <div className="text-center opacity-40">
                           <BrainCircuit className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-sm font-medium">Awaiting Signal...</p>
+                          <p className="text-sm font-medium">Awaiting Logic Signal...</p>
                       </div>
                   ) : (
                       <div className="w-full space-y-4">
@@ -294,7 +294,7 @@ export default function OgeemoAiPage() {
                           </div>
                           {commandResult.type !== 'unknown' && (
                               <Button className="w-full h-12 text-lg font-bold group shadow-lg" onClick={handleExecuteCommand}>
-                                  Launch Now <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                  Execute Now <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                               </Button>
                           )}
                       </div>
@@ -304,7 +304,7 @@ export default function OgeemoAiPage() {
             <CardFooter className="bg-muted/30 border-t py-3 flex justify-between items-center px-6">
                 <div className="flex items-center gap-2">
                     <History className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recent Commands</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recent Actions</span>
                 </div>
                 <div className="flex gap-2">
                     {recentCommands.map((cmd, i) => (
@@ -317,7 +317,7 @@ export default function OgeemoAiPage() {
           <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                   <Compass className="h-4 w-4 text-primary" />
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Common Signals</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Natural Signals</h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {discoverableIntents.map((intent) => (
@@ -336,21 +336,21 @@ export default function OgeemoAiPage() {
           </div>
         </div>
 
-        {/* RIGHT: Quick Search */}
+        {/* RIGHT: Quick Data Search */}
         <div className="lg:col-span-5 flex flex-col min-h-0">
           <Card className="flex-1 flex flex-col min-h-0 border-2 border-primary/10 shadow-lg">
             <CardHeader className="bg-primary/5 border-b py-4">
                 <div className="flex items-center gap-2">
                     <Search className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Quick Search</CardTitle>
+                    <CardTitle className="text-lg">Quick Data Lookup</CardTitle>
                 </div>
-                <CardDescription>Instant indexing of contacts, projects, and tools.</CardDescription>
+                <CardDescription>Find contacts, projects, or specific tools.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 flex flex-col gap-4 flex-1 min-h-0">
                 <div className="relative">
                     <Input
                         ref={searchInputRef}
-                        placeholder={searchSpeech.isListening ? "Listening..." : "Find anything..."}
+                        placeholder={searchSpeech.isListening ? "Listening for noun..." : "Find a record..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={cn(
@@ -401,21 +401,21 @@ export default function OgeemoAiPage() {
                             </Table>
                         ) : (
                             <div className="p-12 text-center text-muted-foreground italic text-sm">
-                                No records match that signal.
+                                No records match that criteria.
                             </div>
                         )
                     ) : (
                         <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
                             <Database className="h-10 w-10 opacity-10" />
-                            <p className="text-sm font-medium">Terminal data-link idle.</p>
-                            <p className="text-[10px] uppercase tracking-widest">Awaiting search parameter</p>
+                            <p className="text-sm font-medium">Noun index idle.</p>
+                            <p className="text-[10px] uppercase tracking-widest">Search for a name or project</p>
                         </div>
                     )}
                 </ScrollArea>
             </CardContent>
             <CardFooter className="border-t py-3 bg-muted/20">
                 <Button variant="ghost" size="sm" asChild className="w-full text-xs font-bold text-primary">
-                    <Link href="/reports/search">Open Full Search Hub <ExternalLink className="h-3 w-3 ml-2" /></Link>
+                    <Link href="/reports/search">Open Full Search Hub <ArrowRight className="h-3 w-3 ml-2" /></Link>
                 </Button>
             </CardFooter>
           </Card>
@@ -423,25 +423,4 @@ export default function OgeemoAiPage() {
       </div>
     </div>
   );
-}
-
-function ExternalLink(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" x2="21" y1="14" y2="3" />
-        </svg>
-    )
 }

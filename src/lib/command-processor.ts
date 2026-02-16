@@ -23,11 +23,12 @@ function normalize(str: string): string {
 }
 
 /**
- * Cleans a parameter string by removing leading filler words.
+ * Cleans a parameter string by removing filler words from anywhere in the string.
  */
 function cleanParam(param: string): string {
     return param
-        .replace(/^(to|a|an|the|new|named|called|for|about|at|with)\s+/i, '')
+        .replace(/\b(to|a|an|the|new|named|called|for|about|at|with|page|hub|manager)\b/gi, '')
+        .replace(/\s+/g, ' ')
         .trim();
 }
 
@@ -39,6 +40,9 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'commandcenter': { target: '/command-centre', label: 'Command Centre', category: 'Intelligence' },
     'ogeemoai': { target: '/command-centre', label: 'Ogeemo AI', category: 'Intelligence' },
     'mastermind': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
+    'timemanager': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
+    'timelog': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
+    'timesheet': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
     
     // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -68,6 +72,12 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'todo': { target: '/to-do', label: 'To-Do List', category: 'Workspace' },
     'tasks': { target: '/to-do', label: 'Tasks', category: 'Workspace' },
     'calendar': { target: '/calendar', label: 'Calendar', category: 'Workspace' },
+
+    // Administration
+    'backup': { target: '/backup', label: 'Backups', category: 'Administration' },
+    'backups': { target: '/backup', label: 'Backups', category: 'Administration' },
+    'export': { target: '/backup', label: 'Backups', category: 'Administration' },
+    'settings': { target: '/settings', label: 'Settings', category: 'Administration' },
 };
 
 /**
@@ -98,7 +108,8 @@ export function processCommand(input: string): CommandResult {
     
     // Navigation: "Go", "Open", "Show", "View"
     if (['go', 'open', 'show', 'view'].includes(verb) && remaining) {
-        const searchTarget = normalize(cleanParam(remaining));
+        const cleaned = cleanParam(remaining);
+        const searchTarget = normalize(cleaned);
         
         // Search command map first
         if (commandMap[searchTarget]) {
@@ -125,8 +136,8 @@ export function processCommand(input: string): CommandResult {
         }
     }
 
-    // Creation: "Create", "Make", "New", "Add"
-    if (['create', 'make', 'new', 'add'].includes(verb) && remaining) {
+    // Creation: "Create", "Make", "New", "Add", "Do"
+    if (['create', 'make', 'new', 'add', 'do'].includes(verb) && remaining) {
         const param = cleanParam(remaining);
         const normalizedParam = normalize(param);
 
@@ -170,6 +181,16 @@ export function processCommand(input: string): CommandResult {
                 message: 'Action: [Schedule Entry]',
                 description: title ? `Adding "${title}" to timeline.` : "Opening scheduler.",
                 category: 'Workspace'
+            };
+        }
+
+        if (normalizedParam.includes('backup')) {
+            return {
+                type: 'navigation',
+                target: '/backup',
+                message: 'Action: [Backup Manager]',
+                description: "Opening backup and data protection tools.",
+                category: 'Administration'
             };
         }
     }

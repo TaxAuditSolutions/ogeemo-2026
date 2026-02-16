@@ -36,8 +36,10 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     // Workspace & Core Hubs
     'actionmanager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
     'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'commandcentre': { target: '/command-centre', label: 'Command Centre', category: 'Intelligence' },
-    'commandcenter': { target: '/command-centre', label: 'Command Centre', category: 'Intelligence' },
+    'commandcentre': { target: '/command-centre', label: 'AI Dispatch', category: 'Intelligence' },
+    'commandcenter': { target: '/command-centre', label: 'AI Dispatch', category: 'Intelligence' },
+    'dispatch': { target: '/command-centre', label: 'AI Dispatch', category: 'Intelligence' },
+    'aidispatch': { target: '/command-centre', label: 'AI Dispatch', category: 'Intelligence' },
     'ogeemoai': { target: '/command-centre', label: 'Ogeemo AI', category: 'Intelligence' },
     'mastermind': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
     'timemanager': { target: '/master-mind', label: 'Master Mind', category: 'Workspace' },
@@ -106,7 +108,7 @@ export function processCommand(input: string): CommandResult {
         return {
             type: 'navigation',
             target: cmd.target,
-            message: `Launcher: [${cmd.label}]`,
+            message: `Dispatch: [${cmd.label}]`,
             description: `Navigating directly to ${cmd.label}.`,
             category: cmd.category
         };
@@ -236,7 +238,7 @@ export function processCommand(input: string): CommandResult {
         return {
             type: 'navigation',
             target: menuItemMatch.href,
-            message: `Launcher: [${menuItemMatch.label}]`,
+            message: `Dispatch: [${menuItemMatch.label}]`,
             description: `Match found in application registry.`,
             category: 'Navigation'
         };

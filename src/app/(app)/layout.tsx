@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -74,13 +73,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <Link href="/command-centre">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                        <span className="font-bold uppercase">Ogeemo AI</span>
+                                        <span className="font-bold uppercase text-xs">AI Dispatch</span>
                                     </div>
                                 </Link>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Open Ogeemo AI Assistant</p>
+                              <p>Open Ogeemo AI Dispatch</p>
                             </TooltipContent>
                           </Tooltip>
                           

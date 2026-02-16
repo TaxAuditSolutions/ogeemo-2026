@@ -103,7 +103,7 @@ export default function OgeemoAiPage() {
   const launcherBaseTextRef = useRef('');
   const searchBaseTextRef = useRef('');
 
-  // Voice for Launcher
+  // Voice for Dispatcher
   const launcherSpeech = useSpeechToText({
     onTranscript: (transcript) => {
       const newText = launcherBaseTextRef.current ? `${launcherBaseTextRef.current} ${transcript}` : transcript;
@@ -176,20 +176,17 @@ export default function OgeemoAiPage() {
         } else if (item.resultType === 'Project') {
             text = `${item.name} ${item.description || ''}`;
         } else if (item.resultType === 'Invoice') {
-            // Include amount in searchable text
             text = `${item.invoiceNumber} ${item.companyName} ${item.notes || ''} ${item.originalAmount}`;
         } else if (item.resultType === 'Income') {
-            // Include amount in searchable text
             text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
         } else if (item.resultType === 'Expense') {
-            // Include amount in searchable text
             text = `${item.company} ${item.description} ${item.explanation || ''} ${item.totalAmount}`;
         } else if (item.resultType === 'Task') {
             text = `${item.title} ${item.description || ''}`;
         }
         
         return keywords.every(k => text.toLowerCase().includes(k));
-    }).slice(0, 30); // Show up to 30 matches for "everywhere" coverage
+    }).slice(0, 30);
   }, [searchQuery, searchableData]);
 
   const handleMicClick = (target: 'launcher' | 'search') => {
@@ -273,7 +270,7 @@ export default function OgeemoAiPage() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo Logic Engine v5.0</span>
+              <span className="text-[10px] uppercase tracking-tighter font-bold text-muted-foreground">Ogeemo AI Dispatch v5.1</span>
           </div>
       </div>
 
@@ -285,13 +282,13 @@ export default function OgeemoAiPage() {
                 </Link>
             </Button>
         </div>
-        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Command Centre</h1>
+        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Ogeemo AI Dispatch</h1>
         <p className="text-muted-foreground mt-1">Hands-free navigation and discovery terminal.</p>
       </header>
 
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
         
-        {/* LEFT: Action Launcher */}
+        {/* LEFT: Dispatcher */}
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <Card className={cn(
               "border-2 transition-all duration-300 shadow-xl overflow-hidden h-fit",
@@ -300,7 +297,7 @@ export default function OgeemoAiPage() {
             <CardHeader className="bg-primary/5 border-b pb-4">
               <div className="flex items-center gap-2">
                   <Terminal className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Action Launcher</CardTitle>
+                  <CardTitle className="text-lg">Dispatcher</CardTitle>
               </div>
               <CardDescription>Dictate verbs like "Go to", "Open", "Make", or "Find".</CardDescription>
             </CardHeader>
@@ -356,7 +353,7 @@ export default function OgeemoAiPage() {
                           </div>
                           {commandResult.type !== 'unknown' && (
                               <Button className="w-full h-12 text-lg font-bold group shadow-lg" onClick={handleExecuteCommand}>
-                                  Execute Now <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                  Dispatch Now <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                               </Button>
                           )}
                       </div>
@@ -366,7 +363,7 @@ export default function OgeemoAiPage() {
             <CardFooter className="bg-muted/30 border-t py-3 flex justify-between items-center px-6">
                 <div className="flex items-center gap-2">
                     <History className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recent Actions</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recent Dispatches</span>
                 </div>
                 <div className="flex gap-2">
                     {recentCommands.map((cmd, i) => (

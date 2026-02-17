@@ -1,18 +1,13 @@
-
 'use server';
 
-import { adminDb as db, getAdminStorage } from '@/lib/firebase-admin';
+import { getAdminDb, getAdminStorage } from '@/lib/firebase-admin';
 
 const DIALOG_SETTINGS_COLLECTION = 'dialogSettings';
-const VISIONARIES_DIALOG_DOC_ID = 'visionaries_dialog_settings';
 const FILES_COLLECTION = 'files';
 
-function checkDb() {
-    if (!db) throw new Error("Firestore is not initialized.");
-}
-
 export async function getVisionariesDialogImageUrl(userId: string): Promise<string | null> {
-    checkDb();
+    const db = getAdminDb();
+    const storage = getAdminStorage();
     
     // The document ID is now user-specific to support multiple users.
     const settingsDocRef = db.collection(DIALOG_SETTINGS_COLLECTION).doc(userId);
@@ -43,7 +38,7 @@ export async function getVisionariesDialogImageUrl(userId: string): Promise<stri
     }
 
     try {
-        const bucket = getAdminStorage().bucket();
+        const bucket = storage.bucket();
         const file = bucket.file(fileData.storagePath);
         const [url] = await file.getSignedUrl({
             action: 'read',
@@ -57,7 +52,7 @@ export async function getVisionariesDialogImageUrl(userId: string): Promise<stri
 }
 
 export async function setVisionariesDialogImage(userId: string, imageId: string): Promise<void> {
-    checkDb();
+    const db = getAdminDb();
     
     // The document ID is user-specific.
     const settingsDocRef = db.collection(DIALOG_SETTINGS_COLLECTION).doc(userId);

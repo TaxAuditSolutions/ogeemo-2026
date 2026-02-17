@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -56,7 +56,7 @@ const formatCurrency = (amount: number) => {
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
-export default function InvoicingReportPage() {
+function InvoicingReportContent() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -242,4 +242,12 @@ export default function InvoicingReportPage() {
             </AlertDialog>
         </>
     );
+}
+
+export default function InvoicingReportPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <InvoicingReportContent />
+    </Suspense>
+  );
 }

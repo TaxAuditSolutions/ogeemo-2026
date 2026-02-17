@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
     Card, 
     CardContent, 
@@ -89,7 +89,7 @@ const ResultIcon = ({ type }: { type: SearchResult['resultType'] }) => {
     }
 };
 
-export default function OgeemoAiDispatchPage() {
+function AiDispatchContent() {
   const [commandInput, setCommandInput] = useState('');
   const [recentCommands, setRecentCommands] = useState<string[]>([]);
   
@@ -101,6 +101,7 @@ export default function OgeemoAiDispatchPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const launcherInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -513,5 +514,13 @@ export default function OgeemoAiDispatchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OgeemoAiDispatchPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <AiDispatchContent />
+    </Suspense>
   );
 }

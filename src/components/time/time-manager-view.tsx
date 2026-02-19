@@ -34,7 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
-import { type Contact } from '@/data/contacts';
+import { type Contact } from '@/services/contact-service';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
 import { getContacts } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -463,6 +463,16 @@ export function TimeManagerView() {
             setProjects(prev => [newProject, ...prev]); setSelectedProjectId(newProject.id);
             setProjectAction('select'); setNewProjectName(''); toast({ title: 'Project Created' });
         } catch (error: any) { toast({ variant: "destructive", title: "Error", description: error.message }); }
+    };
+
+    const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+        if (isEditing) {
+            setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+        } else {
+            setContacts(prev => [...prev, savedContact]);
+        }
+        setSelectedContactId(savedContact.id);
+        setIsContactFormOpen(false);
     };
 
     if (isLoadingData) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, ArrowDownUp, Archive, Calendar, ArrowLeft, X } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Briefcase, ListChecks, LoaderCircle, Pencil, Archive, Calendar, ArrowLeft, X, MessageSquare } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +24,11 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { Textarea } from '../ui/textarea';
 import { addMinutes } from 'date-fns';
+import EditIdeaDialog from './edit-idea-dialog';
 
 export function IdeaListView() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
   
   const [showNewIdeaCard, setShowNewIdeaCard] = useState(false);
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
@@ -40,6 +38,9 @@ export function IdeaListView() {
   const [initialDialogData, setInitialDialogData] = useState({});
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taskToConvert, setTaskToConvert] = useState<Idea | null>(null);
+
+  const [ideaToEdit, setIdeaToEdit] = useState<Idea | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -84,15 +85,16 @@ export function IdeaListView() {
       const savedIdea = await addIdea({
         title: newIdeaTitle.trim(),
         description: newIdeaDescription.trim(),
-        status: 'Maybe', // Default status for new ideas
+        status: 'Maybe', 
         position: ideas.length,
         userId: user.uid,
         createdAt: new Date(),
       });
-      setIdeas(prev => [savedIdea, ...prev]);
+      setIdeas(prev => [...prev, savedIdea]);
       setNewIdeaTitle('');
       setNewIdeaDescription('');
       setShowNewIdeaCard(false);
+      toast({ title: 'Idea Captured' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not save new idea.' });
     }
@@ -110,31 +112,23 @@ export function IdeaListView() {
   };
   
   const handleStartEdit = (idea: Idea) => {
-    setEditingId(idea.id);
-    setEditingText(idea.title);
+    setIdeaToEdit(idea);
+    setIsEditDialogOpen(true);
   };
   
-  const handleUpdateIdea = async () => {
-    if (!editingId || !editingText.trim()) {
-      setEditingId(null);
-      return;
-    }
-    const ideaToUpdate = ideas.find(i => i.id === editingId);
-    if (!ideaToUpdate || ideaToUpdate.title === editingText.trim()) {
-      setEditingId(null);
-      return;
-    }
-
-    const updatedIdea = { ...ideaToUpdate, title: editingText.trim() };
-    setIdeas(prev => prev.map(t => t.id === editingId ? updatedIdea : t));
+  const handleSaveEditedIdea = async (updatedIdea: Idea) => {
+    const originalIdeas = [...ideas];
+    setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
     
     try {
-      await updateIdea(editingId, { title: editingText.trim() });
+      const { id, ...dataToUpdate } = updatedIdea;
+      await updateIdea(id, dataToUpdate);
+      toast({ title: 'Idea Updated' });
     } catch (error) {
-      setIdeas(prev => prev.map(t => t.id === editingId ? ideaToUpdate : t));
+      setIdeas(originalIdeas);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not update item.' });
     } finally {
-      setEditingId(null);
+      setIdeaToEdit(null);
     }
   };
   
@@ -211,7 +205,7 @@ export function IdeaListView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col items-center h-full">
+      <div className="p-4 sm:p-6 flex flex-col h-full items-center">
         <header className="relative text-center mb-6 w-full max-w-2xl">
           <h1 className="text-3xl font-bold font-headline text-primary">Idea Board</h1>
           <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
@@ -272,47 +266,46 @@ export function IdeaListView() {
                       </div>
                   ) : ideas.length > 0 ? (
                     ideas.map(idea => (
-                      <div key={idea.id} className="flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted/50">
-                        {editingId === idea.id ? (
-                            <Input
-                                autoFocus
-                                value={editingText}
-                                onChange={(e) => setEditingText(e.target.value)}
-                                onBlur={handleUpdateIdea}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateIdea(); if (e.key === 'Escape') setEditingId(null); }}
-                                className="flex-1"
-                            />
-                        ) : (
-                            <p className="flex-1">{idea.title}</p>
-                        )}
-                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
-                                <Calendar className="mr-2 h-4 w-4" />
-                                <span>Schedule a Task</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
-                                <Briefcase className="mr-2 h-4 w-4" />
-                                <span>Convert to Project</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleArchive(idea)}>
-                              <Archive className="mr-2 h-4 w-4" />
-                              <span>Archive</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <div key={idea.id} className="flex flex-col gap-1 p-2 rounded-md border bg-card hover:bg-muted/50 group">
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 cursor-pointer" onClick={() => handleStartEdit(idea)}>
+                                <p className="font-semibold">{idea.title}</p>
+                                {idea.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1 mt-0.5">
+                                        <MessageSquare className="h-3 w-3" />
+                                        {idea.description}
+                                    </p>
+                                )}
+                            </div>
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => handleScheduleTask(idea)}>
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    <span>Schedule a Task</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleMakeProject(idea)}>
+                                    <Briefcase className="mr-2 h-4 w-4" />
+                                    <span>Convert to Project</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleArchive(idea)}>
+                                <Archive className="mr-2 h-4 w-4" />
+                                <span>Archive</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => handleStartEdit(idea)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleDeleteIdea(idea.id)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                       </div>
                     ))
                   ) : !showNewIdeaCard ? (
@@ -332,6 +325,12 @@ export function IdeaListView() {
             onContactsChange={setContacts}
             projectToEdit={null}
             initialData={initialDialogData}
+        />
+        <EditIdeaDialog
+            isOpen={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            idea={ideaToEdit}
+            onSave={handleSaveEditedIdea}
         />
     </>
   );

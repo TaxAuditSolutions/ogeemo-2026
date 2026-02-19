@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function FeaturesPage() {
     const featureGroups = [
@@ -120,7 +121,9 @@ export default function FeaturesPage() {
                             </div>
                         </div>
                         <div className="relative aspect-video bg-white rounded-2xl shadow-xl overflow-hidden border">
-                            <ImagePlaceholder id="features-dashboard" className="object-cover" />
+                            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
+                                <ShieldCheck className="h-16 w-16 opacity-20" />
+                            </div>
                         </div>
                     </div>
                 </section>

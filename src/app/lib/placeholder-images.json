@@ -1,4 +1,3 @@
-
 {
   "website-hero": {
     "url": "https://picsum.photos/seed/ogeemo-hero/1200/600",
@@ -19,6 +18,10 @@
   "about-julie": {
     "url": "https://picsum.photos/seed/julie-white/400/400",
     "hint": "professional female accountant"
+  },
+  "story-sarah": {
+    "url": "https://picsum.photos/seed/sarah-story/800/600",
+    "hint": "professional woman working remote"
   },
   "features-dashboard": {
     "url": "https://picsum.photos/seed/ogeemo-dashboard/800/600",

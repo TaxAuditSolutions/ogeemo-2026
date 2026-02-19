@@ -1,8 +1,7 @@
-
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -57,7 +56,11 @@ import { ContactSelector } from '@/components/contacts/contact-selector';
 import { Label } from '@/components/ui/label';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
-export default function ClientTimeLogReportPage() {
+const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
+function ClientTimeLogReportContent() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
@@ -67,6 +70,8 @@ export default function ClientTimeLogReportPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const highlightedId = searchParams.get('highlight');
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
@@ -111,6 +116,18 @@ export default function ClientTimeLogReportPage() {
     useEffect(() => {
         loadData();
     }, [loadData]);
+
+    useEffect(() => {
+        if (highlightedId && !isLoading) {
+            const timeoutId = setTimeout(() => {
+                const rowElement = document.getElementById(`row-${highlightedId}`);
+                if (rowElement) {
+                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [highlightedId, isLoading]);
 
     const clientEntries = useMemo(() => {
         const fromLogs = timeLogs
@@ -241,10 +258,6 @@ export default function ClientTimeLogReportPage() {
         setSortConfig({ key, direction });
     };
 
-    const formatCurrency = (amount: number) => {
-        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-    };
-
     const workersForSelection = useMemo(() => {
         const adminWorker: Worker = {
             id: user?.uid || '',
@@ -347,7 +360,7 @@ export default function ClientTimeLogReportPage() {
                                         <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                                     ) : clientEntries.length > 0 ? (
                                         clientEntries.map(entry => (
-                                            <TableRow key={entry.id}>
+                                            <TableRow key={entry.id} id={`row-${entry.id}`} className={cn(highlightedId === entry.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
                                                 <TableCell className="font-medium">{entry.contactName}</TableCell>
                                                 <TableCell>{entry.workerName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
@@ -434,4 +447,12 @@ export default function ClientTimeLogReportPage() {
             </AlertDialog>
         </>
     );
+}
+
+export default function ClientTimeLogReportPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <ClientTimeLogReportContent />
+    </Suspense>
+  );
 }

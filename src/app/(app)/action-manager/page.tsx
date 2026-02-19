@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Settings, Plus, PlayCircle, BookOpen, Lightbulb, Info, X } from 'lucide-react';
+import { LoaderCircle, Settings, Plus, PlayCircle, BookOpen, Info, X } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { AnimatePresence, motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function ActionManagerDashboardPage() {
   const [chips, setChips] = useState<ActionChipData[]>([]);
@@ -29,7 +28,6 @@ export default function ActionManagerDashboardPage() {
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
 
   useEffect(() => {
-    // Only set the initial visibility from preferences once they are loaded
     if (preferences) {
       setIsAboutPanelVisible(preferences.showActionManagerAboutPanel ?? true);
     }
@@ -69,12 +67,9 @@ export default function ActionManagerDashboardPage() {
 
   useEffect(() => {
     loadChips();
-    
-    // Listen for custom event to reload chips if they are changed on another page
     const handleChipsUpdate = () => loadChips();
     window.addEventListener('chipsUpdated', handleChipsUpdate);
     return () => window.removeEventListener('chipsUpdated', handleChipsUpdate);
-
   }, [loadChips]);
 
 
@@ -89,33 +84,28 @@ export default function ActionManagerDashboardPage() {
           </p>
         </header>
 
-        <AnimatePresence>
-            {isAboutPanelVisible && (
-                 <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-4xl mb-6 overflow-hidden"
-                >
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <AlertTitle>About the Action Manager</AlertTitle>
-                                <AlertDescription>
-                                This is your personalized dashboard. Add, remove, and reorder 'Action Chips' to create one-click shortcuts to the Ogeemo managers and tools you use most often.
-                                </AlertDescription>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 -mr-2 -mt-2" onClick={handleDismissAboutPanel}>
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Dismiss</span>
-                            </Button>
-                        </div>
-                    </Alert>
-                </motion.div>
+        <div
+            className={cn(
+                "w-full max-w-4xl transition-all duration-300 overflow-hidden",
+                isAboutPanelVisible ? "max-h-[500px] opacity-100 mb-6" : "max-h-0 opacity-0 mb-0"
             )}
-        </AnimatePresence>
+        >
+            <Alert>
+                <Info className="h-4 w-4" />
+                <div className="flex justify-between items-start">
+                    <div>
+                        <AlertTitle>About the Action Manager</AlertTitle>
+                        <AlertDescription>
+                        This is your personalized dashboard. Add, remove, and reorder 'Action Chips' to create one-click shortcuts to the Ogeemo managers and tools you use most often.
+                        </AlertDescription>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 -mr-2 -mt-2" onClick={handleDismissAboutPanel}>
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Dismiss</span>
+                    </Button>
+                </div>
+            </Alert>
+        </div>
 
         <Card className="w-full max-w-4xl">
             <CardHeader className="flex-row items-center justify-center p-4">

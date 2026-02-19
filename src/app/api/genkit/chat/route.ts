@@ -16,12 +16,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Call the ogeemoAgent wrapper function
-    const result = await ogeemoAgent({userId, message, history: history || []});
+    const result = await ogeemoAgent({message, history: history || []});
     
     return NextResponse.json(result);
     
   } catch (error: any) {
     console.error("[Ogeemo Agent API Error]", error);
+
+    // Specific handling for 429 Quota errors
+    if (error.message?.includes('429') || error.message?.includes('Resource exhausted')) {
+        return NextResponse.json({
+            error: 'Ogeemo is thinking too hard!',
+            details: 'The AI service is currently at its capacity limit. Please wait about 60 seconds and try your request again.',
+            code: 'QUOTA_EXHAUSTED'
+        }, {status: 429});
+    }
+
     // Return specific error details to the frontend
     return NextResponse.json({
         error: 'Agent communication error.',

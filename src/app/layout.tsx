@@ -6,8 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import "./globals.css";
 
-// Re-compilation trigger comment to resolve vendor-chunk error
-
 const fontBody = Inter({
   subsets: ['latin'],
   variable: '--font-body',

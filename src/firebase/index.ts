@@ -1,4 +1,4 @@
-// src/firebase/index.ts
+
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -18,6 +18,10 @@ interface FirebaseServices {
 
 let services: FirebaseServices | null = null;
 
+/**
+ * Initializes and returns Firebase client services.
+ * Implements the singleton pattern to ensure one instance across the client.
+ */
 export function getFirebaseServices(): FirebaseServices {
   if (services) {
     return services;
@@ -33,3 +37,16 @@ export function getFirebaseServices(): FirebaseServices {
   
   return services;
 }
+
+/**
+ * Prompt-compliant initialization function.
+ * Ensures the default app is initialized if it hasn't been already.
+ */
+export function initializeFirebase() {
+    if (getApps().length === 0) {
+        initializeApp(firebaseConfig);
+    }
+}
+
+export { getFirestore, getAuth, getStorage, getFunctions };
+    

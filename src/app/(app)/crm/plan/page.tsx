@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -34,7 +35,6 @@ import { useAuth } from '@/context/auth-context';
 import { getContacts, updateContact, deleteContacts, type Contact } from '@/services/contact-service';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { getAllCrmActions, type Action as CrmAction } from '@/services/crm-action-service';
-
 
 const ItemTypes = {
   LEAD: 'lead',
@@ -162,52 +162,46 @@ const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEdit
     );
 };
 
-
-export default function CrmPlanPage() {
+function CrmPlanContent() {
   const [prospects, setProspects] = useState<Contact[]>([]);
   const [allCrmActions, setAllCrmActions] = useState<CrmAction[]>([]);
   const [leadToDelete, setLeadToDelete] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [prospectsFolderId, setProspectsFolderId] = useState<string | null>(null);
 
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+        const folders = await ensureSystemFolders(user.uid);
+        const prospectsFolder = folders.find(f => f.name === 'Prospects' && f.isSystem);
+        
+        if (!prospectsFolder) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find the Prospects folder.' });
+            return;
+        }
+
+        const [contactsFromDb, actionsFromDb] = await Promise.all([
+            getContacts(user.uid),
+            getAllCrmActions(user.uid),
+        ]);
+
+        const leads = contactsFromDb.filter(c => c.folderId === prospectsFolder.id);
+        setProspects(leads);
+        setAllCrmActions(actionsFromDb);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error loading data' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, toast]);
 
   useEffect(() => {
-    const loadData = async () => {
-        if (!user) return;
-        setIsLoading(true);
-        try {
-            const folders = await ensureSystemFolders(user.uid);
-            const prospectsFolder = folders.find(f => f.name === 'Prospects' && f.isSystem);
-            
-            if (!prospectsFolder) {
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not find the Prospects folder.' });
-                return;
-            }
-            
-            setProspectsFolderId(prospectsFolder.id);
-
-            const [contactsFromDb, actionsFromDb] = await Promise.all([
-                getContacts(user.uid),
-                getAllCrmActions(user.uid),
-            ]);
-
-            // Filter for only contacts in the Prospects folder
-            const leads = contactsFromDb.filter(c => c.folderId === prospectsFolder.id);
-            setProspects(leads);
-            setAllCrmActions(actionsFromDb);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error loading data' });
-            console.error("Failed to load CRM data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
     loadData();
-  }, [user, toast]);
+  }, [loadData]);
 
   const moveCard = useCallback((dragIndex: number, hoverIndex: number, sourceStatus: string) => {
       setProspects(prev => {
@@ -264,7 +258,6 @@ export default function CrmPlanPage() {
     router.push(`/crm/action-plan?leadName=${encodeURIComponent(lead.name)}`);
   };
 
-
   const columns = ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"];
 
   if (isLoading) {
@@ -320,7 +313,7 @@ export default function CrmPlanPage() {
                       moveCard={moveCard}
                       onDropCard={onDropCard}
                       onEditLead={handleEditLead}
-                      onDeleteLead={() => setLeadToDelete}
+                      onDeleteLead={setLeadToDelete}
                       onPlanAction={handlePlanAction}
                   />
               );
@@ -345,5 +338,13 @@ export default function CrmPlanPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export default function CrmPlanPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <CrmPlanContent />
+    </Suspense>
   );
 }

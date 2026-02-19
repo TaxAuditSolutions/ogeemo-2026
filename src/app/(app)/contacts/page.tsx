@@ -1,6 +1,6 @@
-
 'use client';
 
+import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { ContactsSkeleton } from '@/components/contacts/contacts-skeleton';
 
@@ -12,5 +12,9 @@ const ContactsView = dynamic(
 );
 
 export default function ContactsPage() {
-  return <ContactsView />;
+  return (
+    <Suspense fallback={<ContactsSkeleton />}>
+      <ContactsView />
+    </Suspense>
+  );
 }

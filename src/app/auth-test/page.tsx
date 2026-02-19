@@ -1,7 +1,7 @@
 'use client';
-import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
+/**
+ * @fileOverview Minimal stub to save space.
+ */
 export default function AuthTestRedirectPage() {
-  useEffect(() => { redirect('/login'); }, []);
   return null;
 }

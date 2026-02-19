@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -268,10 +269,9 @@ function ProjectCreateForm() {
             <ProjectManagementHeader />
           </div>
           <div className="absolute top-0 right-0">
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/projects/all" aria-label="Close">
-                    <X className="h-5 w-5" />
-                </Link>
+            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
             </Button>
           </div>
         </header>
@@ -327,10 +327,8 @@ function ProjectCreateForm() {
         ) : (
             <div className="w-full max-w-lg animate-in fade-in-50">
                 <div className="flex justify-start mb-6">
-                    <Button variant="outline" asChild>
-                        <Link href="/projects/all">
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
-                        </Link>
+                    <Button variant="outline" onClick={() => setCreationStep('choice')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Choice
                     </Button>
                 </div>
                 <div className="p-8 border-2 border-dashed rounded-lg">

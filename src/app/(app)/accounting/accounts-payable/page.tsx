@@ -1,6 +1,6 @@
-
 'use client';
 
+import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
 
@@ -19,5 +19,9 @@ const AccountsPayablePageView = dynamic(
 );
 
 export default function AccountsPayablePage() {
-  return <AccountsPayablePageView />;
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <AccountsPayablePageView />
+    </Suspense>
+  );
 }

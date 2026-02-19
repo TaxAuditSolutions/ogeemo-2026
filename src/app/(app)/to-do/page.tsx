@@ -1,11 +1,10 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
 
 const ToDoListView = dynamic(
-  () => import('@/components/todo/todo-list-view').then((mod) => mod.ToDoListView),
+  () => import('@/components/tasks/tasks-view').then((mod) => mod.ToDoListView),
   {
     loading: () => (
       <div className="flex h-full w-full items-center justify-center p-4">

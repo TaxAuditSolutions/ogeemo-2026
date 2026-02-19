@@ -1,3 +1,4 @@
+
 {
   "website-hero": {
     "url": "https://picsum.photos/seed/ogeemo-hero/1200/600",
@@ -30,5 +31,13 @@
   "hytexercise-preview": {
     "url": "https://picsum.photos/seed/fitness/800/450",
     "hint": "person doing chair stretches"
+  },
+  "pitch-strategy": {
+    "url": "https://picsum.photos/seed/strategy/1200/600",
+    "hint": "abstract digital connection network"
+  },
+  "pitch-architecture": {
+    "url": "https://picsum.photos/seed/architecture/800/600",
+    "hint": "blueprint high tech interface"
   }
 }

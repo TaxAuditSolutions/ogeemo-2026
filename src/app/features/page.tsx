@@ -178,7 +178,7 @@ export default function FeaturesPage() {
                 {/* Detailed Features Grid */}
                 <section className="py-24 container px-4">
                     <div className="text-center mb-16 space-y-4">
-                        <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary">Everything, in one tab.</h2>
+                        <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary">Everything is connected by the Spider Web.</h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">Ogeemo replaces your fragmented tech stack with high-fidelity modules.</p>
                     </div>
 

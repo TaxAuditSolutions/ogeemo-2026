@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, MessageSquare, Phone, MapPin, LoaderCircle } from "lucide-react";
+import { Mail, MessageSquare, MapPin, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { submitInquiry } from "@/services/inquiry-service";
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,15 +20,32 @@ export default function ContactPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
+        
+        try {
+            await submitInquiry({
+                firstName: formData.get('first-name') as string,
+                lastName: formData.get('last-name') as string,
+                email: formData.get('email') as string,
+                subject: formData.get('subject') as string,
+                message: formData.get('message') as string,
+            });
+            
             toast({
                 title: "Message Sent!",
                 description: "We've received your inquiry and will get back to you shortly.",
             });
+            form.reset();
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error sending message",
+                description: error.message || "Something went wrong. Please try again later.",
+            });
+        } finally {
             setIsSubmitting(false);
-            (e.target as HTMLFormElement).reset();
-        }, 1000);
+        }
     };
 
     return (
@@ -74,24 +92,24 @@ export default function ContactPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="first-name">First Name</Label>
-                                            <Input id="first-name" placeholder="John" required />
+                                            <Input id="first-name" name="first-name" placeholder="John" required />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="last-name">Last Name</Label>
-                                            <Input id="last-name" placeholder="Doe" required />
+                                            <Input id="last-name" name="last-name" placeholder="Doe" required />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Work Email</Label>
-                                        <Input id="email" type="email" placeholder="john@example.com" required />
+                                        <Input id="email" name="email" type="email" placeholder="john@example.com" required />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="subject">Subject</Label>
-                                        <Input id="subject" placeholder="How can we help?" required />
+                                        <Input id="subject" name="subject" placeholder="How can we help?" required />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="message">Message</Label>
-                                        <Textarea id="message" placeholder="Tell us about your business..." rows={5} required />
+                                        <Textarea id="message" name="message" placeholder="Tell us about your business..." rows={5} required />
                                     </div>
                                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                                         {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}

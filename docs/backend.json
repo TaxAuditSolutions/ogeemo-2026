@@ -68,8 +68,8 @@
             "invoiceDate": { "type": "string", "format": "date-time" },
             "status": { "type": "string", "enum": ["outstanding", "paid", "partially_paid", "overdue"] },
             "notes": { "type": "string" },
+            "taxType": { "type": "number" },
             "taxRate": { "type": "number" },
-            "taxType": { "type": "string" },
             "userId": { "type": "string" }
         },
         "required": ["invoiceNumber", "companyName", "contactId", "originalAmount", "amountPaid", "dueDate", "invoiceDate", "status", "userId"]
@@ -484,6 +484,20 @@
         "hint": { "type": "string" }
       },
       "required": ["url"]
+    },
+    "ContactInquiry": {
+      "title": "Contact Inquiry",
+      "description": "Records messages submitted via the public contact form.",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["firstName", "lastName", "email", "subject", "message", "createdAt"]
     }
   },
   "auth": {
@@ -617,6 +631,10 @@
     "/siteImages/{imageId}": {
       "schema": { "$ref": "#/entities/SiteImage" },
       "description": "Stores URLs for site-wide images, keyed by a unique ID."
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/ContactInquiry" },
+      "description": "Collection of public contact form submissions."
     }
   }
 }

@@ -42,5 +42,9 @@
   "pitch-architecture": {
     "url": "https://picsum.photos/seed/architecture/800/600",
     "hint": "blueprint high tech interface"
+  },
+  "action-chips-spider-web": {
+    "url": "https://picsum.photos/seed/spider-web/1200/600",
+    "hint": "connected network spider web diagram"
   }
 }

@@ -33,6 +33,15 @@ export default function ActionChipsPage() {
             <h1 className="text-5xl md:text-7xl font-bold font-headline text-primary tracking-tighter mb-6 max-w-4xl">
               The Magic of Action Chips
             </h1>
+            
+            {/* Spider Web Image Placeholder */}
+            <div className="w-full max-w-4xl aspect-[2/1] mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-muted relative">
+                <ImagePlaceholder id="action-chips-spider-web" className="object-cover" />
+                <div className="absolute inset-0 bg-black/5 flex items-center justify-center pointer-events-none">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-20">The Ogeemo Spider Web</span>
+                </div>
+            </div>
+
             <p className="text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
               The Ogeemo Action Chip is a revolutionary breakthrough in business management. 
               It is not just a button; it is the control node for your <strong>Spider Web</strong> of operations.

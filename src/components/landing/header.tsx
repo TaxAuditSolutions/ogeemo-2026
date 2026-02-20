@@ -38,6 +38,7 @@ export function SiteHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem asChild><Link href="/for-small-businesses">For Small Businesses</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/for-consultants">For Consultants</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/for-accountants">For Accountants</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/for-bookkeepers">For Bookkeepers</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/for-virtual-assistants">For Virtual Assistants</Link></DropdownMenuItem>

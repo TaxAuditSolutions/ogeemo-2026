@@ -75,5 +75,9 @@
   "command-centre-hero": {
     "url": "https://picsum.photos/seed/command-centre/1200/600",
     "hint": "high tech control room digital interface"
+  },
+  "consultant-hero": {
+    "url": "https://picsum.photos/seed/consultant/1200/400",
+    "hint": "professional consultant working laptop"
   }
 }

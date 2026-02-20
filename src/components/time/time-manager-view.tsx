@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { type Project, type Event as TaskEvent, type TimeSession } from '@/types/calendar-types';
+import { type Project, type Event as TaskEvent, type TimeSession, type StoredTimerState } from '@/types/calendar-types';
 import { type Contact } from '@/services/contact-service';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
 import { getContacts } from '@/services/contact-service';
@@ -79,17 +79,6 @@ import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, 
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '../ui/badge';
-
-export interface StoredTimerState {
-    eventId: string;
-    notes: string;
-    isActive: boolean;
-    isPaused: boolean;
-    startTime: number;
-    pauseTime: number | null;
-    totalPausedDuration: number;
-}
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
@@ -157,17 +146,17 @@ export function TimeManagerView() {
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
 
-    // Initial client-side setup - ensure default is current time
+    // Initial client-side setup
     useEffect(() => {
         const now = new Date();
         setStartDate(now);
         setStartHour(formatDate(now, 'HH'));
         setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
         
-        const later = addMinutes(now, 30);
-        setEndDate(later);
-        setEndHour(formatDate(later, 'HH'));
-        setEndMinute(String(Math.floor(later.getMinutes() / 5) * 5).padStart(2, '0'));
+        // End time is left empty by default as requested
+        setEndDate(undefined);
+        setEndHour(undefined);
+        setEndMinute(undefined);
     }, []);
 
     const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') })), []);
@@ -309,8 +298,7 @@ export function TimeManagerView() {
         setIsBillable(false); setBillableRate(100); setStartDate(now);
         setStartHour(formatDate(now, 'HH')); setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
         
-        const later = addMinutes(now, 30);
-        setEndDate(later); setEndHour(formatDate(later, 'HH')); setEndMinute(String(Math.floor(later.getMinutes() / 5) * 5).padStart(2, '0'));
+        setEndDate(undefined); setEndHour(undefined); setEndMinute(undefined);
         setIsAllDay(false);
         setSessions([]); setEventToEdit(null);
         localStorage.removeItem(TIMER_STORAGE_KEY);
@@ -618,7 +606,20 @@ export function TimeManagerView() {
                                             <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{endDate ? formatDate(endDate, "PP") : "Date"}</Button></PopoverTrigger>
                                             <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={d => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
                                         </Popover>
-                                        <div className="flex gap-1"><Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={endMinute} onValueChange={setEndMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="flex gap-1">
+                                            <Select value={endHour || ""} onValueChange={setEndHour} disabled={isAllDay}>
+                                                <SelectTrigger className="h-8 text-xs">
+                                                    <SelectValue placeholder="Hr" />
+                                                </SelectTrigger>
+                                                <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                            <Select value={endMinute || ""} onValueChange={setEndMinute} disabled={isAllDay}>
+                                                <SelectTrigger className="h-8 text-xs">
+                                                    <SelectValue placeholder="Min" />
+                                                </SelectTrigger>
+                                                <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>

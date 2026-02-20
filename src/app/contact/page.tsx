@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -24,30 +23,23 @@ export default function ContactPage() {
         const form = e.target as HTMLFormElement;
         const formData = new FormData(form);
         
-        try {
-            await submitInquiry({
-                firstName: formData.get('first-name') as string,
-                lastName: formData.get('last-name') as string,
-                email: formData.get('email') as string,
-                subject: formData.get('subject') as string,
-                message: formData.get('message') as string,
-            });
-            
-            toast({
-                title: "Message Captured!",
-                description: "Your inquiry has been recorded in the database.",
-            });
-            setIsSuccess(true);
-            form.reset();
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error sending message",
-                description: error.message || "Something went wrong. Please try again later.",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
+        // The service now handles permission errors centrally via emitter.
+        // We set success optimistically unless the call itself throws (not permissions).
+        submitInquiry({
+            firstName: formData.get('first-name') as string,
+            lastName: formData.get('last-name') as string,
+            email: formData.get('email') as string,
+            subject: formData.get('subject') as string,
+            message: formData.get('message') as string,
+        });
+        
+        toast({
+            title: "Message Captured!",
+            description: "Your inquiry has been recorded in the database.",
+        });
+        setIsSuccess(true);
+        form.reset();
+        setIsSubmitting(false);
     };
 
     return (

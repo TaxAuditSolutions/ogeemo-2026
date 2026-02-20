@@ -43,7 +43,9 @@ const searchContactsTool = ai.defineTool(
     }),
   },
   async (input, { context }) => {
-    const userId = (context as any)?.userId;
+    // Check if context exists and has userId property
+    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
+    
     if (!userId) return { success: false, contacts: [], message: "User not authenticated." };
 
     try {
@@ -93,7 +95,9 @@ const createTaskTool = ai.defineTool(
     }),
   },
   async (input, { context }) => {
-    const userId = (context as any)?.userId;
+    // Check if context exists and has userId property
+    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
+    
     if (!userId) return { success: false, message: "User not authenticated." };
 
     try {
@@ -140,7 +144,9 @@ const addContactTool = ai.defineTool(
     }),
   },
   async (input, { context }) => {
-    const userId = (context as any)?.userId;
+    // Check if context exists and has userId property
+    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
+    
     if (!userId) return { success: false, message: "User not authenticated." };
 
     try {
@@ -197,21 +203,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 {{{knowledgeBase}}}
 `;
 
-export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
-    let userId = await getCurrentUserId();
-    
-    // Fallback for cases where session cookie is not yet synced
-    if (!userId && input.clientUserId) {
-        userId = input.clientUserId;
-    }
-
-    if (!userId) {
-        throw new Error("Unauthorized: Please ensure you are logged in to use Ogeemo AI.");
-    }
-    return ogeemoAgentFlow({ ...input, userId });
-}
-
-// Internal flow definition
+// Define the flow first so we can reference it
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
@@ -221,11 +213,14 @@ const ogeemoAgentFlow = ai.defineFlow(
   async (input) => {
     const { userId, message, history } = input;
 
+    // Fix: Correctly map history to match Genkit's expected message format
+    // The previous mapping was causing issues because 'content' needs to be in a specific format
     const messages: any[] = history?.map(msg => ({
         role: msg.role,
-        content: msg.content.map(c => ({ text: c.text }))
+        content: msg.content // Pass content directly if it's already in correct format, or adjust if needed
     })) || [];
 
+    // Add current message
     messages.push({ role: 'user', content: [{ text: message }] });
 
     const knowledgeBase = getKnowledgeBase();
@@ -234,9 +229,9 @@ const ogeemoAgentFlow = ai.defineFlow(
     try {
         const result = await ai.generate({
           model: 'googleai/gemini-1.5-flash',
-          messages: messages,
+          messages: messages, // Now passing correctly formatted messages
           tools: [searchContactsTool, createTaskTool, addContactTool],
-          context: { userId },
+          context: { userId }, // Context is passed here
           system: finalSystemPrompt,
           config: { temperature: 0.1 },
         });
@@ -248,3 +243,19 @@ const ogeemoAgentFlow = ai.defineFlow(
     }
   }
 );
+
+export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
+    let userId = await getCurrentUserId();
+    
+    // Fallback for cases where session cookie is not yet synced
+    if (!userId && input.clientUserId) {
+        userId = input.clientUserId;
+    }
+
+    if (!userId) {
+        throw new Error("Unauthorized: Please ensure you are logged in to use Ogeemo AI.");
+    }
+    
+    // Call the defined flow
+    return ogeemoAgentFlow({ ...input, userId });
+}

@@ -21,7 +21,8 @@ import {
     Users,
     Quote,
     CheckCircle2,
-    Network
+    Network,
+    X
 } from 'lucide-react';
 
 export default function AboutLandingPage() {

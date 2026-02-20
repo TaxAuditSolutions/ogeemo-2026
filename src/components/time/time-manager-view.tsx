@@ -651,6 +651,28 @@ export function TimeManagerView() {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-0">
+                            <div className="flex items-center gap-2 mb-4">
+                                {!timerState?.isActive ? (
+                                    <Button onClick={handleStartTimer} className="flex-1">
+                                        <Play className="mr-2 h-4 w-4" /> Start New Session
+                                    </Button>
+                                ) : (
+                                    <>
+                                        {timerState.isPaused ? (
+                                            <Button onClick={handleResumeTimer} variant="outline" className="flex-1">
+                                                <Play className="mr-2 h-4 w-4" /> Resume Session
+                                            </Button>
+                                        ) : (
+                                            <Button onClick={handlePauseTimer} variant="outline" className="flex-1">
+                                                <Pause className="mr-2 h-4 w-4" /> Pause Session
+                                            </Button>
+                                        )}
+                                        <Button onClick={handleLogCurrentSession} variant="destructive" className="flex-1">
+                                            <Square className="mr-2 h-4 w-4" /> Stop & Log
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                             <div className="flex gap-2 items-end">
                                 <div className="flex-1">
                                     <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>

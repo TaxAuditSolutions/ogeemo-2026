@@ -62,5 +62,9 @@
   "va-hero": {
     "url": "https://picsum.photos/seed/va-partner/1200/400",
     "hint": "professional virtual assistant home office"
+  },
+  "lawyer-hero": {
+    "url": "https://picsum.photos/seed/lawyer-office/1200/400",
+    "hint": "modern law office professional scales"
   }
 }

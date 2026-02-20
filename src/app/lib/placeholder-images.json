@@ -46,5 +46,9 @@
   "action-chips-spider-web": {
     "url": "https://picsum.photos/seed/spider-web/1200/600",
     "hint": "connected network spider web diagram"
+  },
+  "features-ecosystem": {
+    "url": "https://picsum.photos/seed/ecosystem/1200/400",
+    "hint": "interconnected business ecosystem"
   }
 }

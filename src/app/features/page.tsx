@@ -38,6 +38,11 @@ export default function FeaturesPage() {
                             Feature Deep-Dive
                         </Badge>
                         <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">The Ecosystem of Efficiency.</h1>
+                        
+                        <div className="w-full max-w-4xl mx-auto aspect-[3/1] rounded-xl overflow-hidden shadow-lg border-4 border-white bg-muted my-8">
+                            <ImagePlaceholder id="features-ecosystem" className="object-cover" />
+                        </div>
+
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Ogeemo isn't a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one tab.
                         </p>
@@ -94,9 +99,9 @@ export default function FeaturesPage() {
                             <CardContent className="text-sm text-muted-foreground space-y-2">
                                 <p>Cash-based accounting that links every single ledger entry to a source document.</p>
                                 <ul className="list-disc pl-4 space-y-1">
-                                    <li>Sales Tax Calculator</li>
                                     <li>Income Statement</li>
                                     <li>Financial Reports</li>
+                                    <li>Sales Tax Calculator</li>
                                 </ul>
                             </CardContent>
                         </Card>

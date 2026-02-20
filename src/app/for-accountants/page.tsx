@@ -45,7 +45,7 @@ export default function ForAccountantsPage() {
                                 </li>
                                 <li className="flex items-start gap-3">
                                     <Check className="h-5 w-5 text-primary mt-1" />
-                                    <span><strong>T2125 Ready:</strong> Categories mapped directly to CRA line numbers.</span>
+                                    <span><strong>Tax Forms:</strong> Categories mapped directly to CRA line numbers.</span>
                                 </li>
                             </ul>
                         </div>

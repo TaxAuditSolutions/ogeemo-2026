@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -211,7 +210,14 @@ export default function WorkerTimeLogReportPage() {
             payRate: 0,
             userId: user?.uid || '',
         };
-        return [adminWorker, ...workers];
+        // Use a Set to ensure unique IDs, favoring Admin if there's a conflict
+        const seen = new Set([adminWorker.id]);
+        const filteredWorkers = workers.filter(w => {
+            if (seen.has(w.id)) return false;
+            seen.add(w.id);
+            return true;
+        });
+        return [adminWorker, ...filteredWorkers];
     }, [workers, user, adminName]);
 
     const formatCurrency = (amount: number) => {
@@ -249,7 +255,7 @@ export default function WorkerTimeLogReportPage() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Beginning of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
@@ -263,7 +269,7 @@ export default function WorkerTimeLogReportPage() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">

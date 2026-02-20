@@ -79,17 +79,38 @@ const docToWorker = (doc: any): Worker => {
     } as Worker;
 };
 
+/**
+ * Fetches all workers, combining explicit payroll records and contacts from the directory.
+ */
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
-  // Using a direct collection query first to ensure we aren't hitting silent index errors
-  const q = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
+  
+  // 1. Fetch from legacy payrollWorkers collection
+  const qWorkers = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
+  const snapshotWorkers = await getDocs(qWorkers);
+  const workers = snapshotWorkers.docs.map(docToWorker);
 
-  if (snapshot.empty) {
-    return [];
-  }
-    
-  return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
+  // 2. Fetch from contacts (the new consolidated directory)
+  const qContacts = query(collection(db, 'contacts'), where("userId", "==", userId));
+  const snapshotContacts = await getDocs(qContacts);
+  const contactWorkers = snapshotContacts.docs.map(doc => {
+      const data = doc.data();
+      // Avoid duplicates if they exist in both collections (prefer legacy worker record)
+      if (workers.some(w => w.id === doc.id || (w.email && w.email === data.email))) return null;
+      
+      return {
+          id: doc.id,
+          name: data.name,
+          email: data.email || '',
+          workerType: 'employee', 
+          payType: 'hourly',
+          payRate: 0,
+          userId: data.userId,
+          workerIdNumber: data.employeeNumber || '',
+      } as Worker;
+  }).filter(Boolean) as Worker[];
+
+  return [...workers, ...contactWorkers].sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function getEmployees(userId: string): Promise<Worker[]> {
@@ -134,7 +155,6 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     const batch = writeBatch(db);
 
     // 1. Reassign Time Logs
-    // We MUST include userId in the query to satisfy Firestore security rules
     const timeLogsQuery = query(
         collection(db, TIME_LOGS_COLLECTION), 
         where('userId', '==', currentUserId),

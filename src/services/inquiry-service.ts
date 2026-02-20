@@ -14,6 +14,9 @@ export interface ContactInquiry {
   createdAt: string;
 }
 
+/**
+ * Records a message submitted via the public contact form.
+ */
 export function submitInquiry(data: Omit<ContactInquiry, 'createdAt'>) {
   const { db } = getFirebaseServices();
   const inquiryData = {
@@ -23,15 +26,17 @@ export function submitInquiry(data: Omit<ContactInquiry, 'createdAt'>) {
   
   const collectionRef = collection(db, 'inquiries');
 
-  // Mutation is non-blocking to allow for optimistic UI updates
+  // Mutation is non-blocking to leverage optimistic UI and background synchronization.
   addDoc(collectionRef, inquiryData)
     .catch(async (serverError) => {
+      // Construct a detailed, contextual error for the developer overlay.
       const permissionError = new FirestorePermissionError({
         path: collectionRef.path,
         operation: 'create',
         requestResourceData: inquiryData,
       } satisfies SecurityRuleContext);
 
+      // Emit the error centrally so the listener can trigger the dev overlay.
       errorEmitter.emit('permission-error', permissionError);
     });
 }

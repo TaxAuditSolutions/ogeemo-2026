@@ -36,8 +36,8 @@ export default function ForSmallBusinessesPage() {
             <section className="py-20 container px-4 bg-white">
                 <div className="max-w-5xl mx-auto space-y-16">
                     <div className="text-center space-y-4">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline text-primary">Stop Being the Data Middleman</h2>
-                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">Traditional small businesses lose hours every week toggling between unrelated tools. Ogeemo ends the fragmentation.</p>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline text-primary">End the Administrative Fragmentation</h2>
+                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">Traditional small businesses lose hours every week toggling between unrelated tools. Ogeemo ends the fragmentation by unifying your operations.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -77,7 +77,7 @@ export default function ForSmallBusinessesPage() {
                 </div>
             </section>
 
-            {/* New Inventory Section */}
+            {/* Inventory Section */}
             <section className="py-20 bg-muted/30 border-y">
                 <div className="container px-4">
                     <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">

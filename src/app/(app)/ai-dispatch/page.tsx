@@ -28,7 +28,8 @@ import {
     TrendingDown,
     Clock,
     FileText,
-    Book
+    Book,
+    X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -135,7 +136,7 @@ export default function AiDispatchPage() {
         else if (item.type === 'File') text = item.name;
 
         return keywords.every(k => text.toLowerCase().includes(k));
-    }).slice(0, 20);
+    }).slice(0, 50);
   }, [commandInput, searchableData]);
 
   const handleMicClick = () => {
@@ -162,7 +163,7 @@ export default function AiDispatchPage() {
   const handleResultClick = (item: any) => {
     let path = '';
     if (item.type === 'Menu Item') {
-        path = item.href;
+        path = typeof item.href === 'string' ? item.href : item.href.pathname;
     } else if (item.type === 'Contact') {
         path = `/contacts?highlight=${item.id}`;
     } else if (item.type === 'Project') {
@@ -252,46 +253,91 @@ export default function AiDispatchPage() {
                       )}
                   </div>
 
-                  {/* Real-time Search Section */}
-                  <div className="border-2 border-dashed rounded-xl overflow-hidden bg-background flex flex-col">
-                      <div className="p-2 border-b bg-muted/20 flex items-center gap-2">
-                          <Search className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Discovery Results</span>
-                      </div>
-                      <ScrollArea className="flex-1 h-[200px]">
-                          {searchResults.length > 0 ? (
-                              <div className="divide-y">
-                                  {searchResults.map((item, i) => (
-                                      <div 
-                                          key={`${item.type}-${i}`} 
-                                          className="p-3 hover:bg-muted cursor-pointer transition-colors flex items-center justify-between group"
-                                          onClick={() => handleResultClick(item)}
-                                      >
-                                          <div className="flex items-center gap-3 min-w-0">
-                                              <ResultIcon type={item.type} />
-                                              <div className="min-w-0">
-                                                  <p className="text-sm font-semibold truncate">
-                                                      {item.type === 'Menu Item' ? item.label : (item.name || item.title)}
-                                                  </p>
-                                                  <p className="text-[10px] text-muted-foreground uppercase">{item.type}</p>
-                                              </div>
-                                          </div>
-                                          <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
-                                      </div>
-                                  ))}
-                              </div>
-                          ) : commandInput.length >= 2 ? (
-                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-                                  <p className="text-sm italic">No data matches found.</p>
-                              </div>
-                          ) : (
-                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 opacity-30">
-                                  <Database className="h-6 w-6 mb-2" />
-                                  <p className="text-xs">Type to search database...</p>
-                              </div>
+                  {/* Discovery Results Section - Table UI from Search Page */}
+                  <Card className="border-2 border-dashed rounded-xl overflow-hidden bg-background flex flex-col">
+                      <CardHeader className="p-2 border-b bg-muted/20 flex flex-row items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Discovery Results</span>
+                          </div>
+                          {commandInput && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCommandInput('')}>
+                                  <X className="h-3 w-3" />
+                              </Button>
                           )}
-                      </ScrollArea>
-                  </div>
+                      </CardHeader>
+                      <CardContent className="p-0 flex-1">
+                        <ScrollArea className="h-[300px]">
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center h-48 gap-2">
+                                    <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
+                                    <p className="text-xs text-muted-foreground">Indexing data...</p>
+                                </div>
+                            ) : searchResults.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/50">
+                                            <TableHead className="w-12 text-[10px] uppercase font-bold">Type</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold">Name / Title</TableHead>
+                                            <TableHead className="text-[10px] uppercase font-bold">Details</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {searchResults.map((item, index) => {
+                                            let name = '';
+                                            let details = '';
+                                            if(item.type === 'Menu Item') {
+                                                name = item.label;
+                                                details = `Open ${item.label}`;
+                                            } else if (item.type === 'Contact') {
+                                                name = item.name;
+                                                details = item.email || item.businessName || '';
+                                            } else if (item.type === 'Project') {
+                                                name = item.name;
+                                                details = item.description || '';
+                                            } else if (item.type === 'Invoice') {
+                                                name = `Invoice #${item.invoiceNumber}`;
+                                                details = item.companyName;
+                                            } else if (item.type === 'Income' || item.type === 'Expense') {
+                                                name = item.company;
+                                                details = item.description;
+                                            } else if (item.type === 'Task') {
+                                                name = item.title;
+                                                details = item.description || '';
+                                            } else if (item.type === 'File') {
+                                                name = item.name;
+                                                details = item.type;
+                                            }
+                                            
+                                            return (
+                                                <TableRow 
+                                                    key={`${item.type}-${index}`} 
+                                                    onClick={() => handleResultClick(item)} 
+                                                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                                >
+                                                    <TableCell>
+                                                        <ResultIcon type={item.type} />
+                                                    </TableCell>
+                                                    <TableCell className="font-bold text-sm truncate max-w-[150px]">{name}</TableCell>
+                                                    <TableCell className="text-xs text-muted-foreground truncate max-w-[200px]">{details}</TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            ) : commandInput.length >= 2 ? (
+                                <div className="flex flex-col items-center justify-center h-48 text-muted-foreground p-4">
+                                    <p className="text-sm italic">No database matches found.</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-48 text-muted-foreground p-4 opacity-30">
+                                    <Database className="h-6 w-6 mb-2" />
+                                    <p className="text-xs">Type to search database...</p>
+                                </div>
+                            )}
+                        </ScrollArea>
+                      </CardContent>
+                  </Card>
               </div>
             </CardContent>
             <CardFooter className="bg-muted/10 text-[10px] uppercase tracking-widest text-muted-foreground justify-center py-2">

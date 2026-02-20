@@ -14,7 +14,9 @@ import {
     Zap,
     Mic,
     Square,
-    Search
+    Search,
+    Info,
+    ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -59,6 +61,11 @@ export default function AiDispatchPage() {
     }
   };
 
+  const handleApplyHint = (hint: string) => {
+      setCommandInput(hint);
+      launcherInputRef.current?.focus();
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full items-center bg-muted/10">
       <header className="relative text-center w-full max-w-2xl">
@@ -69,7 +76,7 @@ export default function AiDispatchPage() {
         </div>
         <div className="flex items-center justify-center gap-3">
             <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Ogeemo AI Dispatch</h1>
-            <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-primary hover:text-primary/80">
+            <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-primary hover:text-primary/80" title="Open Global Search">
                 <Link href="/reports/search">
                     <Search className="h-8 w-8" />
                     <span className="sr-only">Open Global Search</span>
@@ -130,6 +137,32 @@ export default function AiDispatchPage() {
                 Operational Intelligence Mode: Active
             </CardFooter>
         </Card>
+
+        {/* Command Hints Section */}
+        <div className="space-y-3 px-2">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Info className="h-3.5 w-3.5" />
+                Orchestration Hints
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                    { label: "Check Ledger", cmd: "Go to Ledger" },
+                    { label: "Run Payroll", cmd: "Open Payroll" },
+                    { label: "New Project", cmd: "Create a Project" },
+                    { label: "Find Contact", cmd: "Search for Smith" }
+                ].map(hint => (
+                    <Button 
+                        key={hint.cmd} 
+                        variant="ghost" 
+                        className="justify-between h-9 bg-white border px-3 hover:bg-primary/5 group"
+                        onClick={() => handleApplyHint(hint.cmd)}
+                    >
+                        <span className="text-xs font-medium">{hint.label}</span>
+                        <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                    </Button>
+                ))}
+            </div>
+        </div>
       </div>
     </div>
   );

@@ -103,6 +103,7 @@ export function TimeManagerView() {
     const [contacts, setContacts] = React.useState<Contact[]>([]);
     const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
     const [companies, setCompanies] = React.useState<Company[]>([]);
+    const [workers, setWorkers] = React.useState<Worker[]>([]);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
     const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
 
@@ -167,19 +168,6 @@ export function TimeManagerView() {
     const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') })), []);
     const minuteOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; }), []);
     
-    const workerContacts = useMemo(() => {
-        const workersFolder = contactFolders.find(f => f.name === 'Workers' && f.isSystem);
-        if (!workersFolder) return [];
-        const getDescendantIds = (parentId: string): string[] => {
-            let ids = [parentId];
-            contactFolders.filter(f => f.parentId === parentId).forEach(child => {
-                ids = [...ids, ...getDescendantIds(child.id)];
-            });
-            return ids;
-        };
-        return contacts.filter(c => getDescendantIds(workersFolder.id).includes(c.folderId));
-    }, [contactFolders, contacts]);
-
     const totalAccumulatedSeconds = useMemo(() => sessions.reduce((acc, session) => acc + session.durationSeconds, 0), [sessions]);
     const totalTime = useMemo(() => totalAccumulatedSeconds + elapsedSeconds, [totalAccumulatedSeconds, elapsedSeconds]);
 
@@ -380,10 +368,10 @@ export function TimeManagerView() {
         if (!user) { setIsLoadingData(false); return; }
         setIsLoadingData(true);
         try {
-            const [proj, cont, fold, comp, ind] = await Promise.all([
-                getProjects(user.uid), getContacts(user.uid), ensureSystemFolders(user.uid), getCompanies(user.uid), getIndustries(user.uid),
+            const [proj, cont, fold, comp, ind, wrks] = await Promise.all([
+                getProjects(user.uid), getContacts(user.uid), ensureSystemFolders(user.uid), getCompanies(user.uid), getIndustries(user.uid), getWorkers(user.uid)
             ]);
-            setProjects(proj); setContacts(cont); setContactFolders(fold); setCompanies(comp); setCustomIndustries(ind);
+            setProjects(proj); setContacts(cont); setContactFolders(fold); setCompanies(comp); setCustomIndustries(ind); setWorkers(wrks);
             setSelectedWorkerId(user.uid);
             const eventIdParam = searchParams.get('eventId');
             if (eventIdParam) {
@@ -475,6 +463,8 @@ export function TimeManagerView() {
         setIsContactFormOpen(false);
     };
 
+    const selectedWorker = workers.find(w => w.id === selectedWorkerId) || workers.find(w => w.id === user?.uid);
+
     if (isLoadingData) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
 
     return (
@@ -517,6 +507,7 @@ export function TimeManagerView() {
                         </div>
                         <div className="flex justify-center md:justify-end items-center gap-2">
                             {eventToEdit && <Button variant="outline" size="icon" onClick={() => setIsDeleteDialogOpen(true)}><Trash2 className="h-4 w-4" /></Button>}
+                            <Button variant="outline" className="h-9" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
                             <Button className="h-9" onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> Save & Close</Button>
                             <Button variant="ghost" size="icon" onClick={() => router.back()}><X className="h-5 w-5" /></Button>
                         </div>
@@ -530,7 +521,7 @@ export function TimeManagerView() {
                                 <Label htmlFor="subject">Subject Title *</Label>
                                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} ref={subjectInputRef} />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Card>
                                     <CardHeader className="p-4"><CardTitle className="text-sm">Contact</CardTitle></CardHeader>
                                     <CardContent className="p-4 pt-0">
@@ -561,48 +552,166 @@ export function TimeManagerView() {
                                         ) : <div className="flex gap-1 mt-2"><Input placeholder="Name..." value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className="text-xs h-8"/><Button onClick={handleCreateProject} size="sm" className="h-8">Create</Button></div>}
                                     </CardContent>
                                 </Card>
+                                <Card>
+                                    <CardHeader className="p-4"><CardTitle className="text-sm">Worker</CardTitle></CardHeader>
+                                    <CardContent className="p-4 pt-0">
+                                        <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="w-full justify-between mt-6 text-xs truncate">
+                                                    {selectedWorker ? selectedWorker.name : "Select worker..."}
+                                                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-full p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search workers..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No worker found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem onSelect={() => { setSelectedWorkerId(user?.uid || null); setIsWorkerPopoverOpen(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === user?.uid ? "opacity-100" : "opacity-0")}/>
+                                                                Me (Admin)
+                                                            </CommandItem>
+                                                            {workers.map(w => (
+                                                                <CommandItem key={w.id} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
+                                                                    {w.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardContent>
+                                </Card>
                             </div>
                             <div className="space-y-2"><Label htmlFor="notes">Details</Label><Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} /></div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="p-4"><CardTitle className="text-sm">Scheduling</CardTitle></CardHeader>
-                        <CardContent className="space-y-4 pt-0">
-                            <div className="flex items-center space-x-2"><Checkbox id="all-day" checked={isAllDay} onCheckedChange={(v) => setIsAllDay(!!v)} /><Label htmlFor="all-day">All-day</Label></div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Start</Label>
-                                    <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{startDate ? formatDate(startDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
-                                    </Popover>
-                                    <div className="flex gap-1"><Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader className="p-4"><CardTitle className="text-sm">Scheduling</CardTitle></CardHeader>
+                            <CardContent className="space-y-4 pt-0">
+                                <div className="flex items-center space-x-2"><Checkbox id="all-day" checked={isAllDay} onCheckedChange={(v) => setIsAllDay(!!v)} /><Label htmlFor="all-day">All-day</Label></div>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Start</Label>
+                                        <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
+                                            <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{startDate ? formatDate(startDate, "PP") : "Date"}</Button></PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
+                                        </Popover>
+                                        <div className="flex gap-1"><Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">End</Label>
+                                        <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
+                                            <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{endDate ? formatDate(endDate, "PP") : "Date"}</Button></PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={d => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
+                                        </Popover>
+                                        <div className="flex gap-1"><Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={endMinute} onValueChange={setEndMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">End</Label>
-                                    <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
-                                        <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{endDate ? formatDate(endDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={d => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
-                                    </Popover>
-                                    <div className="flex gap-1"><Select value={endHour} onValueChange={setEndHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={endMinute} onValueChange={setEndMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="p-4"><CardTitle className="text-sm">Billing Status</CardTitle></CardHeader>
+                            <CardContent className="space-y-4 pt-0">
+                                <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="non-billable" id="rb1"/><Label htmlFor="rb1">Non-Billable</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="billable" id="rb2"/><Label htmlFor="rb2">Billable</Label></div>
+                                </RadioGroup>
+                                {isBillable && (
+                                    <div className="space-y-2 max-w-xs animate-in fade-in-50">
+                                        <Label htmlFor="rate" className="text-xs">Hourly Rate ($/hr)</Label>
+                                        <Input id="rate" type="number" value={billableRate} onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="100.00" />
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
 
                     <Card>
-                        <CardHeader className="p-4 flex flex-row items-center justify-between"><CardTitle className="text-sm">Time Log</CardTitle><span className="font-mono text-lg text-primary">{formatTime(totalTime)}</span></CardHeader>
+                        <CardHeader className="p-4 flex flex-row items-center justify-between">
+                            <CardTitle className="text-sm">Time Logs & Sessions</CardTitle>
+                            <div className="text-right">
+                                <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total Session Time</span>
+                                <span className="font-mono text-lg font-bold text-primary">{formatTime(totalTime)}</span>
+                            </div>
+                        </CardHeader>
                         <CardContent className="space-y-4 pt-0">
-                            <div className="flex gap-2 items-end"><div className="flex-1"><Label htmlFor="sn" className="text-xs">Session Notes</Label><Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" /></div><Button onClick={handleLogCurrentSession} variant="outline" size="sm" disabled={!timerState?.isActive}>Log Session</Button></div>
-                            <ScrollArea className="h-32 border rounded-md"><div className="p-2 space-y-1">{sessions.map(s => (<div key={s.id} className="flex justify-between items-center p-2 bg-muted rounded-md text-xs"><div><p className="font-semibold">{formatTime(s.durationSeconds)}</p><p className="text-muted-foreground">{s.notes}</p></div><div className="flex gap-1"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleOpenEditSession(s)}><Pencil className="h-3.5 w-3.5"/></Button><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}><Trash2 className="h-3.5 w-3.5"/></Button></div></div>))}</div></ScrollArea>
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
+                                    <Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" placeholder="What are you working on right now?" />
+                                </div>
+                                <Button onClick={handleLogCurrentSession} variant="outline" size="sm" disabled={!timerState?.isActive} className="h-10">
+                                    Log Session
+                                </Button>
+                            </div>
+                            <ScrollArea className="h-48 border rounded-md">
+                                <div className="p-2 space-y-1">
+                                    {sessions.length > 0 ? sessions.map(s => (
+                                        <div key={s.id} className="flex justify-between items-center p-3 bg-muted rounded-md text-xs border border-transparent hover:border-primary/20 transition-colors">
+                                            <div>
+                                                <p className="font-bold text-primary">{formatTime(s.durationSeconds)}</p>
+                                                <p className="text-muted-foreground mt-0.5">{s.notes || 'No notes for this session.'}</p>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditSession(s)}>
+                                                    <Pencil className="h-3.5 w-3.5"/>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>
+                                                    <Trash2 className="h-3.5 w-3.5"/>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground opacity-50">
+                                            <Clock className="h-8 w-8 mb-2" />
+                                            <p>No sessions recorded yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
                         </CardContent>
                     </Card>
                 </div>
             </div>
             <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={null} folders={contactFolders} onFoldersChange={setContactFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />
-            <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}><DialogContent><DialogHeader><DialogTitle>Edit Session</DialogTitle></DialogHeader><div className="py-4 space-y-4"><div className="flex gap-2"><div><Label className="text-xs">Hours</Label><Input type="number" value={editSessionHours} onChange={e => setEditSessionHours(e.target.value === '' ? '' : Number(e.target.value))} /></div><div><Label className="text-xs">Mins</Label><Input type="number" value={editSessionMinutes} onChange={e => setEditSessionMinutes(e.target.value === '' ? '' : Number(e.target.value))} /></div></div><div><Label className="text-xs">Notes</Label><Textarea value={editSessionNotes} onChange={e => setEditSessionNotes(e.target.value)} /></div></div><DialogFooter><Button variant="ghost" onClick={() => setIsEditSessionDialogOpen(false)}>Cancel</Button><Button onClick={handleSaveSession}>Save</Button></DialogFooter></DialogContent></Dialog>
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Event?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+            <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Edit Recorded Session</DialogTitle></DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs">Hours</Label>
+                                <Input type="number" value={editSessionHours} onChange={e => setEditSessionHours(e.target.value === '' ? '' : Number(e.target.value))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">Minutes</Label>
+                                <Input type="number" value={editSessionMinutes} onChange={e => setEditSessionMinutes(e.target.value === '' ? '' : Number(e.target.value))} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs">Session Notes</Label>
+                            <Textarea value={editSessionNotes} onChange={e => setEditSessionNotes(e.target.value)} rows={4} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsEditSessionDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveSession}>Apply Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader><AlertDialogTitle>Delete this entire entry?</AlertDialogTitle><AlertDialogDescription>This will remove the event and all recorded time sessions. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive hover:bg-destructive/90">Delete Permanently</AlertDialogAction></AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

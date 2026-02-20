@@ -54,5 +54,9 @@
   "accountant-hero": {
     "url": "https://picsum.photos/seed/accountant/1200/400",
     "hint": "professional accountant financial advice"
+  },
+  "bookkeeper-hero": {
+    "url": "https://picsum.photos/seed/bookkeeper/1200/400",
+    "hint": "organized bookkeeping financial records"
   }
 }

@@ -1,9 +1,9 @@
-
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import Link from 'next/link';
 import { 
     BookOpen, 
@@ -22,6 +22,11 @@ export default function ForBookkeepersPage() {
                     <div className="container px-4 text-center space-y-6">
                         <Badge variant="secondary">FOR BOOKKEEPERS</Badge>
                         <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">Bookkeeping, <br /> Kept Simple.</h1>
+                        
+                        <div className="w-full max-w-4xl mx-auto aspect-[3/1] rounded-xl overflow-hidden shadow-lg border-4 border-white bg-muted my-8">
+                            <ImagePlaceholder id="bookkeeper-hero" className="object-cover" />
+                        </div>
+
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The BKS method allows you to manage more clients with less effort and zero paper trails.</p>
                     </div>
                 </section>

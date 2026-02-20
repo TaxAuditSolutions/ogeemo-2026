@@ -95,8 +95,8 @@ export default function FeaturesPage() {
                                 <p>Cash-based accounting that links every single ledger entry to a source document.</p>
                                 <ul className="list-disc pl-4 space-y-1">
                                     <li>Sales Tax Calculator</li>
-                                    <li>T2125 Ready Reports</li>
-                                    <li>Accounts Receivable</li>
+                                    <li>Income Statement</li>
+                                    <li>Financial Reports</li>
                                 </ul>
                             </CardContent>
                         </Card>

@@ -1,3 +1,4 @@
+
 {
   "website-hero": {
     "url": "https://picsum.photos/seed/ogeemo-hero/1200/600",
@@ -70,5 +71,9 @@
   "paralegal-hero": {
     "url": "https://picsum.photos/seed/paralegal/1200/400",
     "hint": "professional legal assistant working documents"
+  },
+  "command-centre-hero": {
+    "url": "https://picsum.photos/seed/command-centre/1200/600",
+    "hint": "high tech control room digital interface"
   }
 }

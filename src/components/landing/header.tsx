@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -45,7 +46,7 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="link" asChild><Link href="/action-chips">Action Chips</Link></Button>
+            <Button variant="link" asChild><Link href="/command-centre-info">The Command Centre</Link></Button>
             <Button variant="link" asChild><Link href="/sarah">Sarah</Link></Button>
             <Button variant="link" asChild><Link href="/about">About</Link></Button>
             <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>

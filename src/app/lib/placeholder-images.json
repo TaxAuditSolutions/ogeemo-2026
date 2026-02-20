@@ -66,5 +66,9 @@
   "lawyer-hero": {
     "url": "https://picsum.photos/seed/lawyer-office/1200/400",
     "hint": "modern law office professional scales"
+  },
+  "paralegal-hero": {
+    "url": "https://picsum.photos/seed/paralegal/1200/400",
+    "hint": "professional legal assistant working documents"
   }
 }

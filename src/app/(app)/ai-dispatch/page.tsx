@@ -84,7 +84,7 @@ export default function AiDispatchPage() {
             <CardHeader className="bg-muted/30 pb-4">
               <div className="flex items-center gap-2">
                   <Terminal className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Unified Command Terminal</CardTitle>
+                  <CardTitle className="text-lg">Enter Command Prompt</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">

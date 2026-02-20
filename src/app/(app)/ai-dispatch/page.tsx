@@ -253,7 +253,7 @@ export default function AiDispatchPage() {
                       )}
                   </div>
 
-                  {/* Discovery Results Section - Table UI from Search Page */}
+                  {/* Discovery Results Section */}
                   <Card className="border-2 border-dashed rounded-xl overflow-hidden bg-background flex flex-col">
                       <CardHeader className="p-2 border-b bg-muted/20 flex flex-row items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export default function AiDispatchPage() {
                       </CardHeader>
                       <CardContent className="p-0 flex-1">
                         <ScrollArea className="h-[300px]">
-                            {isLoading ? (
+                            {isDataLoading ? (
                                 <div className="flex flex-col items-center justify-center h-48 gap-2">
                                     <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
                                     <p className="text-xs text-muted-foreground">Indexing data...</p>

@@ -22,7 +22,11 @@ import {
     Quote,
     CheckCircle2,
     Network,
-    X
+    X,
+    MousePointerClick,
+    Layers,
+    Activity,
+    AlertTriangle
 } from 'lucide-react';
 
 export default function AboutLandingPage() {
@@ -98,50 +102,55 @@ export default function AboutLandingPage() {
           </div>
         </section>
 
-        {/* The Three Pillars */}
-        <section className="py-20 bg-muted/30">
+        {/* Action Chips: The Secret Sauce */}
+        <section className="py-24 bg-muted/30">
           <div className="container px-4">
-            <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary tracking-tight">The Three Pillars of Ogeemo</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">A unified architecture designed to scale with your ambition.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="border-none shadow-none bg-transparent text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
-                  <BrainCircuit className="h-8 w-8" />
+            <div className="flex flex-col lg:flex-row gap-12 items-center">
+              <div className="flex-1 space-y-6">
+                <Badge variant="outline" className="text-primary border-primary">Innovation</Badge>
+                <h2 className="text-4xl md:text-5xl font-bold font-headline text-primary">The Magic of Action Chips</h2>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  The Ogeemo Action Chip is more than a button—it's a <strong>Pivot Point</strong>. Most apps trap you in a linear flow. Ogeemo uses Action Chips to bridge the gap between abstract ideas and concrete execution.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Zap className="h-5 w-5" />
+                      <h4 className="font-bold">Instant Transformation</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">One click to turn an inbox item into a scheduled project or a billable time log.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Layers className="h-5 w-5" />
+                      <h4 className="font-bold">Multi-View Pivoting</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Switch between high-level strategy and micro-tasking without losing your context.</p>
+                  </div>
                 </div>
-                <CardTitle className="text-2xl">Intelligence</CardTitle>
-                <CardContent className="px-0">
-                  <p className="text-muted-foreground">The AI Dispatcher and Master Mind schedule your day, categorize your spending, and find any document with a single natural language command.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-none bg-transparent text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
-                  <Briefcase className="h-8 w-8" />
-                </div>
-                <CardTitle className="text-2xl">Operations</CardTitle>
-                <CardContent className="px-0">
-                  <p className="text-muted-foreground">High-fidelity project execution with real-time time tracking, dynamic temporal granularity, and automated BKS (Bookkeeping Kept Simple).</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-none bg-transparent text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
-                  <Users2 className="h-8 w-8" />
-                </div>
-                <CardTitle className="text-2xl">Relationships</CardTitle>
-                <CardContent className="px-0">
-                  <p className="text-muted-foreground">A unified Contact Hub that links communication history, project status, and financial statements to every client and lead.</p>
-                </CardContent>
-              </Card>
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-4">
+                <Card className="bg-white border-primary/10 shadow-xl p-6 flex flex-col items-center text-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <BrainCircuit className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">The Bridge</CardTitle>
+                  <CardDescription className="text-xs">Connecting the "Idea Board" directly to the "Temporal Matrix."</CardDescription>
+                </Card>
+                <Card className="bg-white border-primary/10 shadow-xl p-6 mt-8 flex flex-col items-center text-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Activity className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">Zero Friction</CardTitle>
+                  <CardDescription className="text-xs">Drag, drop, and pivot. The administrative gap vanishes.</CardDescription>
+                </Card>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Sarah's Story Section */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white border-y">
           <div className="container px-4 max-w-5xl mx-auto">
             <div className="flex flex-col items-center text-center mb-16 space-y-4">
               <Badge variant="outline" className="text-primary border-primary">User Spotlight</Badge>
@@ -181,7 +190,7 @@ export default function AboutLandingPage() {
 
                 <div className="space-y-4">
                   <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
-                    <AlertTriangleIcon className="h-6 w-6 text-amber-500" />
+                    <AlertTriangle className="h-6 w-6 text-amber-500" />
                     The "App-Juggling" Trap
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
@@ -205,7 +214,7 @@ export default function AboutLandingPage() {
                     </ul>
                   </div>
                   <p className="text-muted-foreground italic text-sm">
-                    Worst of all, an experienced mentor told her: "Good records are more important than sales." Sarah realized she was multi-tasking herself into a state of "Assumptive Liability"—guessing at her time, her billing, and her future.
+                    Sarah realized she was multi-tasking herself into a state of "Assumptive Liability"—guessing at her time, her billing, and her future.
                   </p>
                 </div>
 
@@ -215,18 +224,31 @@ export default function AboutLandingPage() {
                     Discovering the Ogeemo "Spider Web"
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Then, Sarah found Ogeemo. It wasn’t another app to learn; it was a SaaS wrapper that integrated natively with her Google Workspace. The moment she logged in, the fragmentation vanished.
+                    Then, Sarah found Ogeemo. It wasn’t another app to learn; it was a SaaS wrapper that integrated natively with her Google Workspace. The moment she logged in, the fragmentation vanished. Ogeemo introduced her to the **"Spider Web" Architecture**:
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg hover:border-primary/50 transition-colors">
-                      <h4 className="font-bold text-sm mb-1">Master Action Chip</h4>
-                      <p className="text-xs text-muted-foreground">Pivot business views with a single click—from Idea Board to Template Builder.</p>
-                    </div>
-                    <div className="p-4 border rounded-lg hover:border-primary/50 transition-colors">
-                      <h4 className="font-bold text-sm mb-1">The Command Centre</h4>
-                      <p className="text-xs text-muted-foreground">The brain of the business. Draggable ideas become billable projects instantly.</p>
-                    </div>
-                  </div>
+                  <ul className="space-y-6">
+                    <li className="flex gap-4 items-start">
+                        <div className="p-2 bg-primary/10 rounded-lg shrink-0"><Zap className="h-5 w-5 text-primary"/></div>
+                        <div>
+                            <h4 className="font-bold text-lg">The Master Action Chip</h4>
+                            <p className="text-sm text-muted-foreground">From one central header, Sarah could pivot her entire business view. With a click, she could switch from her "Idea Board" to her "Project Template Builder."</p>
+                        </div>
+                    </li>
+                    <li className="flex gap-4 items-start">
+                        <div className="p-2 bg-primary/10 rounded-lg shrink-0"><BrainCircuit className="h-5 w-5 text-primary"/></div>
+                        <div>
+                            <h4 className="font-bold text-lg">The Command Centre (The Calendar)</h4>
+                            <p className="text-sm text-muted-foreground">For Sarah, the Ogeemo Calendar became the brain of her business. When she dragged an Idea into a time slot, Ogeemo’s "Action-to-Protocol Bridge" did the heavy lifting. It wasn't just an "event" anymore; it was a billable project that automatically updated her ledgers.</p>
+                        </div>
+                    </li>
+                    <li className="flex gap-4 items-start">
+                        <div className="p-2 bg-primary/10 rounded-lg shrink-0"><Briefcase className="h-5 w-5 text-primary"/></div>
+                        <div>
+                            <h4 className="font-bold text-lg">The CRM & File Manager</h4>
+                            <p className="text-sm text-muted-foreground">No more hunting through G-Drive. Every prospect, every file, and every task was a "Node" on her web, connected and instantly accessible.</p>
+                        </div>
+                    </li>
+                  </ul>
                 </div>
 
                 <div className="space-y-4">
@@ -235,10 +257,10 @@ export default function AboutLandingPage() {
                     BKS: The "Sleep Well at Night" Factor
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    The biggest transformation was the BKS (Bookkeeping Kept Simple) system. Sarah used to dread the "B-word." With Ogeemo, she learned TOM—The Ogeemo Method.
+                    The biggest transformation was the BKS (Bookkeeping Kept Simple) system. Sarah used to dread the "B-word" (Bookkeeping). With Ogeemo, she learned TOM—The Ogeemo Method.
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
-                    She realized that by following the intuitive "Info Icons" and the 3-dot discovery menus, she was building a <strong>Black Box of Evidence</strong>. Ogeemo's "Audit-Ready" mandate meant every expense was linked to a source document. If a client (or the tax man) ever questioned her, she just had to click.
+                    She realized that by following the intuitive "Info Icons" and the 3-dot discovery menus, she was building a <strong>Black Box of Evidence</strong>. Ogeemo's "Audit-Ready" mandate meant every expense was linked to a source document. If a client ever questioned her, she didn't have to "find" the proof. She just had to click.
                   </p>
                 </div>
 
@@ -329,10 +351,4 @@ export default function AboutLandingPage() {
       <SiteFooter />
     </div>
   );
-}
-
-function AlertTriangleIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-    )
 }

@@ -157,12 +157,17 @@ export function TimeManagerView() {
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
 
-    // Initial client-side setup
+    // Initial client-side setup - ensure default is current time
     useEffect(() => {
         const now = new Date();
         setStartDate(now);
         setStartHour(formatDate(now, 'HH'));
         setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
+        
+        const later = addMinutes(now, 30);
+        setEndDate(later);
+        setEndHour(formatDate(later, 'HH'));
+        setEndMinute(String(Math.floor(later.getMinutes() / 5) * 5).padStart(2, '0'));
     }, []);
 
     const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') })), []);
@@ -303,7 +308,10 @@ export function TimeManagerView() {
         setSubject(""); setNotes(""); setSelectedProjectId(null); setSelectedContactId(null);
         setIsBillable(false); setBillableRate(100); setStartDate(now);
         setStartHour(formatDate(now, 'HH')); setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
-        setEndDate(undefined); setEndHour(undefined); setEndMinute(undefined); setIsAllDay(false);
+        
+        const later = addMinutes(now, 30);
+        setEndDate(later); setEndHour(formatDate(later, 'HH')); setEndMinute(String(Math.floor(later.getMinutes() / 5) * 5).padStart(2, '0'));
+        setIsAllDay(false);
         setSessions([]); setEventToEdit(null);
         localStorage.removeItem(TIMER_STORAGE_KEY);
         window.dispatchEvent(new Event('storage'));

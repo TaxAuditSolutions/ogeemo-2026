@@ -26,7 +26,8 @@ import {
     MousePointerClick,
     Layers,
     Activity,
-    AlertTriangle
+    AlertTriangle,
+    Star
 } from 'lucide-react';
 
 export default function AboutLandingPage() {
@@ -122,10 +123,24 @@ export default function AboutLandingPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-primary">
+                      <Star className="h-5 w-5" />
+                      <h4 className="font-bold">Personalized Favorites</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Manage your chips to show only the features you use most. These curated shortcuts appear in your left sidebar under "Favorites."</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
                       <Layers className="h-5 w-5" />
                       <h4 className="font-bold">Multi-View Pivoting</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">Switch between high-level strategy and micro-tasking without losing your context.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Activity className="h-5 w-5" />
+                      <h4 className="font-bold">Zero Friction</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Drag, drop, and pivot. The administrative gap between thought and record vanishes.</p>
                   </div>
                 </div>
               </div>
@@ -139,10 +154,10 @@ export default function AboutLandingPage() {
                 </Card>
                 <Card className="bg-white border-primary/10 shadow-xl p-6 mt-8 flex flex-col items-center text-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Activity className="h-6 w-6" />
+                    <Star className="h-6 w-6" />
                   </div>
-                  <CardTitle className="text-lg">Zero Friction</CardTitle>
-                  <CardDescription className="text-xs">Drag, drop, and pivot. The administrative gap vanishes.</CardDescription>
+                  <CardTitle className="text-lg">Command Focus</CardTitle>
+                  <CardDescription className="text-xs">Your most critical managers, always available in your "Favorites" sidebar.</CardDescription>
                 </Card>
               </div>
             </div>
@@ -224,14 +239,14 @@ export default function AboutLandingPage() {
                     Discovering the Ogeemo "Spider Web"
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Then, Sarah found Ogeemo. It wasn’t another app to learn; it was a SaaS wrapper that integrated natively with her Google Workspace. The moment she logged in, the fragmentation vanished. Ogeemo introduced her to the **"Spider Web" Architecture**:
+                    Then, Sarah found Ogeemo. It wasn’t another app to learn; it was a SaaS wrapper that integrated natively with her Google Workspace. The moment Sarah logged in, the fragmentation vanished. Ogeemo introduced her to the **"Spider Web" Architecture**:
                   </p>
                   <ul className="space-y-6">
                     <li className="flex gap-4 items-start">
                         <div className="p-2 bg-primary/10 rounded-lg shrink-0"><Zap className="h-5 w-5 text-primary"/></div>
                         <div>
                             <h4 className="font-bold text-lg">The Master Action Chip</h4>
-                            <p className="text-sm text-muted-foreground">From one central header, Sarah could pivot her entire business view. With a click, she could switch from her "Idea Board" to her "Project Template Builder."</p>
+                            <p className="text-sm text-muted-foreground">From one central header, Sarah could pivot her entire business view. She customized her dashboard to show only the tools she used daily, making them instantly accessible in her "Favorites" sidebar menu.</p>
                         </div>
                     </li>
                     <li className="flex gap-4 items-start">

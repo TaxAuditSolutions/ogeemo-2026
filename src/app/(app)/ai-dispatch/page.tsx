@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
     ArrowLeft, 
     BrainCircuit, 
-    Terminal, 
+    Cpu, 
     Zap,
     Mic,
     Square,
@@ -83,7 +83,7 @@ export default function AiDispatchPage() {
         <Card className={cn("border-2 transition-all duration-300 shadow-xl", commandResult.type !== 'unknown' ? "border-primary" : "border-muted")}>
             <CardHeader className="bg-muted/30 pb-4">
               <div className="flex items-center gap-2">
-                  <Terminal className="h-5 w-5 text-primary" />
+                  <Cpu className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Enter Command Prompt</CardTitle>
               </div>
             </CardHeader>

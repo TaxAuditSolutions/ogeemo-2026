@@ -50,5 +50,9 @@
   "features-ecosystem": {
     "url": "https://picsum.photos/seed/ecosystem/1200/400",
     "hint": "interconnected business ecosystem"
+  },
+  "accountant-hero": {
+    "url": "https://picsum.photos/seed/accountant/1200/400",
+    "hint": "professional accountant financial advice"
   }
 }

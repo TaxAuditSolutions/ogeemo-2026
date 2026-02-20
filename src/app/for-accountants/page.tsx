@@ -1,9 +1,9 @@
-
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import Link from 'next/link';
 import { 
     Calculator, 
@@ -16,7 +16,8 @@ import {
     Coins,
     BookOpen,
     MessageSquare,
-    BarChart
+    BarChart,
+    Check
 } from 'lucide-react';
 
 export default function ForAccountantsPage() {
@@ -28,8 +29,17 @@ export default function ForAccountantsPage() {
                 <section className="bg-muted/30 py-20 border-b">
                     <div className="container px-4 text-center space-y-6">
                         <Badge variant="secondary">FOR ACCOUNTANTS</Badge>
-                        <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">The Modern Accountant's <br /> Secret Weapon.</h1>
-                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Transition from bookkeeper to strategic advisor with real-time financial orchestration.</p>
+                        <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">
+                            The Modern Accountant's <br /> Secret Weapon.
+                        </h1>
+                        
+                        <div className="w-full max-w-4xl mx-auto aspect-[3/1] rounded-xl overflow-hidden shadow-lg border-4 border-white bg-muted my-8">
+                            <ImagePlaceholder id="accountant-hero" className="object-cover" />
+                        </div>
+
+                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                            Transition from bookkeeper to strategic advisor with real-time financial orchestration.
+                        </p>
                     </div>
                 </section>
 
@@ -179,12 +189,4 @@ export default function ForAccountantsPage() {
             <SiteFooter />
         </div>
     );
-}
-
-function Check({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-        </svg>
-    )
 }

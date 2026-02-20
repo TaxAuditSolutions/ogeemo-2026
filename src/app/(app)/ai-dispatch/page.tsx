@@ -14,7 +14,7 @@ import {
     Zap,
     Mic,
     Square,
-    X
+    Search
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -67,7 +67,15 @@ export default function AiDispatchPage() {
                 <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4" /> Exit</Link>
             </Button>
         </div>
-        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Ogeemo AI Dispatch</h1>
+        <div className="flex items-center justify-center gap-3">
+            <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Ogeemo AI Dispatch</h1>
+            <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-primary hover:text-primary/80">
+                <Link href="/reports/search">
+                    <Search className="h-8 w-8" />
+                    <span className="sr-only">Open Global Search</span>
+                </Link>
+            </Button>
+        </div>
         <p className="text-muted-foreground">Unified terminal for operational orchestration.</p>
       </header>
 

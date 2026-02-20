@@ -20,7 +20,15 @@ import {
     Square,
     Database,
     AlertTriangle,
-    RefreshCw
+    RefreshCw,
+    User,
+    Briefcase,
+    FileDigit,
+    TrendingUp,
+    TrendingDown,
+    Clock,
+    FileText,
+    Book
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,10 +40,25 @@ import { getContacts } from '@/services/contact-service';
 import { getProjects, getTasksForUser } from '@/services/project-service';
 import { getInvoices, getIncomeTransactions, getExpenseTransactions } from '@/services/accounting-service';
 import { getFiles } from '@/services/file-service';
+import { allMenuItems } from '@/lib/menu-items';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const ResultIcon = ({ type }: { type: string }) => {
+    switch (type) {
+        case 'Menu Item': return <Book className="h-4 w-4 text-muted-foreground" />;
+        case 'Contact': return <User className="h-4 w-4 text-blue-500" />;
+        case 'Project': return <Briefcase className="h-4 w-4 text-primary" />;
+        case 'Invoice': return <FileDigit className="h-4 w-4 text-orange-500" />;
+        case 'Income': return <TrendingUp className="h-4 w-4 text-green-500" />;
+        case 'Expense': return <TrendingDown className="h-4 w-4 text-red-500" />;
+        case 'Task': return <Clock className="h-4 w-4 text-purple-500" />;
+        case 'File': return <FileText className="h-4 w-4 text-muted-foreground" />;
+        default: return <Search className="h-4 w-4" />;
+    }
+};
 
 export default function AiDispatchPage() {
   const [commandInput, setCommandInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchableData, setSearchableData] = useState<any[]>([]);
@@ -72,6 +95,7 @@ export default function AiDispatchPage() {
         ]);
 
         const combined = [
+            ...allMenuItems.map(item => ({ ...item, type: 'Menu Item' })),
             ...contacts.map(i => ({ ...i, type: 'Contact' })),
             ...projects.map(i => ({ ...i, type: 'Project' })),
             ...invoices.map(i => ({ ...i, type: 'Invoice' })),
@@ -95,6 +119,25 @@ export default function AiDispatchPage() {
 
   const commandResult = useMemo(() => processCommand(commandInput), [commandInput]);
 
+  const searchResults = useMemo(() => {
+    if (!commandInput.trim() || commandInput.length < 2) return [];
+    const term = commandInput.toLowerCase().trim();
+    const keywords = term.split(/\s+/).filter(Boolean);
+
+    return searchableData.filter(item => {
+        let text = '';
+        if (item.type === 'Menu Item') text = item.label;
+        else if (item.type === 'Contact') text = `${item.name} ${item.email} ${item.businessName || ''}`;
+        else if (item.type === 'Project') text = `${item.name} ${item.description || ''}`;
+        else if (item.type === 'Invoice') text = `${item.invoiceNumber} ${item.companyName}`;
+        else if (item.type === 'Income' || item.type === 'Expense') text = `${item.company} ${item.description}`;
+        else if (item.type === 'Task') text = `${item.title} ${item.description || ''}`;
+        else if (item.type === 'File') text = item.name;
+
+        return keywords.every(k => text.toLowerCase().includes(k));
+    }).slice(0, 20);
+  }, [commandInput, searchableData]);
+
   const handleMicClick = () => {
     if (launcherSpeech.isListening) {
         launcherSpeech.stopListening();
@@ -116,19 +159,42 @@ export default function AiDispatchPage() {
     }
   };
 
+  const handleResultClick = (item: any) => {
+    let path = '';
+    if (item.type === 'Menu Item') {
+        path = item.href;
+    } else if (item.type === 'Contact') {
+        path = `/contacts?highlight=${item.id}`;
+    } else if (item.type === 'Project') {
+        path = `/projects/${item.id}/tasks`;
+    } else if (item.type === 'Invoice') {
+        path = `/accounting/invoicing-report?highlight=${item.id}`;
+    } else if (item.type === 'Income') {
+        path = `/accounting/ledgers?tab=income&highlight=${item.id}`;
+    } else if (item.type === 'Expense') {
+        path = `/accounting/ledgers?tab=expenses&highlight=${item.id}`;
+    } else if (item.type === 'Task') {
+        path = `/master-mind?eventId=${item.id}`;
+    } else if (item.type === 'File') {
+        path = `/document-manager?highlight=${item.id}`;
+    }
+
+    if (path) router.push(path);
+  };
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full items-center">
-      <header className="relative text-center w-full max-w-4xl">
+    <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full items-center bg-muted/10">
+      <header className="relative text-center w-full max-w-5xl">
         <div className="absolute left-0 top-1/2 -translate-y-1/2">
             <Button asChild variant="outline" size="sm">
                 <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4" /> Exit</Link>
             </Button>
         </div>
         <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Ogeemo AI Dispatch</h1>
-        <p className="text-muted-foreground">Unified terminal for navigation and intelligence.</p>
+        <p className="text-muted-foreground">Unified terminal for navigation, creation, and global discovery.</p>
       </header>
 
-      <div className="max-w-4xl w-full space-y-6">
+      <div className="max-w-5xl w-full space-y-6">
         {loadError && (
             <div className="bg-destructive/10 border border-destructive/20 text-destructive p-3 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -143,17 +209,17 @@ export default function AiDispatchPage() {
             <CardHeader className="bg-muted/30 pb-4">
               <div className="flex items-center gap-2">
                   <Terminal className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Command Terminal</CardTitle>
+                  <CardTitle className="text-lg">Unified Command Terminal</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="relative">
                   <Input
                     ref={launcherInputRef}
-                    placeholder={launcherSpeech.isListening ? "Listening for intent..." : "Describe where you want to go or what to create..."}
+                    placeholder={launcherSpeech.isListening ? "Listening for intent..." : "Describe where you want to go or what you're looking for..."}
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
-                    className={cn("h-16 text-xl pr-24 rounded-xl", launcherSpeech.isListening && "ring-2 ring-destructive")}
+                    className={cn("h-16 text-xl pr-24 rounded-xl shadow-inner", launcherSpeech.isListening && "ring-2 ring-destructive")}
                     onKeyDown={(e) => e.key === 'Enter' && handleExecuteCommand()}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -164,26 +230,75 @@ export default function AiDispatchPage() {
                   </div>
               </div>
 
-              <div className="min-h-[100px] flex items-center justify-center border-2 border-dashed rounded-xl p-6 bg-muted/5">
-                  {commandInput ? (
-                      <div className="w-full space-y-4">
-                          <h4 className="text-2xl font-bold">{commandResult.message}</h4>
-                          <p className="text-muted-foreground">{commandResult.description}</p>
-                          {commandResult.type !== 'unknown' && (
-                              <Button className="w-full h-12 text-lg font-bold" onClick={handleExecuteCommand}>Execute Dispatch</Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Command Intent Section */}
+                  <div className="min-h-[120px] flex items-center justify-center border-2 border-dashed rounded-xl p-6 bg-primary/5">
+                      {commandInput ? (
+                          <div className="w-full space-y-4">
+                              <div className="flex items-center justify-between">
+                                  <h4 className="text-2xl font-bold">{commandResult.message}</h4>
+                                  <Badge variant="outline">{commandResult.category}</Badge>
+                              </div>
+                              <p className="text-muted-foreground text-sm">{commandResult.description}</p>
+                              {commandResult.type !== 'unknown' && (
+                                  <Button className="w-full h-12 text-lg font-bold" onClick={handleExecuteCommand}>Execute Dispatch</Button>
+                              )}
+                          </div>
+                      ) : (
+                          <div className="text-center opacity-40">
+                              <BrainCircuit className="h-8 w-8 mx-auto mb-2" />
+                              <p className="text-sm font-medium">Awaiting Logic Signal...</p>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Real-time Search Section */}
+                  <div className="border-2 border-dashed rounded-xl overflow-hidden bg-background flex flex-col">
+                      <div className="p-2 border-b bg-muted/20 flex items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Discovery Results</span>
+                      </div>
+                      <ScrollArea className="flex-1 h-[200px]">
+                          {searchResults.length > 0 ? (
+                              <div className="divide-y">
+                                  {searchResults.map((item, i) => (
+                                      <div 
+                                          key={`${item.type}-${i}`} 
+                                          className="p-3 hover:bg-muted cursor-pointer transition-colors flex items-center justify-between group"
+                                          onClick={() => handleResultClick(item)}
+                                      >
+                                          <div className="flex items-center gap-3 min-w-0">
+                                              <ResultIcon type={item.type} />
+                                              <div className="min-w-0">
+                                                  <p className="text-sm font-semibold truncate">
+                                                      {item.type === 'Menu Item' ? item.label : (item.name || item.title)}
+                                                  </p>
+                                                  <p className="text-[10px] text-muted-foreground uppercase">{item.type}</p>
+                                              </div>
+                                          </div>
+                                          <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                                      </div>
+                                  ))}
+                              </div>
+                          ) : commandInput.length >= 2 ? (
+                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                                  <p className="text-sm italic">No data matches found.</p>
+                              </div>
+                          ) : (
+                              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 opacity-30">
+                                  <Database className="h-6 w-6 mb-2" />
+                                  <p className="text-xs">Type to search database...</p>
+                              </div>
                           )}
-                      </div>
-                  ) : (
-                      <div className="text-center opacity-40">
-                          <BrainCircuit className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-sm font-medium">Awaiting Logic Signal...</p>
-                      </div>
-                  )}
+                      </ScrollArea>
+                  </div>
               </div>
             </CardContent>
+            <CardFooter className="bg-muted/10 text-[10px] uppercase tracking-widest text-muted-foreground justify-center py-2">
+                Unified Index Status: {isDataLoading ? "Syncing..." : "Live & Connected"}
+            </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
-    

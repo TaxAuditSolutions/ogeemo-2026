@@ -22,7 +22,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 flex">
-          <Link href="/action-manager" className="flex items-center" aria-label="Go to Action Manager">
+          <Link href="/about" className="flex items-center" aria-label="Go to About Page">
             <Logo />
           </Link>
         </div>
@@ -45,6 +45,8 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <Button variant="link" asChild><Link href="/action-chips">Action Chips</Link></Button>
+            <Button variant="link" asChild><Link href="/sarah">Sarah</Link></Button>
             <Button variant="link" asChild><Link href="/about">About</Link></Button>
             <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>
         </nav>

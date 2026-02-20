@@ -55,6 +55,8 @@ import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { Label } from '@/components/ui/label';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -91,12 +93,13 @@ function ClientTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
+            // Individual catch blocks to provide granular path info for Security Rules debugging
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers(user.uid),
-                getContacts(user.uid),
-                getTimeLogs(user.uid),
-                getTasksForUser(user.uid),
-                getUserProfile(user.uid)
+                getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
+                getContacts(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
+                getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
+                getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
+                getUserProfile(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'users' }; throw err; })
             ]);
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
@@ -107,6 +110,13 @@ function ClientTimeLogReportContent() {
             setTimeLogs(fetchedLogs);
             setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: error.path || 'unknown',
+                    operation: 'list',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            }
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
             setIsLoading(false);

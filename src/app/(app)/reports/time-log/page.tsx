@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock, Pencil } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -55,8 +55,10 @@ import type { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
-export default function WorkerTimeLogReportPage() {
+function WorkerTimeLogReportContent() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [timeLogs, setTimeLogs] = useState<any[]>([]);
@@ -84,12 +86,13 @@ export default function WorkerTimeLogReportPage() {
         }
         setIsLoading(true);
         try {
+            // We wrap individual calls to capture specific permission errors for diagnostics
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers(user.uid),
-                getContacts(user.uid),
-                getTimeLogs(user.uid),
-                getTasksForUser(user.uid),
-                getUserProfile(user.uid)
+                getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
+                getContacts(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
+                getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
+                getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
+                getUserProfile(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'users' }; throw err; })
             ]);
             
             const name = profile?.displayName || user.displayName || user.email || 'Admin';
@@ -100,6 +103,13 @@ export default function WorkerTimeLogReportPage() {
             setTimeLogs(fetchedLogs);
             setTasks(fetchedTasks.filter(t => (t.duration || 0) > 0));
         } catch (error: any) {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: error.path || 'unknown',
+                    operation: 'list',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            }
             toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
         } finally {
             setIsLoading(false);
@@ -210,7 +220,6 @@ export default function WorkerTimeLogReportPage() {
             payRate: 0,
             userId: user?.uid || '',
         };
-        // Use a Set to ensure unique IDs, favoring Admin if there's a conflict
         const seen = new Set([adminWorker.id]);
         const filteredWorkers = workers.filter(w => {
             if (seen.has(w.id)) return false;
@@ -388,4 +397,12 @@ export default function WorkerTimeLogReportPage() {
             </AlertDialog>
         </>
     );
+}
+
+export default function WorkerTimeLogReportPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <WorkerTimeLogReportContent />
+    </Suspense>
+  );
 }

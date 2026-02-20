@@ -27,7 +27,8 @@ import {
     Layers,
     Activity,
     AlertTriangle,
-    Star
+    Star,
+    Compass
 } from 'lucide-react';
 
 export default function AboutLandingPage() {
@@ -108,39 +109,39 @@ export default function AboutLandingPage() {
           <div className="container px-4">
             <div className="flex flex-col lg:flex-row gap-12 items-center">
               <div className="flex-1 space-y-6">
-                <Badge variant="outline" className="text-primary border-primary">Innovation</Badge>
+                <Badge variant="outline" className="text-primary border-primary">Unique Innovation</Badge>
                 <h2 className="text-4xl md:text-5xl font-bold font-headline text-primary">The Magic of Action Chips</h2>
                 <p className="text-xl text-muted-foreground leading-relaxed">
-                  The Ogeemo Action Chip is more than a button—it's a <strong>Pivot Point</strong>. Most apps trap you in a linear flow. Ogeemo uses Action Chips to bridge the gap between abstract ideas and concrete execution.
+                  The Ogeemo Action Chip is a revolutionary breakthrough in business management. It is not just a button; it is the control node for your <strong>Spider Web</strong> of operations. Unique to Ogeemo, no other software allows you to sculpt your workspace so precisely.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-primary">
-                      <Zap className="h-5 w-5" />
-                      <h4 className="font-bold">Instant Transformation</h4>
+                      <LayoutDashboard className="h-5 w-5" />
+                      <h4 className="font-bold">Total User Control</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground">One click to turn an inbox item into a scheduled project or a billable time log.</p>
+                    <p className="text-sm text-muted-foreground">Organize Ogeemo to suit your exact wants, needs, and wishes. You decide which elements of the spider web are visible and active.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Zap className="h-5 w-5" />
+                      <h4 className="font-bold">Zero Clutter, Maximum Time</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">By managing your chips, you eliminate digital noise. See only what you use, saving hours of navigation time every week.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Compass className="h-5 w-5" />
+                      <h4 className="font-bold">Learn the Ogeemo Method</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Managing your chips is a core part of TOM. It teaches you the scope of Ogeemo's features while you build your own "Favorites" sidebar.</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-primary">
                       <Star className="h-5 w-5" />
-                      <h4 className="font-bold">Personalized Favorites</h4>
+                      <h4 className="font-bold">The "Favorites" Engine</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground">Manage your chips to show only the features you use most. These curated shortcuts appear in your left sidebar under "Favorites."</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-primary">
-                      <Layers className="h-5 w-5" />
-                      <h4 className="font-bold">Multi-View Pivoting</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Switch between high-level strategy and micro-tasking without losing your context.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-primary">
-                      <Activity className="h-5 w-5" />
-                      <h4 className="font-bold">Zero Friction</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Drag, drop, and pivot. The administrative gap between thought and record vanishes.</p>
+                    <p className="text-sm text-muted-foreground">Your curated Action Chips automatically populate your left sidebar, creating a personalized command strip that reflects your unique workflow.</p>
                   </div>
                 </div>
               </div>
@@ -149,15 +150,15 @@ export default function AboutLandingPage() {
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <BrainCircuit className="h-6 w-6" />
                   </div>
-                  <CardTitle className="text-lg">The Bridge</CardTitle>
-                  <CardDescription className="text-xs">Connecting the "Idea Board" directly to the "Temporal Matrix."</CardDescription>
+                  <CardTitle className="text-lg">Orchestrate</CardTitle>
+                  <CardDescription className="text-xs">Direct the flow of information across the nodes of your business web.</CardDescription>
                 </Card>
                 <Card className="bg-white border-primary/10 shadow-xl p-6 mt-8 flex flex-col items-center text-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Star className="h-6 w-6" />
+                    <Layers className="h-6 w-6" />
                   </div>
-                  <CardTitle className="text-lg">Command Focus</CardTitle>
-                  <CardDescription className="text-xs">Your most critical managers, always available in your "Favorites" sidebar.</CardDescription>
+                  <CardTitle className="text-lg">Customize</CardTitle>
+                  <CardDescription className="text-xs">Turn features on or off in your dashboard to suit your current mission.</CardDescription>
                 </Card>
               </div>
             </div>
@@ -246,7 +247,7 @@ export default function AboutLandingPage() {
                         <div className="p-2 bg-primary/10 rounded-lg shrink-0"><Zap className="h-5 w-5 text-primary"/></div>
                         <div>
                             <h4 className="font-bold text-lg">The Master Action Chip</h4>
-                            <p className="text-sm text-muted-foreground">From one central header, Sarah could pivot her entire business view. She customized her dashboard to show only the tools she used daily, making them instantly accessible in her "Favorites" sidebar menu.</p>
+                            <p className="text-sm text-muted-foreground">From one central header, Sarah could pivot her entire business view. By managing her chips, she organized Ogeemo to suit her exact needs, reducing clutter and saving time. She gained absolute control over the elements of her spider web.</p>
                         </div>
                     </li>
                     <li className="flex gap-4 items-start">
@@ -282,7 +283,7 @@ export default function AboutLandingPage() {
                 <div className="pt-6 border-t">
                   <h3 className="text-3xl font-bold text-primary mb-4">A Business, Not Just a Job</h3>
                   <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                    Sarah is no longer an administrative assistant "grinding" from home. She is a CEO. Because Ogeemo handles the "Administrative Gap" in the background, she spends her time doing what she loves: helping her clients grow.
+                    Sarah is no longer an administrative assistant "grinding" from home. She is a CEO. Because Ogeemo handles the "Administrative Gap" in the background, Sarah spends her time doing what she loves: helping her clients grow.
                   </p>
                   <Button asChild size="lg" className="h-12 px-8">
                     <Link href="/register">Join Sarah in the Ogeemo World <ArrowRight className="ml-2 h-4 w-4"/></Link>

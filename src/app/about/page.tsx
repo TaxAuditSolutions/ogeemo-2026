@@ -28,7 +28,8 @@ import {
     Activity,
     AlertTriangle,
     Star,
-    Compass
+    Compass,
+    LayoutDashboard
 } from 'lucide-react';
 
 export default function AboutLandingPage() {

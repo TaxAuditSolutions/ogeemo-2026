@@ -79,5 +79,9 @@
   "consultant-hero": {
     "url": "https://picsum.photos/seed/consultant/1200/400",
     "hint": "professional consultant working laptop"
+  },
+  "welcome-graphic": {
+    "url": "https://picsum.photos/seed/welcome/1200/500",
+    "hint": "futuristic digital interface connection"
   }
 }

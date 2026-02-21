@@ -26,7 +26,10 @@ import {
     MousePointerClick,
     Settings,
     Timer,
-    PlusCircle
+    PlusCircle,
+    Route,
+    FilePlus2,
+    ListChecks
 } from "lucide-react";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
@@ -190,7 +193,7 @@ export default function FeaturesPage() {
                         </div>
 
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Ogeemo isn't a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one Action Chip.
+                            Ogeemo is not a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one Action Chip.
                         </p>
                     </div>
                 </section>

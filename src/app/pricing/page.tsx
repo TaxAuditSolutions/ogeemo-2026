@@ -293,7 +293,7 @@ export default function PricingPage() {
                             <TableRow>
                                 <TableCell className="font-bold py-6">QuickBooks Online (Essentials)</TableCell>
                                 <TableCell className="font-mono">$60.00+</TableCell>
-                                <TableCell className="text-sm text-muted-foreground">Pay for dozens of features you don't use. Tiered "trap" forces upgrades for basic team access. (QBO) payroll typically costs between $50 and $134 extra for payroll alone, per month,</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Pay for dozens of features you don't use. Tiered "trap" forces upgrades for basic team access. (QBO) payroll typically costs between $50 and $134 per month extra to add the payroll module.</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell className="font-bold py-6">Xero (Growing)</TableCell>

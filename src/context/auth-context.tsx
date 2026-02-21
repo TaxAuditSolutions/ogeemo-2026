@@ -23,6 +23,7 @@ const marketingPaths = [
     '/website', 
     '/features',
     '/for-small-businesses', 
+    '/for-consultants',
     '/for-accountants',
     '/for-bookkeepers',
     '/for-virtual-assistants',
@@ -88,7 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
       if (user && isPublicPath) {
-        router.push('/action-manager');
+        // Redirect to Welcome page after successful login
+        router.push('/welcome');
       }
 
       if (!user && !isPublicPath && !isMarketingPath) {

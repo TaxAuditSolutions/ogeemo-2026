@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
               <div className="flex h-16 shrink-0 items-center justify-center border-b border-white/20 px-4 lg:px-6">
-                <Link href="/action-manager" aria-label="Go to Action Manager">
+                <Link href="/welcome" aria-label="Go to Welcome Page">
                   <Logo />
                 </Link>
               </div>

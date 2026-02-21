@@ -1,7 +1,16 @@
-
 import { redirect } from 'next/navigation';
+import { getCurrentUserId } from './actions';
 
-export default function Home() {
-  // Redirect the root path to the primary landing page at /about
-  redirect('/about');
+/**
+ * @fileOverview The root landing page. 
+ * Redirects to the welcome page if authenticated, otherwise to the marketing about page.
+ */
+export default async function Home() {
+  const userId = await getCurrentUserId();
+  
+  if (userId) {
+    redirect('/welcome');
+  } else {
+    redirect('/about');
+  }
 }

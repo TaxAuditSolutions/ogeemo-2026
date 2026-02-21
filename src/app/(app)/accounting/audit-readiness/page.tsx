@@ -38,7 +38,7 @@ export default function AuditReadinessPage() {
         <AlertTriangle className="h-5 w-5" />
         <AlertTitle className="font-bold">The Auditor's Perspective</AlertTitle>
         <AlertDescription className="text-sm">
-            An Auditor assumes all bank deposits are <strong>income</strong> and no expenses are <strong>deductible</strong> unless you prove otherwise. In the absence of a written business reason, auditors assume expenses are personal.
+            An Auditor can assume all bank deposits could be <strong>income</strong> and any expenses may not be <strong>deductible</strong> unless they are obviously deductible, or your records show the proof. In the absence of a written business reason, auditors can and might assume any or all expenses are personal.
         </AlertDescription>
       </Alert>
 

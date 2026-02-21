@@ -298,12 +298,12 @@ export default function PricingPage() {
                             <TableRow>
                                 <TableCell className="font-bold py-6">Xero (Growing)</TableCell>
                                 <TableCell className="font-mono">$42.00+</TableCell>
-                                <TableCell className="text-sm text-muted-foreground">Limited transaction counts on lower tiers. Requires expensive add-ons for projects and payroll.</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Limited transaction counts on lower tiers. Requires expensive add-ons for projects and payroll. Tiered "trap" forces upgrades for basic team access.</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell className="font-bold py-6">Sage Accounting</TableCell>
                                 <TableCell className="font-mono">$25.00+</TableCell>
-                                <TableCell className="text-sm text-muted-foreground">Restrictive multi-user pricing. Fragmented interface requires third-party tools for CRM/Projects.</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Restrictive multi-user pricing. Fragmented interface requires third-party tools for CRM/Projects. Tiered "trap" forces upgrades for basic team access.</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell className="font-bold py-6 flex items-center gap-2">

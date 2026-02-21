@@ -17,7 +17,9 @@ import {
     BookOpen,
     MessageSquare,
     BarChart,
-    Check
+    Check,
+    Users2,
+    Zap
 } from 'lucide-react';
 
 export default function ForAccountantsPage() {
@@ -40,6 +42,42 @@ export default function ForAccountantsPage() {
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Transition from bookkeeper to strategic advisor with real-time financial orchestration.
                         </p>
+                    </div>
+                </section>
+
+                {/* Shared Workspace Section */}
+                <section className="py-20 bg-primary/5">
+                    <div className="container px-4 max-w-5xl mx-auto">
+                        <div className="text-center mb-12 space-y-4">
+                            <h2 className="text-3xl font-bold font-headline text-primary">The Power of a Shared Workspace</h2>
+                            <p className="text-lg text-muted-foreground">Why having your clients work inside Ogeemo transforms your practice.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <Users2 className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Real-Time Advisory</CardTitle>
+                                    <CardDescription>Move from post-mortem to proactive.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        When your clients manage their daily tasks and BKS Ledgers in Ogeemo, you gain an over-the-shoulder view of their financial health. You can provide strategic advice based on <strong>today's</strong> data, not last month's receipts.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <Zap className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Zero Data Re-entry</CardTitle>
+                                    <CardDescription>Clean data, right from the source.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        Eliminate the "admin gap." Because the client captures information as they work, the data you receive is structured, categorized by CRA line numbers, and already linked to source documents.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </section>
 

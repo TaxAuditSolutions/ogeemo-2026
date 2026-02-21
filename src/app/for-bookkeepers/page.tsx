@@ -15,7 +15,9 @@ import {
     Users,
     Briefcase,
     Zap,
-    BarChart3
+    BarChart3,
+    ArrowRightLeft,
+    Handshake
 } from 'lucide-react';
 
 export default function ForBookkeepersPage() {
@@ -40,6 +42,42 @@ export default function ForBookkeepersPage() {
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             The BKS method allows you to manage more clients with less effort and zero paper trails.
                         </p>
+                    </div>
+                </section>
+
+                {/* Collaboration Section */}
+                <section className="py-20 bg-primary/5">
+                    <div className="container px-4 max-w-5xl mx-auto">
+                        <div className="text-center mb-12 space-y-4">
+                            <h2 className="text-3xl font-bold font-headline text-primary">The Shared Ledger Advantage</h2>
+                            <p className="text-lg text-muted-foreground">Stop chasing data. Start managing it alongside your clients.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <ArrowRightLeft className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Direct Data Flow</CardTitle>
+                                    <CardDescription>Clients record, you reconcile.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        By sharing an Ogeemo environment, your clients can log their own expenses and time as they happen. You no longer have to spend hours on data entry; instead, you focus on the high-value work of reconciliation and financial accuracy.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <Handshake className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Professional Synergy</CardTitle>
+                                    <CardDescription>A unified portal for client and pro.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        Give your clients a professional command centre that they actually *want* to use. When they see the value of Action Chips and the Master Mind, they are more likely to stay compliant, making your job easier and more profitable.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </section>
 

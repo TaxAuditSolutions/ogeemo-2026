@@ -1,5 +1,3 @@
-'use client';
-
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +15,9 @@ import {
     Briefcase,
     CheckCircle2,
     ArrowRight,
-    Star
+    Star,
+    BrainCircuit,
+    Layers
 } from 'lucide-react';
 
 export default function ForVirtualAssistantsPage() {
@@ -42,6 +42,42 @@ export default function ForVirtualAssistantsPage() {
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Ogeemo is designed for the modern VA who does more than just data entry. It’s for the partner who orchestrates the entire client operation.
                         </p>
+                    </div>
+                </section>
+
+                {/* Collaboration Section */}
+                <section className="py-20 bg-primary/5">
+                    <div className="container px-4 max-w-5xl mx-auto">
+                        <div className="text-center mb-12 space-y-4">
+                            <h2 className="text-3xl font-bold font-headline text-primary">The Unified Business Partnership</h2>
+                            <p className="text-lg text-muted-foreground">Why a shared Ogeemo workspace is the ultimate VA tool.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <BrainCircuit className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Master the Master Mind</CardTitle>
+                                    <CardDescription>Plan, schedule, and execute for your clients.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        When your client shares their Master Mind with you, you can take over the heavy lifting of project planning and scheduling. You aren't just checking off items; you are orchestrating the timing and execution of their business vision.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-white border-primary/10">
+                                <CardHeader>
+                                    <Layers className="h-8 w-8 text-primary mb-2" />
+                                    <CardTitle>Sculpt the Workflow</CardTitle>
+                                    <CardDescription>Build the perfect workspace for them.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        As their Virtual Business Partner (VBP), you can manage their Action Chips to create a streamlined, zero-clutter interface. You design the environment that helps them stay focused and productive.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </section>
 

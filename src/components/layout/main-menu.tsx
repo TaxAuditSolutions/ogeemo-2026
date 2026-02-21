@@ -21,7 +21,7 @@ import { useSidebarView } from '@/context/sidebar-view-context';
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
-    Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting'] },
+    Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/accounting/audit-readiness'] },
     Growth: { icon: BarChart3, items: ['/reports/search', '/marketing-manager', '/idea-board'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator'] },
 };

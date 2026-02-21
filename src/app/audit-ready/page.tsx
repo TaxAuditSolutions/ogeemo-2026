@@ -16,10 +16,18 @@ import {
     Search,
     ArrowRight,
     Ban,
-    Scale
+    Scale,
+    ChevronDown
 } from 'lucide-react';
 
 export default function AuditReadyLandingPage() {
+  const scrollToContent = () => {
+    const element = document.getElementById('audit-reality');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
@@ -38,14 +46,17 @@ export default function AuditReadyLandingPage() {
             <p className="text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed">
               "The power to audit is the power to destroy." Don't just keep books—build a fortress of evidence with Bookkeeping Kept Simple (BKS) and The Ogeemo Method.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <Button asChild size="lg" className="h-12 px-8 text-lg font-bold">
-                <Link href="/register">Protect Your Business Now</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 px-8 text-lg bg-transparent border-white text-white hover:bg-white hover:text-black">
-                <Link href="/contact">Speak with an Expert</Link>
-              </Button>
-            </div>
+            
+            <Button 
+              variant="ghost" 
+              onClick={scrollToContent}
+              className="text-white hover:bg-white/10 mt-4 group h-auto py-4"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-sm font-semibold uppercase tracking-widest">Learn More</span>
+                <ChevronDown className="h-8 w-8 animate-bounce text-primary" />
+              </div>
+            </Button>
           </div>
           
           {/* Background decoration */}
@@ -53,7 +64,7 @@ export default function AuditReadyLandingPage() {
         </section>
 
         {/* The Stark Reality Section */}
-        <section className="py-24 bg-white">
+        <section id="audit-reality" className="py-24 bg-white">
           <div className="container px-4">
             <div className="max-w-4xl mx-auto space-y-12">
                 <div className="text-center space-y-4">

@@ -44,7 +44,7 @@ export default function FeaturesPage() {
                         </div>
 
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Ogeemo isn't a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one tab.
+                            Ogeemo isn't a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one Action Chip.
                         </p>
                     </div>
                 </section>
@@ -127,47 +127,45 @@ export default function FeaturesPage() {
                 </section>
 
                 {/* The "Spider Web" Integration Section */}
-                <section className="py-24 bg-muted/30 border-y">
-                    <div className="container px-4">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                            <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl border-8 border-white">
-                                <ImagePlaceholder id="action-chips-spider-web" className="object-cover" />
+                <section className="py-24 container px-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl border-8 border-white">
+                            <ImagePlaceholder id="action-chips-spider-web" className="object-cover" />
+                        </div>
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <h2 className="text-4xl font-bold font-headline text-primary">Native Integration. No "Gaps."</h2>
+                                <p className="text-lg text-muted-foreground leading-relaxed">
+                                    Traditional software creates "administrative gaps"—time spent moving data from your email to your calendar, or your timer to your invoice. Ogeemo solves this by treating every item as a node on your <strong>Business Spider Web</strong>.
+                                </p>
                             </div>
-                            <div className="space-y-8">
-                                <div className="space-y-4">
-                                    <h2 className="text-4xl font-bold font-headline text-primary">Native Integration. No "Gaps."</h2>
-                                    <p className="text-lg text-muted-foreground leading-relaxed">
-                                        Traditional software creates "administrative gaps"—time spent moving data from your email to your calendar, or your timer to your invoice. Ogeemo solves this by treating every item as a node on your <strong>Business Spider Web</strong>.
-                                    </p>
-                                </div>
 
-                                <div className="space-y-6">
-                                    <div className="flex gap-4">
-                                        <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-                                            <FolderSync className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Unified Document Manager</h4>
-                                            <p className="text-muted-foreground">Manage Google Drive directly from your contact records. Every client file is exactly where it belongs.</p>
-                                        </div>
+                            <div className="space-y-6">
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+                                        <FolderSync className="h-5 w-5" />
                                     </div>
-                                    <div className="flex gap-4">
-                                        <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-                                            <Users className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Relationship Intelligence</h4>
-                                            <p className="text-muted-foreground">A Contact Hub that tracks communication history, project status, and financial balance in one view.</p>
-                                        </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">Unified Document Manager</h4>
+                                        <p className="text-muted-foreground">Manage Google Drive directly from your contact records. Every client file is exactly where it belongs.</p>
                                     </div>
-                                    <div className="flex gap-4">
-                                        <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-                                            <Bot className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">AI Dispatch Terminal</h4>
-                                            <p className="text-muted-foreground">Give commands instead of clicking buttons. "Start meeting with Acme" triggers the timer and opens the notes.</p>
-                                        </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+                                        <Users className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">Relationship Intelligence</h4>
+                                        <p className="text-muted-foreground">A Contact Hub that tracks communication history, project status, and financial balance in one view.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+                                        <Bot className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg">AI Dispatch Terminal</h4>
+                                        <p className="text-muted-foreground">Give commands instead of clicking buttons. "Start meeting with Acme" triggers the timer and opens the notes.</p>
                                     </div>
                                 </div>
                             </div>

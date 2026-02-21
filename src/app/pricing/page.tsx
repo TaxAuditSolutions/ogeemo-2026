@@ -4,7 +4,7 @@
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
 import { 
@@ -17,7 +17,9 @@ import {
     Zap,
     Scale,
     AlertCircle,
-    TrendingDown
+    TrendingDown,
+    XCircle,
+    Check
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -150,11 +152,65 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* Market Comparison Section */}
+        {/* Feature Comparison Section */}
+        <section className="py-24 bg-white border-t">
+            <div className="container px-4 max-w-6xl mx-auto">
+                <div className="text-center mb-16 space-y-4">
+                    <h2 className="text-3xl md:text-5xl font-bold font-headline">Feature Orchestration</h2>
+                    <p className="text-muted-foreground text-lg">Why "All-in-One" is better than "Integration-Heavy".</p>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border shadow-xl">
+                    <Table>
+                        <TableHeader className="bg-slate-900">
+                            <TableRow className="hover:bg-slate-900">
+                                <TableHead className="text-white font-bold h-16 w-1/3">Core Capability</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center bg-primary/20">Ogeemo</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center">QuickBooks</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center">Xero</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center">Sage</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {[
+                                { name: "BKS Core Accounting", ogeemo: true, qb: true, xero: true, sage: true },
+                                { name: "Professional Invoicing", ogeemo: true, qb: true, xero: true, sage: true },
+                                { name: "Audit-Ready Evidence Linking (Files to Ledger)", ogeemo: true, qb: false, xero: false, sage: false },
+                                { name: "Temporal Matrix (5-min Time Precision)", ogeemo: true, qb: false, xero: false, sage: false },
+                                { name: "Project Kanban Boards", ogeemo: true, qb: "Higher Tiers", xero: "Add-on", sage: "Basic" },
+                                { name: "Custom Action Chips (Workflow Sculpting)", ogeemo: true, qb: false, xero: false, sage: false },
+                                { name: "CRM Relationship Hub", ogeemo: true, qb: "Basic", xero: "Basic", sage: "Basic" },
+                                { name: "Native Google Workspace Wrapper", ogeemo: true, qb: false, xero: false, sage: false },
+                                { name: "AI Dispatch Terminal", ogeemo: true, qb: false, xero: false, sage: false },
+                                { name: "Unlimited Users at Base Rate", ogeemo: true, qb: false, xero: false, sage: false }
+                            ].map((row, i) => (
+                                <TableRow key={i} className={i % 2 === 0 ? "bg-slate-50/50" : ""}>
+                                    <TableCell className="font-semibold py-4">{row.name}</TableCell>
+                                    <TableCell className="text-center py-4 bg-primary/5">
+                                        {row.ogeemo === true ? <Check className="h-5 w-5 text-primary mx-auto" /> : <span className="text-xs font-bold text-primary">{row.ogeemo}</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        {row.qb === true ? <Check className="h-5 w-5 text-slate-400 mx-auto" /> : row.qb === false ? <XCircle className="h-5 w-5 text-slate-300 mx-auto" /> : <span className="text-[10px] uppercase font-bold text-slate-500">{row.qb}</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        {row.xero === true ? <Check className="h-5 w-5 text-slate-400 mx-auto" /> : row.xero === false ? <XCircle className="h-5 w-5 text-slate-300 mx-auto" /> : <span className="text-[10px] uppercase font-bold text-slate-500">{row.xero}</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        {row.sage === true ? <Check className="h-5 w-5 text-slate-400 mx-auto" /> : row.sage === false ? <XCircle className="h-5 w-5 text-slate-300 mx-auto" /> : <span className="text-[10px] uppercase font-bold text-slate-500">{row.sage}</span>}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        </section>
+
+        {/* Market Price Comparison Section */}
         <section className="py-24 bg-slate-50 border-y">
             <div className="container px-4 max-w-5xl mx-auto">
                 <div className="text-center mb-12 space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-slate-900">Market Comparison</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-slate-900">Price Comparison</h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">How Ogeemo compares to traditional subscription models and manual labor.</p>
                 </div>
 

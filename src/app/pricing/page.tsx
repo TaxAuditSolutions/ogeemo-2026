@@ -18,7 +18,10 @@ import {
     AlertCircle,
     TrendingDown,
     XCircle,
-    Check
+    Check,
+    Users2,
+    Target,
+    HeartHandshake
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -50,8 +53,50 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* The Two-Pillar Formula */}
+        {/* Pricing Philosophy Section */}
         <section className="py-24 bg-white">
+            <div className="container px-4 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-6">
+                        <Badge variant="outline" className="text-primary border-primary">OUR PHILOSOPHY</Badge>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline text-slate-900">Building a Community, <br />Not a Toll Road.</h2>
+                        <p className="text-lg text-slate-600 leading-relaxed">
+                            In business, there are two ways to set a price: "what the market will bear" or "what is required to deliver exceptional value." We chose the latter.
+                        </p>
+                        <p className="text-slate-600">
+                            The more you charge, the higher the barrier to entry. We believe that high prices are just an invitation for competitors to undercut you and for users to feel penalized for their own success.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        <Card className="bg-primary/5 border-primary/10 shadow-none">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <Target className="h-5 w-5 text-primary" />
+                                    Removing the Barrier
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">We keep our base membership low so that every visionary can access Ogeemo. Our growth comes from your referrals and your success, not from inflated subscription tiers.</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary/5 border-primary/10 shadow-none">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <HeartHandshake className="h-5 w-5 text-primary" />
+                                    Community First
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Our goal is to build a vibrant community of orchestrated businesses. By pricing fairly, we ensure that Ogeemo remains your long-term partner, not a monthly burden.</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {/* The Two-Pillar Formula */}
+        <section className="py-24 bg-slate-50 border-y">
           <div className="container px-4">
             <div className="text-center mb-16 space-y-4">
                 <h2 className="text-3xl md:text-5xl font-bold font-headline">The Ogeemo Formula</h2>
@@ -60,7 +105,7 @@ export default function PricingPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
                 {/* Pillar 1: Base Membership */}
-                <Card className="relative overflow-hidden border-2">
+                <Card className="relative overflow-hidden border-2 bg-white">
                     <CardHeader className="bg-slate-50 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <ShieldCheck className="h-6 w-6" />
@@ -98,7 +143,7 @@ export default function PricingPage() {
                 </Card>
 
                 {/* Pillar 2: Infrastructure Sync */}
-                <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
+                <Card className="relative overflow-hidden border-2 border-primary shadow-xl bg-white">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
                         Operational Precision
                     </div>
@@ -152,7 +197,7 @@ export default function PricingPage() {
         </section>
 
         {/* Feature Comparison Section */}
-        <section className="py-24 bg-white border-t">
+        <section className="py-24 bg-white">
             <div className="container px-4 max-w-6xl mx-auto">
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline">Feature Orchestration</h2>

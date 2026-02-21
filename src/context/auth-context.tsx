@@ -60,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const idToken = await currentUser.getIdToken();
         
         // This creates the server-side session cookie. 
-        // We catch errors to avoid blocking the UI if session creation is slow.
         try {
             await fetch('/api/auth/session', {
                 method: 'POST',
@@ -85,14 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthLoading) {
-      const isPublicPath = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/login' || pathname === '/register';
+      const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
+      // If the user is authenticated and on a public page (login/register), send them to welcome
       if (user && isPublicPath) {
-        // Redirect to Welcome page after successful login
         router.push('/welcome');
       }
 
+      // If the user is NOT authenticated and NOT on a allowed path, send them to login
       if (!user && !isPublicPath && !isMarketingPath) {
         router.push('/login');
       }

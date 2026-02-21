@@ -1,15 +1,9 @@
-'use client';
-
 import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
 
 /**
- * @fileOverview Redirects the app root to the welcome page.
+ * @fileOverview Redirects the authenticated root to the welcome page.
+ * This handles cases where a logged-in user hits the application root.
  */
 export default function AppPageRoot() {
-  useEffect(() => {
-    redirect('/welcome');
-  }, []);
-
-  return null;
+  redirect('/welcome');
 }

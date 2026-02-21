@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,14 +20,159 @@ import {
     LayoutDashboard,
     Globe,
     Bot,
-    FolderSync
+    FolderSync,
+    Info,
+    CheckCircle2,
+    MousePointerClick,
+    Settings,
+    Timer,
+    PlusCircle
 } from "lucide-react";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+
+interface FeatureDetailProps {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    overview: string;
+    usageSteps: { title: string; description: string; icon: React.ElementType }[];
+}
+
+const FeatureDeepDive = ({ isOpen, onOpenChange, feature }: { isOpen: boolean; onOpenChange: (open: boolean) => void; feature: FeatureDetailProps | null }) => {
+    if (!feature) return null;
+    const Icon = feature.icon;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2 shrink-0 bg-primary/5 border-b">
+                    <div className="flex items-center gap-3 text-primary mb-1">
+                        <div className="p-2 bg-white rounded-lg shadow-sm border border-primary/10">
+                            <Icon className="h-6 w-6" />
+                        </div>
+                        <DialogTitle className="text-2xl font-headline">{feature.title} Deep Dive</DialogTitle>
+                    </div>
+                    <DialogDescription className="text-base text-muted-foreground">
+                        {feature.description}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <ScrollArea className="flex-1 px-6 py-6">
+                    <div className="space-y-8">
+                        <section className="space-y-3">
+                            <h4 className="font-bold text-lg flex items-center gap-2">
+                                <Info className="h-5 w-5 text-primary" />
+                                What is this?
+                            </h4>
+                            <p className="text-muted-foreground leading-relaxed">
+                                {feature.overview}
+                            </p>
+                        </section>
+
+                        <Separator />
+
+                        <section className="space-y-6">
+                            <h4 className="font-bold text-lg flex items-center gap-2">
+                                <MousePointerClick className="h-5 w-5 text-primary" />
+                                How to use it
+                            </h4>
+                            <div className="grid gap-6">
+                                {feature.usageSteps.map((step, idx) => (
+                                    <div key={idx} className="flex gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-bold border border-primary/20">
+                                            {idx + 1}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <step.icon className="h-4 w-4 text-primary" />
+                                                <h5 className="font-semibold">{step.title}</h5>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </div>
+                </ScrollArea>
+
+                <DialogFooter className="p-4 border-t bg-muted/30 shrink-0">
+                    <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Close Deep Dive</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 export default function FeaturesPage() {
+    const [selectedFeature, setSelectedFeature] = useState<FeatureDetailProps | null>(null);
+    const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
+
+    const featureDetails: Record<string, FeatureDetailProps> = {
+        actionChips: {
+            title: "Action Chips",
+            description: "The control nodes of your business spider web.",
+            icon: Zap,
+            overview: "Action Chips are revolutionary control nodes that allow you to sculpt Ogeemo to match your exact business mind. They aren't just shortcuts; they are programmable entry points that carry your context across the platform, eliminating digital noise and maximizing navigation speed.",
+            usageSteps: [
+                { title: "Personalize Your Hub", description: "Visit the Action Manager Settings to view all available modules. Drag your most-used tools into the 'Selected' list.", icon: Settings },
+                { title: "One-Click Hub Pivots", description: "Your chips automatically populate your dashboard and sidebar 'Command Strip'. Click a chip to jump between context hubs instantly.", icon: Zap },
+                { title: "Sculpt Your Focus", description: "Remove chips for modules you don't use. This keeps your workspace clean, professional, and optimized for high-speed operation.", icon: Layers }
+            ]
+        },
+        commandCentre: {
+            title: "Command Centre",
+            description: "High-fidelity temporal execution engine.",
+            icon: BrainCircuit,
+            overview: "Built on a Temporal Matrix, the Command Centre allows you to divide every hour into 5-minute increments. This provides the granularity needed to track 'invisible work'—the quick client calls and rapid administrative tasks that usually go unrecorded.",
+            usageSteps: [
+                { title: "Schedule with Fidelity", description: "Drag tasks from your project Forge directly into the calendar. Use the slots to define exactly when work will happen.", icon: Calendar },
+                { title: "Start Live Sessions", description: "Use the 'Master Mind' card to start a live timer. Your active context follows you across the app as you work.", icon: Timer },
+                { title: "Capture the Micro", description: "Record even 5-minute consults. These slots sync natively with BKS Accounting for precision billable time recovery.", icon: Clock }
+            ]
+        },
+        bksAccounting: {
+            title: "BKS Accounting",
+            description: "Bookkeeping Kept Simple & Audit-Ready.",
+            icon: Calculator,
+            overview: "BKS is a cash-basis system designed to build a 'Black Box of Evidence'. It prioritizes audit-readiness by creating a one-to-one link between every ledger entry and its digital source document, categorized natively by CRA line numbers.",
+            usageSteps: [
+                { title: "Post Transactions", description: "Enter income and expenses as they happen. Map them to standard CRA categories to stay compliant 365 days a year.", icon: PlusCircle },
+                { title: "Link Digital Proof", description: "Upload or link a PDF receipt to every expense entry. This creates a defensible audit trail that accountants respect.", icon: FolderSync },
+                { title: "Review Financial Snapshots", description: "Check your YTD profitability and tax position instantly. Use the Sales Tax Calculator to prepare for quarterly remittances.", icon: FileDigit }
+            ]
+        },
+        projectForge: {
+            title: "Project Forge",
+            description: "Multi-step goal orchestration.",
+            icon: Briefcase,
+            overview: "The Project Forge is where your high-level goals are broken down into actionable reality. It combines visual Kanban boards with reusable templates to ensure that your business protocols are followed perfectly every time.",
+            usageSteps: [
+                { title: "Blueprint Your Outcomes", description: "Define a project for any goal requiring multiple steps. Use the 'Project Plan' view to list out every mandatory action.", icon: Route },
+                { title: "Forge Reusable Templates", description: "Save successful project structures as templates. Next time, launch a full task board with one click.", icon: FilePlus2 },
+                { title: "Kanban Execution", description: "Move tasks from 'To Do' to 'Done'. Completed tasks sync with your time logs and client communication history.", icon: ListChecks }
+            ]
+        }
+    };
+
+    const handleInfoClick = (key: string) => {
+        setSelectedFeature(featureDetails[key]);
+        setIsDeepDiveOpen(true);
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
             <SiteHeader />
@@ -52,7 +198,15 @@ export default function FeaturesPage() {
                 {/* Core Pillars Grid */}
                 <section className="py-24 container px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
+                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-all relative group">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute top-2 right-2 h-8 w-8 text-primary rounded-full hover:bg-primary/10"
+                                onClick={() => handleInfoClick('actionChips')}
+                            >
+                                <Info className="h-5 w-5" />
+                            </Button>
                             <CardHeader>
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <Zap className="h-6 w-6" />
@@ -70,7 +224,15 @@ export default function FeaturesPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
+                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-all relative group">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute top-2 right-2 h-8 w-8 text-primary rounded-full hover:bg-primary/10"
+                                onClick={() => handleInfoClick('commandCentre')}
+                            >
+                                <Info className="h-5 w-5" />
+                            </Button>
                             <CardHeader>
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <BrainCircuit className="h-6 w-6" />
@@ -88,7 +250,15 @@ export default function FeaturesPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
+                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-all relative group">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute top-2 right-2 h-8 w-8 text-primary rounded-full hover:bg-primary/10"
+                                onClick={() => handleInfoClick('bksAccounting')}
+                            >
+                                <Info className="h-5 w-5" />
+                            </Button>
                             <CardHeader>
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <Calculator className="h-6 w-6" />
@@ -106,7 +276,15 @@ export default function FeaturesPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
+                        <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-all relative group">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute top-2 right-2 h-8 w-8 text-primary rounded-full hover:bg-primary/10"
+                                onClick={() => handleInfoClick('projectForge')}
+                            >
+                                <Info className="h-5 w-5" />
+                            </Button>
                             <CardHeader>
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <Briefcase className="h-6 w-6" />
@@ -237,6 +415,12 @@ export default function FeaturesPage() {
                 </section>
             </main>
             <SiteFooter />
+
+            <FeatureDeepDive 
+                isOpen={isDeepDiveOpen} 
+                onOpenChange={setIsDeepDiveOpen} 
+                feature={selectedFeature} 
+            />
         </div>
     );
 }

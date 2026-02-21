@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -162,8 +161,8 @@ export default function PricingPage() {
 
                 <div className="overflow-x-auto rounded-2xl border shadow-xl">
                     <Table>
-                        <TableHeader className="bg-slate-900">
-                            <TableRow className="hover:bg-slate-900">
+                        <TableHeader>
+                            <TableRow className="bg-slate-900">
                                 <TableHead className="text-white font-bold h-16 w-1/3">Core Capability</TableHead>
                                 <TableHead className="text-white font-bold h-16 text-center bg-primary/20">Ogeemo</TableHead>
                                 <TableHead className="text-white font-bold h-16 text-center">QuickBooks</TableHead>
@@ -175,6 +174,7 @@ export default function PricingPage() {
                             {[
                                 { name: "BKS Core Accounting", ogeemo: true, qb: true, xero: true, sage: true },
                                 { name: "Professional Invoicing", ogeemo: true, qb: true, xero: true, sage: true },
+                                { name: "Full Payroll Processing (Runs & Remittances)", ogeemo: true, qb: "Add-on Fee", xero: "Add-on Fee", sage: "Add-on Fee" },
                                 { name: "Audit-Ready Evidence Linking (Files to Ledger)", ogeemo: true, qb: false, xero: false, sage: false },
                                 { name: "Temporal Matrix (5-min Time Precision)", ogeemo: true, qb: false, xero: false, sage: false },
                                 { name: "Project Kanban Boards", ogeemo: true, qb: "Higher Tiers", xero: "Add-on", sage: "Basic" },

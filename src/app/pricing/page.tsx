@@ -325,9 +325,14 @@ export default function PricingPage() {
                                         <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Average Micro-Biz: ~$19.97</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="py-8 text-sm font-semibold text-primary flex items-start gap-2">
-                                    <CheckCircle2 className="h-5 w-5 shrink-0" />
-                                    No catches. No tiers. No shelfware. Just orchestration that scales with your actual work.
+                                <TableCell className="py-8 text-sm font-semibold text-primary flex flex-col gap-2">
+                                    <div className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-5 w-5 shrink-0" />
+                                        <span>No catches. No tiers. No shelfware. Just orchestration that scales with your actual work.</span>
+                                    </div>
+                                    <p className="text-xs font-medium text-primary/80 italic pl-7">
+                                        Ogeemo pricing is designed to be straightforward, fair, and deliberately easy to understand.
+                                    </p>
                                 </TableCell>
                             </TableRow>
                         </TableBody>

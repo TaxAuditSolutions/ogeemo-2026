@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SiteHeader } from "@/components/landing/header";
 import { SiteFooter } from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
@@ -10,30 +11,32 @@ import {
     CheckCircle2, 
     Activity, 
     ShieldCheck, 
-    ArrowRight, 
-    Ban,
+    Database,
     Cpu,
     Zap,
     Scale,
     AlertCircle,
-    TrendingDown,
-    XCircle,
     Check,
-    Users2,
     Target,
     HeartHandshake,
-    Info
+    Info,
+    Files,
+    XCircle
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function PricingPage() {
+  const [isSyncInfoOpen, setIsSyncInfoOpen] = useState(false);
+
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
@@ -160,23 +163,15 @@ export default function PricingPage() {
                         </div>
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-2xl">Infrastructure Sync</CardTitle>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
-                                            <Info className="h-5 w-5" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs p-4 space-y-2">
-                                        <p className="font-bold border-b pb-1">Layman's Guide to Sync Fees</p>
-                                        <div className="space-y-2 text-xs">
-                                            <p><strong>Data Writes (Operations):</strong> Think of this as every time you "save" a piece of information—like adding an expense or creating a new contact.</p>
-                                            <p><strong>AI tokens:</strong> The "fuel" for the Ogeemo intelligence. It breaks your messages into small pieces (tokens) to process them. A typical short query uses about 100-200 tokens.</p>
-                                            <p><strong>Secure Storage:</strong> Like a digital filing cabinet. 1GB can hold thousands of professional PDFs or millions of text-based ledger entries.</p>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-primary rounded-full hover:bg-primary/10" 
+                                onClick={() => setIsSyncInfoOpen(true)}
+                                title="Open Layman's Guide"
+                            >
+                                <Info className="h-5 w-5" />
+                            </Button>
                         </div>
                         <CardDescription>Pay for Actual Business Activity</CardDescription>
                         <div className="mt-4 flex flex-col">
@@ -361,7 +356,7 @@ export default function PricingPage() {
                         <div className="flex flex-col gap-4">
                             <div className="flex gap-4">
                                 <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-primary shrink-0">
-                                    <Ban className="h-5 w-5" />
+                                    <XCircle className="h-5 w-5" />
                                 </div>
                                 <p className="text-sm font-medium">No $49 to $499 subscription jumps.</p>
                             </div>
@@ -439,6 +434,54 @@ export default function PricingPage() {
       </main>
 
       <SiteFooter />
+
+      {/* Infrastructure Sync Layman's Guide Dialog */}
+      <Dialog open={isSyncInfoOpen} onOpenChange={setIsSyncInfoOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-primary mb-2">
+                <Activity className="h-6 w-6" />
+                <DialogTitle className="text-2xl font-headline">Layman's Guide to Infrastructure Sync</DialogTitle>
+            </div>
+            <DialogDescription className="text-base">
+              Ogeemo only bills you for the actual computing power and storage your business consumes. No hidden fees, just direct operational synchronization.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-8 py-6">
+            <div className="space-y-2">
+              <h4 className="font-bold text-lg text-primary flex items-center gap-2">
+                <Database className="h-5 w-5" /> Data Writes & Operations
+              </h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Think of this like the cost of a single stamp for a piece of mail. Every time you "save" a piece of information—like adding an expense, creating a new contact, or updating a project step—Ogeemo records that data in our secure cloud database. We only bill you for these active changes, not for simply looking at your data.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-lg text-primary flex items-center gap-2">
+                <Cpu className="h-5 w-5" /> AI Orchestration (Tokens)
+              </h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Tokens are the "fuel" for the Ogeemo intelligence. The AI doesn't read words like humans do; it breaks them into small pieces called tokens to process and understand them. A typical short query uses about 100-200 tokens. You aren't paying a flat monthly fee for AI; you're only paying for the exact amount of intelligence your business consumes to get the job done.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-lg text-primary flex items-center gap-2">
+                <Files className="h-5 w-5" /> Secure Storage
+              </h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                This is like the monthly rent for your digital filing cabinet. We keep your data encrypted and replicated across multiple secure servers globally. 1GB of storage is massive for a micro-business; it can hold thousands of professional PDFs or millions of text-based ledger entries. You only pay for the space you actually fill.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="border-t pt-4 bg-slate-50 -mx-6 -mb-6 p-6 rounded-b-lg">
+            <div className="flex-1 text-xs text-muted-foreground italic flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                This model ensures that when your business is quiet, your costs are near zero.
+            </div>
+            <Button onClick={() => setIsSyncInfoOpen(false)}>Got it, thanks!</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,8 +1,9 @@
-
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { 
     ShieldCheck, 
@@ -13,12 +14,10 @@ import {
     Scale, 
     Ban, 
     Clock, 
-    DollarSign,
     CheckCircle2,
     Info
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from '@/components/ui/separator';
 
 export default function AuditReadinessPage() {
   return (

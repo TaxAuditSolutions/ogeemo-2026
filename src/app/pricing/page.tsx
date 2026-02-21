@@ -14,9 +14,13 @@ import {
     ArrowRight, 
     Ban,
     Cpu,
-    Zap
+    Zap,
+    Scale,
+    AlertCircle,
+    TrendingDown
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function PricingPage() {
   return (
@@ -109,13 +113,13 @@ export default function PricingPage() {
                                 <span className="text-muted-foreground">Formula Billing</span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2 italic">
-                                Our formula ensures you are only billed for the specific data and intelligence your business consumes.
+                                Only billed for the specific data and intelligence your business consumes.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-6">
                         <div className="space-y-4">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Calculated Operational Rates:</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Operational Rates:</h4>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center p-3 rounded-lg border bg-slate-50 text-sm">
                                     <span>Data Writes (per 1,000 operations)</span>
@@ -144,6 +148,75 @@ export default function PricingPage() {
                 </Card>
             </div>
           </div>
+        </section>
+
+        {/* Market Comparison Section */}
+        <section className="py-24 bg-slate-50 border-y">
+            <div className="container px-4 max-w-5xl mx-auto">
+                <div className="text-center mb-12 space-y-4">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-slate-900">Market Comparison</h2>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">How Ogeemo compares to traditional subscription models and manual labor.</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border shadow-lg overflow-hidden">
+                    <Table>
+                        <TableHeader className="bg-slate-900">
+                            <TableRow className="hover:bg-slate-900">
+                                <TableHead className="text-white font-bold h-14">Provider</TableHead>
+                                <TableHead className="text-white font-bold h-14">Typical Monthly Cost</TableHead>
+                                <TableHead className="text-white font-bold h-14">The "Catch"</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell className="font-bold py-6">QuickBooks Online (Essentials)</TableCell>
+                                <TableCell className="font-mono">$60.00+</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Pay for dozens of features you don't use. Tiered "trap" forces upgrades for basic team access.</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold py-6">Xero (Growing)</TableCell>
+                                <TableCell className="font-mono">$42.00+</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Limited transaction counts on lower tiers. Requires expensive add-ons for projects and payroll.</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold py-6">Sage Accounting</TableCell>
+                                <TableCell className="font-mono">$25.00+</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Restrictive multi-user pricing. Fragmented interface requires third-party tools for CRM/Projects.</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold py-6 flex items-center gap-2">
+                                    Junior Bookkeeper <Badge variant="outline" className="text-[10px] uppercase">Manual Labor</Badge>
+                                </TableCell>
+                                <TableCell className="font-mono">$400.00+</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">Based on just 10 hours at $40/hr. Prone to human error, delays, and missing document links.</TableCell>
+                            </TableRow>
+                            <TableRow className="bg-primary/5 hover:bg-primary/10 transition-colors">
+                                <TableCell className="py-8">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-xl text-primary uppercase">Ogeemo</span>
+                                        <Badge className="bg-primary text-white">THE WINNER</Badge>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="py-8">
+                                    <div className="flex flex-col">
+                                        <span className="font-mono font-bold text-xl text-primary">$15 + Usage</span>
+                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Average Micro-Biz: ~$19.97</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="py-8 text-sm font-semibold text-primary flex items-start gap-2">
+                                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                                    No catches. No tiers. No shelfware. Just orchestration that scales with your actual work.
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+                
+                <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>Competitor pricing based on standard 2024/2025 non-promotional mid-tier public rates.</p>
+                </div>
+            </div>
         </section>
 
         {/* Why this works Section */}

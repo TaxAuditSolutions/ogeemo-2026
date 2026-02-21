@@ -21,10 +21,17 @@ import {
     Check,
     Users2,
     Target,
-    HeartHandshake
+    HeartHandshake,
+    Info
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function PricingPage() {
   return (
@@ -151,7 +158,26 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <Activity className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl">Infrastructure Sync</CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-2xl">Infrastructure Sync</CardTitle>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                                            <Info className="h-5 w-5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-4 space-y-2">
+                                        <p className="font-bold border-b pb-1">Layman's Guide to Sync Fees</p>
+                                        <div className="space-y-2 text-xs">
+                                            <p><strong>Data Writes (Operations):</strong> Think of this as every time you "save" a piece of information—like adding an expense or creating a new contact.</p>
+                                            <p><strong>AI tokens:</strong> The "fuel" for the Ogeemo intelligence. It breaks your messages into small pieces (tokens) to process them. A typical short query uses about 100-200 tokens.</p>
+                                            <p><strong>Secure Storage:</strong> Like a digital filing cabinet. 1GB can hold thousands of professional PDFs or millions of text-based ledger entries.</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <CardDescription>Pay for Actual Business Activity</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">

@@ -9,17 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
 import { 
     CheckCircle2, 
-    Zap, 
+    Activity, 
     ShieldCheck, 
     ArrowRight, 
-    Activity, 
-    Users, 
-    DollarSign,
-    Scale,
-    TrendingUp,
     Ban,
-    Info,
-    Cpu
+    Cpu,
+    Zap
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 
@@ -97,56 +92,53 @@ export default function PricingPage() {
                     </CardContent>
                 </Card>
 
-                {/* Pillar 2: Usage Formula */}
+                {/* Pillar 2: Infrastructure Sync */}
                 <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
-                        Infrastructure Sync
+                        Operational Precision
                     </div>
                     <CardHeader className="bg-primary/5 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <Activity className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl">Usage Formula</CardTitle>
-                        <CardDescription>Transparent Performance</CardDescription>
+                        <CardTitle className="text-2xl">Infrastructure Sync</CardTitle>
+                        <CardDescription>Pay for Actual Business Activity</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-bold text-primary">2X</span>
-                                <span className="text-muted-foreground">Google Cloud Charges</span>
+                                <span className="text-4xl font-bold text-primary">Usage</span>
+                                <span className="text-muted-foreground">Formula Billing</span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2 italic">
-                                We charge you exactly double the underlying infrastructure cost for your specific orchestration. 
+                                Our formula ensures you are only billed for the specific data and intelligence your business consumes.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-6">
                         <div className="space-y-4">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">The Math in Motion:</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Calculated Operational Rates:</h4>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center p-3 rounded-lg border bg-slate-50 text-sm">
-                                    <span>Firestore Data Writes (per 1,000)</span>
+                                    <span>Data Writes (per 1,000 operations)</span>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-muted-foreground line-through">Google: ~$0.0018</p>
                                         <p className="font-mono font-bold text-primary">$0.0036</p>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center p-3 rounded-lg border bg-slate-50 text-sm">
                                     <span>AI Orchestration (per 100k tokens)</span>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-muted-foreground line-through">Google: ~$0.0075</p>
-                                        <p className="font-mono font-bold text-primary">$0.015</p>
+                                        <p className="font-mono font-bold text-primary">$0.0150</p>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center p-3 rounded-lg border bg-slate-50 text-sm">
-                                    <span>Secure Storage (per GB/mo)</span>
+                                    <span>Secure Storage (per GB / month)</span>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-muted-foreground line-through">Google: ~$0.02</p>
-                                        <p className="font-mono font-bold text-primary">$0.04</p>
+                                        <p className="font-mono font-bold text-primary">$0.0400</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                            * Basic navigation and UI rendering are included. Charges only apply to active data mutations and AI processing.
+                            * Basic UI navigation and read-only views are included. Charges apply to active data mutations and AI processing calls.
                         </p>
                     </CardContent>
                 </Card>
@@ -164,7 +156,7 @@ export default function PricingPage() {
                             Business isn't a straight line. It has cycles of intensity and periods of rest.
                         </p>
                         <p className="text-lg text-slate-300 leading-relaxed">
-                            With our <strong>2X Google Formula</strong>, you are never penalized for being a small operator. If your data usage is minimal, your bill is minimal. If you scale to 10,000 invoices a day, your costs scale predictably without arbitrary "tier jumps."
+                            With our <strong>Infrastructure Sync</strong> model, you are never penalized for being a small operator. If your usage is minimal, your bill is minimal. If you scale to thousands of operations a day, your costs scale predictably without arbitrary "tier jumps."
                         </p>
                         <div className="flex flex-col gap-4">
                             <div className="flex gap-4">
@@ -177,7 +169,7 @@ export default function PricingPage() {
                                 <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-primary shrink-0">
                                     <Cpu className="h-5 w-5" />
                                 </div>
-                                <p className="text-sm font-medium">Direct transparency into underlying cloud costs.</p>
+                                <p className="text-sm font-medium">Full transparency into operational volume.</p>
                             </div>
                         </div>
                     </div>
@@ -215,8 +207,8 @@ export default function PricingPage() {
                 <h2 className="text-3xl font-bold font-headline text-center">Pricing FAQ</h2>
                 <div className="space-y-8">
                     <div className="space-y-2">
-                        <h4 className="font-bold text-lg">Why "2X Google Charges"?</h4>
-                        <p className="text-muted-foreground">This formula covers the underlying infrastructure cost (1X) and the continuous development, security management, and orchestration provided by Ogeemo (1X). It is the most transparent way to price software in the 21st century.</p>
+                        <h4 className="font-bold text-lg">How is usage calculated?</h4>
+                        <p className="text-muted-foreground">Ogeemo tracks the actual infrastructure resources required to run your business. Our formula scales with your specific volume, ensuring you only pay for the value you generate.</p>
                     </div>
                     <div className="space-y-2">
                         <h4 className="font-bold text-lg">What if I add a team?</h4>

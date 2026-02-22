@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -59,6 +60,7 @@ import { Separator } from '@/components/ui/separator';
 const contactSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }).optional().or(z.literal('')),
+  birthDate: z.string().optional(),
   website: z.string().optional(),
   businessName: z.string().optional(),
   employeeNumber: z.string().optional(), // Used as User ID
@@ -107,6 +109,7 @@ interface ContactFormDialogProps {
 const defaultFormValues: ContactFormData = {
   name: "",
   email: "",
+  birthDate: "",
   website: "",
   businessName: "",
   employeeNumber: "",
@@ -368,6 +371,10 @@ export default function ContactFormDialog({
                                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address</FormLabel> <FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="birthDate" render={({ field }) => ( <FormItem> <FormLabel>Birth Date</FormLabel> <FormControl><Input type="date" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                                        <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem> <FormLabel>User ID</FormLabel> <FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl> <FormDescription>Assign a unique identifier for this individual.</FormDescription> <FormMessage /> </FormItem> )} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FormField control={form.control} name="folderId" render={({ field }) => ( 
                                             <FormItem className="flex flex-col"> 
                                                 <FormLabel>Folder <span className="text-destructive">*</span></FormLabel> 
@@ -389,9 +396,8 @@ export default function ContactFormDialog({
                                                 <FormMessage />
                                             </FormItem>
                                         )} />
-                                        <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem> <FormLabel>User ID</FormLabel> <FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl> <FormDescription>Assign a unique identifier for this individual.</FormDescription> <FormMessage /> </FormItem> )} />
+                                        <FormField control={form.control} name="website" render={({ field }) => ( <FormItem> <FormLabel>Website URL</FormLabel> <FormControl><Input placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                     </div>
-                                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem> <FormLabel>Website URL</FormLabel> <FormControl><Input placeholder="https://example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                                 </section>
 
                                 <Separator className="md:col-span-2 my-2" />
@@ -527,3 +533,5 @@ export default function ContactFormDialog({
       </>
     );
 }
+
+    

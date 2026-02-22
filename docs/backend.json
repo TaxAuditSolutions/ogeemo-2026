@@ -20,6 +20,7 @@
         "properties": {
             "name": { "type": "string" },
             "email": { "type": "string", "format": "email" },
+            "birthDate": { "type": "string", "format": "date" },
             "businessName": { "type": "string" },
             "employeeNumber": { "type": "string", "description": "Unique identifier for the contact (User ID)." },
             "craProgramAccountNumber": { "type": "string" },
@@ -598,7 +599,7 @@
     },
     "/timeLogs/{timeLogId}/locations/{locationId}": {
         "schema": { "$ref": "#/entities/LocationLog" },
-        "description": "A sub-collection of GPS coordinates for a specific time log."
+        "description": "A log of all inventory transactions."
     },
     "/leads/{leadId}": {
         "schema": { "$ref": "#/entities/Lead" },
@@ -638,3 +639,5 @@
     }
   }
 }
+
+    

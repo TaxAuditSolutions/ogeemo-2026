@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -29,18 +30,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, FileDigit, Landmark, CheckCircle, MoreVertical } from 'lucide-react';
+import { LoaderCircle, FileDigit, Landmark, CheckCircle, MoreVertical, BookOpen } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInvoices, type Invoice, postInvoicePayment } from '@/services/accounting-service';
 import { AccountingPageHeader } from './page-header';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
+const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
 
 export function AccountsReceivablePageView() {
@@ -67,7 +70,8 @@ export function AccountsReceivablePageView() {
         setIsLoading(true);
         try {
             const allInvoices = await getInvoices(user.uid);
-            setInvoices(allInvoices);
+            // Strictly show outstanding invoices
+            setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load invoice data.' });
         } finally {
@@ -100,10 +104,10 @@ export function AccountsReceivablePageView() {
             await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
             toast({ 
                 title: 'Payment Posted', 
-                description: `${formatCurrency(amount)} recorded for Invoice #${selectedInvoice.invoiceNumber}. Income ledger updated.` 
+                description: `${formatCurrency(amount)} recorded. Invoice updated and transaction added to GL.` 
             });
             setIsPaymentDialogOpen(false);
-            loadData();
+            loadData(); // Refresh list - fully paid invoices will disappear
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
         } finally {
@@ -123,12 +127,12 @@ export function AccountsReceivablePageView() {
                     Accounts Receivable
                 </h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Manage your outstanding invoices and record client payments.
+                    Registry of all outstanding client invoices. Post a payment to move the record to the General Ledger.
                 </p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-                <Card className="md:col-span-1">
+                <Card className="md:col-span-1 border-primary/20">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
                     </CardHeader>
@@ -136,16 +140,26 @@ export function AccountsReceivablePageView() {
                         <p className="text-2xl font-bold text-destructive">{formatCurrency(totalOutstanding)}</p>
                     </CardContent>
                 </Card>
-                <Card className="md:col-span-2 flex flex-col justify-center px-6">
-                    <p className="text-sm text-muted-foreground">
-                        Post a payment to mark an invoice as paid. This will automatically create an income entry in your BKS Ledger.
+                <Card className="md:col-span-2 flex flex-col justify-center px-6 bg-muted/30">
+                    <p className="text-sm text-muted-foreground italic">
+                        "If it's not paid, it's a promise. If it's paid, it's a transaction."
+                        <br />
+                        Fully paid invoices are automatically moved to the BKS Ledger.
                     </p>
                 </Card>
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Invoice Registry</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Outstanding Invoices</CardTitle>
+                        <CardDescription>Click "Post Payment" once the money arrives in your bank.</CardDescription>
+                    </div>
+                    <Button asChild>
+                        <Link href="/accounting/invoices/create">
+                            <Plus className="mr-2 h-4 w-4" /> Create New Invoice
+                        </Link>
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
@@ -159,7 +173,6 @@ export function AccountsReceivablePageView() {
                                     <TableHead>Invoice #</TableHead>
                                     <TableHead>Client</TableHead>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Balance Due</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -167,40 +180,47 @@ export function AccountsReceivablePageView() {
                             <TableBody>
                                 {invoices.length > 0 ? invoices.map((inv) => {
                                     const balance = inv.originalAmount - inv.amountPaid;
-                                    const isPaid = balance <= 0.01;
                                     return (
                                         <TableRow key={inv.id}>
                                             <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
                                             <TableCell>{inv.companyName}</TableCell>
                                             <TableCell>{format(inv.invoiceDate, 'PP')}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={isPaid ? 'secondary' : 'default'}>
-                                                    {isPaid ? 'Paid' : 'Outstanding'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">
+                                            <TableCell className="text-right font-mono text-destructive">
                                                 {formatCurrency(balance)}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    {!isPaid && (
-                                                        <Button size="sm" variant="outline" onClick={() => handleOpenPaymentDialog(inv)}>
-                                                            <Landmark className="mr-2 h-4 w-4"/> Post Payment
-                                                        </Button>
-                                                    )}
-                                                    <Button size="sm" variant="ghost" asChild>
-                                                        <Link href={`/accounting/invoices/preview?action=print&invoiceId=${inv.id}`} target="_blank">
-                                                            <FileDigit className="h-4 w-4" />
-                                                        </Link>
+                                                    <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenPaymentDialog(inv)}>
+                                                        <Landmark className="mr-2 h-4 w-4"/> Post Payment
                                                     </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem asChild>
+                                                                <Link href={`/accounting/invoices/preview?action=print&invoiceId=${inv.id}`} target="_blank">
+                                                                    <BookOpen className="mr-2 h-4 w-4" /> View PDF
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => {
+                                                                localStorage.setItem('editInvoiceId', inv.id);
+                                                                router.push('/accounting/invoices/create');
+                                                            }}>
+                                                                <Pencil className="mr-2 h-4 w-4" /> Edit Invoice
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
                                     );
                                 }) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                            No invoices found.
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                            No outstanding receivables. All invoices are either paid (in GL) or haven't been created yet.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -213,9 +233,9 @@ export function AccountsReceivablePageView() {
             <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Post Payment</DialogTitle>
+                        <DialogTitle>Post Client Payment</DialogTitle>
                         <DialogDescription>
-                            Record a payment for Invoice #{selectedInvoice?.invoiceNumber}.
+                            Confirm funds received for Invoice #{selectedInvoice?.invoiceNumber}. This will move the record to your BKS General Ledger.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
@@ -246,7 +266,7 @@ export function AccountsReceivablePageView() {
                         <Button variant="ghost" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handlePostPayment} disabled={isSaving}>
                             {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Confirm Payment
+                            Post to GL
                         </Button>
                     </DialogFooter>
                 </DialogContent>

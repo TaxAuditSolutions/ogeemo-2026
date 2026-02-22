@@ -71,7 +71,9 @@ import {
     ArrowDownAZ,
     ArrowUpZA,
     Printer,
-    FilterX
+    FilterX,
+    Clock,
+    FileDigit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -82,7 +84,8 @@ import {
     getExpenseTransactions, addExpenseTransaction, updateExpenseTransaction, deleteExpenseTransaction, type ExpenseTransaction, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
-    getCompanies, addCompany, type Company
+    getCompanies, addCompany, type Company,
+    addInvoiceWithLineItems, addPayableBill
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -90,7 +93,7 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
@@ -117,8 +120,9 @@ const emptyTransactionForm = {
     documentNumber: '', 
     documentUrl: '', 
     type: 'business' as 'business' | 'personal', 
-    paymentMethod: '',
-    depositedTo: 'Bank Account #1' 
+    paymentMethod: 'Bank Transfer',
+    depositedTo: 'Bank Account #1',
+    paymentStatus: 'paid' as 'paid' | 'unpaid'
 };
 
 export function LedgersView() {
@@ -139,7 +143,6 @@ export function LedgersView() {
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
   
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
-  const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
   const [newCompanyName, setNewCompanyName] = React.useState('');
   const [showAddCompany, setShowAddCompany] = React.useState(false);
@@ -148,13 +151,11 @@ export function LedgersView() {
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
-  // Filter State
   const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
   const [isStartFilterOpen, setIsStartFilterOpen] = React.useState(false);
   const [isEndFilterOpen, setIsEndFilterOpen] = React.useState(false);
 
-  // New Category State
   const [showAddCategory, setShowAddCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState('');
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
@@ -299,8 +300,9 @@ export function LedgersView() {
           documentNumber: tx.documentNumber || '',
           documentUrl: tx.documentUrl || '',
           type: tx.type,
-          paymentMethod: tx.paymentMethod || '',
+          paymentMethod: tx.paymentMethod || 'Bank Transfer',
           depositedTo: tx.transactionType === 'income' ? (tx as IncomeTransaction).depositedTo : '',
+          paymentStatus: 'paid'
       });
       setIsTransactionDialogOpen(true);
   };
@@ -368,22 +370,65 @@ export function LedgersView() {
       };
 
       try {
-          if (transactionToEdit) {
+          if (newTransaction.paymentStatus === 'unpaid') {
+              // Routing to AR or AP buckets instead of GL
+              const contact = contacts.find(c => c.name === newTransaction.company);
               if (newTransactionType === 'income') {
-                  await updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo });
+                  if (!contact) throw new Error("A valid contact record is required for Accounts Receivable entries.");
+                  await addInvoiceWithLineItems({
+                      invoiceNumber: newTransaction.documentNumber || `PRO-${Date.now()}`,
+                      companyName: newTransaction.company,
+                      contactId: contact.id,
+                      originalAmount: totalAmountNum,
+                      amountPaid: 0,
+                      dueDate: addDays(new Date(newTransaction.date), 14),
+                      invoiceDate: new Date(newTransaction.date),
+                      status: 'outstanding',
+                      notes: newTransaction.description,
+                      taxType: 'standard',
+                      userId: user.uid,
+                  }, [{
+                      description: newTransaction.description || "Service Delivery",
+                      quantity: 1,
+                      price: totalAmountNum,
+                      taxRate: taxRateNum
+                  }]);
+                  toast({ title: "Sent to Accounts Receivable", description: "This unpaid item is now in your AR bucket." });
               } else {
-                  await updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: selectedCategoryNumber });
+                  await addPayableBill({
+                      vendor: newTransaction.company,
+                      invoiceNumber: newTransaction.documentNumber || `BILL-${Date.now()}`,
+                      dueDate: format(addDays(new Date(newTransaction.date), 14), 'yyyy-MM-dd'),
+                      totalAmount: totalAmountNum,
+                      preTaxAmount: preTaxAmount,
+                      taxAmount: taxAmount,
+                      taxRate: taxRateNum,
+                      category: selectedCategoryNumber,
+                      description: newTransaction.description,
+                      documentUrl: newTransaction.documentUrl,
+                      userId: user.uid
+                  });
+                  toast({ title: "Sent to Accounts Payable", description: "This unpaid bill is now in your AP bucket." });
               }
-              toast({ title: "Transaction Updated" });
           } else {
-              if (newTransactionType === 'income') {
-                  const newEntryData: Omit<IncomeTransaction, 'id'> = { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid };
-                  await addIncomeTransaction(newEntryData);
-                  toast({ title: "Income Transaction Added" });
+              // standard GL entry
+              if (transactionToEdit) {
+                  if (newTransactionType === 'income') {
+                      await updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo });
+                  } else {
+                      await updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: selectedCategoryNumber });
+                  }
+                  toast({ title: "Transaction Updated" });
               } else {
-                  const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: selectedCategoryNumber, userId: user.uid };
-                  await addExpenseTransaction(newEntryData);
-                  toast({ title: "Expense Transaction Added" });
+                  if (newTransactionType === 'income') {
+                      const newEntryData: Omit<IncomeTransaction, 'id'> = { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid };
+                      await addIncomeTransaction(newEntryData);
+                      toast({ title: "Income Recorded in GL" });
+                  } else {
+                      const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: selectedCategoryNumber, userId: user.uid };
+                      await addExpenseTransaction(newEntryData);
+                      toast({ title: "Expense Recorded in GL" });
+                  }
               }
           }
           setIsTransactionDialogOpen(false);
@@ -509,15 +554,17 @@ export function LedgersView() {
                             ) : '-'}
                         </TableCell>
                         <TableCell className="print:hidden">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </TableCell>
                     </TableRow>
                 ))}
@@ -546,7 +593,7 @@ export function LedgersView() {
         
         <header className="text-center relative print:hidden">
             <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
-            <p className="text-muted-foreground">Comprehensive record of all business income and expenses.</p>
+            <p className="text-muted-foreground">Comprehensive record of all processed business income and expenses.</p>
             <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
                     <Link href="/action-manager"><X className="h-5 w-5"/></Link>
@@ -605,7 +652,6 @@ export function LedgersView() {
         </Card>
 
         <div ref={contentRef}>
-            {/* Print Header */}
             <div className="hidden print:block text-center mb-8 border-b pb-4">
                 <h1 className="text-3xl font-bold">BKS General Ledger</h1>
                 <p className="text-muted-foreground">
@@ -640,6 +686,21 @@ export function LedgersView() {
                                 <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600 cursor-pointer">Expense</Label></div>
                             </RadioGroup>
                         )}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right font-bold">Payment Status</Label>
+                            <div className="col-span-3">
+                                <RadioGroup value={newTransaction.paymentStatus} onValueChange={(v) => setNewTransaction(p => ({...p, paymentStatus: v as 'paid' | 'unpaid'}))} className="flex space-x-4">
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="paid" id="ps-paid" />
+                                        <Label htmlFor="ps-paid" className="cursor-pointer">Paid Now (Post to GL)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="unpaid" id="ps-unpaid" />
+                                        <Label htmlFor="ps-unpaid" className="cursor-pointer">Pay Later (Post to {newTransactionType === 'income' ? 'A/R' : 'A/P'})</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Date *</Label>
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
@@ -687,13 +748,15 @@ export function LedgersView() {
                         <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Description</Label><Input value={newTransaction.description} onChange={e => setNewTransaction(p => ({...p, description: e.target.value}))} className="col-span-3" /></div>
                         <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Amount *</Label><div className="relative col-span-3"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({...p, totalAmount: e.target.value}))} className="pl-7" /></div></div>
                         
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Payment Method</Label>
-                            <Select value={newTransaction.paymentMethod} onValueChange={v => setNewTransaction(p => ({...p, paymentMethod: v}))}>
-                                <SelectTrigger className="col-span-3"><SelectValue placeholder="How was this paid?" /></SelectTrigger>
-                                <SelectContent>{paymentMethodOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                            </Select>
-                        </div>
+                        {newTransaction.paymentStatus === 'paid' && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Payment Method</Label>
+                                <Select value={newTransaction.paymentMethod} onValueChange={v => setNewTransaction(p => ({...p, paymentMethod: v}))}>
+                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="How was this paid?" /></SelectTrigger>
+                                    <SelectContent>{paymentMethodOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Category *</Label>
@@ -728,7 +791,7 @@ export function LedgersView() {
                             </div>
                         </div>
 
-                        {newTransactionType === 'income' && (
+                        {newTransactionType === 'income' && newTransaction.paymentStatus === 'paid' && (
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Deposit To</Label>
                                 <Select value={newTransaction.depositedTo} onValueChange={v => setNewTransaction(p => ({...p, depositedTo: v}))}>
@@ -753,7 +816,9 @@ export function LedgersView() {
                 </ScrollArea>
                 <DialogFooter className="p-6 pt-2 border-t shrink-0">
                     <Button variant="ghost" onClick={() => setIsTransactionDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveTransaction}>Save Transaction</Button>
+                    <Button onClick={handleSaveTransaction}>
+                        {newTransaction.paymentStatus === 'unpaid' ? (newTransactionType === 'income' ? 'Record Receivable' : 'Record Payable') : 'Post to Ledger'}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -17,7 +17,6 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { mockIncome, mockExpenses } from '@/data/accounting';
 import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 
@@ -41,7 +40,7 @@ interface BaseTransaction {
   documentNumber?: string;
   documentUrl?: string;
   type: 'business' | 'personal';
-  paymentMethod?: string; // Added payment method
+  paymentMethod?: string;
   userId: string;
 }
 
@@ -234,6 +233,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         depositedTo: depositAccount,
         type: 'business',
         documentNumber: invoiceData.invoiceNumber,
+        paymentMethod: 'Bank Transfer'
     });
 
     await batch.commit();
@@ -358,6 +358,43 @@ export async function updatePayableBill(id: string, data: Partial<Omit<PayableBi
 export async function deletePayableBill(id: string): Promise<void> {
   const db = getDb();
   await deleteDoc(doc(db, PAYABLES_COLLECTION, id));
+}
+
+/**
+ * Records a payment for a bill, creates an expense entry in GL, and removes the bill from AP.
+ */
+export async function postBillPayment(userId: string, billId: string, paymentDate: string, paymentMethod: string): Promise<void> {
+    const db = getDb();
+    const billRef = doc(db, PAYABLES_COLLECTION, billId);
+    const billSnap = await getDoc(billRef);
+    
+    if (!billSnap.exists()) throw new Error("Bill not found.");
+    
+    const billData = docToPayableBill(billSnap);
+    const batch = writeBatch(db);
+    
+    // 1. Create Expense Entry in GL
+    const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
+    batch.set(expenseRef, {
+        userId,
+        date: paymentDate,
+        company: billData.vendor,
+        description: `Payment for Bill #${billData.invoiceNumber}: ${billData.description}`,
+        totalAmount: billData.totalAmount,
+        preTaxAmount: billData.preTaxAmount || billData.totalAmount,
+        taxAmount: billData.taxAmount || 0,
+        taxRate: billData.taxRate || 0,
+        category: billData.category,
+        type: 'business',
+        documentNumber: billData.invoiceNumber,
+        documentUrl: billData.documentUrl,
+        paymentMethod: paymentMethod
+    });
+
+    // 2. Delete Bill from AP
+    batch.delete(billRef);
+
+    await batch.commit();
 }
 
 // --- Asset Management Interfaces & Functions ---
@@ -488,7 +525,8 @@ export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'us
 
 export async function deleteLoan(id: string): Promise<void> {
     const db = getDb();
-    await deleteDoc(doc(db, LOANS_COLLECTION, id));
+    const docRef = doc(db, LOANS_COLLECTION, id);
+    await deleteDoc(docRef);
 }
 
 
@@ -548,8 +586,6 @@ async function getCategories<T extends BaseCategory>(
   const batch = writeBatch(db);
   let hasWrites = false;
 
-  // Idempotent Seeding Logic: 
-  // We check for existing structural categories by categoryNumber instead of random IDs.
   const existingByNumber = new Map(existingCategories.map(c => [c.categoryNumber, c]));
 
   for (const stdCat of standardCategories) {
@@ -567,7 +603,6 @@ async function getCategories<T extends BaseCategory>(
       }
   }
 
-  // Deduplication logic: If multiple categories exist with the same name/number (from historical bugs)
   const groupedByNumber: Record<string, T[]> = {};
   existingCategories.forEach(cat => {
       if (cat.categoryNumber) {
@@ -582,7 +617,6 @@ async function getCategories<T extends BaseCategory>(
           const master = matches[0];
           const duplicates = matches.slice(1);
           for (const dupe of duplicates) {
-              // Reassign transactions from duplicate to master
               const txQuery = query(collection(db, transactionCollectionName), where("userId", "==", userId), where(categoryFieldName, "==", dupe.categoryNumber));
               const txSnapshot = await getDocs(txQuery);
               txSnapshot.forEach(txDoc => {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from "react";
@@ -83,7 +84,7 @@ import {
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -99,6 +100,8 @@ import { useReactToPrint } from "@/hooks/use-react-to-print";
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
+const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind"];
+
 const emptyTransactionForm = { 
     date: format(new Date(), 'yyyy-MM-dd'), 
     company: '', 
@@ -113,6 +116,7 @@ const emptyTransactionForm = {
     documentNumber: '', 
     documentUrl: '', 
     type: 'business' as 'business' | 'personal', 
+    paymentMethod: '',
     depositedTo: 'Bank Account #1' 
 };
 
@@ -287,6 +291,7 @@ export function LedgersView() {
           documentNumber: tx.documentNumber || '',
           documentUrl: tx.documentUrl || '',
           type: tx.type,
+          paymentMethod: tx.paymentMethod || '',
           depositedTo: tx.transactionType === 'income' ? (tx as IncomeTransaction).depositedTo : '',
       });
       setIsTransactionDialogOpen(true);
@@ -359,6 +364,7 @@ export function LedgersView() {
           documentNumber: newTransaction.documentNumber,
           documentUrl: newTransaction.documentUrl,
           type: newTransaction.type,
+          paymentMethod: newTransaction.paymentMethod,
       };
 
       try {
@@ -746,6 +752,25 @@ export function LedgersView() {
                                         <Button size="sm" onClick={handleCreateCategory}>Add</Button>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Payment Method</Label>
+                            <div className="col-span-3">
+                                <Select 
+                                    value={newTransaction.paymentMethod} 
+                                    onValueChange={v => setNewTransaction(p => ({ ...p, paymentMethod: v }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select payment method..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {paymentMethodOptions.map(method => (
+                                            <SelectItem key={method} value={method}>{method}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

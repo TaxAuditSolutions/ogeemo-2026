@@ -123,6 +123,7 @@
             "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
             "taxAmount": { "type": "number", "description": "The amount of tax collected." },
             "taxRate": { "type": "number", "description": "The tax rate applied." },
+            "paymentMethod": { "type": "string", "enum": ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind"] },
             "incomeCategory": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
             "depositedTo": { "type": "string" },
             "explanation": { "type": "string" },
@@ -145,6 +146,7 @@
             "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
             "taxAmount": { "type": "number", "description": "The amount of tax paid." },
             "taxRate": { "type": "number", "description": "The tax rate applied." },
+            "paymentMethod": { "type": "string", "enum": ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind"] },
             "category": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
             "explanation": { "type": "string" },
             "documentNumber": { "type": "string" },
@@ -631,7 +633,11 @@
     },
     "/siteImages/{imageId}": {
       "schema": { "$ref": "#/entities/SiteImage" },
-      "description": "Stores URLs for site-wide images, keyed by a unique ID."
+      "description": "Stores URLs for globally used site images like heroes and logos.",
+      "rules": {
+        "allow_read": "true",
+        "allow_write": "request.auth != null"
+      }
     },
     "/inquiries/{inquiryId}": {
       "schema": { "$ref": "#/entities/ContactInquiry" },
@@ -639,5 +645,3 @@
     }
   }
 }
-
-    

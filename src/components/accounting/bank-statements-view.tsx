@@ -96,11 +96,29 @@ const mockBankTransactions: BankTransaction[] = [
   { id: 'txn_p_3', accountId: 'acc_3', date: '2024-07-23', description: 'Salary Deposit', amount: 4500, status: 'personal' },
 ];
 
+const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind"];
+
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const emptyTransactionForm = { date: '', company: '', description: '', totalAmount: '', taxRate: '', preTaxAmount: '', taxAmount: '', category: '', incomeCategory: '', explanation: '', documentNumber: '', documentUrl: '', type: 'business' as 'business' | 'personal', depositedTo: '' };
+const emptyTransactionForm = { 
+    date: '', 
+    company: '', 
+    description: '', 
+    totalAmount: '', 
+    taxRate: '', 
+    preTaxAmount: '', 
+    taxAmount: '', 
+    category: '', 
+    incomeCategory: '', 
+    explanation: '', 
+    documentNumber: '', 
+    documentUrl: '', 
+    type: 'business' as 'business' | 'personal', 
+    paymentMethod: '',
+    depositedTo: 'Bank Account #1' 
+};
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
 
 
@@ -226,6 +244,7 @@ export function BankStatementsView() {
             company: transactionToReconcile.description,
             description: `Reconciled from bank transaction`,
             totalAmount: String(Math.abs(transactionToReconcile.amount)),
+            paymentMethod: transactionToReconcile.amount < 0 ? 'Bank Transfer' : 'Bank Transfer', // Sensible default for reconciliation
         });
     }, [transactionToReconcile]);
     
@@ -358,6 +377,7 @@ export function BankStatementsView() {
             documentNumber: newTransaction.documentNumber,
             documentUrl: newTransaction.documentUrl,
             type: newTransaction.type,
+            paymentMethod: newTransaction.paymentMethod,
         };
 
         try {
@@ -378,12 +398,12 @@ export function BankStatementsView() {
         }
     };
   
-    const handleCreateCompany = async () => {
-        if (!user || !newCompanyName.trim()) return;
+    const handleCreateCompany = async (companyName: string) => {
+        if (!user || !companyName.trim()) return;
         try {
-            const newCompany = await addCompany({ name: newCompanyName.trim(), userId: user.uid });
+            const newCompany = await addCompany({ name: companyName.trim(), userId: user.uid });
             setCompanies(prev => [...prev, newCompany]);
-            setNewTransaction(prev => ({ ...prev, company: newCompanyName.trim() }));
+            setNewTransaction(prev => ({ ...prev, company: newCompany.name }));
             setShowAddCompany(false);
             setNewCompanyName('');
             toast({ title: 'Company Created' });
@@ -397,7 +417,7 @@ export function BankStatementsView() {
         try {
             const newCategory = await addExpenseCategory({ name: newExpenseCategoryName.trim(), userId: user.uid });
             setExpenseCategories(prev => [...prev, newCategory]);
-            setNewTransaction(prev => ({ ...prev, category: newExpenseCategoryName.trim() }));
+            setNewTransaction(prev => ({ ...prev, category: newCategory.categoryNumber || newCategory.id }));
             setShowAddExpenseCategory(false);
             setNewExpenseCategoryName('');
             toast({ title: 'Category Created' });
@@ -411,7 +431,7 @@ export function BankStatementsView() {
         try {
             const newCategory = await addIncomeCategory({ name: newIncomeCategoryName.trim(), userId: user.uid });
             setIncomeCategories(prev => [...prev, newCategory]);
-            setNewTransaction(prev => ({ ...prev, incomeCategory: newIncomeCategoryName.trim() }));
+            setNewTransaction(prev => ({ ...prev, incomeCategory: newCategory.categoryNumber || newCategory.id }));
             setShowAddIncomeCategory(false);
             setNewIncomeCategoryName('');
             toast({ title: 'Category Created' });
@@ -693,15 +713,35 @@ export function BankStatementsView() {
                     <Label htmlFor="tx-company-gl" className="text-right">Company <span className="text-destructive">*</span></Label>
                     <div className="col-span-3 space-y-2">
                         <div className="flex gap-2">
-                            <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.company || "Select company..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search company..." /><CommandList><CommandEmpty>No company found.</CommandEmpty><CommandGroup>{companies.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                            <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.company || "Select company..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search company..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><div className="p-1"><Button variant="outline" className="w-full" onClick={() => { handleCreateCompany(newCompanyName); setIsCompanyPopoverOpen(false); }}><Plus className="mr-2 h-4 w-4"/> Create "{newCompanyName}"</Button></div></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             <Button variant="outline" onClick={() => setShowAddCompany(p => !p)}>{showAddCompany ? 'Cancel' : 'Add New'}</Button>
                         </div>
-                        {showAddCompany && <div className="flex gap-2 animate-in fade-in-50"><Input placeholder="New company name..." value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} /><Button onClick={handleCreateCompany}><Plus className="mr-2 h-4 w-4"/>Add</Button></div>}
+                        {showAddCompany && <div className="flex gap-2 animate-in fade-in-50"><Input placeholder="New company name..." value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} /><Button onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4"/>Add</Button></div>}
                     </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="tx-description-gl" className="text-right">Description</Label><Input id="tx-description-gl" value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} className="col-span-3" /></div>
                 
                 <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="tx-totalAmount-gl" className="text-right">Total Amount <span className="text-destructive">*</span></Label><div className="relative col-span-3"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span><Input id="tx-totalAmount-gl" type="number" value={newTransaction.totalAmount} onChange={(e) => setNewTransaction(prev => ({...prev, totalAmount: e.target.value}))} className="pl-7" step="0.01" placeholder="0.00"/></div></div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Payment Method</Label>
+                    <div className="col-span-3">
+                        <Select 
+                            value={newTransaction.paymentMethod} 
+                            onValueChange={v => setNewTransaction(p => ({ ...p, paymentMethod: v }))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select payment method..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentMethodOptions.map(method => (
+                                    <SelectItem key={method} value={method}>{method}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="tx-taxRate-gl" className="text-right">Tax Rate (%)</Label><Input id="tx-taxRate-gl" type="number" value={newTransaction.taxRate} onChange={(e) => setNewTransaction(prev => ({...prev, taxRate: e.target.value}))} className="col-span-3" placeholder="e.g., 15"/></div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -725,7 +765,13 @@ export function BankStatementsView() {
                         <Label htmlFor="tx-income-category-gl" className="text-right">Income Category <span className="text-destructive">*</span></Label>
                         <div className="col-span-3 space-y-2">
                             <div className="flex gap-2">
-                                <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.incomeCategory || "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search category..." /><CommandList><CommandEmpty>No category found.</CommandEmpty><CommandGroup>{incomeCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, incomeCategory: c.name })); setIsIncomeCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.incomeCategory.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                                <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.incomeCategory ? (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select category...") : "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search category..." value={newIncomeCategoryName} onValueChange={setNewIncomeCategoryName}/><CommandList><CommandEmpty>No category found.</CommandEmpty><CommandGroup>{incomeCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, incomeCategory: c.categoryNumber || c.id })); setIsIncomeCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === c.categoryNumber || newTransaction.incomeCategory === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                                 <Button variant="outline" onClick={() => setShowAddIncomeCategory(p => !p)}>{showAddIncomeCategory ? 'Cancel' : 'Add New'}</Button>
                             </div>
                             {showAddIncomeCategory && <div className="flex gap-2 animate-in fade-in-50"><Input placeholder="New income category..." value={newIncomeCategoryName} onChange={e => setNewIncomeCategoryName(e.target.value)} /><Button onClick={handleCreateIncomeCategory}><Plus className="mr-2 h-4 w-4"/>Add</Button></div>}
@@ -738,7 +784,13 @@ export function BankStatementsView() {
                         <Label htmlFor="tx-category-gl" className="text-right">Category <span className="text-destructive">*</span></Label>
                         <div className="col-span-3 space-y-2">
                             <div className="flex gap-2">
-                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.category || "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search category..." /><CommandList><CommandEmpty>No category found.</CommandEmpty><CommandGroup>{expenseCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, category: c.name })); setIsCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.category.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between">{newTransaction.category ? (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select category...") : "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search category..." value={newExpenseCategoryName} onValueChange={setNewExpenseCategoryName}/><CommandList><CommandEmpty>No category found.</CommandEmpty><CommandGroup>{expenseCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id })); setIsCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.category === c.categoryNumber || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                                 <Button variant="outline" onClick={() => setShowAddExpenseCategory(p => !p)}>{showAddExpenseCategory ? 'Cancel' : 'Add New'}</Button>
                             </div>
                             {showAddExpenseCategory && <div className="flex gap-2 animate-in fade-in-50"><Input placeholder="New expense category..." value={newExpenseCategoryName} onChange={e => setNewExpenseCategoryName(e.target.value)} /><Button onClick={handleCreateExpenseCategory}><Plus className="mr-2 h-4 w-4"/>Add</Button></div>}
@@ -752,8 +804,8 @@ export function BankStatementsView() {
                         readOnly 
                         disabled 
                         value={(newTransactionType === 'income'
-                            ? incomeCategories.find(c => c.name === newTransaction.incomeCategory)?.categoryNumber
-                            : expenseCategories.find(c => c.name === newTransaction.category)?.categoryNumber) || ''
+                            ? incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.categoryNumber
+                            : expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.categoryNumber) || ''
                         } 
                         className="col-span-3 bg-muted/50" 
                     />

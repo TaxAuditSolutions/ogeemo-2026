@@ -41,6 +41,7 @@ interface BaseTransaction {
   documentNumber?: string;
   documentUrl?: string;
   type: 'business' | 'personal';
+  paymentMethod?: string; // Added payment method
   userId: string;
 }
 

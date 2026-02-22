@@ -17,7 +17,8 @@ import {
     CheckCircle2,
     Layers,
     BrainCircuit,
-    X
+    X,
+    Globe
 } from 'lucide-react';
 import {
   Accordion,
@@ -187,6 +188,22 @@ export default function ActionChipsInfoPage() {
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                         Use the <strong>"Full Menu"</strong> view in the sidebar to see everything Ogeemo has to offer, then use the <strong>"Action Manager"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
+                    </p>
+                </CardContent>
+            </Card>
+
+            <Card className="bg-primary/5 border-dashed border-primary/30">
+                <CardHeader>
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary" />
+                        Orchestrate the Web
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        Your spider web doesn't have to stop at Ogeemo's borders. Use the <strong>'+ Add New Action'</strong> button in the manager and select <strong>'Custom URL'</strong>. 
+                        <br/><br/>
+                        Create instant shortcuts to your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global Command Centre.
                     </p>
                 </CardContent>
             </Card>

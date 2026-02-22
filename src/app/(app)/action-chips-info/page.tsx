@@ -8,20 +8,13 @@ import { Button } from "@/components/ui/button";
 import { 
     Zap, 
     ArrowRight, 
-    LayoutDashboard, 
-    MousePointerClick, 
-    GripVertical, 
     Trash2, 
     Plus, 
     Save, 
-    Info,
-    CheckCircle2,
     Layers,
     BrainCircuit,
     X,
-    Globe,
-    PlusCircle,
-    Link as LinkIcon
+    GripVertical
 } from 'lucide-react';
 import {
   Accordion,
@@ -162,7 +155,6 @@ export default function ActionChipsInfoPage() {
             <Card className="bg-primary text-primary-foreground shadow-xl overflow-hidden border-none">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <MousePointerClick className="h-5 w-5" />
                         Take Control
                     </CardTitle>
                 </CardHeader>
@@ -182,12 +174,10 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-muted/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                <CardHeader>
+                    <CardTitle className="text-sm font-bold">
                         Master Tip
                     </CardTitle>
-                    <Info className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -198,8 +188,7 @@ export default function ActionChipsInfoPage() {
 
             <Card className="bg-background border-primary/20 border-2 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <PlusCircle className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm font-bold">
                         How to Create a Chip
                     </CardTitle>
                 </CardHeader>
@@ -214,12 +203,10 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-primary/5 border-dashed border-primary/30">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <LinkIcon className="h-4 w-4 text-primary" />
+                <CardHeader>
+                    <CardTitle className="text-sm font-bold">
                         Orchestrate the Web
                     </CardTitle>
-                    <Globe className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">

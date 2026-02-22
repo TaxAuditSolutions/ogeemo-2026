@@ -1,3 +1,4 @@
+
 import {
     FileDigit,
     FileOutput,
@@ -51,6 +52,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
     { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement" },
+    { href: "/accounting/reports/accrual-adjustments", icon: BookOpen, label: "Accrual Adjustments" },
 ];
 
 export default accountingMenuItems;

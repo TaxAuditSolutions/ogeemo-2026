@@ -38,15 +38,32 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, FileDigit, ChevronsUpDown, Check, UserPlus } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, FileDigit, ChevronsUpDown, Check, UserPlus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getPayableBills, addPayableBill, postBillPayment, deletePayableBill, type PayableBill, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/services/accounting-service';
+import { getPayableBills, addPayableBill, updatePayableBill, postBillPayment, deletePayableBill, type PayableBill, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/services/accounting-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { type Contact } from '@/services/contact-service';
@@ -81,6 +98,7 @@ export function AccountsPayablePageView() {
   // Bill Form State
   const [isAddBillOpen, setIsAddAddBillOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [billToEditId, setBillToEditId] = useState<string | null>(null);
   const [billForm, setBillForm] = useState(emptyBillForm);
   const [isVendorPopoverOpen, setIsVendorPopoverOpen] = useState(false);
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
@@ -92,6 +110,9 @@ export function AccountsPayablePageView() {
   const [billToPay, setBillToPay] = useState<PayableBill | null>(null);
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
+
+  // Deletion State
+  const [billToDelete, setBillToDelete] = useState<PayableBill | null>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -126,6 +147,26 @@ export function AccountsPayablePageView() {
     loadData();
   }, [loadData]);
 
+  const handleOpenAddBill = () => {
+      setBillToEditId(null);
+      setBillForm(emptyBillForm);
+      setIsAddAddBillOpen(true);
+  };
+
+  const handleOpenEditBill = (bill: PayableBill) => {
+      setBillToEditId(bill.id);
+      setBillForm({
+          vendor: bill.vendor,
+          invoiceNumber: bill.invoiceNumber || '',
+          dueDate: bill.dueDate,
+          totalAmount: String(bill.totalAmount),
+          category: bill.category,
+          description: bill.description || '',
+          documentUrl: bill.documentUrl || '',
+      });
+      setIsAddAddBillOpen(true);
+  };
+
   const handleSaveBill = async () => {
     if (!user || !billForm.vendor || !billForm.totalAmount || !billForm.category) {
         toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide supplier, amount, and category.' });
@@ -134,14 +175,23 @@ export function AccountsPayablePageView() {
 
     setIsSaving(true);
     try {
-        await addPayableBill({
+        const payload = {
             ...billForm,
             totalAmount: parseFloat(billForm.totalAmount),
             userId: user.uid,
-        });
-        toast({ title: 'Bill Logged', description: 'Added to your Accounts Payable.' });
+        };
+
+        if (billToEditId) {
+            await updatePayableBill(billToEditId, payload);
+            toast({ title: 'Bill Updated' });
+        } else {
+            await addPayableBill(payload);
+            toast({ title: 'Bill Logged', description: 'Added to your Accounts Payable.' });
+        }
+        
         setIsAddAddBillOpen(false);
         setBillForm(emptyBillForm);
+        setBillToEditId(null);
         loadData();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -168,8 +218,20 @@ export function AccountsPayablePageView() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+      if (!billToDelete) return;
+      try {
+          await deletePayableBill(billToDelete.id);
+          toast({ title: 'Bill Deleted', variant: 'destructive' });
+          loadData();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+      } finally {
+          setBillToDelete(null);
+      }
+  };
+
   const handleSupplierSave = (savedContact: Contact) => {
-      // Add the new supplier name to the local companies list for the dropdown
       const newCompany: Company = { id: savedContact.id, name: savedContact.businessName || savedContact.name, userId: user?.uid || '' };
       setCompanies(prev => [...prev, newCompany].sort((a,b) => a.name.localeCompare(b.name)));
       setBillForm(prev => ({ ...prev, vendor: newCompany.name }));
@@ -219,7 +281,7 @@ export function AccountsPayablePageView() {
                     <CardTitle>Accounts Payable Ledger</CardTitle>
                     <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
                 </div>
-                <Button onClick={() => setIsAddAddBillOpen(true)}>
+                <Button onClick={handleOpenAddBill}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Log Invoice
                 </Button>
             </CardHeader>
@@ -251,14 +313,22 @@ export function AccountsPayablePageView() {
                                             <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => setBillToPay(bill)}>
                                                 <Landmark className="mr-2 h-4 w-4"/> Post Payment
                                             </Button>
-                                            <Button size="sm" variant="ghost" onClick={async () => {
-                                                if (window.confirm("Permanently delete this bill?")) {
-                                                    await deletePayableBill(bill.id);
-                                                    loadData();
-                                                }
-                                            }}>
-                                                <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenEditBill(bill)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onSelect={() => setBillToDelete(bill)} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Bill
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -279,7 +349,7 @@ export function AccountsPayablePageView() {
         <Dialog open={isAddBillOpen} onOpenChange={setIsAddAddBillOpen}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Log Outstanding Bill</DialogTitle>
+                    <DialogTitle>{billToEditId ? 'Edit Outstanding Bill' : 'Log Outstanding Bill'}</DialogTitle>
                     <DialogDescription>Add a Supplier</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
@@ -359,7 +429,10 @@ export function AccountsPayablePageView() {
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsAddAddBillOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveBill} disabled={isSaving}>Save Bill</Button>
+                    <Button onClick={handleSaveBill} disabled={isSaving}>
+                        {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>}
+                        {billToEditId ? 'Save Changes' : 'Save Bill'}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -403,6 +476,21 @@ export function AccountsPayablePageView() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!billToDelete} onOpenChange={() => setBillToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the outstanding bill from {billToDelete?.vendor} for {billToDelete ? formatCurrency(billToDelete.totalAmount) : ''}. This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete Bill</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
         <ContactFormDialog
             isOpen={isContactFormOpen}

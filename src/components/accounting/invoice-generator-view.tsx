@@ -22,7 +22,7 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AddLineItemDialog } from './add-line-item-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -379,7 +379,7 @@ export function InvoiceGeneratorView() {
             Select a contact from your master list to generate a professional invoice.
           </p>
           <div className="absolute top-0 right-0">
-             <Button asChild variant="ghost" size="icon">
+            <Button asChild variant="ghost" size="icon">
                 <a onClick={() => router.back()} className="cursor-pointer">
                     <X className="h-5 w-5" />
                     <span className="sr-only">Close</span>
@@ -464,7 +464,9 @@ export function InvoiceGeneratorView() {
                                         {invoiceDate ? format(invoiceDate, "PPP") : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={invoiceDate} onSelect={(date) => date && setInvoiceDate(date)} initialFocus /></PopoverContent>
+                                <PopoverContent className="w-auto p-0">
+                                    <CustomCalendar mode="single" selected={invoiceDate} onSelect={(date) => date && setInvoiceDate(date)} initialFocus />
+                                </PopoverContent>
                             </Popover>
                         </div>
                         <div className="space-y-2">

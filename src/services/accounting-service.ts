@@ -74,8 +74,28 @@ export interface Invoice {
   createdAt: Date;
 }
 
+export interface ServiceItem {
+  id: string;
+  description: string;
+  price: number;
+  taxType?: string;
+  taxRate?: number;
+  userId: string;
+}
+
 const INVOICES_COLLECTION = 'invoices';
 const LINE_ITEMS_COLLECTION = 'invoiceLineItems';
+const INCOME_COLLECTION = 'incomeTransactions';
+const EXPENSE_COLLECTION = 'expenseTransactions';
+const PAYABLES_COLLECTION = 'payableBills';
+const ASSETS_COLLECTION = 'assets';
+const EQUITY_COLLECTION = 'equityTransactions';
+const LOANS_COLLECTION = 'loans';
+const COMPANIES_COLLECTION = 'companies';
+const INCOME_CATEGORIES_COLLECTION = 'incomeCategories';
+const EXPENSE_CATEGORIES_COLLECTION = 'expenseCategories';
+const SERVICE_ITEMS_COLLECTION = 'serviceItems';
+const TAX_TYPES_COLLECTION = 'taxTypes';
 
 const docToInvoice = (doc: any): Invoice => {
     const data = doc.data();
@@ -111,6 +131,7 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
     } as InvoiceLineItem;
 };
 
+const docToServiceItem = (doc: any): ServiceItem => ({ id: doc.id, ...doc.data() } as ServiceItem);
 
 export async function getInvoices(userId: string): Promise<Invoice[]> {
   const db = getDb();
@@ -270,7 +291,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         status: isFullyPaid ? 'paid' : 'partially_paid'
     });
 
-    const incomeRef = doc(collection(db, 'incomeTransactions'));
+    const incomeRef = doc(collection(db, INCOME_COLLECTION));
     const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
     
     const incomeData = {
@@ -299,12 +320,6 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
 }
 
 // --- Income ---
-export interface IncomeTransaction extends BaseTransaction {
-  incomeCategory: string; 
-  depositedTo: string;
-}
-
-const INCOME_COLLECTION = 'incomeTransactions';
 const docToIncome = (doc: any): IncomeTransaction => ({ id: doc.id, ...doc.data() } as IncomeTransaction);
 
 export async function getIncomeTransactions(userId: string): Promise<IncomeTransaction[]> {
@@ -371,11 +386,6 @@ export async function deleteIncomeTransaction(id: string): Promise<void> {
 
 
 // --- Expense ---
-export interface ExpenseTransaction extends BaseTransaction {
-  category: string; 
-}
-
-const EXPENSE_COLLECTION = 'expenseTransactions';
 const docToExpense = (doc: any): ExpenseTransaction => ({ id: doc.id, ...doc.data() } as ExpenseTransaction);
 
 export async function getExpenseTransactions(userId: string): Promise<ExpenseTransaction[]> {
@@ -441,23 +451,6 @@ export async function deleteExpenseTransaction(id: string): Promise<void> {
 }
 
 // --- Accounts Payable ---
-export interface PayableBill {
-  id: string;
-  vendor: string;
-  invoiceNumber: string;
-  dueDate: string;
-  totalAmount: number;
-  preTaxAmount?: number;
-  taxAmount?: number;
-  taxRate?: number;
-  category: string;
-  description: string;
-  documentUrl?: string;
-  userId: string;
-}
-
-
-const PAYABLES_COLLECTION = 'payableBills';
 const docToPayableBill = (doc: any): PayableBill => {
     const data = doc.data();
     return { id: doc.id, ...data, totalAmount: data.totalAmount ?? 0 } as PayableBill;
@@ -585,7 +578,6 @@ export interface Asset {
   userId: string;
 }
 
-const ASSETS_COLLECTION = 'assets';
 const docToAsset = (doc: any): Asset => {
     const data = doc.data();
     return { 
@@ -667,7 +659,6 @@ export interface EquityTransaction {
   userId: string;
 }
 
-const EQUITY_COLLECTION = 'equityTransactions';
 const docToEquityTransaction = (doc: any): EquityTransaction => ({ id: doc.id, ...doc.data() } as EquityTransaction);
 
 export async function getEquityTransactions(userId: string): Promise<EquityTransaction[]> {
@@ -744,7 +735,6 @@ export interface Loan {
   userId: string;
 }
 
-const LOANS_COLLECTION = 'loans';
 const docToLoan = (doc: any): Loan => ({ id: doc.id, ...doc.data() } as Loan);
 
 export async function getLoans(userId: string): Promise<Loan[]> {
@@ -815,7 +805,6 @@ export interface Company {
   userId: string;
 }
 
-const COMPANIES_COLLECTION = 'companies';
 const docToCompany = (doc: any): Company => ({ id: doc.id, ...doc.data() } as Company);
 
 export async function getCompanies(userId: string): Promise<Company[]> {
@@ -863,8 +852,6 @@ export interface BaseCategory {
 export interface IncomeCategory extends BaseCategory {}
 export interface ExpenseCategory extends BaseCategory {}
 
-const INCOME_CATEGORIES_COLLECTION = 'incomeCategories';
-const EXPENSE_CATEGORIES_COLLECTION = 'expenseCategories';
 const docToIncomeCategory = (doc: any): IncomeCategory => ({ id: doc.id, ...doc.data() } as IncomeCategory);
 const docToExpenseCategory = (doc: any): ExpenseCategory => ({ id: doc.id, ...doc.data() } as ExpenseCategory);
 
@@ -921,7 +908,6 @@ async function getCategories<T extends BaseCategory>(
         }));
       }
     });
-    // Optimistic return is tricky here, so we wait or just return current + new
   }
 
   return existingCategories.sort((a,b) => a.name.localeCompare(b.name));
@@ -1105,14 +1091,6 @@ export async function deleteServiceItem(id: string): Promise<void> {
   });
 }
 
-export interface TaxType {
-  id: string;
-  name: string;
-  rate: number;
-  userId: string;
-}
-
-const TAX_TYPES_COLLECTION = 'taxTypes';
 const docToTaxType = (doc: any): TaxType => ({ id: doc.id, ...doc.data() } as TaxType);
 
 export async function getTaxTypes(userId: string): Promise<TaxType[]> {
@@ -1176,7 +1154,7 @@ export async function deleteTaxType(id: string): Promise<void> {
     
 export async function addRemittance(remittance: any) {
     const db = getDb();
-    const docRef = doc(collection(db, 'payrollRemittances'));
+    const docRef = doc(collection(db, REMITTANCES_COLLECTION));
     setDoc(docRef, remittance).catch(async (error) => {
       if (error.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -1186,4 +1164,62 @@ export async function addRemittance(remittance: any) {
         }));
       }
     });
+}
+
+export async function archiveIncomeCategory(userId: string, id: string): Promise<void> {
+    const db = getDb();
+    await updateDoc(doc(db, INCOME_CATEGORIES_COLLECTION, id), { isArchived: true });
+}
+
+export async function restoreIncomeCategory(id: string): Promise<void> {
+    const db = getDb();
+    await updateDoc(doc(db, INCOME_CATEGORIES_COLLECTION, id), { isArchived: false });
+}
+
+export async function archiveExpenseCategory(userId: string, id: string): Promise<void> {
+    const db = getDb();
+    await updateDoc(doc(db, EXPENSE_CATEGORIES_COLLECTION, id), { isArchived: true });
+}
+
+export async function restoreExpenseCategory(id: string): Promise<void> {
+    const db = getDb();
+    await updateDoc(doc(db, EXPENSE_CATEGORIES_COLLECTION, id), { isArchived: false });
+}
+
+export async function mergeCategories(userId: string, sourceId: string, targetCategoryNumber: string, type: 'income' | 'expense'): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    
+    const transactionCol = type === 'income' ? INCOME_COLLECTION : EXPENSE_COLLECTION;
+    const categoryField = type === 'income' ? 'incomeCategory' : 'category';
+    const categoryCol = type === 'income' ? INCOME_CATEGORIES_COLLECTION : EXPENSE_CATEGORIES_COLLECTION;
+
+    const sourceRef = doc(db, categoryCol, sourceId);
+    const sourceSnap = await getDoc(sourceRef);
+    if (!sourceSnap.exists()) return;
+    const sourceData = sourceSnap.data();
+
+    const q = query(collection(db, transactionCol), where("userId", "==", userId), where(categoryField, "==", sourceData.categoryNumber));
+    const snapshot = await getDocs(q);
+    
+    snapshot.forEach(tDoc => {
+        batch.update(tDoc.ref, { [categoryField]: targetCategoryNumber });
+    });
+
+    batch.delete(sourceRef);
+    await batch.commit();
+}
+
+export async function deleteIncomeCategories(ids: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, INCOME_CATEGORIES_COLLECTION, id)));
+    await batch.commit();
+}
+
+export async function deleteExpenseCategories(ids: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, EXPENSE_CATEGORIES_COLLECTION, id)));
+    await batch.commit();
 }

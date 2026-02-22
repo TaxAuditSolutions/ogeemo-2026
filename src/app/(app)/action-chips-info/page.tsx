@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -18,7 +19,8 @@ import {
     Layers,
     BrainCircuit,
     X,
-    Globe
+    Globe,
+    PlusCircle
 } from 'lucide-react';
 import {
   Accordion,
@@ -179,16 +181,34 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-muted/50">
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-primary" />
                         Master Tip
                     </CardTitle>
+                    <Info className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                         Use the <strong>"Full Menu"</strong> view in the sidebar to see everything Ogeemo has to offer, then use the <strong>"Action Manager"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
                     </p>
+                </CardContent>
+            </Card>
+
+            <Card className="bg-background border-primary/20 border-2 shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4 text-primary" />
+                        How to Create a Chip
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-xs text-muted-foreground space-y-2">
+                        <p>1. Open the <strong>Action Manager</strong>.</p>
+                        <p>2. Click the <strong>"+ Add New Action"</strong> button.</p>
+                        <p>3. Select <strong>Internal Page</strong> to bookmark an Ogeemo tool, or <strong>Custom URL</strong> for external sites.</p>
+                        <p>4. Name your chip and click <strong>Save</strong>. It will appear in your "Available Actions" library.</p>
+                    </div>
                 </CardContent>
             </Card>
 

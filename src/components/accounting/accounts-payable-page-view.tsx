@@ -42,13 +42,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, FileDigit, ChevronsUpDown, Check } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, FileDigit, ChevronsUpDown, Check, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getPayableBills, addPayableBill, postBillPayment, deletePayableBill, type PayableBill, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/services/accounting-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import { type Contact } from '@/services/contact-service';
 import { AccountingPageHeader } from './page-header';
 import { cn } from '@/lib/utils';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -69,7 +73,9 @@ const emptyBillForm = {
 export function AccountsPayablePageView() {
   const [bills, setBills] = useState<PayableBill[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [categories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+  const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Bill Form State
@@ -78,6 +84,9 @@ export function AccountsPayablePageView() {
   const [billForm, setBillForm] = useState(emptyBillForm);
   const [isVendorPopoverOpen, setIsVendorPopoverOpen] = useState(false);
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
+
+  // New Supplier (Contact) State
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   // Payment State
   const [billToPay, setBillToPay] = useState<PayableBill | null>(null);
@@ -94,14 +103,18 @@ export function AccountsPayablePageView() {
     }
     setIsLoading(true);
     try {
-      const [fetchedBills, fetchedCompanies, fetchedCategories] = await Promise.all([
+      const [fetchedBills, fetchedCompanies, fetchedCategories, fetchedFolders, fetchedIndustries] = await Promise.all([
         getPayableBills(user.uid),
         getCompanies(user.uid),
-        getExpenseCategories(user.uid)
+        getExpenseCategories(user.uid),
+        getContactFolders(user.uid),
+        getIndustries(user.uid)
       ]);
       setBills(fetchedBills);
       setCompanies(fetchedCompanies);
-      setCategories(fetchedCategories);
+      setExpenseCategories(fetchedCategories);
+      setContactFolders(fetchedFolders);
+      setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -155,9 +168,20 @@ export function AccountsPayablePageView() {
     }
   };
 
+  const handleSupplierSave = (savedContact: Contact) => {
+      // Add the new supplier name to the local companies list for the dropdown
+      const newCompany: Company = { id: savedContact.id, name: savedContact.businessName || savedContact.name, userId: user?.uid || '' };
+      setCompanies(prev => [...prev, newCompany].sort((a,b) => a.name.localeCompare(b.name)));
+      setBillForm(prev => ({ ...prev, vendor: newCompany.name }));
+      setIsContactFormOpen(false);
+      setIsVendorPopoverOpen(false);
+  };
+
   const totalPayable = useMemo(() => {
       return bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
   }, [bills]);
+
+  const suppliersFolder = contactFolders.find(f => f.name === 'Suppliers' && f.isSystem);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -261,26 +285,34 @@ export function AccountsPayablePageView() {
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
                         <Label>Supplier *</Label>
-                        <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between">{billForm.vendor || "Select a supplier..."}<ChevronsUpDown className="ml-2 h-4 w-4 opacity-50"/></Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search suppliers..." onValueChange={(val) => setBillForm(p => ({...p, vendor: val}))} />
-                                    <CommandList>
-                                        <CommandEmpty>Select to add new supplier.</CommandEmpty>
-                                        <CommandGroup>
-                                            {companies.map(c => (
-                                                <CommandItem key={c.id} onSelect={() => { setBillForm(p => ({...p, vendor: c.name})); setIsVendorPopoverOpen(false); }}>
-                                                    <Check className={cn("mr-2 h-4 w-4", billForm.vendor === c.name ? "opacity-100" : "opacity-0")} /> {c.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                        <div className="flex gap-2">
+                            <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between overflow-hidden">
+                                        <span className="truncate">{billForm.vendor || "Select a supplier..."}</span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0"/>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search suppliers..." onValueChange={(val) => setBillForm(p => ({...p, vendor: val}))} />
+                                        <CommandList>
+                                            <CommandEmpty>No supplier found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {companies.map(c => (
+                                                    <CommandItem key={c.id} value={c.name} onSelect={() => { setBillForm(p => ({...p, vendor: c.name})); setIsVendorPopoverOpen(false); }}>
+                                                        <Check className={cn("mr-2 h-4 w-4", billForm.vendor === c.name ? "opacity-100" : "opacity-0")} /> {c.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="outline" size="icon" onClick={() => setIsContactFormOpen(true)} title="Add New Supplier Record">
+                                <UserPlus className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -371,6 +403,20 @@ export function AccountsPayablePageView() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <ContactFormDialog
+            isOpen={isContactFormOpen}
+            onOpenChange={setIsContactFormOpen}
+            contactToEdit={null}
+            folders={contactFolders}
+            onFoldersChange={setContactFolders}
+            onSave={handleSupplierSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+            forceFolderId={suppliersFolder?.id}
+        />
     </div>
   );
 }

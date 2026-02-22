@@ -212,10 +212,22 @@ export function ManageDashboardView() {
     });
   };
 
+  const handleSortAvailableChips = (direction: 'asc' | 'desc') => {
+    setChipsState(prevState => {
+      const sortedChips = [...prevState.availableChips].sort((a, b) => {
+        return direction === 'asc'
+          ? a.label.localeCompare(b.label)
+          : b.label.localeCompare(a.label);
+      });
+      return { ...prevState, availableChips: sortedChips };
+    });
+  };
+
   const handleSaveUserChipOrder = async () => {
     if (!user) return;
     try {
       await updateActionChips(user.uid, chipsState.userChips);
+      await updateAvailableActionChips(user.uid, chipsState.availableChips);
       window.dispatchEvent(new Event('chipsUpdated'));
       toast({
         title: "Dashboard Order Saved",
@@ -278,9 +290,13 @@ export function ManageDashboardView() {
                 <CardHeader className="text-center">
                     <CardTitle className="text-lg">Available Actions</CardTitle>
                     <CardDescription>Drag actions to "Selected Actions" to add them to your dashboard.</CardDescription>
+                    <div className="flex justify-center gap-2 pt-2">
+                        <Button variant="outline" onClick={() => handleSortAvailableChips('asc')} className="h-6 px-2 py-1 text-xs"><ArrowDownAZ className="mr-2 h-4 w-4" /> Sort A-Z</Button>
+                        <Button variant="outline" onClick={() => handleSortAvailableChips('desc')} className="h-6 px-2 py-1 text-xs"><ArrowUpZA className="mr-2 h-4 w-4" /> Sort Z-A</Button>
+                    </div>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.availableChips.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label)).map((chip, index) => (
+                    {chipsState.availableChips.filter(Boolean).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>

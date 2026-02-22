@@ -73,7 +73,7 @@ import {
     Printer,
     FilterX
 } from "lucide-react";
-import { cn, formatTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
@@ -82,6 +82,7 @@ import {
     getExpenseTransactions, addExpenseTransaction, updateExpenseTransaction, deleteExpenseTransaction, type ExpenseTransaction, 
     getExpenseCategories, addExpenseCategory, type ExpenseCategory,
     getIncomeCategories, addIncomeCategory, type IncomeCategory,
+    getCompanies, addCompany, type Company
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -127,6 +128,7 @@ export function LedgersView() {
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
+  const [companies, setCompanies] = React.useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   
@@ -138,7 +140,9 @@ export function LedgersView() {
   
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
-  const [contactSearchValue, setContactSearchValue] = React.useState('');
+  const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
+  const [newCompanyName, setNewCompanyName] = React.useState('');
+  const [showAddCompany, setShowAddCompany] = React.useState(false);
 
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   
@@ -153,10 +157,11 @@ export function LedgersView() {
   // New Category State
   const [showAddCategory, setShowAddCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState('');
+  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
+  const [isIncomeCategoryPopoverOpen, setIsIncomeCategoryPopoverOpen] = React.useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { preferences, updatePreferences } = useUserPreferences();
   const { handlePrint, contentRef } = useReactToPrint();
   
   const searchParams = useSearchParams();
@@ -165,6 +170,7 @@ export function LedgersView() {
   const autoEdit = searchParams ? searchParams.get('edit') === 'true' : false;
   
   const [activeTab, setActiveTab] = React.useState(initialTab || 'all');
+  const router = useRouter();
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
       if (type === 'income') {
@@ -177,7 +183,7 @@ export function LedgersView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries] = await Promise.all([
+        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
             getContacts(user.uid),
@@ -185,6 +191,7 @@ export function LedgersView() {
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),
             getIndustries(user.uid),
+            getCompanies(user.uid)
         ]);
         setIncomeLedger(income); 
         setExpenseLedger(expenses); 
@@ -193,6 +200,7 @@ export function LedgersView() {
         setExpenseCategories(fetchedExpenseCategories); 
         setIncomeCategories(fetchedIncomeCategories);
         setCustomIndustries(fetchedIndustries);
+        setCompanies(fetchedCompanies);
     } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
     finally { setIsLoading(false); }
   }, [user, toast]);
@@ -297,30 +305,23 @@ export function LedgersView() {
       setIsTransactionDialogOpen(true);
   };
 
-  // Deep linking and scroll effect
   React.useEffect(() => {
     if (highlightedId && !isLoading) {
-        // Switch tab if needed
         if (initialTab && initialTab !== activeTab) {
             setActiveTab(initialTab);
         }
-        
-        // Handle "One-Click Edit"
         if (autoEdit) {
             const tx = generalLedger.find(t => t.id === highlightedId);
             if (tx) {
                 handleEditTransaction(tx);
             }
         }
-        
-        // Use a short timeout to ensure the DOM has rendered the specific tab content
         const timeoutId = setTimeout(() => {
             const rowElement = document.getElementById(`row-${highlightedId}`);
             if (rowElement) {
                 rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }, 300);
-        
         return () => clearTimeout(timeoutId);
     }
   }, [highlightedId, isLoading, initialTab, autoEdit, generalLedger, activeTab]);
@@ -341,10 +342,9 @@ export function LedgersView() {
       if (!user) return;
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
-      
       const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
-      if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum)) {
+      if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || isNaN(totalAmountNum)) {
           toast({ variant: 'destructive', title: 'Missing Information', description: 'Please ensure Date, Contact, Category, and Amount are provided.' });
           return;
       }
@@ -411,15 +411,27 @@ export function LedgersView() {
     }
   };
 
+  const handleCreateCompany = async (name: string) => {
+      if (!user || !name.trim()) return;
+      try {
+          const newCompany = await addCompany({ name: name.trim(), userId: user.uid });
+          setCompanies(prev => [...prev, newCompany]);
+          setNewTransaction(prev => ({ ...prev, company: newCompany.name }));
+          setShowAddCompany(false);
+          setNewCompanyName('');
+          toast({ title: 'Company Created' });
+      } catch (e: any) { toast({ variant: 'destructive', title: 'Error', description: e.message }); }
+  };
+
   const handleCreateCategory = async () => {
     if (!user || !newCategoryName.trim()) return;
     try {
         if (newTransactionType === 'income') {
-            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid, categoryNumber: '' });
+            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
             setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
             setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber || newCat.id }));
         } else {
-            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid, categoryNumber: '' });
+            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
             setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
             setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
         }
@@ -542,7 +554,6 @@ export function LedgersView() {
             </div>
         </header>
 
-        {/* Filter & Print Bar */}
         <Card className="print:hidden">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b bg-muted/30">
                 <div className="flex items-center gap-2">
@@ -577,5 +588,201 @@ export function LedgersView() {
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !endDate && "text-muted-foreground")}/></PopoverTrigger></Popover></div></CardContent></Card></div>);
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <Button variant="ghost" onClick={clearFilters} disabled={!startDate && !endDate}>
+                    <FilterX className="mr-2 h-4 w-4" /> Clear Filters
+                </Button>
+            </CardContent>
+        </Card>
+
+        <div ref={contentRef}>
+            {/* Print Header */}
+            <div className="hidden print:block text-center mb-8 border-b pb-4">
+                <h1 className="text-3xl font-bold">BKS General Ledger</h1>
+                <p className="text-muted-foreground">
+                    {startDate ? format(startDate, 'PPP') : 'Beginning of time'} - {endDate ? format(endDate, 'PPP') : 'Present'}
+                </p>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4 print:hidden">
+                    <TabsTrigger value="all">General Ledger</TabsTrigger>
+                    <TabsTrigger value="income">Income Ledger</TabsTrigger>
+                    <TabsTrigger value="expenses">Expense Ledger</TabsTrigger>
+                </TabsList>
+                <TabsContent value="all">{renderTable(generalLedger, 'all')}</TabsContent>
+                <TabsContent value="income">{renderTable(filteredIncome.map(i => ({...i, transactionType: 'income'})), 'income')}</TabsContent>
+                <TabsContent value="expenses">{renderTable(filteredExpenses.map(e => ({...e, transactionType: 'expense'})), 'expense')}</TabsContent>
+            </Tabs>
+        </div>
+
+        <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
+            <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
+                <DialogHeader className="text-center sm:text-center shrink-0">
+                    <DialogTitle className="text-2xl text-primary font-bold">
+                        {transactionToEdit ? 'Edit' : 'Post'} {newTransactionType === 'income' ? 'Income' : 'Expense'}
+                    </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="flex-1 min-h-0">
+                    <div className="grid gap-4 py-4 px-6">
+                        {!transactionToEdit && (
+                            <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense')} className="grid grid-cols-2 gap-4">
+                                <div><RadioGroupItem value="income" id="r-income" className="peer sr-only" /><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 cursor-pointer">Income</Label></div>
+                                <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600 cursor-pointer">Expense</Label></div>
+                            </RadioGroup>
+                        )}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Date *</Label>
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("col-span-3 justify-start text-left font-normal", !newTransaction.date && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <CustomCalendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Contact *</Label>
+                            <div className="col-span-3 space-y-2">
+                                <div className="flex gap-2">
+                                    <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                                        <PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between truncate">{newTransaction.company || "Select or search..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search contact..." value={newCompanyName} onValueChange={setNewCompanyName}/>
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCompany(newCompanyName)}>
+                                                            <Plus className="mr-2 h-4 w-4"/> Create "{newCompanyName}"
+                                                        </Button>
+                                                    </CommandEmpty>
+                                                    <CommandGroup>
+                                                        {companies.map(c => (
+                                                            <CommandItem key={c.id} onSelect={() => { setNewTransaction(p => ({...p, company: c.name})); setIsCompanyPopoverOpen(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")}/> {c.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Button variant="outline" size="icon" onClick={() => setIsContactFormOpen(true)} title="Add New Contact"><UserPlus className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Description</Label><Input value={newTransaction.description} onChange={e => setNewTransaction(p => ({...p, description: e.target.value}))} className="col-span-3" /></div>
+                        <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Amount *</Label><div className="relative col-span-3"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({...p, totalAmount: e.target.value}))} className="pl-7" /></div></div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Payment Method</Label>
+                            <Select value={newTransaction.paymentMethod} onValueChange={v => setNewTransaction(p => ({...p, paymentMethod: v}))}>
+                                <SelectTrigger className="col-span-3"><SelectValue placeholder="How was this paid?" /></SelectTrigger>
+                                <SelectContent>{paymentMethodOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Category *</Label>
+                            <div className="col-span-3">
+                                <Popover open={newTransactionType === 'income' ? isIncomeCategoryPopoverOpen : isCategoryPopoverOpen} onOpenChange={newTransactionType === 'income' ? setIsIncomeCategoryPopoverOpen : setIsCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between truncate">
+                                            {getCategoryName(newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category, newTransactionType)}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
+                                            <CommandList>
+                                                <CommandEmpty><Button variant="ghost" className="w-full justify-start text-primary" onClick={handleCreateCategory}><Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"</Button></CommandEmpty>
+                                                <CommandGroup>
+                                                    {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
+                                                        <CommandItem key={c.id} onSelect={() => { 
+                                                            setNewTransaction(p => ({...p, [newTransactionType === 'income' ? 'incomeCategory' : 'category']: c.categoryNumber || c.id})); 
+                                                            newTransactionType === 'income' ? setIsIncomeCategoryPopoverOpen(false) : setIsCategoryPopoverOpen(false); 
+                                                        }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", (newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category) === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
+                                                            {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+
+                        {newTransactionType === 'income' && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Deposit To</Label>
+                                <Select value={newTransaction.depositedTo} onValueChange={v => setNewTransaction(p => ({...p, depositedTo: v}))}>
+                                    <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                                    <SelectContent>{defaultDepositAccounts.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right pt-2">Explanation</Label>
+                            <Textarea value={newTransaction.explanation} onChange={e => setNewTransaction(p => ({...p, explanation: e.target.value}))} className="col-span-3" rows={2} />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Doc # / Link</Label>
+                            <div className="col-span-3 flex gap-2">
+                                <Input placeholder="Doc #" value={newTransaction.documentNumber} onChange={e => setNewTransaction(p => ({...p, documentNumber: e.target.value}))} className="w-1/3" />
+                                <Input placeholder="Document URL..." value={newTransaction.documentUrl} onChange={e => setNewTransaction(p => ({...p, documentUrl: e.target.value}))} className="flex-1" />
+                            </div>
+                        </div>
+                    </div>
+                </ScrollArea>
+                <DialogFooter className="p-6 pt-2 border-t shrink-0">
+                    <Button variant="ghost" onClick={() => setIsTransactionDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveTransaction}>Save Transaction</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently delete this ledger entry. This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <ContactFormDialog
+            isOpen={isContactFormOpen}
+            onOpenChange={setIsContactFormOpen}
+            contactToEdit={null}
+            folders={contactFolders}
+            onFoldersChange={setContactFolders}
+            onSave={handleContactSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+        />
+    </div>
+  );
 }

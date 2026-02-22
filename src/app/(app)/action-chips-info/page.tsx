@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -187,7 +186,7 @@ export default function ActionChipsInfoPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                        Use the <strong>"Groups"</strong> view in the sidebar to see everything Ogeemo has to offer, then use the <strong>"Action Manager"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
+                        Use the <strong>"Full Menu"</strong> view in the sidebar to see everything Ogeemo has to offer, then use the <strong>"Action Manager"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
                     </p>
                 </CardContent>
             </Card>

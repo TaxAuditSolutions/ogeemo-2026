@@ -31,6 +31,7 @@ import {
   ArrowUpZA,
   Database,
   PlayCircle,
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -44,6 +45,7 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
+  { href: "/action-chips-info", label: "Action Chip Manager", icon: Zap },
   { href: "/master-mind", label: "Command Centre", icon: PlayCircle },
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
   { href: "/about", label: "About Ogeemo", icon: Globe },

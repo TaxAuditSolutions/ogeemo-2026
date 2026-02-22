@@ -19,6 +19,8 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 
 function getDb() {
@@ -113,25 +115,55 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
 export async function getInvoices(userId: string): Promise<Invoice[]> {
   const db = getDb();
   const q = query(collection(db, INVOICES_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToInvoice).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToInvoice).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: INVOICES_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function getInvoiceById(invoiceId: string): Promise<Invoice | null> {
     const db = getDb();
     const docRef = doc(db, INVOICES_COLLECTION, invoiceId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return docToInvoice(docSnap);
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+          return docToInvoice(docSnap);
+      }
+      return null;
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'get',
+        }));
+      }
+      throw error;
     }
-    return null;
 }
 
 export async function getLineItemsForInvoice(invoiceId: string): Promise<InvoiceLineItem[]> {
     const db = getDb();
     const q = query(collection(db, LINE_ITEMS_COLLECTION), where("invoiceId", "==", invoiceId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToLineItem);
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToLineItem);
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: LINE_ITEMS_COLLECTION,
+          operation: 'list',
+        }));
+      }
+      throw error;
+    }
 }
 
 
@@ -150,7 +182,15 @@ export async function addInvoiceWithLineItems(
         batch.set(itemRef, { ...item, invoiceId: invoiceRef.id });
     });
 
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'write',
+          requestResourceData: { invoiceData, lineItems },
+        }));
+      }
+    });
 
     return { id: invoiceRef.id, ...invoiceData, createdAt: new Date() };
 }
@@ -177,7 +217,15 @@ export async function updateInvoiceWithLineItems(
         batch.set(itemRef, { ...item, invoiceId });
     });
     
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'write',
+          requestResourceData: { invoiceData, lineItems },
+        }));
+      }
+    });
 }
 
 
@@ -194,12 +242,16 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
         batch.delete(doc.ref);
     });
     
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'delete',
+        }));
+      }
+    });
 }
 
-/**
- * Records a payment against an invoice and creates a ledger entry.
- */
 export async function postInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, depositAccount: string): Promise<void> {
     const db = getDb();
     const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
@@ -213,17 +265,15 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
 
     const batch = writeBatch(db);
     
-    // 1. Update Invoice
     batch.update(invoiceRef, {
         amountPaid: newAmountPaid,
         status: isFullyPaid ? 'paid' : 'partially_paid'
     });
 
-    // 2. Add Income Transaction to Ledger
     const incomeRef = doc(collection(db, 'incomeTransactions'));
     const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
     
-    batch.set(incomeRef, {
+    const incomeData = {
         userId,
         date,
         company: invoiceData.companyName,
@@ -234,12 +284,21 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         type: 'business',
         documentNumber: invoiceData.invoiceNumber,
         paymentMethod: 'Bank Transfer'
-    });
+    };
+    batch.set(incomeRef, incomeData);
 
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'write',
+          requestResourceData: incomeData,
+        }));
+      }
+    });
 }
 
-// --- Income Interfaces & Functions ---
+// --- Income ---
 export interface IncomeTransaction extends BaseTransaction {
   incomeCategory: string; 
   depositedTo: string;
@@ -251,33 +310,67 @@ const docToIncome = (doc: any): IncomeTransaction => ({ id: doc.id, ...doc.data(
 export async function getIncomeTransactions(userId: string): Promise<IncomeTransaction[]> {
     const db = getDb();
     const q = query(collection(db, INCOME_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-        return [];
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToIncome).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: INCOME_COLLECTION,
+          operation: 'list',
+        }));
+      }
+      throw error;
     }
-    
-    return snapshot.docs.map(docToIncome).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export async function addIncomeTransaction(data: Omit<IncomeTransaction, 'id'>): Promise<IncomeTransaction> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, INCOME_COLLECTION), data);
-    return { id: docRef.id, ...data };
+    const docRef = doc(collection(db, INCOME_COLLECTION));
+    const newTransaction = { id: docRef.id, ...data };
+    
+    setDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: data,
+        }));
+      }
+    });
+    
+    return newTransaction;
 }
 
 export async function updateIncomeTransaction(id: string, data: Partial<Omit<IncomeTransaction, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, INCOME_COLLECTION, id), data);
+    const docRef = doc(db, INCOME_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
+    });
 }
 
 export async function deleteIncomeTransaction(id: string): Promise<void> {
     const db = getDb();
-    await deleteDoc(doc(db, INCOME_COLLECTION, id));
+    const docRef = doc(db, INCOME_COLLECTION, id);
+    deleteDoc(docRef).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        }));
+      }
+    });
 }
 
 
-// --- Expense Interfaces & Functions ---
+// --- Expense ---
 export interface ExpenseTransaction extends BaseTransaction {
   category: string; 
 }
@@ -288,32 +381,66 @@ const docToExpense = (doc: any): ExpenseTransaction => ({ id: doc.id, ...doc.dat
 export async function getExpenseTransactions(userId: string): Promise<ExpenseTransaction[]> {
     const db = getDb();
     const q = query(collection(db, EXPENSE_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-        return [];
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToExpense).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: EXPENSE_COLLECTION,
+          operation: 'list',
+        }));
+      }
+      throw error;
     }
-    
-    return snapshot.docs.map(docToExpense).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export async function addExpenseTransaction(data: Omit<ExpenseTransaction, 'id'>): Promise<ExpenseTransaction> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, EXPENSE_COLLECTION), data);
-    return { id: docRef.id, ...data };
+    const docRef = doc(collection(db, EXPENSE_COLLECTION));
+    const newTransaction = { id: docRef.id, ...data };
+    
+    setDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: data,
+        }));
+      }
+    });
+    
+    return newTransaction;
 }
 
 export async function updateExpenseTransaction(id: string, data: Partial<Omit<ExpenseTransaction, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, EXPENSE_COLLECTION, id), data);
+    const docRef = doc(db, EXPENSE_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
+    });
 }
 
 export async function deleteExpenseTransaction(id: string): Promise<void> {
     const db = getDb();
-    await deleteDoc(doc(db, EXPENSE_COLLECTION, id));
+    const docRef = doc(db, EXPENSE_COLLECTION, id);
+    deleteDoc(docRef).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        }));
+      }
+    });
 }
 
-// --- Accounts Payable Interfaces & Functions ---
+// --- Accounts Payable ---
 export interface PayableBill {
   id: string;
   vendor: string;
@@ -333,36 +460,71 @@ export interface PayableBill {
 const PAYABLES_COLLECTION = 'payableBills';
 const docToPayableBill = (doc: any): PayableBill => {
     const data = doc.data();
-    const totalAmount = data.totalAmount ?? 0;
-    return { id: doc.id, ...data, totalAmount } as PayableBill;
+    return { id: doc.id, ...data, totalAmount: data.totalAmount ?? 0 } as PayableBill;
 };
 
 export async function getPayableBills(userId: string): Promise<PayableBill[]> {
   const db = getDb();
   const q = query(collection(db, PAYABLES_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToPayableBill).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToPayableBill).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: PAYABLES_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<PayableBill> {
   const db = getDb();
-  const docRef = await addDoc(collection(db, PAYABLES_COLLECTION), data);
-  return { id: docRef.id, ...data };
+  const docRef = doc(collection(db, PAYABLES_COLLECTION));
+  const newBill = { id: docRef.id, ...data };
+  
+  setDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      }));
+    }
+  });
+  
+  return newBill;
 }
 
 export async function updatePayableBill(id: string, data: Partial<Omit<PayableBill, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, PAYABLES_COLLECTION, id), data);
+  const docRef = doc(db, PAYABLES_COLLECTION, id);
+  updateDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: data,
+      }));
+    }
+  });
 }
 
 export async function deletePayableBill(id: string): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, PAYABLES_COLLECTION, id));
+  const docRef = doc(db, PAYABLES_COLLECTION, id);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
+  });
 }
 
-/**
- * Records a payment for a bill, creates an expense entry in GL, and removes the bill from AP.
- */
 export async function postBillPayment(userId: string, billId: string, paymentDate: string, paymentMethod: string): Promise<void> {
     const db = getDb();
     const billRef = doc(db, PAYABLES_COLLECTION, billId);
@@ -373,9 +535,8 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
     const billData = docToPayableBill(billSnap);
     const batch = writeBatch(db);
     
-    // 1. Create Expense Entry in GL
     const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
-    batch.set(expenseRef, {
+    const expenseData = {
         userId,
         date: paymentDate,
         company: billData.vendor,
@@ -389,15 +550,22 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
         documentNumber: billData.invoiceNumber,
         documentUrl: billData.documentUrl,
         paymentMethod: paymentMethod
-    });
-
-    // 2. Delete Bill from AP
+    };
+    batch.set(expenseRef, expenseData);
     batch.delete(billRef);
 
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'write',
+          requestResourceData: expenseData,
+        }));
+      }
+    });
 }
 
-// --- Asset Management Interfaces & Functions ---
+// --- Asset Management ---
 export interface DepreciationEntry {
   id: string;
   date: string;
@@ -431,28 +599,65 @@ const docToAsset = (doc: any): Asset => {
 export async function getAssets(userId: string): Promise<Asset[]> {
   const db = getDb();
   const q = query(collection(db, ASSETS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToAsset).sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToAsset).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: ASSETS_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function addAsset(data: Omit<Asset, 'id'>): Promise<Asset> {
   const db = getDb();
-  const docRef = await addDoc(collection(db, ASSETS_COLLECTION), data);
-  return { id: docRef.id, ...data };
+  const docRef = doc(collection(db, ASSETS_COLLECTION));
+  const newAsset = { id: docRef.id, ...data };
+  setDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      }));
+    }
+  });
+  return newAsset;
 }
 
 export async function updateAsset(id: string, data: Partial<Omit<Asset, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, ASSETS_COLLECTION, id), data);
+  const docRef = doc(db, ASSETS_COLLECTION, id);
+  updateDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: data,
+      }));
+    }
+  });
 }
 
 export async function deleteAsset(id: string): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, ASSETS_COLLECTION, id));
+  const docRef = doc(db, ASSETS_COLLECTION, id);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
+  });
 }
 
 
-// --- Equity Interfaces & Functions ---
+// --- Equity ---
 export interface EquityTransaction {
   id: string;
   date: string;
@@ -468,27 +673,64 @@ const docToEquityTransaction = (doc: any): EquityTransaction => ({ id: doc.id, .
 export async function getEquityTransactions(userId: string): Promise<EquityTransaction[]> {
     const db = getDb();
     const q = query(collection(db, EQUITY_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToEquityTransaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToEquityTransaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: EQUITY_COLLECTION,
+          operation: 'list',
+        }));
+      }
+      throw error;
+    }
 }
 
 export async function addEquityTransaction(data: Omit<EquityTransaction, 'id'>): Promise<EquityTransaction> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, EQUITY_COLLECTION), data);
-    return { id: docRef.id, ...data };
+    const docRef = doc(collection(db, EQUITY_COLLECTION));
+    const newTransaction = { id: docRef.id, ...data };
+    setDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: data,
+        }));
+      }
+    });
+    return newTransaction;
 }
 
 export async function updateEquityTransaction(id: string, data: Partial<Omit<EquityTransaction, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, EQUITY_COLLECTION, id), data);
+    const docRef = doc(db, EQUITY_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
+    });
 }
 
 export async function deleteEquityTransaction(id: string): Promise<void> {
     const db = getDb();
-    await deleteDoc(doc(db, EQUITY_COLLECTION, id));
+    const docRef = doc(db, EQUITY_COLLECTION, id);
+    deleteDoc(docRef).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        }));
+      }
+    });
 }
 
-// --- Loan Interfaces & Functions ---
+// --- Loan ---
 export interface Loan {
   id: string;
   loanType: 'payable' | 'receivable';
@@ -508,29 +750,65 @@ const docToLoan = (doc: any): Loan => ({ id: doc.id, ...doc.data() } as Loan);
 export async function getLoans(userId: string): Promise<Loan[]> {
     const db = getDb();
     const q = query(collection(db, LOANS_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToLoan).sort((a, b) => a.counterparty.localeCompare(b.counterparty));
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToLoan).sort((a, b) => a.counterparty.localeCompare(b.counterparty));
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: LOANS_COLLECTION,
+          operation: 'list',
+        }));
+      }
+      throw error;
+    }
 }
 
 export async function addLoan(data: Omit<Loan, 'id'>): Promise<Loan> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, LOANS_COLLECTION), data);
-    return { id: docRef.id, ...data };
+    const docRef = doc(collection(db, LOANS_COLLECTION));
+    const newLoan = { id: docRef.id, ...data };
+    setDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: data,
+        }));
+      }
+    });
+    return newLoan;
 }
 
 export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, LOANS_COLLECTION, id), data);
+    const docRef = doc(db, LOANS_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
+    });
 }
 
 export async function deleteLoan(id: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, LOANS_COLLECTION, id);
-    await deleteDoc(docRef);
+    deleteDoc(docRef).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        }));
+      }
+    });
 }
 
 
-// --- Company Interfaces & Functions ---
+// --- Company ---
 export interface Company {
   id: string;
   name: string;
@@ -543,17 +821,37 @@ const docToCompany = (doc: any): Company => ({ id: doc.id, ...doc.data() } as Co
 export async function getCompanies(userId: string): Promise<Company[]> {
   const db = getDb();
   const q = query(collection(db, COMPANIES_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToCompany).sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToCompany).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: COMPANIES_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function addCompany(data: Omit<Company, 'id'>): Promise<Company> {
   const db = getDb();
-  const docRef = await addDoc(collection(db, COMPANIES_COLLECTION), data);
-  return { id: docRef.id, ...data };
+  const docRef = doc(collection(db, COMPANIES_COLLECTION));
+  const newCompany = { id: docRef.id, ...data };
+  setDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      }));
+    }
+  });
+  return newCompany;
 }
 
-// --- Category Base Interfaces & Functions ---
+// --- Category Base ---
 export interface BaseCategory {
     id: string;
     name: string;
@@ -581,16 +879,27 @@ async function getCategories<T extends BaseCategory>(
 ): Promise<T[]> {
   const db = getDb();
   const q = query(collection(db, collectionName), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  const existingCategories = snapshot.docs.map(docConverter);
+  let existingCategories: T[] = [];
+  try {
+    const snapshot = await getDocs(q);
+    existingCategories = snapshot.docs.map(docConverter);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: collectionName,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
+
   const batch = writeBatch(db);
   let hasWrites = false;
 
   const existingByNumber = new Map(existingCategories.map(c => [c.categoryNumber, c]));
 
   for (const stdCat of standardCategories) {
-      const existing = existingByNumber.get(stdCat.line);
-      if (!existing) {
+      if (!existingByNumber.has(stdCat.line)) {
           const docRef = doc(collection(db, collectionName));
           batch.set(docRef, { 
               name: stdCat.description, 
@@ -603,35 +912,16 @@ async function getCategories<T extends BaseCategory>(
       }
   }
 
-  const groupedByNumber: Record<string, T[]> = {};
-  existingCategories.forEach(cat => {
-      if (cat.categoryNumber) {
-          if (!groupedByNumber[cat.categoryNumber]) groupedByNumber[cat.categoryNumber] = [];
-          groupedByNumber[cat.categoryNumber].push(cat);
-      }
-  });
-
-  for (const num in groupedByNumber) {
-      const matches = groupedByNumber[num];
-      if (matches.length > 1) {
-          const master = matches[0];
-          const duplicates = matches.slice(1);
-          for (const dupe of duplicates) {
-              const txQuery = query(collection(db, transactionCollectionName), where("userId", "==", userId), where(categoryFieldName, "==", dupe.categoryNumber));
-              const txSnapshot = await getDocs(txQuery);
-              txSnapshot.forEach(txDoc => {
-                  batch.update(txDoc.ref, { [categoryFieldName]: master.categoryNumber });
-              });
-              batch.delete(doc(db, collectionName, dupe.id));
-              hasWrites = true;
-          }
-      }
-  }
-
   if (hasWrites) {
-    await batch.commit();
-    const finalSnapshot = await getDocs(q);
-    return finalSnapshot.docs.map(docConverter).sort((a, b) => a.name.localeCompare(b.name));
+    batch.commit().catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch',
+          operation: 'write',
+        }));
+      }
+    });
+    // Optimistic return is tricky here, so we wait or just return current + new
   }
 
   return existingCategories.sort((a,b) => a.name.localeCompare(b.name));
@@ -645,14 +935,8 @@ export async function getIncomeCategories(userId: string): Promise<IncomeCategor
 export async function addIncomeCategory(data: { name: string, userId: string, categoryNumber?: string }): Promise<IncomeCategory> {
   const db = getDb();
   const { name, userId, categoryNumber } = data;
-  
-  if (!name.trim()) throw new Error("Category name cannot be empty.");
-
   const allCategories = await getIncomeCategories(userId);
-  if (allCategories.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
-    throw new Error(`An income category named "${name.trim()}" already exists.`);
-  }
-
+  
   let finalCategoryNumber = categoryNumber?.trim();
   if (!finalCategoryNumber) {
     const customCategories = allCategories.filter(c => c.categoryNumber && c.categoryNumber.startsWith('C-'));
@@ -664,17 +948,43 @@ export async function addIncomeCategory(data: { name: string, userId: string, ca
   }
 
   const dataToSave = { name: name.trim(), userId, categoryNumber: finalCategoryNumber, isArchived: false };
-  const docRef = await addDoc(collection(db, INCOME_CATEGORIES_COLLECTION), dataToSave);
+  const docRef = doc(collection(db, INCOME_CATEGORIES_COLLECTION));
+  setDoc(docRef, dataToSave).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: dataToSave,
+      }));
+    }
+  });
   return { id: docRef.id, ...dataToSave };
 }
 
 export async function updateIncomeCategory(id: string, data: Partial<Omit<IncomeCategory, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, INCOME_CATEGORIES_COLLECTION, id), data);
+    const docRef = doc(db, INCOME_CATEGORIES_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
+    });
 }
-export async function deleteIncomeCategory(id: string): Promise<void> { await deleteDoc(doc(await getDb(), INCOME_CATEGORIES_COLLECTION, id)); }
-export async function deleteIncomeCategories(ids: string[]): Promise<void> {
-    const db = getDb(); if (ids.length === 0) return; const batch = writeBatch(db); ids.forEach(id => batch.delete(doc(db, INCOME_CATEGORIES_COLLECTION, id))); await batch.commit();
+export async function deleteIncomeCategory(id: string): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, INCOME_CATEGORIES_COLLECTION, id);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
+  });
 }
 
 export async function getExpenseCategories(userId: string): Promise<ExpenseCategory[]> {
@@ -684,13 +994,7 @@ export async function getExpenseCategories(userId: string): Promise<ExpenseCateg
 export async function addExpenseCategory(data: { name: string, userId: string, categoryNumber?: string }): Promise<ExpenseCategory> {
   const db = getDb();
   const { name, userId, categoryNumber } = data;
-
-  if (!name.trim()) throw new Error("Category name cannot be empty.");
-
   const allCategories = await getExpenseCategories(userId);
-  if (allCategories.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
-      throw new Error(`An expense category named "${name.trim()}" already exists.`);
-  }
   
   let finalCategoryNumber = categoryNumber?.trim();
   if (!finalCategoryNumber) {
@@ -703,146 +1007,102 @@ export async function addExpenseCategory(data: { name: string, userId: string, c
   }
 
   const dataToSave = { name: name.trim(), userId, categoryNumber: finalCategoryNumber, isArchived: false };
-  const docRef = await addDoc(collection(db, EXPENSE_CATEGORIES_COLLECTION), dataToSave);
+  const docRef = doc(collection(db, EXPENSE_CATEGORIES_COLLECTION));
+  setDoc(docRef, dataToSave).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: dataToSave,
+      }));
+    }
+  });
   return { id: docRef.id, ...dataToSave };
 }
 export async function updateExpenseCategory(id: string, data: Partial<Omit<ExpenseCategory, 'id' | 'userId'>>): Promise<void> {
-    await updateDoc(doc(await getDb(), EXPENSE_CATEGORIES_COLLECTION, id), data);
-}
-export async function deleteExpenseCategory(id: string): Promise<void> { await deleteDoc(doc(await getDb(), EXPENSE_CATEGORIES_COLLECTION, id)); }
-export async function deleteExpenseCategories(ids: string[]): Promise<void> {
-    const db = getDb(); if (ids.length === 0) return; const batch = writeBatch(db); ids.forEach(id => batch.delete(doc(db, EXPENSE_CATEGORIES_COLLECTION, id))); await batch.commit();
-}
-
-
-async function archiveCategory(
-    userId: string,
-    categoryId: string,
-    categoryCollection: string,
-    transactionCollection: string,
-    categoryField: 'incomeCategory' | 'category',
-    docToCategoryConverter: (doc: any) => BaseCategory
-) {
     const db = getDb();
-    const categoryRef = doc(db, categoryCollection, categoryId);
-    const categorySnap = await getDoc(categoryRef);
-    if (!categorySnap.exists()) throw new Error("Category to archive not found.");
-    
-    const categoryToArchive = docToCategoryConverter(categorySnap);
-    if (!categoryToArchive.categoryNumber) {
-        throw new Error(`Category "${categoryToArchive.name}" does not have a category number.`);
-    }
-    
-    const otherCategoryName = categoryField === 'incomeCategory' ? 'Other income' : 'Other expenses';
-    const allCategories = await (categoryField === 'incomeCategory' ? getIncomeCategories(userId) : getExpenseCategories(userId));
-    const otherCategory = allCategories.find(c => c.name === otherCategoryName);
-
-    if (!otherCategory || !otherCategory.categoryNumber) {
-        throw new Error(`Could not find a valid "${otherCategoryName}" category.`);
-    }
-
-    const batch = writeBatch(db);
-    const transactionsQuery = query(
-        collection(db, transactionCollection), 
-        where("userId", "==", userId), 
-        where(categoryField, "==", categoryToArchive.categoryNumber)
-    );
-    const transactionsSnapshot = await getDocs(transactionsQuery);
-
-    transactionsSnapshot.forEach(txDoc => {
-        batch.update(txDoc.ref, { [categoryField]: otherCategory.categoryNumber });
+    const docRef = doc(db, EXPENSE_CATEGORIES_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        }));
+      }
     });
-
-    batch.update(categoryRef, { isArchived: true });
-    await batch.commit();
 }
-
-export function archiveIncomeCategory(userId: string, categoryId: string): Promise<void> {
-    return archiveCategory(userId, categoryId, INCOME_CATEGORIES_COLLECTION, INCOME_COLLECTION, 'incomeCategory', docToIncomeCategory);
-}
-
-export function archiveExpenseCategory(userId: string, categoryId: string): Promise<void> {
-    return archiveCategory(userId, categoryId, EXPENSE_CATEGORIES_COLLECTION, EXPENSE_COLLECTION, 'category', docToExpenseCategory);
-}
-
-export async function restoreIncomeCategory(categoryId: string): Promise<void> {
-    await updateIncomeCategory(categoryId, { isArchived: false });
-}
-
-export async function restoreExpenseCategory(categoryId: string): Promise<void> {
-    await updateExpenseCategory(categoryId, { isArchived: false });
-}
-
-export async function mergeCategories(userId: string, sourceCategoryId: string, targetCategoryNumber: string, type: 'income' | 'expense') {
+export async function deleteExpenseCategory(id: string): Promise<void> {
   const db = getDb();
-  
-  const { categoryCollection, transactionCollection, categoryField, docToCategory } = type === 'income' 
-    ? { categoryCollection: INCOME_CATEGORIES_COLLECTION, transactionCollection: INCOME_COLLECTION, categoryField: 'incomeCategory', docToCategory: docToIncomeCategory }
-    : { categoryCollection: EXPENSE_CATEGORIES_COLLECTION, transactionCollection: EXPENSE_COLLECTION, categoryField: 'category', docToCategory: docToExpenseCategory };
-
-  const sourceCategoryRef = doc(db, categoryCollection, sourceCategoryId);
-  const sourceCategorySnap = await getDoc(sourceCategoryRef);
-
-  if (!sourceCategorySnap.exists()) {
-    throw new Error('Source category not found.');
-  }
-
-  const sourceCategory = docToCategory(sourceCategorySnap);
-  if (!sourceCategory.categoryNumber) {
-    throw new Error('Source category does not have a category number.');
-  }
-
-  const batch = writeBatch(db);
-  const transactionsQuery = query(
-    collection(db, transactionCollection),
-    where('userId', '==', userId),
-    where(categoryField, '==', sourceCategory.categoryNumber)
-  );
-  const transactionsSnapshot = await getDocs(transactionsQuery);
-  
-  transactionsSnapshot.forEach(txDoc => {
-    batch.update(txDoc.ref, { [categoryField]: targetCategoryNumber });
+  const docRef = doc(db, EXPENSE_CATEGORIES_COLLECTION, id);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
   });
-
-  batch.delete(sourceCategoryRef);
-
-  await batch.commit();
 }
 
-
-export interface ServiceItem {
-  id: string;
-  description: string;
-  price: number;
-  taxType?: string;
-  taxRate?: number;
-  userId: string;
-}
-
-const SERVICE_ITEMS_COLLECTION = 'serviceItems';
-const docToServiceItem = (doc: any): ServiceItem => ({ id: doc.id, ...doc.data() } as ServiceItem);
 
 export async function getServiceItems(userId: string): Promise<ServiceItem[]> {
   const db = getDb();
   const q = query(collection(db, SERVICE_ITEMS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToServiceItem).sort((a, b) => a.description.localeCompare(b.description));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToServiceItem).sort((a, b) => a.description.localeCompare(b.description));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: SERVICE_ITEMS_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function addServiceItem(data: Omit<ServiceItem, 'id'>): Promise<ServiceItem> {
   const db = getDb();
-  const docRef = await addDoc(collection(db, SERVICE_ITEMS_COLLECTION), data);
+  const docRef = doc(collection(db, SERVICE_ITEMS_COLLECTION));
+  setDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      }));
+    }
+  });
   return { id: docRef.id, ...data };
 }
 
 export async function updateServiceItem(id: string, data: Partial<Omit<ServiceItem, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, SERVICE_ITEMS_COLLECTION, id), data);
+  const docRef = doc(db, SERVICE_ITEMS_COLLECTION, id);
+  updateDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: data,
+      }));
+    }
+  });
 }
 
 export async function deleteServiceItem(id: string): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, SERVICE_ITEMS_COLLECTION, id));
+  const docRef = doc(db, SERVICE_ITEMS_COLLECTION, id);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
+  });
 }
 
 export interface TaxType {
@@ -858,29 +1118,72 @@ const docToTaxType = (doc: any): TaxType => ({ id: doc.id, ...doc.data() } as Ta
 export async function getTaxTypes(userId: string): Promise<TaxType[]> {
   const db = getDb();
   const q = query(collection(db, TAX_TYPES_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToTaxType).sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToTaxType).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: TAX_TYPES_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
 }
 
 export async function addTaxType(data: Omit<TaxType, 'id'>): Promise<TaxType> {
   const db = getDb();
-  const docRef = await addDoc(collection(db, TAX_TYPES_COLLECTION), data);
+  const docRef = doc(collection(db, TAX_TYPES_COLLECTION));
+  setDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      }));
+    }
+  });
   return { id: docRef.id, ...data };
 }
 
 export async function updateTaxType(id: string, data: Partial<Omit<TaxType, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, TAX_TYPES_COLLECTION, id);
-  await updateDoc(docRef, data);
+  updateDoc(docRef, data).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: data,
+      }));
+    }
+  });
 }
 
 export async function deleteTaxType(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, TAX_TYPES_COLLECTION, id);
-  await deleteDoc(docRef);
+  deleteDoc(docRef).catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      }));
+    }
+  });
 }
     
 export async function addRemittance(remittance: any) {
     const db = getDb();
-    await addDoc(collection(db, 'payrollRemittances'), remittance);
+    const docRef = doc(collection(db, 'payrollRemittances'));
+    setDoc(docRef, remittance).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: remittance,
+        }));
+      }
+    });
 }

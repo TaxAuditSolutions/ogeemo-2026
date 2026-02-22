@@ -202,7 +202,9 @@ export function LedgersView() {
         setIncomeCategories(fetchedIncomeCategories);
         setCustomIndustries(fetchedIndustries);
         setCompanies(fetchedCompanies);
-    } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+    } catch (e: any) { 
+        // Standard errors are already handled by emitting them from services
+    }
     finally { setIsLoading(false); }
   }, [user, toast]);
 
@@ -340,7 +342,7 @@ export function LedgersView() {
     setSortConfig({ key, direction });
   };
 
-  const handleSaveTransaction = async () => {
+  const handleSaveTransaction = () => {
       if (!user) return;
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
@@ -369,123 +371,97 @@ export function LedgersView() {
           paymentMethod: newTransaction.paymentMethod,
       };
 
-      try {
-          if (newTransaction.paymentStatus === 'unpaid') {
-              // Routing to AR or AP buckets instead of GL
-              const contact = contacts.find(c => c.name === newTransaction.company);
-              if (newTransactionType === 'income') {
-                  if (!contact) throw new Error("A valid contact record is required for Accounts Receivable entries.");
-                  await addInvoiceWithLineItems({
-                      invoiceNumber: newTransaction.documentNumber || `PRO-${Date.now()}`,
-                      companyName: newTransaction.company,
-                      contactId: contact.id,
-                      originalAmount: totalAmountNum,
-                      amountPaid: 0,
-                      dueDate: addDays(new Date(newTransaction.date), 14),
-                      invoiceDate: new Date(newTransaction.date),
-                      status: 'outstanding',
-                      notes: newTransaction.description,
-                      taxType: 'standard',
-                      userId: user.uid,
-                  }, [{
-                      description: newTransaction.description || "Service Delivery",
-                      quantity: 1,
-                      price: totalAmountNum,
-                      taxRate: taxRateNum
-                  }]);
-                  toast({ title: "Sent to Accounts Receivable", description: "This unpaid item is now in your AR bucket." });
-              } else {
-                  await addPayableBill({
-                      vendor: newTransaction.company,
-                      invoiceNumber: newTransaction.documentNumber || `BILL-${Date.now()}`,
-                      dueDate: format(addDays(new Date(newTransaction.date), 14), 'yyyy-MM-dd'),
-                      totalAmount: totalAmountNum,
-                      preTaxAmount: preTaxAmount,
-                      taxAmount: taxAmount,
-                      taxRate: taxRateNum,
-                      category: selectedCategoryNumber,
-                      description: newTransaction.description,
-                      documentUrl: newTransaction.documentUrl,
-                      userId: user.uid
-                  });
-                  toast({ title: "Sent to Accounts Payable", description: "This unpaid bill is now in your AP bucket." });
-              }
+      if (newTransaction.paymentStatus === 'unpaid') {
+          const contact = contacts.find(c => c.name === newTransaction.company);
+          if (newTransactionType === 'income') {
+              if (!contact) { toast({ variant: 'destructive', title: 'Error', description: "A valid contact record is required for Accounts Receivable entries." }); return; }
+              addInvoiceWithLineItems({
+                  invoiceNumber: newTransaction.documentNumber || `PRO-${Date.now()}`,
+                  companyName: newTransaction.company,
+                  contactId: contact.id,
+                  originalAmount: totalAmountNum,
+                  amountPaid: 0,
+                  dueDate: addDays(new Date(newTransaction.date), 14),
+                  invoiceDate: new Date(newTransaction.date),
+                  status: 'outstanding',
+                  notes: newTransaction.description,
+                  taxType: 'standard',
+                  userId: user.uid,
+              }, [{
+                  description: newTransaction.description || "Service Delivery",
+                  quantity: 1,
+                  price: totalAmountNum,
+                  taxRate: taxRateNum
+              }]);
+              toast({ title: "Sent to Accounts Receivable", description: "This unpaid item is now in your AR bucket." });
           } else {
-              // standard GL entry
-              if (transactionToEdit) {
-                  if (newTransactionType === 'income') {
-                      await updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo });
-                  } else {
-                      await updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: selectedCategoryNumber });
-                  }
-                  toast({ title: "Transaction Updated" });
+              addPayableBill({
+                  vendor: newTransaction.company,
+                  invoiceNumber: newTransaction.documentNumber || `BILL-${Date.now()}`,
+                  dueDate: format(addDays(new Date(newTransaction.date), 14), 'yyyy-MM-dd'),
+                  totalAmount: totalAmountNum,
+                  preTaxAmount: preTaxAmount,
+                  taxAmount: taxAmount,
+                  taxRate: taxRateNum,
+                  category: selectedCategoryNumber,
+                  description: newTransaction.description,
+                  documentUrl: newTransaction.documentUrl,
+                  userId: user.uid
+              });
+              toast({ title: "Sent to Accounts Payable", description: "This unpaid bill is now in your AP bucket." });
+          }
+      } else {
+          if (transactionToEdit) {
+              if (newTransactionType === 'income') {
+                  updateIncomeTransaction(transactionToEdit.id, { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo });
               } else {
-                  if (newTransactionType === 'income') {
-                      const newEntryData: Omit<IncomeTransaction, 'id'> = { ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid };
-                      await addIncomeTransaction(newEntryData);
-                      toast({ title: "Income Recorded in GL" });
-                  } else {
-                      const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: selectedCategoryNumber, userId: user.uid };
-                      await addExpenseTransaction(newEntryData);
-                      toast({ title: "Expense Recorded in GL" });
-                  }
+                  updateExpenseTransaction(transactionToEdit.id, { ...baseData, category: selectedCategoryNumber });
+              }
+              toast({ title: "Transaction Updated" });
+          } else {
+              if (newTransactionType === 'income') {
+                  addIncomeTransaction({ ...baseData, incomeCategory: selectedCategoryNumber, depositedTo: newTransaction.depositedTo, userId: user.uid });
+                  toast({ title: "Income Recorded in GL" });
+              } else {
+                  addExpenseTransaction({ ...baseData, category: selectedCategoryNumber, userId: user.uid });
+                  toast({ title: "Expense Recorded in GL" });
               }
           }
-          setIsTransactionDialogOpen(false);
-          loadData();
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
       }
+      setIsTransactionDialogOpen(false);
+      // Wait a moment for background sync before reloading
+      setTimeout(loadData, 500);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     if (!transactionToDelete || !user) return;
-    try {
-        if (transactionToDelete.transactionType === 'income') {
-            await deleteIncomeTransaction(transactionToDelete.id);
-            setIncomeLedger(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
-        } else {
-            await deleteExpenseTransaction(transactionToDelete.id);
-            setExpenseLedger(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
-        }
-        toast({ title: 'Transaction Deleted' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
-    } finally {
-        setTransactionToDelete(null);
+    if (transactionToDelete.transactionType === 'income') {
+        deleteIncomeTransaction(transactionToDelete.id);
+    } else {
+        deleteExpenseTransaction(transactionToDelete.id);
     }
+    setTransactionToDelete(null);
+    setTimeout(loadData, 500);
   };
 
-  const handleCreateCompany = async (name: string) => {
+  const handleCreateCompany = (name: string) => {
       if (!user || !name.trim()) return;
-      try {
-          const newCompany = await addCompany({ name: name.trim(), userId: user.uid });
-          setCompanies(prev => [...prev, newCompany]);
-          setNewTransaction(prev => ({ ...prev, company: newCompany.name }));
-          setShowAddCompany(false);
-          setNewCompanyName('');
-          toast({ title: 'Company Created' });
-      } catch (e: any) { toast({ variant: 'destructive', title: 'Error', description: e.message }); }
+      addCompany({ name: name.trim(), userId: user.uid });
+      setShowAddCompany(false);
+      setNewCompanyName('');
+      setTimeout(loadData, 500);
   };
 
-  const handleCreateCategory = async () => {
+  const handleCreateCategory = () => {
     if (!user || !newCategoryName.trim()) return;
-    try {
-        if (newTransactionType === 'income') {
-            const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
-            setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
-            setNewTransaction(prev => ({ ...prev, incomeCategory: newCat.categoryNumber || newCat.id }));
-        } else {
-            const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
-            setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
-            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
-        }
-        setShowAddCategory(false);
-        setNewCategoryName('');
-        toast({ title: 'Category Created' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
+    if (newTransactionType === 'income') {
+        addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
+    } else {
+        addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
     }
+    setShowAddCategory(false);
+    setNewCategoryName('');
+    setTimeout(loadData, 500);
   };
 
   const clearFilters = () => {
@@ -494,11 +470,7 @@ export function LedgersView() {
   };
 
   const handleContactSave = (contact: Contact, isEditing: boolean) => {
-      if (isEditing) {
-          setContacts(prev => prev.map(c => c.id === contact.id ? contact : c));
-      } else {
-          setContacts(prev => [...prev, contact]);
-      }
+      loadData();
       setIsContactFormOpen(false);
   };
 

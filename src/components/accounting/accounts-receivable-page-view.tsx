@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -29,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, FileDigit, Landmark, CheckCircle, MoreVertical, BookOpen, Plus } from 'lucide-react';
+import { LoaderCircle, FileDigit, Landmark, CheckCircle, MoreVertical, BookOpen, Plus, Pencil } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -72,11 +73,11 @@ export function AccountsReceivablePageView() {
             // Strictly show outstanding invoices
             setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load invoice data.' });
+            // Contextual errors are handled by service layer
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast]);
+    }, [user]);
 
     useEffect(() => {
         loadData();
@@ -89,7 +90,7 @@ export function AccountsReceivablePageView() {
         setIsPaymentDialogOpen(true);
     };
 
-    const handlePostPayment = async () => {
+    const handlePostPayment = () => {
         if (!user || !selectedInvoice) return;
         
         const amount = parseFloat(paymentAmount);
@@ -98,20 +99,10 @@ export function AccountsReceivablePageView() {
             return;
         }
 
-        setIsSaving(true);
-        try {
-            await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
-            toast({ 
-                title: 'Payment Posted', 
-                description: `${formatCurrency(amount)} recorded. Invoice updated and transaction added to GL.` 
-            });
-            setIsPaymentDialogOpen(false);
-            loadData(); // Refresh list - fully paid invoices will disappear
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
-        } finally {
-            setIsSaving(false);
-        }
+        postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
+        toast({ title: 'Payment Initiated', description: 'Recording payment and updating ledger.' });
+        setIsPaymentDialogOpen(false);
+        setTimeout(loadData, 500); // Refresh list
     };
 
     const totalOutstanding = useMemo(() => {

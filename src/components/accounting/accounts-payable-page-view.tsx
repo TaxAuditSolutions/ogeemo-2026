@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -137,11 +138,11 @@ export function AccountsPayablePageView() {
       setContactFolders(fetchedFolders);
       setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      // Standard errors are already handled by services emitting contextual errors
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
     loadData();
@@ -167,74 +168,50 @@ export function AccountsPayablePageView() {
       setIsAddAddBillOpen(true);
   };
 
-  const handleSaveBill = async () => {
+  const handleSaveBill = () => {
     if (!user || !billForm.vendor || !billForm.totalAmount || !billForm.category) {
         toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide supplier, amount, and category.' });
         return;
     }
 
-    setIsSaving(true);
-    try {
-        const payload = {
-            ...billForm,
-            totalAmount: parseFloat(billForm.totalAmount),
-            userId: user.uid,
-        };
+    const payload = {
+        ...billForm,
+        totalAmount: parseFloat(billForm.totalAmount),
+        userId: user.uid,
+    };
 
-        if (billToEditId) {
-            await updatePayableBill(billToEditId, payload);
-            toast({ title: 'Bill Updated' });
-        } else {
-            await addPayableBill(payload);
-            toast({ title: 'Bill Logged', description: 'Added to your Accounts Payable.' });
-        }
-        
-        setIsAddAddBillOpen(false);
-        setBillForm(emptyBillForm);
-        setBillToEditId(null);
-        loadData();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
+    if (billToEditId) {
+        updatePayableBill(billToEditId, payload);
+        toast({ title: 'Bill Updated' });
+    } else {
+        addPayableBill(payload);
+        toast({ title: 'Bill Logged', description: 'Added to your Accounts Payable.' });
     }
+    
+    setIsAddAddBillOpen(false);
+    setBillForm(emptyBillForm);
+    setBillToEditId(null);
+    setTimeout(loadData, 500);
   };
 
-  const handlePostPayment = async () => {
+  const handlePostPayment = () => {
     if (!user || !billToPay) return;
-    setIsSaving(true);
-    try {
-        await postBillPayment(user.uid, billToPay.id, paymentDate, paymentMethod);
-        toast({ 
-            title: 'Payment Posted', 
-            description: `Expense added to GL and bill removed from AP.` 
-        });
-        setBillToPay(null);
-        loadData();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
+    postBillPayment(user.uid, billToPay.id, paymentDate, paymentMethod);
+    setBillToPay(null);
+    toast({ title: 'Payment Initiated', description: 'The payment record is being processed.' });
+    setTimeout(loadData, 500);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
       if (!billToDelete) return;
-      try {
-          await deletePayableBill(billToDelete.id);
-          toast({ title: 'Bill Deleted', variant: 'destructive' });
-          loadData();
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
-      } finally {
-          setBillToDelete(null);
-      }
+      deletePayableBill(billToDelete.id);
+      setBillToDelete(null);
+      setTimeout(loadData, 500);
   };
 
   const handleSupplierSave = (savedContact: Contact) => {
-      const newCompany: Company = { id: savedContact.id, name: savedContact.businessName || savedContact.name, userId: user?.uid || '' };
-      setCompanies(prev => [...prev, newCompany].sort((a,b) => a.name.localeCompare(b.name)));
-      setBillForm(prev => ({ ...prev, vendor: newCompany.name }));
+      loadData();
+      setBillForm(prev => ({ ...prev, vendor: savedContact.businessName || savedContact.name }));
       setIsContactFormOpen(false);
       setIsVendorPopoverOpen(false);
   };

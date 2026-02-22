@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -228,6 +229,7 @@ interface PayrollRunDetail {
     grossPay: number;
     deductions: number;
     netPay: number;
+    userId: string;
 }
 
 interface SavePayrollRunData {
@@ -239,7 +241,7 @@ interface SavePayrollRunData {
     totalDeductions: number;
     totalNetPay: number;
     employeeCount: number;
-    details: PayrollRunDetail[];
+    details: Omit<PayrollRunDetail, 'userId'>[];
 }
 
 export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
@@ -261,7 +263,7 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
 
     data.details.forEach(detail => {
         const detailRef = doc(collection(db, PAYROLL_RUNS_COLLECTION, runRef.id, 'details'));
-        batch.set(detailRef, { ...detail, runId: runRef.id });
+        batch.set(detailRef, { ...detail, runId: runRef.id, userId: data.userId });
     });
 
     data.details.forEach(detail => {

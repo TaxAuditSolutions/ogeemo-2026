@@ -86,6 +86,7 @@ export interface InvoiceLineItem {
   price: number;
   taxType?: string;
   taxRate?: number;
+  userId: string;
 }
 
 export interface Invoice {
@@ -162,6 +163,7 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
         price: data.price,
         taxType: data.taxType || '',
         taxRate: data.taxRate || 0,
+        userId: data.userId,
     } as InvoiceLineItem;
 };
 
@@ -224,7 +226,7 @@ export async function getLineItemsForInvoice(invoiceId: string): Promise<Invoice
 
 export async function addInvoiceWithLineItems(
     invoiceData: Omit<Invoice, 'id' | 'createdAt'>, 
-    lineItems: Omit<InvoiceLineItem, 'invoiceId' | 'id'>[]
+    lineItems: Omit<InvoiceLineItem, 'invoiceId' | 'id' | 'userId'>[]
 ): Promise<Invoice> {
     const db = getDb();
     const batch = writeBatch(db);
@@ -234,7 +236,7 @@ export async function addInvoiceWithLineItems(
 
     lineItems.forEach(item => {
         const itemRef = doc(collection(db, LINE_ITEMS_COLLECTION));
-        batch.set(itemRef, { ...item, invoiceId: invoiceRef.id });
+        batch.set(itemRef, { ...item, invoiceId: invoiceRef.id, userId: invoiceData.userId });
     });
 
     batch.commit().catch(async (error) => {
@@ -253,7 +255,8 @@ export async function addInvoiceWithLineItems(
 export async function updateInvoiceWithLineItems(
     invoiceId: string, 
     invoiceData: Partial<Omit<Invoice, 'id' | 'userId'>>, 
-    lineItems: Omit<InvoiceLineItem, 'id' | 'invoiceId'>[]
+    lineItems: Omit<InvoiceLineItem, 'id' | 'invoiceId' | 'userId'>[],
+    userId: string
 ): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
@@ -269,7 +272,7 @@ export async function updateInvoiceWithLineItems(
 
     lineItems.forEach(item => {
         const itemRef = doc(collection(db, LINE_ITEMS_COLLECTION));
-        batch.set(itemRef, { ...item, invoiceId });
+        batch.set(itemRef, { ...item, invoiceId, userId });
     });
     
     batch.commit().catch(async (error) => {

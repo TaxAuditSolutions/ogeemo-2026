@@ -84,9 +84,10 @@
             "invoiceId": { "type": "string" },
             "description": { "type": "string" },
             "quantity": { "type": "number" },
-            "price": { "type": "number" }
+            "price": { "type": "number" },
+            "userId": { "type": "string" }
         },
-        "required": ["invoiceId", "description", "quantity", "price"]
+        "required": ["invoiceId", "description", "quantity", "price", "userId"]
     },
     "ServiceItem": {
         "title": "Service Item",
@@ -202,9 +203,10 @@
         "employeeName": { "type": "string" },
         "grossPay": { "type": "number" },
         "deductions": { "type": "number" },
-        "netPay": { "type": "number" }
+        "netPay": { "type": "number" },
+        "userId": { "type": "string" }
       },
-      "required": ["runId", "employeeId", "employeeName", "grossPay", "deductions", "netPay"]
+      "required": ["runId", "employeeId", "employeeName", "grossPay", "deductions", "netPay", "userId"]
     },
     "PayrollRemittance": {
         "title": "Payroll Remittance",

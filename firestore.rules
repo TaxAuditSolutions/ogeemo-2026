@@ -171,12 +171,13 @@ service cloud.firestore {
     }
 
     match /invoiceLineItems/{itemId} {
-      allow read, update, delete: if isOwner(get(/databases/$(database)/documents/invoices/$(resource.data.invoiceId)).data.userId);
-      allow create: if isOwner(get(/databases/$(database)/documents/invoices/$(request.resource.data.invoiceId)).data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
     match /payrollRuns/{runId}/details/{detailId} {
-        allow read, create, update, delete: if isOwner(get(/databases/$(database)/documents/payrollRuns/$(runId)).data.userId);
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
     }
 
     match /leaveRequests/{leaveRequestId} {
@@ -188,7 +189,6 @@ service cloud.firestore {
 
     match /timeLogs/{timeLogId} {
       allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
-      // Read, update, and delete must check the existing document data (resource.data), not request data.
       allow read, update, delete: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
       
       match /locations/{locationId} {

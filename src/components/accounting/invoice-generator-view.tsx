@@ -13,14 +13,14 @@ import { format, addDays } from 'date-fns';
 import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, FileDown, Clock, UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, deleteInvoice, getTaxTypes, type TaxType } from '@/services/accounting-service';
+import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '../contacts/contact-form-dialog';
-import { getCompanies, addCompany, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/services/accounting-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
@@ -34,7 +34,7 @@ import { TimeLogImportDialog } from './time-log-import-dialog';
 import { Event as TaskEvent } from '@/types/calendar-types';
 
 
-interface LineItem {
+interface LocalLineItem {
   id: string;
   description: string;
   quantity: number;
@@ -71,23 +71,23 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
-  const [paymentTermsDays, setPaymentTermsDays] = useState('14');
+  const [paymentTermsDays, setPaymentTermsDays] = setPaymentTermsDays('14');
   const [notes, setNotes] = useState("Thank you for your business!");
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
+  const [lineItems, setLineItems] = useState<LocalLineItem[]>([]);
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
-  const [itemToEdit, setItemToEdit] = useState<LineItem | null>(null);
+  const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
   
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
@@ -113,8 +113,12 @@ export function InvoiceGeneratorView() {
           setSelectedSupplierId(invoiceData.supplierId || null);
           
           const mappedLineItems = lineItemsData.map(item => ({
-              ...item,
               id: item.id || `item_${Math.random()}`,
+              description: item.description,
+              quantity: item.quantity,
+              price: item.price,
+              taxType: item.taxType,
+              taxRate: item.taxRate,
           }));
           setLineItems(mappedLineItems);
           
@@ -194,7 +198,7 @@ export function InvoiceGeneratorView() {
     }
   }, [selectedContactId, contacts, userProfile]);
   
-  const handleOpenAddItemDialog = (item: LineItem | null) => {
+  const handleOpenAddItemDialog = (item: LocalLineItem | null) => {
     setItemToEdit(item);
     setIsAddLineItemDialogOpen(true);
   };
@@ -203,7 +207,7 @@ export function InvoiceGeneratorView() {
     setLineItems(prev => prev.filter(item => item.id !== id));
   };
   
-  const handleSaveLineItem = (newItem: LineItem) => {
+  const handleSaveLineItem = (newItem: LocalLineItem) => {
     if (itemToEdit) {
       setLineItems(prev => prev.map(item => item.id === itemToEdit.id ? { ...newItem, id: itemToEdit.id } : item));
       setItemToEdit(null);
@@ -213,7 +217,7 @@ export function InvoiceGeneratorView() {
   };
 
   const handleAddTimeLogEntries = (entries: TaskEvent[]) => {
-      const newItems: LineItem[] = entries.map((entry, index) => {
+      const newItems: LocalLineItem[] = entries.map((entry, index) => {
           const hours = (entry.duration || 0) / 3600;
           return {
               id: `time_${Date.now()}_${index}`,
@@ -282,7 +286,7 @@ export function InvoiceGeneratorView() {
 
     try {
         if (invoiceToEditId) {
-            await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave);
+            await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
             toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
         } else {
             const newInvoice = await addInvoiceWithLineItems(invoiceData, itemsToSave);
@@ -379,7 +383,7 @@ export function InvoiceGeneratorView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <AccountingPageHeader pageTitle="Create Invoice" />
+        <InvoicePageHeader pageTitle="Create Invoice" />
         <header className="relative text-center">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">

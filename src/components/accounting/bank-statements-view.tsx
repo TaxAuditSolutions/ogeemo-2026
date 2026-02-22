@@ -96,7 +96,7 @@ const mockBankTransactions: BankTransaction[] = [
   { id: 'txn_p_3', accountId: 'acc_3', date: '2024-07-23', description: 'Salary Deposit', amount: 4500, status: 'personal' },
 ];
 
-const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind"];
+const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -129,6 +129,13 @@ const ReconciliationActions = () => (
       <CardDescription className="text-xs">For unreconciled transactions from a business account:</CardDescription>
     </CardHeader>
     <CardContent className="grid gap-4">
+        <div className="flex items-start gap-3">
+          <Link2 className="h-5 w-5 mt-1 text-primary shrink-0"/>
+          <div>
+            <h4 className="font-semibold">Match to Ledger</h4>
+            <p className="text-sm text-muted-foreground">Find and link this to an existing income or expense entry.</p>
+          </div>
+        </div>
         <div className="flex items-start gap-3">
           <Link2 className="h-5 w-5 mt-1 text-primary shrink-0"/>
           <div>

@@ -46,6 +46,37 @@ interface BaseTransaction {
   userId: string;
 }
 
+export interface IncomeTransaction extends BaseTransaction {
+  incomeCategory: string;
+  depositedTo: string;
+}
+
+export interface ExpenseTransaction extends BaseTransaction {
+  category: string;
+}
+
+export interface PayableBill {
+  id: string;
+  vendor: string;
+  invoiceNumber?: string;
+  dueDate: string;
+  totalAmount: number;
+  preTaxAmount?: number;
+  taxAmount?: number;
+  taxRate?: number;
+  category: string;
+  description?: string;
+  documentUrl?: string;
+  userId: string;
+}
+
+export interface TaxType {
+  id: string;
+  name: string;
+  rate: number;
+  userId: string;
+}
+
 // --- Invoice Interfaces & Functions ---
 export interface InvoiceLineItem {
   id?: string;
@@ -63,6 +94,7 @@ export interface Invoice {
   businessNumber?: string;
   companyName: string;
   contactId: string;
+  supplierId?: string | null;
   originalAmount: number;
   amountPaid: number;
   dueDate: Date;
@@ -96,6 +128,7 @@ const INCOME_CATEGORIES_COLLECTION = 'incomeCategories';
 const EXPENSE_CATEGORIES_COLLECTION = 'expenseCategories';
 const SERVICE_ITEMS_COLLECTION = 'serviceItems';
 const TAX_TYPES_COLLECTION = 'taxTypes';
+const REMITTANCES_COLLECTION = 'payrollRemittances';
 
 const docToInvoice = (doc: any): Invoice => {
     const data = doc.data();
@@ -106,6 +139,7 @@ const docToInvoice = (doc: any): Invoice => {
         businessNumber: data.businessNumber,
         companyName: data.companyName,
         contactId: data.contactId,
+        supplierId: data.supplierId || null,
         originalAmount: data.originalAmount,
         amountPaid: data.amountPaid || 0,
         dueDate: (data.dueDate as Timestamp)?.toDate ? (data.dueDate as Timestamp).toDate() : new Date(),

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -78,14 +79,16 @@ export function InvoiceGeneratorView() {
   const [notes, setNotes] = useState("Thank you for your business!");
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+  const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<LineItem | null>(null);
   
-  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
       setIsLoading(true);
@@ -107,6 +110,7 @@ export function InvoiceGeneratorView() {
           setDueDate(new Date(invoiceData.dueDate));
           setNotes(invoiceData.notes);
           setSelectedContactId(invoiceData.contactId);
+          setSelectedSupplierId(invoiceData.supplierId || null);
           
           const mappedLineItems = lineItemsData.map(item => ({
               ...item,
@@ -263,6 +267,7 @@ export function InvoiceGeneratorView() {
         businessNumber,
         companyName,
         contactId: selectedContactId,
+        supplierId: selectedSupplierId,
         originalAmount: total,
         amountPaid: invoiceToEditId ? (await getInvoiceById(invoiceToEditId))?.amountPaid || 0 : 0,
         dueDate: dueDate,
@@ -305,6 +310,7 @@ export function InvoiceGeneratorView() {
     setPaymentTermsDays('14');
     setNotes("Thank you for your business!");
     setSelectedContactId(null);
+    setSelectedSupplierId(null);
     setLineItems([]);
     toast({ title: "Form Cleared" });
   };
@@ -368,6 +374,7 @@ export function InvoiceGeneratorView() {
   };
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
+  const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
 
   return (
     <>
@@ -403,7 +410,7 @@ export function InvoiceGeneratorView() {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                             <Label>Billing Contact</Label>
+                             <Label>Billing Contact (Client)</Label>
                              <div className="flex gap-2">
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -443,6 +450,49 @@ export function InvoiceGeneratorView() {
                                 </Button>
                              </div>
                         </div>
+                        <div className="space-y-2">
+                             <Label>Supplier</Label>
+                             <div className="flex gap-2">
+                                <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between overflow-hidden">
+                                            {selectedSupplier ? (
+                                                <span className="truncate">{selectedSupplier.name} {selectedSupplier.businessName ? `(${selectedSupplier.businessName})` : ''}</span>
+                                            ) : "Select supplier..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search suppliers..." />
+                                            <CommandList>
+                                                <CommandEmpty>No supplier found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {contacts.map(c => (
+                                                        <CommandItem
+                                                            key={c.id}
+                                                            value={c.name}
+                                                            onSelect={() => {
+                                                                setSelectedSupplierId(c.id);
+                                                                setIsSupplierPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", selectedSupplierId === c.id ? "opacity-100" : "opacity-0")} />
+                                                            {c.name} {c.businessName ? `(${c.businessName})` : ''}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Supplier">
+                                    <UserPlus className="h-4 w-4" />
+                                </Button>
+                             </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="invoiceNumber">Invoice #</Label>

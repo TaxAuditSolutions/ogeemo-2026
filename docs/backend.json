@@ -63,6 +63,7 @@
             "businessNumber": { "type": "string" },
             "companyName": { "type": "string" },
             "contactId": { "type": "string" },
+            "supplierId": { "type": "string", "description": "The ID of the supplier associated with this invoice." },
             "originalAmount": { "type": "number" },
             "amountPaid": { "type": "number" },
             "dueDate": { "type": "string", "format": "date-time" },

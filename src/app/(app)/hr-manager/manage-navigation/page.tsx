@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -271,7 +270,7 @@ export default function ManageHrNavigationPage() {
                     <CardDescription>Drag items to "Selected Items" to add them to the dropdown.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.availableChips.filter(Boolean).map((chip, index) => (
+                    {chipsState.availableChips.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label)).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>
@@ -292,5 +291,3 @@ export default function ManageHrNavigationPage() {
     </>
   );
 }
-
-    

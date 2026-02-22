@@ -67,7 +67,7 @@ const TrashDropZone = () => {
   );
 };
 
-export default function ManageHrNavigationPage() {
+export default function ManageAccountingNavigationPage() {
   const [chipsState, setChipsState] = React.useState<{
     userChips: ActionChipData[];
     availableChips: ActionChipData[];
@@ -92,7 +92,7 @@ export default function ManageHrNavigationPage() {
         ]);
         setChipsState({ userChips, availableChips });
       } catch (error) {
-        console.error("Failed to load HR nav chips:", error);
+        console.error("Failed to load accounting nav chips:", error);
         toast({
           variant: 'destructive',
           title: 'Failed to load actions',
@@ -270,7 +270,7 @@ export default function ManageHrNavigationPage() {
                     <CardDescription>Drag items to "Selected Items" to add them to the dropdown.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.availableChips.filter(Boolean).map((chip, index) => (
+                    {chipsState.availableChips.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label)).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>

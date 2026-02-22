@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -133,8 +132,6 @@ export function ManageDashboardView() {
       const newUserChips = [...prevState.userChips];
       const [draggedItem] = newUserChips.splice(dragIndex, 1);
       newUserChips.splice(hoverIndex, 0, draggedItem);
-      // Local state is updated for immediate visual feedback.
-      // Final order is persisted on "Save" button click.
       return { ...prevState, userChips: newUserChips };
     });
   }, []);
@@ -283,7 +280,7 @@ export function ManageDashboardView() {
                     <CardDescription>Drag actions to "Selected Actions" to add them to your dashboard.</CardDescription>
                 </CardHeader>
                 <ChipDropZone onDrop={(item) => handleDrop(item, 'available')} className="min-h-[150px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 p-4 place-items-center">
-                    {chipsState.availableChips.filter(Boolean).map((chip, index) => (
+                    {chipsState.availableChips.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label)).map((chip, index) => (
                         <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
                     ))}
                 </ChipDropZone>

@@ -353,12 +353,6 @@ export default function ContactFormDialog({
                     <DialogDescription>
                         {contactToEdit ? `Editing details for ${contactToEdit.name}.` : `Create a new contact record.`}
                     </DialogDescription>
-                    <div className="absolute top-4 right-4">
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-5 w-5" />
-                            <span className="sr-only">Close</span>
-                        </Button>
-                    </div>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
@@ -533,5 +527,3 @@ export default function ContactFormDialog({
       </>
     );
 }
-
-    

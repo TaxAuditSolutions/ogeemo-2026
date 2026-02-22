@@ -20,7 +20,8 @@ import {
     BrainCircuit,
     X,
     Globe,
-    PlusCircle
+    PlusCircle,
+    Link as LinkIcon
 } from 'lucide-react';
 import {
   Accordion,
@@ -213,17 +214,18 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-primary/5 border-dashed border-primary/30">
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary" />
+                        <LinkIcon className="h-4 w-4 text-primary" />
                         Orchestrate the Web
                     </CardTitle>
+                    <Globe className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                         Your spider web doesn't have to stop at Ogeemo's borders. Use the <strong>'+ Add New Action'</strong> button in the manager and select <strong>'Custom URL'</strong>. 
                         <br/><br/>
-                        Create instant shortcuts to your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global Command Centre.
+                        By entering a full web address (e.g., https://www.google.com), you can create instant shortcuts to any site outside of Ogeemo, such as your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global Command Centre.
                     </p>
                 </CardContent>
             </Card>

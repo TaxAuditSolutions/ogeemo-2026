@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -174,7 +173,7 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-muted/50">
-                <CardHeader>
+                <CardHeader className="text-center">
                     <CardTitle className="text-sm font-bold">
                         Master Tip
                     </CardTitle>
@@ -187,7 +186,7 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-background border-primary/20 border-2 shadow-sm">
-                <CardHeader>
+                <CardHeader className="text-center">
                     <CardTitle className="text-sm font-bold">
                         How to Create a Chip
                     </CardTitle>
@@ -203,7 +202,7 @@ export default function ActionChipsInfoPage() {
             </Card>
 
             <Card className="bg-primary/5 border-dashed border-primary/30">
-                <CardHeader>
+                <CardHeader className="text-center">
                     <CardTitle className="text-sm font-bold">
                         Orchestrate the Web
                     </CardTitle>

@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Users,
@@ -77,7 +76,6 @@ export const allMenuItems: MenuItem[] = [
   { href: "/reports/client-time-log", label: "Client Time Log Report", icon: Clock },
   { href: "/reports/search", label: "Advanced Search", icon: Search },
   { href: "/feedback", label: "Feedback", icon: Megaphone },
-  { href: "/accounting/reports/accrual-adjustments", label: "Accrual Adjustments", icon: BookOpen },
   ...accountingMenuItems,
   ...hrMenuItems,
 ];

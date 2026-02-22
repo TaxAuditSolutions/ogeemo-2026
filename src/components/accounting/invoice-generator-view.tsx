@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -71,11 +70,11 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
-  const [paymentTermsDays, setPaymentTermsDays] = setPaymentTermsDays('14');
+  const [paymentTermsDays, setPaymentTermsDays] = useState('14');
   const [notes, setNotes] = useState("Thank you for your business!");
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -282,15 +281,14 @@ export function InvoiceGeneratorView() {
         userId: user.uid,
     };
     
-    const itemsToSave = lineItems.map(({id, ...rest}) => rest);
+    const itemsToSave = lineItems.map(({id, ...rest}) => ({ ...rest, userId: user.uid }));
 
     try {
         if (invoiceToEditId) {
             await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
             toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
         } else {
-            const newInvoice = await addInvoiceWithLineItems(invoiceData, itemsToSave);
-            setInvoiceToEditId(newInvoice.id);
+            await addInvoiceWithLineItems(invoiceData, itemsToSave);
             toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
         }
         localStorage.removeItem(EDIT_INVOICE_ID_KEY);

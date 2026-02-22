@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -116,7 +115,7 @@ export function AccountsPayablePageView() {
 
   const handleSaveBill = async () => {
     if (!user || !billForm.vendor || !billForm.totalAmount || !billForm.category) {
-        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide vendor, amount, and category.' });
+        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide supplier, amount, and category.' });
         return;
     }
 
@@ -197,7 +196,7 @@ export function AccountsPayablePageView() {
                     <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
                 </div>
                 <Button onClick={() => setIsAddAddBillOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Log New Bill
+                    <PlusCircle className="mr-2 h-4 w-4" /> Log Invoice
                 </Button>
             </CardHeader>
             <CardContent>
@@ -210,7 +209,7 @@ export function AccountsPayablePageView() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Due Date</TableHead>
-                                <TableHead>Vendor</TableHead>
+                                <TableHead>Supplier</TableHead>
                                 <TableHead>Invoice #</TableHead>
                                 <TableHead className="text-right">Amount Due</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -257,20 +256,20 @@ export function AccountsPayablePageView() {
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Log Outstanding Bill</DialogTitle>
-                    <DialogDescription>Add a vendor invoice to your Accounts Payable.</DialogDescription>
+                    <DialogDescription>Add a Supplier</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
-                        <Label>Vendor *</Label>
+                        <Label>Supplier *</Label>
                         <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between">{billForm.vendor || "Select vendor..."}<ChevronsUpDown className="ml-2 h-4 w-4 opacity-50"/></Button>
+                                <Button variant="outline" className="w-full justify-between">{billForm.vendor || "Select a supplier..."}<ChevronsUpDown className="ml-2 h-4 w-4 opacity-50"/></Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                    <CommandInput placeholder="Search vendors..." onValueChange={(val) => setBillForm(p => ({...p, vendor: val}))} />
+                                    <CommandInput placeholder="Search suppliers..." onValueChange={(val) => setBillForm(p => ({...p, vendor: val}))} />
                                     <CommandList>
-                                        <CommandEmpty>Select to add new vendor.</CommandEmpty>
+                                        <CommandEmpty>Select to add new supplier.</CommandEmpty>
                                         <CommandGroup>
                                             {companies.map(c => (
                                                 <CommandItem key={c.id} onSelect={() => { setBillForm(p => ({...p, vendor: c.name})); setIsVendorPopoverOpen(false); }}>

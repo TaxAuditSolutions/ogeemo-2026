@@ -385,7 +385,7 @@ export function InvoiceGeneratorView() {
         <header className="relative text-center">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Select a contact from your master list to generate a professional invoice.
+            Select contacts from your master list to generate a professional invoice.
           </p>
           <div className="absolute top-0 right-0">
             <Button asChild variant="ghost" size="icon">
@@ -412,7 +412,7 @@ export function InvoiceGeneratorView() {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                             <Label>Billing Contact (Client)</Label>
+                             <Label>Billing To (Contact)</Label>
                              <div className="flex gap-2">
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -453,22 +453,22 @@ export function InvoiceGeneratorView() {
                              </div>
                         </div>
                         <div className="space-y-2">
-                             <Label>Supplier</Label>
+                             <Label>Billing From (Contact)</Label>
                              <div className="flex gap-2">
                                 <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="w-full justify-between overflow-hidden">
                                             {selectedSupplier ? (
                                                 <span className="truncate">{selectedSupplier.name} {selectedSupplier.businessName ? `(${selectedSupplier.businessName})` : ''}</span>
-                                            ) : "Select supplier..."}
+                                            ) : "Select contact..."}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                         <Command>
-                                            <CommandInput placeholder="Search suppliers..." />
+                                            <CommandInput placeholder="Search contacts..." />
                                             <CommandList>
-                                                <CommandEmpty>No supplier found.</CommandEmpty>
+                                                <CommandEmpty>No contact found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {contacts.map(c => (
                                                         <CommandItem
@@ -488,7 +488,7 @@ export function InvoiceGeneratorView() {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Supplier">
+                                <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Contact">
                                     <UserPlus className="h-4 w-4" />
                                 </Button>
                              </div>

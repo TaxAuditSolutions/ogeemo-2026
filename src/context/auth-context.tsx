@@ -47,11 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth: firebaseAuth } = getFirebaseServices();
 
   useEffect(() => {
-    setPersistence(firebaseAuth, browserLocalPersistence).catch((error) => {
+    setPersistence(firebaseAuth, browserLocalPersistence).catch((error: any) => {
         console.error("Firebase persistence error:", error);
     });
 
-    const unsubscribe = firebaseAuth.onAuthStateChanged(async (currentUser) => {
+    const unsubscribe = firebaseAuth.onAuthStateChanged(async (currentUser: User | null) => {
       setUser(currentUser);
       
       if (currentUser) {
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    if (!isAuthLoading) {
+    if (!isAuthLoading && pathname) {
       const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
       
@@ -141,14 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   return (
     <AuthContext.Provider value={value}>
-      {isAuthLoading ? (
-        <div className="flex h-screen w-screen items-center justify-center">
-          <div className="text-center">
-              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-              <p className="font-semibold">Starting app...</p>
-          </div>
-        </div>
-      ) : children}
+        {/* Always render children to prevent hydration mismatches and "Rendered more hooks" errors */}
+        {children}
+        
+        {/* Render loading overlay on top if needed */}
+        {isAuthLoading && (
+            <div className="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+                    <p className="font-semibold">Starting app...</p>
+                </div>
+            </div>
+        )}
     </AuthContext.Provider>
   );
 }

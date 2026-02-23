@@ -226,7 +226,7 @@ export function LogTimeDialog({
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between">
                                             <span className="truncate">
-                                                {selectedContactDisplay ? selectedContactDisplay.name : "Internal / No Client"}
+                                                {selectedContactDisplay ? (selectedContactDisplay.businessName ? `${selectedContactDisplay.name} - ${selectedContactDisplay.businessName}` : selectedContactDisplay.name) : "Internal / No Client"}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -244,7 +244,7 @@ export function LogTimeDialog({
                                                     {contacts.map(c => (
                                                         <CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>
-                                                            {c.name}
+                                                            {c.name} {c.businessName ? `- ${c.businessName}` : ''}
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>

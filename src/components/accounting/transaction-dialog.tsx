@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -596,7 +597,7 @@ export function TransactionDialog({
                             {/* Logistics Section */}
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <Info className="h-4 w-4" />
+                                    <Clock className="h-4 w-4" />
                                     Operational Routing
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

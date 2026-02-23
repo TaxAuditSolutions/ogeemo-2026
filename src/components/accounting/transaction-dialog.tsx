@@ -328,7 +328,7 @@ export function TransactionDialog({
                 <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center">
                     <div className="flex flex-col items-center gap-2 text-primary">
                         <Calculator className="h-8 w-8" />
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-center">
                             <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
                             <DialogDescription className="text-sm">Precision BKS Financial Orchestration</DialogDescription>
                         </div>

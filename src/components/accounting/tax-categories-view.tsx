@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   TrendingUp,
   TrendingDown,
+  X,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,7 @@ import { Button } from '../ui/button';
 import { CategoryTable } from './category-table';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
+import Link from 'next/link';
 
 type Category = IncomeCategory | ExpenseCategory;
 type CategoryType = 'income' | 'expense';
@@ -286,7 +288,7 @@ export function TaxCategoriesView() {
     <>
       <div className="p-4 sm:p-6 space-y-6">
         <AccountingPageHeader pageTitle="Tax Category Manager" hubPath="/accounting/tax" hubLabel="Tax Center" />
-        <header className="text-center">
+        <header className="text-center relative">
           <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Tax Category Manager</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg mt-2">
             Organize your business income and expenses. Distinguish between standard CRA lines and your unique custom nodes.
@@ -295,8 +297,13 @@ export function TaxCategoriesView() {
                 <Button variant="outline" size="lg" onClick={() => setIsArchiveDialogOpen(true)} className="h-12 px-8">
                     <Archive className="mr-2 h-5 w-5" /> Archived categories
                 </Button>
-                <Button size="lg" onClick={() => openDialog('expense', 'add')} className="h-12 px-8 shadow-lg">
+                <Button size="lg" onClick={() => openDialog('expense', 'add')} className="h-12 px-8 shadow-lg text-lg">
                     <PlusCircle className="mr-2 h-5 w-5" /> New custom category
+                </Button>
+            </div>
+            <div className="absolute top-0 right-0">
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager"><X className="h-5 w-5"/></Link>
                 </Button>
             </div>
         </header>
@@ -307,7 +314,7 @@ export function TaxCategoriesView() {
                 <p className="text-muted-foreground animate-pulse font-bold uppercase tracking-widest text-xs">Syncing audit lines...</p>
             </div>
         ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[1600px] mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-none mx-auto">
                 <CategoryTable 
                     title="Income Categories"
                     description="Standard and custom nodes for all revenue streams."

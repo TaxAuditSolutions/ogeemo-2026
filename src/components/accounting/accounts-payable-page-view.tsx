@@ -33,8 +33,8 @@ import {
 import {
   Command,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
+  CommandGroup,
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
@@ -71,6 +71,7 @@ import { AccountingPageHeader } from './page-header';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { Separator } from '../ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });

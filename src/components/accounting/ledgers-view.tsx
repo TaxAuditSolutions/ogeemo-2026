@@ -741,7 +741,17 @@ export function LedgersView() {
                             <div className="col-span-3 space-y-2">
                                 <div className="flex gap-2">
                                     <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                                        <PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between truncate">{newTransaction.company || "Select or search..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between truncate">
+                                                {newTransaction.company ? (
+                                                    (() => {
+                                                        const match = contacts.find(c => c.name === newTransaction.company);
+                                                        return match ? `${match.name}${match.businessName ? ` (${match.businessName})` : ''}` : newTransaction.company;
+                                                    })()
+                                                ) : "Select or search..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                             <Command>
                                                 <CommandInput placeholder="Search contact..." value={newCompanyName} onValueChange={setNewCompanyName}/>
@@ -753,8 +763,12 @@ export function LedgersView() {
                                                     </CommandEmpty>
                                                     <CommandGroup>
                                                         {contacts.map(c => (
-                                                            <CommandItem key={c.id} onSelect={() => { setNewTransaction(p => ({...p, company: c.name})); setIsCompanyPopoverOpen(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")}/> {c.name} {c.businessName ? `(${c.businessName})` : ''}
+                                                            <CommandItem key={c.id} onSelect={() => { 
+                                                                setNewTransaction(p => ({...p, company: c.name})); 
+                                                                setIsCompanyPopoverOpen(false); 
+                                                            }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")}/> 
+                                                                {c.name} {c.businessName ? `(${c.businessName})` : ''}
                                                             </CommandItem>
                                                         ))}
                                                     </CommandGroup>

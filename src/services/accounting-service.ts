@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -35,6 +34,8 @@ interface BaseTransaction {
   company: string;
   description: string;
   totalAmount: number;
+  quantity?: number;
+  unitPrice?: number;
   preTaxAmount?: number;
   taxAmount?: number;
   taxRate?: number;
@@ -61,6 +62,8 @@ export interface PayableBill {
   invoiceNumber?: string;
   dueDate: string;
   totalAmount: number;
+  quantity?: number;
+  unitPrice?: number;
   preTaxAmount?: number;
   taxAmount?: number;
   taxRate?: number;
@@ -84,6 +87,9 @@ export interface InvoiceLineItem {
   description: string;
   quantity: number;
   price: number;
+  totalAmount?: number;
+  preTaxAmount?: number;
+  taxAmount?: number;
   taxType?: string;
   taxRate?: number;
   userId: string;
@@ -161,6 +167,9 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
         description: data.description,
         quantity: data.quantity,
         price: data.price,
+        totalAmount: data.totalAmount,
+        preTaxAmount: data.preTaxAmount,
+        taxAmount: data.taxAmount,
         taxType: data.taxType || '',
         taxRate: data.taxRate || 0,
         userId: data.userId,

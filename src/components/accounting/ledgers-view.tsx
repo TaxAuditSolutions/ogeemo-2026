@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -75,7 +74,7 @@ import {
     Clock,
     FileDigit
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
@@ -100,6 +99,7 @@ import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
+import { Separator } from "../ui/separator";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -110,6 +110,8 @@ const emptyTransactionForm = {
     date: format(new Date(), 'yyyy-MM-dd'), 
     company: '', 
     description: '', 
+    quantity: '1',
+    unitPrice: '',
     totalAmount: '', 
     taxRate: '', 
     preTaxAmount: '', 
@@ -164,6 +166,7 @@ export function LedgersView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { handlePrint, contentRef } = useReactToPrint();
+  const { preferences } = useUserPreferences();
   
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
@@ -292,6 +295,8 @@ export function LedgersView() {
           date: tx.date,
           company: tx.company,
           description: tx.description,
+          quantity: String(tx.quantity || '1'),
+          unitPrice: String(tx.unitPrice || tx.totalAmount),
           totalAmount: String(tx.totalAmount),
           taxRate: String(tx.taxRate || ''),
           preTaxAmount: String(tx.preTaxAmount || ''),
@@ -334,6 +339,24 @@ export function LedgersView() {
   const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
   const netIncome = incomeTotal - expenseTotal;
 
+  // Calculation effect for newTransaction
+  React.useEffect(() => {
+    const qty = parseFloat(newTransaction.quantity) || 0;
+    const unitPrice = parseFloat(newTransaction.unitPrice) || 0;
+    const taxRate = parseFloat(newTransaction.taxRate) || 0;
+
+    const total = qty * unitPrice;
+    const preTax = total / (1 + taxRate / 100);
+    const tax = total - preTax;
+
+    setNewTransaction(prev => ({
+        ...prev,
+        totalAmount: total.toFixed(2),
+        preTaxAmount: preTax.toFixed(2),
+        taxAmount: tax.toFixed(2)
+    }));
+  }, [newTransaction.quantity, newTransaction.unitPrice, newTransaction.taxRate]);
+
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -345,6 +368,8 @@ export function LedgersView() {
   const handleSaveTransaction = () => {
       if (!user) return;
       const totalAmountNum = parseFloat(newTransaction.totalAmount);
+      const quantityNum = parseFloat(newTransaction.quantity) || 1;
+      const unitPriceNum = parseFloat(newTransaction.unitPrice) || totalAmountNum;
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
       const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
@@ -360,6 +385,8 @@ export function LedgersView() {
           date: newTransaction.date,
           company: newTransaction.company,
           description: newTransaction.description,
+          quantity: quantityNum,
+          unitPrice: unitPriceNum,
           totalAmount: totalAmountNum,
           preTaxAmount: preTaxAmount,
           taxAmount: taxAmount,
@@ -389,9 +416,13 @@ export function LedgersView() {
                   userId: user.uid,
               }, [{
                   description: newTransaction.description || "Service Delivery",
-                  quantity: 1,
-                  price: totalAmountNum,
-                  taxRate: taxRateNum
+                  quantity: quantityNum,
+                  price: unitPriceNum,
+                  taxRate: taxRateNum,
+                  totalAmount: totalAmountNum,
+                  preTaxAmount: preTaxAmount,
+                  taxAmount: taxAmount,
+                  userId: user.uid
               }]);
               toast({ title: "Sent to Accounts Receivable", description: "This unpaid item is now in your AR bucket." });
           } else {
@@ -400,6 +431,8 @@ export function LedgersView() {
                   invoiceNumber: newTransaction.documentNumber || `BILL-${Date.now()}`,
                   dueDate: format(addDays(new Date(newTransaction.date), 14), 'yyyy-MM-dd'),
                   totalAmount: totalAmountNum,
+                  quantity: quantityNum,
+                  unitPrice: unitPriceNum,
                   preTaxAmount: preTaxAmount,
                   taxAmount: taxAmount,
                   taxRate: taxRateNum,
@@ -429,7 +462,6 @@ export function LedgersView() {
           }
       }
       setIsTransactionDialogOpen(false);
-      // Wait a moment for background sync before reloading
       setTimeout(loadData, 500);
   };
 
@@ -516,7 +548,7 @@ export function LedgersView() {
                         </TableCell>
                         {type === 'all' && <TableCell><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>}
                         <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
-                            ${item.totalAmount.toFixed(2)}
+                            {formatCurrency(item.totalAmount)}
                         </TableCell>
                         <TableCell className="text-center print:hidden">
                             {item.documentUrl ? (
@@ -550,7 +582,7 @@ export function LedgersView() {
                 <TableRow>
                     <TableCell colSpan={type === 'all' ? 4 : 3} className="text-right font-bold">Total</TableCell>
                     <TableCell className={cn("text-right font-bold font-mono", type === 'expense' ? "text-red-600" : type === 'income' ? "text-green-600" : (netIncome >= 0 ? "text-green-600" : "text-red-600"))}>
-                        ${(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome).toFixed(2)}
+                        {formatCurrency(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome)}
                     </TableCell>
                     <TableCell className="print:hidden" colSpan={2}/>
                 </TableRow>
@@ -718,8 +750,53 @@ export function LedgersView() {
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Description</Label><Input value={newTransaction.description} onChange={e => setNewTransaction(p => ({...p, description: e.target.value}))} className="col-span-3" /></div>
-                        <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Amount *</Label><div className="relative col-span-3"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><Input type="number" step="0.01" value={newTransaction.totalAmount} onChange={e => setNewTransaction(p => ({...p, totalAmount: e.target.value}))} className="pl-7" /></div></div>
                         
+                        <Separator />
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Quantity</Label>
+                            <Input type="number" value={newTransaction.quantity} onChange={e => setNewTransaction(p => ({...p, quantity: e.target.value}))} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Unit Price</Label>
+                            <div className="relative col-span-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input type="number" step="0.01" value={newTransaction.unitPrice} onChange={e => setNewTransaction(p => ({...p, unitPrice: e.target.value}))} className="pl-7" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Total Amount *</Label>
+                            <div className="relative col-span-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input type="number" step="0.01" value={newTransaction.totalAmount} readOnly disabled className="pl-7 bg-muted/50 font-bold" />
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Tax Rate (%)</Label>
+                            <div className="relative col-span-3">
+                                <Input type="number" value={newTransaction.taxRate} onChange={e => setNewTransaction(prev => ({...prev, taxRate: e.target.value}))} className="pr-8" placeholder="e.g., 15"/>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Pre-Tax Amount</Label>
+                            <div className="relative col-span-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input value={newTransaction.preTaxAmount} readOnly disabled className="pl-7 bg-muted/50" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Tax Amount</Label>
+                            <div className="relative col-span-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input value={newTransaction.taxAmount} readOnly disabled className="pl-7 bg-muted/50" />
+                            </div>
+                        </div>
+
+                        <Separator />
+
                         {newTransaction.paymentStatus === 'paid' && (
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Payment Method</Label>

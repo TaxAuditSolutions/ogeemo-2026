@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { Separator } from '../ui/separator';
 
 interface LineItem {
   id: string;
@@ -30,6 +31,9 @@ interface LineItem {
   price: number;
   taxType?: string;
   taxRate?: number;
+  totalAmount?: number;
+  preTaxAmount?: number;
+  taxAmount?: number;
 }
 
 interface AddLineItemDialogProps {
@@ -68,11 +72,26 @@ export function AddLineItemDialog({
   const { toast } = useToast();
   const { updatePreferences } = useUserPreferences();
   
+  const { totalAmount, preTaxAmount, taxAmount } = useMemo(() => {
+    const qty = Number(quantity) || 0;
+    const unitPrice = Number(price) || 0;
+    const rate = Number(taxRate) || 0;
+    
+    const total = qty * unitPrice;
+    const preTax = total / (1 + rate / 100);
+    const tax = total - preTax;
+    
+    return {
+        totalAmount: total,
+        preTaxAmount: preTax,
+        taxAmount: tax
+    };
+  }, [quantity, price, taxRate]);
+
   useEffect(() => {
     if (isOpen) {
         if (itemToEdit) {
             setDescription(itemToEdit.description);
-            // Populate the custom description input so the user can edit the text
             setCustomItemDescription(itemToEdit.description);
             setQuantity(itemToEdit.quantity);
             setPrice(itemToEdit.price);
@@ -110,6 +129,9 @@ export function AddLineItemDialog({
         price: numPrice,
         taxType: taxType.trim(),
         taxRate: Number(taxRate) || 0,
+        totalAmount,
+        preTaxAmount,
+        taxAmount,
     };
     
     onSave(newItem);
@@ -230,63 +252,42 @@ export function AddLineItemDialog({
                     value={description}
                 />
             </div>
+
+            <Separator />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                    id="quantity"
-                    type="number"
-                    placeholder="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-                />
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
-                <div className="relative">
-                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                    <Label htmlFor="quantity">Quantity</Label>
                     <Input
-                    id="price"
-                    type="number"
-                    placeholder="0.00"
-                    className="pl-7"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        id="quantity"
+                        type="number"
+                        placeholder="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                     />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="price">Unit Price</Label>
+                    <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                        <Input
+                            id="price"
+                            type="number"
+                            placeholder="0.00"
+                            className="pl-7"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        />
+                    </div>
                 </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="taxType">Tax Type</Label>
-                    <div className="flex gap-2">
-                        <Popover open={isTaxTypePopoverOpen} onOpenChange={setIsTaxTypePopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                                    {taxType || 'Select a tax type...'}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search tax types..." />
-                                    <CommandList>
-                                        <CommandEmpty>No tax type found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {taxTypes.map(type => (
-                                                <CommandItem key={type.id} value={type.name} onSelect={() => handleSelectTaxType(type)}>
-                                                    <Check className={cn("mr-2 h-4 w-4", taxType === type.name ? "opacity-100" : "opacity-0")}/>
-                                                    {type.name} ({type.rate}%)
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
-                            <Settings className="h-4 w-4"/>
-                        </Button>
+                    <Label htmlFor="totalAmount">Total Amount</Label>
+                    <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                        <Input id="totalAmount" readOnly disabled className="pl-7 bg-muted/50 font-bold" value={totalAmount.toFixed(2)} />
                     </div>
                 </div>
                 <div className="space-y-2">
@@ -313,10 +314,61 @@ export function AddLineItemDialog({
                     </div>
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label>Pre-Tax Amount</Label>
+                    <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                        <Input readOnly disabled className="pl-7 bg-muted/50" value={preTaxAmount.toFixed(2)} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Tax Amount</Label>
+                    <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                        <Input readOnly disabled className="pl-7 bg-muted/50" value={taxAmount.toFixed(2)} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="taxType">Tax Type Label</Label>
+                <div className="flex gap-2">
+                    <Popover open={isTaxTypePopoverOpen} onOpenChange={setIsTaxTypePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                                {taxType || 'Select a tax type...'}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search tax types..." />
+                                <CommandList>
+                                    <CommandEmpty>No tax type found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {taxTypes.map(type => (
+                                            <CommandItem key={type.id} value={type.name} onSelect={() => handleSelectTaxType(type)}>
+                                                <Check className={cn("mr-2 h-4 w-4", taxType === type.name ? "opacity-100" : "opacity-0")}/>
+                                                {type.name} ({type.rate}%)
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
+                        <Settings className="h-4 w-4"/>
+                    </Button>
+                </div>
+            </div>
+
             {!itemToEdit && (
-                <div className="flex items-center space-x-2 pt-2">
+                <div className="flex items-center space-x-2 pt-2 border-t mt-4">
                     <Checkbox id="save-repeatable" checked={saveAsRepeatable} onCheckedChange={(checked) => setSaveAsRepeatable(!!checked)} />
-                    <Label htmlFor="save-repeatable">Save as a repeatable item for future use</Label>
+                    <Label htmlFor="save-repeatable" className="cursor-pointer">Save as a repeatable item for future use</Label>
                 </div>
             )}
         </div>

@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -579,7 +579,7 @@ export function TransactionDialog({
                                                     name="taxType"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Tax Label</FormLabel>
+                                                            <FormLabel>Select Tax Type</FormLabel>
                                                             <div className="flex gap-2">
                                                                 <Select value={field.value} onValueChange={handleSelectTaxType}>
                                                                     <FormControl>

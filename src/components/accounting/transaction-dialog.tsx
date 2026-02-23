@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -41,7 +41,8 @@ import {
     Info,
     FileSignature,
     Settings,
-    Percent
+    Percent,
+    MoreVertical
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -370,7 +371,7 @@ export function TransactionDialog({
                                         value={transactionType} 
                                         onValueChange={(v) => {
                                             setTransactionType(v as 'income' | 'expense');
-                                            form.setValue('category', ''); // Clear category when type changes
+                                            form.setValue('category', ''); 
                                         }} 
                                         className="grid grid-cols-2 gap-4"
                                     >

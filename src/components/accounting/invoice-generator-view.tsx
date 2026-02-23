@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -90,11 +91,12 @@ export function InvoiceGeneratorView() {
   
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
+      if (!user) return;
       setIsLoading(true);
       try {
           const [invoiceData, lineItemsData] = await Promise.all([
               getInvoiceById(invoiceId),
-              getLineItemsForInvoice(invoiceId),
+              getLineItemsForInvoice(user.uid, invoiceId),
           ]);
           
           if (!invoiceData) {
@@ -126,7 +128,7 @@ export function InvoiceGeneratorView() {
       } finally {
           setIsLoading(false);
       }
-  }, [toast]);
+  }, [user, toast]);
 
 
   useEffect(() => {
@@ -285,7 +287,7 @@ export function InvoiceGeneratorView() {
 
     try {
         if (invoiceToEditId) {
-            await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
+            await updateInvoiceWithLineItems(invoiceId, invoiceData, itemsToSave, user.uid);
             toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
         } else {
             await addInvoiceWithLineItems(invoiceData, itemsToSave);

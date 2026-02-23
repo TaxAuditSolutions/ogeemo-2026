@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -125,9 +126,9 @@ function InvoicingReportContent() {
     };
 
     const handleConfirmDelete = async () => {
-        if (!invoiceToDelete) return;
+        if (!invoiceToDelete || !user) return;
         try {
-            await deleteInvoice(invoiceToDelete.id);
+            await deleteInvoice(user.uid, invoiceToDelete.id);
             setInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id));
             toast({ title: 'Invoice Deleted' });
         } catch (error: any) {

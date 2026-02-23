@@ -38,6 +38,11 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.userId);
     }
 
+    match /invoiceLineItems/{itemId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
     match /serviceItems/{itemId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
@@ -66,6 +71,10 @@ service cloud.firestore {
     match /payrollRuns/{runId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
+
+      match /details/{detailId} {
+        allow read, create, update, delete: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+      }
     }
 
     match /payrollRemittances/{remittanceId} {
@@ -166,16 +175,6 @@ service cloud.firestore {
     }
     
     match /payrollWorkers/{workerId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-    }
-
-    match /invoiceLineItems/{itemId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    match /payrollRuns/{runId}/details/{detailId} {
         allow read, update, delete: if isOwner(resource.data.userId);
         allow create: if isOwner(request.resource.data.userId);
     }

@@ -206,9 +206,13 @@ export async function getInvoiceById(invoiceId: string): Promise<Invoice | null>
     }
 }
 
-export async function getLineItemsForInvoice(invoiceId: string): Promise<InvoiceLineItem[]> {
+export async function getLineItemsForInvoice(userId: string, invoiceId: string): Promise<InvoiceLineItem[]> {
     const db = getDb();
-    const q = query(collection(db, LINE_ITEMS_COLLECTION), where("invoiceId", "==", invoiceId));
+    const q = query(
+        collection(db, LINE_ITEMS_COLLECTION), 
+        where("userId", "==", userId),
+        where("invoiceId", "==", invoiceId)
+    );
     try {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(docToLineItem);
@@ -259,17 +263,27 @@ export async function updateInvoiceWithLineItems(
     userId: string
 ): Promise<void> {
     const db = getDb();
+    
+    // 1. Clear existing items
+    const existingItemsQuery = query(
+        collection(db, LINE_ITEMS_COLLECTION), 
+        where("userId", "==", userId),
+        where("invoiceId", "==", invoiceId)
+    );
+    const existingItemsSnapshot = await getDocs(existingItemsQuery);
+    
     const batch = writeBatch(db);
 
+    // 2. Update invoice metadata
     const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
     batch.update(invoiceRef, invoiceData);
 
-    const existingItemsQuery = query(collection(db, LINE_ITEMS_COLLECTION), where("invoiceId", "==", invoiceId));
-    const existingItemsSnapshot = await getDocs(existingItemsQuery);
+    // 3. Delete old items
     existingItemsSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
 
+    // 4. Set new items
     lineItems.forEach(item => {
         const itemRef = doc(collection(db, LINE_ITEMS_COLLECTION));
         batch.set(itemRef, { ...item, invoiceId, userId });
@@ -287,15 +301,22 @@ export async function updateInvoiceWithLineItems(
 }
 
 
-export async function deleteInvoice(invoiceId: string): Promise<void> {
+export async function deleteInvoice(userId: string, invoiceId: string): Promise<void> {
     const db = getDb();
+    
+    // Find line items first to delete them in batch
+    const lineItemsQuery = query(
+        collection(db, LINE_ITEMS_COLLECTION), 
+        where("userId", "==", userId),
+        where("invoiceId", "==", invoiceId)
+    );
+    const lineItemsSnapshot = await getDocs(lineItemsQuery);
+    
     const batch = writeBatch(db);
     
     const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
     batch.delete(invoiceRef);
 
-    const lineItemsQuery = query(collection(db, LINE_ITEMS_COLLECTION), where("invoiceId", "==", invoiceId));
-    const lineItemsSnapshot = await getDocs(lineItemsQuery);
     lineItemsSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });

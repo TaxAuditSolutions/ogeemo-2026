@@ -35,13 +35,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, FileDigit, Landmark, CheckCircle, MoreVertical, BookOpen, Plus, Pencil } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Plus, Pencil } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInvoices, type Invoice, postInvoicePayment } from '@/services/accounting-service';
 import { AccountingPageHeader } from './page-header';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
 const formatCurrency = (amount: number) => {
@@ -195,11 +194,6 @@ export function AccountsReceivablePageView() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem asChild>
-                                                                <Link href={`/accounting/invoices/preview?action=print&invoiceId=${inv.id}`} target="_blank">
-                                                                    <BookOpen className="mr-2 h-4 w-4" /> View PDF
-                                                                </Link>
-                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => {
                                                                 localStorage.setItem('editInvoiceId', inv.id);
                                                                 router.push('/accounting/invoices/create');

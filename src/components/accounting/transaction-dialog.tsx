@@ -324,10 +324,10 @@ export function TransactionDialog({
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-5xl flex flex-col max-h-[95vh] p-0 overflow-hidden">
-                <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
-                    <div className="flex items-center gap-3 text-primary">
-                        <Calculator className="h-6 w-6" />
-                        <div>
+                <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center">
+                    <div className="flex flex-col items-center gap-2 text-primary">
+                        <Calculator className="h-8 w-8" />
+                        <div className="space-y-1">
                             <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
                             <DialogDescription className="text-sm">Precision BKS Financial Orchestration</DialogDescription>
                         </div>

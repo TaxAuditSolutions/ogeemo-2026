@@ -42,7 +42,9 @@ import {
     FileSignature,
     Settings,
     Percent,
-    MoreVertical
+    MoreVertical,
+    Calculator,
+    Landmark
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -354,18 +356,19 @@ export function TransactionDialog({
     return (
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl flex flex-col max-h-[95vh] p-0">
-                <DialogHeader className="p-6 pb-2 shrink-0">
-                    <DialogTitle className="text-2xl font-bold text-primary">
+            <DialogContent className="sm:max-w-3xl flex flex-col max-h-[95vh] p-0">
+                <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10">
+                    <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+                        <Landmark className="h-6 w-6" />
                         {transactionToEdit ? 'Edit' : 'Post'} {transactionType === 'income' ? 'Income' : 'Expense'}
                     </DialogTitle>
-                    <DialogDescription>Capture high-fidelity financial details for your BKS records.</DialogDescription>
+                    <DialogDescription>Record high-fidelity operational data for your BKS architecture.</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                         <ScrollArea className="flex-1 px-6">
-                            <div className="space-y-6 pb-6">
+                            <div className="space-y-8 py-6">
                                 {!transactionToEdit && (
                                     <RadioGroup 
                                         value={transactionType} 
@@ -384,17 +387,20 @@ export function TransactionDialog({
                                     control={form.control}
                                     name="paymentStatus"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-3 p-4 bg-muted/30 rounded-lg border">
-                                            <FormLabel className="font-bold">Payment Status</FormLabel>
+                                        <FormItem className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
+                                            <FormLabel className="font-bold flex items-center gap-2 text-primary">
+                                                <Clock className="h-4 w-4" />
+                                                Operational Routing
+                                            </FormLabel>
                                             <FormControl>
-                                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-6">
+                                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-8">
                                                     <div className="flex items-center space-x-2">
                                                         <RadioGroupItem value="paid" id="ps-paid" />
-                                                        <Label htmlFor="ps-paid" className="cursor-pointer">Paid Now (Post to Ledger)</Label>
+                                                        <Label htmlFor="ps-paid" className="cursor-pointer font-semibold">Immediate: Post to Ledger</Label>
                                                     </div>
                                                     <div className="flex items-center space-x-2">
                                                         <RadioGroupItem value="unpaid" id="ps-unpaid" />
-                                                        <Label htmlFor="ps-unpaid" className="cursor-pointer">Pay Later (Post to {transactionType === 'income' ? 'A/R' : 'A/P'})</Label>
+                                                        <Label htmlFor="ps-unpaid" className="cursor-pointer font-semibold">Delayed: Post to {transactionType === 'income' ? 'A/R' : 'A/P'}</Label>
                                                     </div>
                                                 </RadioGroup>
                                             </FormControl>
@@ -402,7 +408,7 @@ export function TransactionDialog({
                                     )}
                                 />
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
                                         name="date"
@@ -437,7 +443,7 @@ export function TransactionDialog({
                                         name="company"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Contact *</FormLabel>
+                                                <FormLabel>Contact Record *</FormLabel>
                                                 <div className="flex gap-2">
                                                     <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                                         <PopoverTrigger asChild>
@@ -455,9 +461,9 @@ export function TransactionDialog({
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                             <Command>
-                                                                <CommandInput placeholder="Search or type name..." />
+                                                                <CommandInput placeholder="Search records..." />
                                                                 <CommandList>
-                                                                    <CommandEmpty>No results found.</CommandEmpty>
+                                                                    <CommandEmpty>No records found.</CommandEmpty>
                                                                     <CommandGroup>
                                                                         {contacts.map(c => (
                                                                             <CommandItem key={c.id} onSelect={() => { field.onChange(c.name); setIsContactPopoverOpen(false); }}>
@@ -470,7 +476,7 @@ export function TransactionDialog({
                                                             </Command>
                                                         </PopoverContent>
                                                     </Popover>
-                                                    <Button type="button" variant="outline" size="icon" onClick={onOpenContactForm} title="Add New Record"><UserPlus className="h-4 w-4"/></Button>
+                                                    <Button type="button" variant="outline" size="icon" onClick={onOpenContactForm} title="Create New Contact"><UserPlus className="h-4 w-4"/></Button>
                                                 </div>
                                                 <FormMessage />
                                             </FormItem>
@@ -483,13 +489,13 @@ export function TransactionDialog({
                                         <FileSignature className="h-4 w-4" />
                                         Tax Categorization
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="category"
                                             render={({ field }) => (
                                                 <FormItem className="flex flex-col">
-                                                    <FormLabel>Tax Category *</FormLabel>
+                                                    <FormLabel>Audit Category *</FormLabel>
                                                     <div className="flex gap-2">
                                                         <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                             <PopoverTrigger asChild>
@@ -502,7 +508,7 @@ export function TransactionDialog({
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                                 <Command>
-                                                                    <CommandInput placeholder="Search or type name..." onValueChange={setNewCategoryName}/>
+                                                                    <CommandInput placeholder="Search categories..." onValueChange={setNewCategoryName}/>
                                                                     <CommandList>
                                                                         <CommandEmpty>
                                                                             <Button variant="ghost" className="w-full justify-start text-primary" onClick={handleInternalCreateCategory}>
@@ -525,7 +531,7 @@ export function TransactionDialog({
                                                     </div>
                                                     {showAddCategory && (
                                                         <div className="flex gap-2 animate-in fade-in-50 pt-2">
-                                                            <Input placeholder="New name..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="h-8" />
+                                                            <Input placeholder="Category name..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="h-8" />
                                                             <Button type="button" onClick={handleInternalCreateCategory} size="sm">Add</Button>
                                                         </div>
                                                     )}
@@ -534,108 +540,112 @@ export function TransactionDialog({
                                             )}
                                         />
                                         <div className="space-y-2">
-                                            <Label>CRA Line #</Label>
-                                            <Input readOnly disabled value={categoryNumberDisplay} className="bg-muted/50" />
+                                            <Label>CRA Line Reference</Label>
+                                            <Input readOnly disabled value={categoryNumberDisplay} className="bg-muted/50 font-mono" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Operational Description</FormLabel><FormControl><Input placeholder="Briefly describe this transaction..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Transaction Summary</FormLabel><FormControl><Input placeholder="Brief description for the ledger..." {...field} /></FormControl><FormMessage /></FormItem> )} />
 
                                 <Separator />
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Unit Price</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" step="0.01" className="pl-7" {...field} /></FormControl></div><FormMessage /></FormItem> )} />
-                                    <div className="space-y-2">
-                                        <Label>Total Amount</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                            <Input value={totals.total.toFixed(2)} readOnly disabled className="pl-7 bg-muted/50 font-bold" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
+                                <section className="p-6 bg-muted/20 rounded-xl border border-dashed space-y-6">
                                     <div className="flex items-center gap-2 text-muted-foreground font-bold text-xs uppercase tracking-widest">
-                                        <Percent className="h-3.5 w-3.5" />
-                                        Tax Configuration
+                                        <Calculator className="h-4 w-4" />
+                                        Financial Details & Tax
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="taxType"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Tax Type</FormLabel>
-                                                    <div className="flex gap-2">
-                                                        <Select value={field.value} onValueChange={handleSelectTaxType}>
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select tax type..." />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="None">No Tax</SelectItem>
-                                                                {taxTypes.map(t => (
-                                                                    <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
-                                                            <Settings className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="taxRate"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex justify-between items-center">
-                                                        <FormLabel>Tax Rate (%)</FormLabel>
-                                                        <Button type="button" variant="link" className="h-auto p-0 text-[10px] font-bold text-primary" onClick={handleSetDefaultTaxRate}>Set Default</Button>
-                                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Unit Price</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span><FormControl><Input type="number" step="0.01" className="pl-7" {...field} /></FormControl></div><FormMessage /></FormItem> )} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-primary font-bold">Gross Total Amount</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                                    <Input value={totals.total.toFixed(2)} readOnly disabled className="pl-7 bg-primary/5 border-primary/20 text-lg font-bold text-primary" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="taxType"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Tax Label</FormLabel>
+                                                            <div className="flex gap-2">
+                                                                <Select value={field.value} onValueChange={handleSelectTaxType}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-10">
+                                                                            <SelectValue placeholder="Tax..." />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="None">None</SelectItem>
+                                                                        {taxTypes.map(t => (
+                                                                            <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <Button type="button" variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} className="shrink-0"><Settings className="h-4 w-4" /></Button>
+                                                            </div>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="taxRate"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <div className="flex justify-between items-center">
+                                                                <FormLabel>Rate %</FormLabel>
+                                                                <Button type="button" variant="link" className="h-auto p-0 text-[10px] font-bold" onClick={handleSetDefaultTaxRate}>Set Default</Button>
+                                                            </div>
+                                                            <div className="relative">
+                                                                <FormControl>
+                                                                    <Input type="number" step="0.1" className="pr-8" {...field} />
+                                                                </FormControl>
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                                                            </div>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-bold text-muted-foreground uppercase">Net (Pre-Tax)</Label>
                                                     <div className="relative">
-                                                        <FormControl>
-                                                            <Input type="number" step="0.1" className="pr-8" {...field} />
-                                                        </FormControl>
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                                        <Input value={totals.preTax.toFixed(2)} readOnly disabled className="pl-7 h-10 bg-background font-mono text-sm" />
                                                     </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Pre-Tax Amount</Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                                <Input value={totals.preTax.toFixed(2)} readOnly disabled className="pl-7 h-8 bg-background/50 text-xs" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Tax Amount</Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                                <Input value={totals.tax.toFixed(2)} readOnly disabled className="pl-7 h-8 bg-background/50 text-xs" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-bold text-muted-foreground uppercase">Tax Portion</Label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                                        <Input value={totals.tax.toFixed(2)} readOnly disabled className="pl-7 h-10 bg-background font-mono text-sm" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </section>
 
                                 <Separator />
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {form.watch('paymentStatus') === 'paid' && (
                                         <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Payment Method</FormLabel>
+                                                <FormLabel>Settlement Method</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="How was it paid?" /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Choose method..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{paymentMethodOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -644,7 +654,7 @@ export function TransactionDialog({
                                     {transactionType === 'income' && form.watch('paymentStatus') === 'paid' && (
                                         <FormField control={form.control} name="depositedTo" render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Deposit To</FormLabel>
+                                                <FormLabel>Destination Account</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>{defaultDepositAccounts.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
@@ -654,20 +664,20 @@ export function TransactionDialog({
                                     )}
                                 </div>
 
-                                <FormField control={form.control} name="explanation" render={({ field }) => ( <FormItem><FormLabel>Business Reason (Internal)</FormLabel><FormControl><Textarea placeholder="Explain why this transaction was made..." rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="explanation" render={({ field }) => ( <FormItem><FormLabel>Audit Notes (Internal)</FormLabel><FormControl><Textarea placeholder="Explain the business purpose for this record..." rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="documentNumber" render={({ field }) => ( <FormItem><FormLabel>Doc # (Invoice/Receipt)</FormLabel><FormControl><Input placeholder="e.g., INV-1001" {...field} /></FormControl></FormItem> )} />
-                                    <FormField control={form.control} name="documentUrl" render={({ field }) => ( <FormItem><FormLabel>Evidence Link (PDF/Image)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl></FormItem> )} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField control={form.control} name="documentNumber" render={({ field }) => ( <FormItem><FormLabel>Reference # (Invoice/Receipt)</FormLabel><FormControl><Input placeholder="e.g., INV-1001" {...field} /></FormControl></FormItem> )} />
+                                    <FormField control={form.control} name="documentUrl" render={({ field }) => ( <FormItem><FormLabel>Evidence Link (Cloud File)</FormLabel><FormControl><Input placeholder="Paste URL to PDF or Image..." {...field} /></FormControl></FormItem> )} />
                                 </div>
                             </div>
                         </ScrollArea>
 
-                        <DialogFooter className="p-6 border-t shrink-0">
+                        <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
                             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button type="submit" disabled={isSaving}>
-                                {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                {form.watch('paymentStatus') === 'unpaid' ? (transactionType === 'income' ? 'Record Receivable' : 'Record Payable') : 'Post to Ledger'}
+                            <Button type="submit" disabled={isSaving} className="min-w-[140px]">
+                                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {form.watch('paymentStatus') === 'unpaid' ? (transactionType === 'income' ? 'Log Receivable' : 'Log Payable') : 'Post to Ledger'}
                             </Button>
                         </DialogFooter>
                     </form>

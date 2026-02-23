@@ -165,7 +165,7 @@ export function TaxCategoriesView() {
               setIncomeCategories(prev => prev.filter(c => c.id !== categoryToDelete.category.id));
           } else {
               await deleteExpenseCategory(categoryToDelete.category.id);
-              setExpenseCategories(prev => prev.filter(c => f.id !== categoryToDelete.category.id));
+              setExpenseCategories(prev => prev.filter(c => c.id !== categoryToDelete.category.id));
           }
           toast({ title: 'Category Deleted' });
       } catch (error: any) {

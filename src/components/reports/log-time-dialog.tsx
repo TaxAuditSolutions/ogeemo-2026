@@ -166,8 +166,8 @@ export function LogTimeDialog({
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: format(set(new Date(), { hours: i }), 'h a') }));
     const minuteOptions = Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; });
 
-    const selectedWorker = workers.find(w => w.id === selectedWorkerId);
-    const selectedContact = contacts.find(c => c.id === selectedContactId);
+    const selectedWorkerDisplay = workers.find(w => w.id === selectedWorkerId);
+    const selectedContactDisplay = contacts.find(c => c.id === selectedContactId);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -192,7 +192,7 @@ export function LogTimeDialog({
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between" disabled={!!entryToEdit}>
                                             <span className="truncate">
-                                                {selectedWorker ? selectedWorker.name : "Select a worker..."}
+                                                {selectedWorkerDisplay ? selectedWorkerDisplay.name : "Select a worker..."}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -226,7 +226,7 @@ export function LogTimeDialog({
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between">
                                             <span className="truncate">
-                                                {selectedContact ? selectedContact.name : "Internal / No Client"}
+                                                {selectedContactDisplay ? selectedContactDisplay.name : "Internal / No Client"}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -265,6 +265,7 @@ export function LogTimeDialog({
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant={"outline"} className={cn("h-11 w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {date ? format(date, "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>

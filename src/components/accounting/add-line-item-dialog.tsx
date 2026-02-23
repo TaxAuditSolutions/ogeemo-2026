@@ -72,7 +72,8 @@ export function AddLineItemDialog({
     if (isOpen) {
         if (itemToEdit) {
             setDescription(itemToEdit.description);
-            setCustomItemDescription('');
+            // Populate the custom description input so the user can edit the text
+            setCustomItemDescription(itemToEdit.description);
             setQuantity(itemToEdit.quantity);
             setPrice(itemToEdit.price);
             setTaxType(itemToEdit.taxType || '');
@@ -219,7 +220,7 @@ export function AddLineItemDialog({
             </div>
 
             <div className="space-y-2 pt-4">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description Preview</Label>
                 <Textarea
                     id="description"
                     readOnly

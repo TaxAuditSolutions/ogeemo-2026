@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -287,7 +286,7 @@ export function InvoiceGeneratorView() {
 
     try {
         if (invoiceToEditId) {
-            await updateInvoiceWithLineItems(invoiceId, invoiceData, itemsToSave, user.uid);
+            await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
             toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
         } else {
             await addInvoiceWithLineItems(invoiceData, itemsToSave);

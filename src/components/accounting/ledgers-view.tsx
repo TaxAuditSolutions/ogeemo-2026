@@ -116,7 +116,7 @@ const emptyTransactionForm = {
     taxRate: '', 
     preTaxAmount: '', 
     taxAmount: '', 
-    category: '', // Unified category field
+    category: '', 
     explanation: '', 
     documentNumber: '', 
     documentUrl: '', 
@@ -495,16 +495,26 @@ export function LedgersView() {
       setTimeout(loadData, 500);
   };
 
-  const handleCreateCategory = () => {
-    if (!user || !newCategoryName.trim()) return;
-    if (newTransactionType === 'income') {
-        addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
-    } else {
-        addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
+  const handleCreateCategory = async (name: string) => {
+    if (!user || !name.trim()) return;
+    try {
+        let newCat;
+        if (newTransactionType === 'income') {
+            newCat = await addIncomeCategory({ name: name.trim(), userId: user.uid });
+            setIncomeCategories(prev => [...prev, newCat]);
+            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
+        } else {
+            newCat = await addExpenseCategory({ name: name.trim(), userId: user.uid });
+            setExpenseCategories(prev => [...prev, newCat]);
+            setNewTransaction(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
+        }
+        setShowAddCategory(false);
+        setNewCategoryName('');
+        setIsCategoryPopoverOpen(false);
+        toast({ title: 'Category Created' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
     }
-    setShowAddCategory(false);
-    setNewCategoryName('');
-    setTimeout(loadData, 500);
   };
 
   const clearFilters = () => {
@@ -778,34 +788,54 @@ export function LedgersView() {
                         
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Category *</Label>
-                            <div className="col-span-3">
-                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between truncate">
-                                            {getCategoryName(newTransaction.category, newTransactionType)}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <div className="col-span-3 space-y-2">
+                                <div className="flex gap-2">
+                                    <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between truncate">
+                                                {getCategoryName(newTransaction.category, newTransactionType)}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCategory(newCategoryName)}>
+                                                            <Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"
+                                                        </Button>
+                                                    </CommandEmpty>
+                                                    <CommandGroup>
+                                                        {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
+                                                            <CommandItem key={c.id} onSelect={() => { 
+                                                                setNewTransaction(p => ({...p, category: c.categoryNumber || c.id})); 
+                                                                setIsCategoryPopoverOpen(false); 
+                                                            }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.category === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
+                                                                {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Button variant="outline" size="icon" onClick={() => setShowAddCategory(p => !p)} title="Add New Category"><Plus className="h-4 w-4"/></Button>
+                                </div>
+                                {showAddCategory && (
+                                    <div className="flex gap-2 animate-in fade-in-50">
+                                        <Input 
+                                            placeholder="New category name..." 
+                                            value={newCategoryName} 
+                                            onChange={e => setNewCategoryName(e.target.value)} 
+                                            className="text-xs"
+                                        />
+                                        <Button onClick={() => handleCreateCategory(newCategoryName)} size="sm">
+                                            <Plus className="mr-2 h-4 w-4"/>Add
                                         </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
-                                            <CommandList>
-                                                <CommandEmpty><Button variant="ghost" className="w-full justify-start text-primary" onClick={handleCreateCategory}><Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"</Button></CommandEmpty>
-                                                <CommandGroup>
-                                                    {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
-                                                        <CommandItem key={c.id} onSelect={() => { 
-                                                            setNewTransaction(p => ({...p, category: c.categoryNumber || c.id})); 
-                                                            setIsCategoryPopoverOpen(false); 
-                                                        }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", newTransaction.category === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
-                                                            {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

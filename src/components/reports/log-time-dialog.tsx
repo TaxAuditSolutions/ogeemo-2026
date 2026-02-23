@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
 import { addTimeLog, updateTimeLog, type TimeLog } from '@/services/timelog-service';
-import { LoaderCircle, Plus, ChevronsUpDown, Check, User, Users, Calendar as CalendarIcon, Clock, Info } from 'lucide-react';
+import { LoaderCircle, Plus, ChevronsUpDown, Check, User, Users, Calendar as CalendarIcon, Clock, Info, Square, Mic } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, formatTime } from '@/lib/utils';
 import { format, set } from 'date-fns';
@@ -171,33 +171,33 @@ export function LogTimeDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
+            <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center sm:text-center">
-                    <DialogTitle className="text-2xl font-bold font-headline text-primary">
+                    <DialogTitle className="text-3xl font-bold font-headline text-primary">
                         {entryToEdit ? 'Edit' : 'Log'} Time Card Entry
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-base">
                         A high-fidelity retrospective recording of an operational work session.
                     </DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="flex-1">
-                    <div className="p-8 space-y-8">
+                    <div className="max-w-5xl mx-auto p-8 space-y-10">
                         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
                                 <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <User className="h-4 w-4" /> Worker (Payroll) *
+                                    <User className="h-4 w-4" /> Worker Attribution (Payroll) *
                                 </Label>
                                 <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between" disabled={!!entryToEdit}>
+                                        <Button variant="outline" role="combobox" className="h-12 w-full justify-between px-4 text-base" disabled={!!entryToEdit}>
                                             <span className="truncate">
                                                 {selectedWorkerDisplay ? selectedWorkerDisplay.name : "Select a worker..."}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command>
                                             <CommandInput placeholder="Search workers..." />
                                             <CommandList>
@@ -207,8 +207,8 @@ export function LogTimeDialog({
                                                         <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
                                                             <div className="flex flex-col">
-                                                                <span>{w.name}</span>
-                                                                {w.workerIdNumber && <span className="text-[10px] text-muted-foreground">ID: {w.workerIdNumber}</span>}
+                                                                <span className="font-semibold">{w.name}</span>
+                                                                {w.workerIdNumber && <span className="text-[10px] text-muted-foreground uppercase">ID: {w.workerIdNumber}</span>}
                                                             </div>
                                                         </CommandItem>
                                                     ))}
@@ -220,31 +220,32 @@ export function LogTimeDialog({
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <Users className="h-4 w-4" /> Client Attribution
+                                    <Users className="h-4 w-4" /> Client Association
                                 </Label>
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between">
+                                        <Button variant="outline" role="combobox" className="h-12 w-full justify-between px-4 text-base">
                                             <span className="truncate">
-                                                {selectedContactDisplay ? (selectedContactDisplay.businessName ? `${selectedContactDisplay.name} - ${selectedContactDisplay.businessName}` : selectedContactDisplay.name) : "Internal / No Client"}
+                                                {selectedContactDisplay ? (selectedContactDisplay.businessName ? `${selectedContactDisplay.name} - ${selectedContactDisplay.businessName}` : selectedContactDisplay.name) : "Internal / General Operations"}
                                             </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command>
-                                            <CommandInput placeholder="Search clients..." />
+                                            <CommandInput placeholder="Search contacts..." />
                                             <CommandList>
-                                                <CommandEmpty>No client found.</CommandEmpty>
+                                                <CommandEmpty>No contact found.</CommandEmpty>
                                                 <CommandGroup>
                                                     <CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}>
                                                         <Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")}/>
-                                                        Internal / No Client
+                                                        Internal / General Operations
                                                     </CommandItem>
                                                     {contacts.map(c => (
                                                         <CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>
-                                                            {c.name} {c.businessName ? `- ${c.businessName}` : ''}
+                                                            <span className="font-medium">{c.name}</span>
+                                                            {c.businessName && <span className="ml-2 text-muted-foreground">- {c.businessName}</span>}
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>
@@ -257,16 +258,16 @@ export function LogTimeDialog({
 
                         <Separator />
 
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                             <div className="space-y-2">
                                 <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <CalendarIcon className="h-4 w-4" /> Activity Date *
+                                    <CalendarIcon className="h-4 w-4" /> Operational Date *
                                 </Label>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("h-11 w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                                        <Button variant={"outline"} className={cn("h-12 w-full justify-start text-left font-normal px-4 text-base", !date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                            {date ? format(date, "PPPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
@@ -281,11 +282,11 @@ export function LogTimeDialog({
                                     </Label>
                                     <div className="flex gap-1">
                                         <Select value={startTime.hour} onValueChange={(v) => setStartTime(p => ({...p, hour: v}))}>
-                                            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                                             <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <Select value={startTime.minute} onValueChange={(v) => setStartTime(p => ({...p, minute: v}))}>
-                                            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                                             <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                     </div>
@@ -296,11 +297,11 @@ export function LogTimeDialog({
                                     </Label>
                                     <div className="flex gap-1">
                                         <Select value={endTime.hour} onValueChange={(v) => setEndTime(p => ({...p, hour: v}))}>
-                                            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                                             <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <Select value={endTime.minute} onValueChange={(v) => setEndTime(p => ({...p, minute: v}))}>
-                                            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                                             <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                     </div>
@@ -310,54 +311,65 @@ export function LogTimeDialog({
 
                         <Separator />
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="subject" className="text-sm uppercase font-bold text-primary">Subject / Summary</Label>
-                                <Input id="subject" placeholder="High-level description of the work session..." className="h-11" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                                <Label htmlFor="subject" className="text-sm uppercase font-bold text-primary">Operational Summary (Subject)</Label>
+                                <Input id="subject" placeholder="What was the main focus of this work session?" className="h-12 text-lg font-semibold" value={subject} onChange={(e) => setSubject(e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="description" className="text-sm uppercase font-bold text-primary">Operational Details *</Label>
-                                <Textarea id="description" placeholder="Comprehensive breakdown of tasks performed..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={6} />
+                                <Label htmlFor="description" className="text-sm uppercase font-bold text-primary">Breakdown of Tasks (Details) *</Label>
+                                <Textarea id="description" placeholder="Detailed log of specific actions performed..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={8} className="text-base leading-relaxed" />
                             </div>
                         </div>
 
                         <Separator />
 
-                        <section className="p-6 border-2 border-primary/10 rounded-2xl bg-primary/5">
-                            <Label className="text-sm uppercase font-bold text-primary mb-4 block">Billing Configuration</Label>
-                            <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-8">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="non-billable" id="rb1"/>
-                                    <Label htmlFor="rb1" className="font-semibold cursor-pointer">Non-Billable</Label>
+                        <section className="p-8 border-2 border-primary/10 rounded-2xl bg-primary/5 shadow-inner">
+                            <Label className="text-lg font-bold text-primary mb-6 block">Billing Configuration</Label>
+                            <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-12">
+                                <div className="flex items-center space-x-3">
+                                    <RadioGroupItem value="non-billable" id="rb1" className="h-5 w-5" />
+                                    <Label htmlFor="rb1" className="text-base font-bold cursor-pointer">Non-Billable</Label>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="billable" id="rb2"/>
-                                    <Label htmlFor="rb2" className="font-semibold cursor-pointer">Billable</Label>
+                                <div className="flex items-center space-x-3">
+                                    <RadioGroupItem value="billable" id="rb2" className="h-5 w-5" />
+                                    <Label htmlFor="rb2" className="text-base font-bold cursor-pointer">Billable to Client</Label>
                                 </div>
                             </RadioGroup>
+                            
                             {isBillable && (
-                                <div className="mt-6 space-y-2 max-w-xs animate-in fade-in-50">
+                                <div className="mt-10 space-y-3 max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
                                     <Label htmlFor="rate" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Hourly Billable Rate ($/hr)</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
-                                        <Input id="rate" type="number" value={billableRate} onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} className="h-11 pl-8 font-mono font-bold" placeholder="100.00" />
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-xl">$</span>
+                                        <Input 
+                                            id="rate" 
+                                            type="number" 
+                                            value={billableRate} 
+                                            onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} 
+                                            className="h-14 pl-10 text-2xl font-mono font-bold border-primary/20 shadow-sm" 
+                                            placeholder="100.00" 
+                                        />
                                     </div>
+                                    <p className="text-[10px] text-muted-foreground italic pl-1">This rate will be used to automatically calculate the total for client invoices.</p>
                                 </div>
                             )}
                         </section>
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium">
-                        <Info className="h-4 w-4 text-primary" />
-                        Synchronizing with the Worker Time Log registry.
+                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground italic font-medium max-w-md">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Info className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>This entry will be synchronized with the master Worker Time Log registry for payroll and billing automation.</span>
                     </div>
-                    <div className="flex gap-3">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button onClick={handleSave} disabled={isSaving} className="h-11 px-8 font-bold shadow-lg">
-                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                            {entryToEdit ? 'Save Changes' : 'Log Operational Time'}
+                    <div className="flex gap-4 w-full sm:w-auto">
+                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-8 text-lg">Cancel</Button>
+                        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-12 font-bold shadow-2xl text-xl">
+                            {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
+                            {entryToEdit ? 'Update Entry' : 'Log Time Entry'}
                         </Button>
                     </div>
                 </DialogFooter>

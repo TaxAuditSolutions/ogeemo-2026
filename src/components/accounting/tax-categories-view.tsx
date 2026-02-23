@@ -14,6 +14,8 @@ import {
   Undo,
   PlusCircle,
   CheckCircle2,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';

@@ -157,7 +157,7 @@ export function TransactionDialog({
         return { total, preTax, tax };
     }, [watchQuantity, watchUnitPrice, watchTaxRate]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (isOpen) {
             if (transactionToEdit) {
                 setTransactionType(transactionToEdit.transactionType || initialType);

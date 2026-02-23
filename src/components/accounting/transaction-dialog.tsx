@@ -166,7 +166,6 @@ export function TransactionDialog({
     const activeCategories = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
     const selectedCategory = activeCategories.find(c => c.categoryNumber === watchCategory || c.id === watchCategory);
 
-    // High-Fidelity Contact Formatting: Name - Business
     const contactOptions = React.useMemo(() => {
         const standaloneCompanies = companies.map(c => ({ id: c.id, label: c.name, type: 'company' }));
         const individualContacts = contacts.map(c => ({

@@ -68,7 +68,6 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
-import { TransactionDialog } from './transaction-dialog';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 
 const formatCurrency = (amount: number) => {
@@ -89,8 +88,6 @@ export function AccountsPayablePageView() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Dialog Controllers
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
-  const [billToEdit, setBillToEdit] = useState<any | null>(null);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   // Payment State
@@ -139,20 +136,6 @@ export function AccountsPayablePageView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleOpenAddBill = () => {
-      setBillToEdit(null);
-      setIsTransactionDialogOpen(true);
-  };
-
-  const handleOpenEditBill = (bill: PayableBill) => {
-      setBillToEdit({
-          ...bill,
-          transactionType: 'expense',
-          paymentStatus: 'unpaid'
-      });
-      setIsTransactionDialogOpen(true);
-  };
 
   const handlePostPayment = async () => {
     if (!user || !billToPay) return;
@@ -218,9 +201,6 @@ export function AccountsPayablePageView() {
                     <CardTitle>Accounts Payable Ledger</CardTitle>
                     <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
                 </div>
-                <Button onClick={handleOpenAddBill}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Log Invoice
-                </Button>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -257,8 +237,8 @@ export function AccountsPayablePageView() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => handleOpenEditBill(bill)}>
-                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                    <DropdownMenuItem disabled>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit (Disabled during reset)
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onSelect={() => setBillToDelete(bill)} className="text-destructive">
@@ -282,23 +262,6 @@ export function AccountsPayablePageView() {
             </CardContent>
         </Card>
 
-        {/* Unified Transaction Dialog */}
-        <TransactionDialog 
-            isOpen={isTransactionDialogOpen}
-            onOpenChange={setIsTransactionDialogOpen}
-            transactionToEdit={billToEdit}
-            initialType="expense"
-            initialPaymentStatus="unpaid"
-            contacts={contacts}
-            companies={companies}
-            incomeCategories={incomeCategories}
-            expenseCategories={expenseCategories}
-            taxTypes={taxTypes}
-            onTaxTypesChange={setTaxTypes}
-            onSuccess={loadData}
-            onOpenContactForm={() => setIsContactFormOpen(true)}
-        />
-
         {/* Post Payment Dialog */}
         <Dialog open={!!billToPay} onOpenChange={() => setBillToPay(null)}>
             <DialogContent>
@@ -308,13 +271,13 @@ export function AccountsPayablePageView() {
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="p-date">Payment Date</Label>
-                        <Input id="p-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
+                        <Label>Payment Date</Label>
+                        <Input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="p-method">Payment Method</Label>
+                        <Label>Payment Method</Label>
                         <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger id="p-method">
+                            <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

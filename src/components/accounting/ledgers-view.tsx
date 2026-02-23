@@ -39,7 +39,6 @@ import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
-    PlusCircle, 
     MoreVertical, 
     Pencil, 
     Trash2, 
@@ -75,7 +74,6 @@ import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
-import { TransactionDialog } from "./transaction-dialog";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -91,8 +89,6 @@ export function LedgersView() {
   const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
-  const [transactionToEdit, setTransactionToEdit] = React.useState<GeneralTransaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
   
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
@@ -224,11 +220,6 @@ export function LedgersView() {
   const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
   const netIncome = incomeTotal - expenseTotal;
 
-  const handleEditTransaction = (tx: GeneralTransaction) => {
-      setTransactionToEdit(tx);
-      setIsTransactionDialogOpen(true);
-  };
-
   const handleConfirmDelete = () => {
     if (!transactionToDelete || !user) return;
     if (transactionToDelete.transactionType === 'income') {
@@ -244,12 +235,6 @@ export function LedgersView() {
       setStartDate(undefined);
       setEndDate(undefined);
   };
-
-  const initialDialogType = React.useMemo(() => {
-      if (activeTab === 'income') return 'income';
-      if (activeTab === 'expenses') return 'expense';
-      return 'income';
-  }, [activeTab]);
 
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
     <div className="border rounded-md overflow-hidden bg-card">
@@ -303,7 +288,7 @@ export function LedgersView() {
                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={() => handleEditTransaction(item)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem disabled><Pencil className="mr-2 h-4 w-4"/>Edit (Disabled during reset)</DropdownMenuItem>
                                         <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -353,9 +338,6 @@ export function LedgersView() {
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
                         <Printer className="mr-2 h-4 w-4" /> Print Ledger
-                    </Button>
-                    <Button onClick={() => { setTransactionToEdit(null); setIsTransactionDialogOpen(true); }} size="sm">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
                     </Button>
                 </div>
             </CardHeader>
@@ -413,21 +395,6 @@ export function LedgersView() {
                 <TabsContent value="expenses">{renderTable(filteredExpenses.map(e => ({...e, transactionType: 'expense'})), 'expense')}</TabsContent>
             </Tabs>
         </div>
-
-        <TransactionDialog 
-            isOpen={isTransactionDialogOpen}
-            onOpenChange={setIsTransactionDialogOpen}
-            transactionToEdit={transactionToEdit}
-            initialType={initialDialogType as any}
-            contacts={contacts}
-            companies={companies}
-            incomeCategories={incomeCategories}
-            expenseCategories={expenseCategories}
-            taxTypes={taxTypes}
-            onTaxTypesChange={setTaxTypes}
-            onSuccess={loadData}
-            onOpenContactForm={() => setIsContactFormOpen(true)}
-        />
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >
             <AlertDialogContent>

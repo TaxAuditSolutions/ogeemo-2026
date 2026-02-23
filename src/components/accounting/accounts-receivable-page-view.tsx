@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Plus, Pencil, FileDigit } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, FileDigit } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +57,6 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
-import { TransactionDialog } from './transaction-dialog';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 
 const formatCurrency = (amount: number) => {
@@ -78,7 +77,6 @@ export function AccountsReceivablePageView() {
     const [isLoading, setIsLoading] = useState(true);
     
     // Dialog Controllers
-    const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -199,9 +197,6 @@ export function AccountsReceivablePageView() {
                         <CardDescription>Click "Post Payment" once the money arrives in your bank.</CardDescription>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" /> Quick Log Receivable
-                        </Button>
                         <Button asChild>
                             <Link href="/accounting/invoices/create">
                                 <FileDigit className="mr-2 h-4 w-4" /> Create Professional Invoice
@@ -272,21 +267,6 @@ export function AccountsReceivablePageView() {
                     )}
                 </CardContent>
             </Card>
-
-            <TransactionDialog 
-                isOpen={isTransactionDialogOpen}
-                onOpenChange={setIsTransactionDialogOpen}
-                initialType="income"
-                initialPaymentStatus="unpaid"
-                contacts={contacts}
-                companies={companies}
-                incomeCategories={incomeCategories}
-                expenseCategories={expenseCategories}
-                taxTypes={taxTypes}
-                onTaxTypesChange={setTaxTypes}
-                onSuccess={loadData}
-                onOpenContactForm={() => setIsContactFormOpen(true)}
-            />
 
             <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                 <DialogContent>

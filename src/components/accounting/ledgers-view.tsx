@@ -752,9 +752,9 @@ export function LedgersView() {
                                                         </Button>
                                                     </CommandEmpty>
                                                     <CommandGroup>
-                                                        {companies.map(c => (
+                                                        {contacts.map(c => (
                                                             <CommandItem key={c.id} onSelect={() => { setNewTransaction(p => ({...p, company: c.name})); setIsCompanyPopoverOpen(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")}/> {c.name}
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")}/> {c.name} {c.businessName ? `(${c.businessName})` : ''}
                                                             </CommandItem>
                                                         ))}
                                                     </CommandGroup>

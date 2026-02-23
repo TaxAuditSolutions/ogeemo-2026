@@ -11,7 +11,7 @@ const defaultPreferences: UserProfile['preferences'] = {
     showDashboardFrame: true,
     showMenuViewInstructions: true,
     showActionManagerAboutPanel: true,
-    defaultSidebarView: 'grouped',
+    defaultSidebarView: 'fullMenu',
 };
 
 export function useUserPreferences() {

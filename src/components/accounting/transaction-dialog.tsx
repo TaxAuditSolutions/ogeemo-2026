@@ -325,7 +325,7 @@ export function TransactionDialog({
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-5xl flex flex-col max-h-[95vh] p-0 overflow-hidden">
-                <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center">
+                <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
                     <div className="flex flex-col items-center gap-2 text-primary">
                         <Calculator className="h-8 w-8" />
                         <div className="space-y-1 text-center">
@@ -460,7 +460,7 @@ export function TransactionDialog({
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
                                                             <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal px-3">
-                                                                <span className="truncate">{selectedCategory ? selectedCategory.name : "Select tax line..."}</span>
+                                                                <span className="truncate">{selectedCategory ? selectedCategory.name : "Select/Add tax line..."}</span>
                                                                 <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                                             </Button>
                                                         </FormControl>

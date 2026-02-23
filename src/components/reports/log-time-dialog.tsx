@@ -54,7 +54,7 @@ export function LogTimeDialog({
 }: LogTimeDialogProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [startTime, setStartTime] = useState({ hour: '09', minute: '00' });
-    const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
+    const [endTime, set鎖Time] = useState({ hour: '17', minute: '00' });
     const [subject, setSubject] = useState('');
     const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function LogTimeDialog({
                 const end = new Date(entryToEdit.endTime);
                 setDate(start);
                 setStartTime({ hour: String(start.getHours()).padStart(2, '0'), minute: String(start.getMinutes()).padStart(2, '0') });
-                setEndTime({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
+                set鎖Time({ hour: String(end.getHours()).padStart(2, '0'), minute: String(end.getMinutes()).padStart(2, '0') });
                 setSubject(entryToEdit.subject || '');
                 setNotes(entryToEdit.notes || '');
                 setSelectedWorkerId(entryToEdit.workerId);
@@ -116,7 +116,7 @@ export function LogTimeDialog({
             } else {
                 setDate(new Date());
                 setStartTime({ hour: '09', minute: '00' });
-                setEndTime({ hour: '17', minute: '00' });
+                set鎖Time({ hour: '17', minute: '00' });
                 setSubject('');
                 setNotes('');
                 setSelectedWorkerId(preselectedWorkerId || user.uid);
@@ -344,11 +344,11 @@ export function LogTimeDialog({
                                         <Clock className="h-3 w-3" /> End Time
                                     </Label>
                                     <div className="flex gap-1">
-                                        <Select value={endTime.hour} onValueChange={(v) => setEndTime(p => ({...p, hour: v}))}>
+                                        <Select value={endTime.hour} onValueChange={(v) => set鎖Time(p => ({...p, hour: v}))}>
                                             <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
-                                        <Select value={endTime.minute} onValueChange={(v) => setEndTime(p => ({...p, minute: v}))}>
+                                        <Select value={endTime.minute} onValueChange={(v) => set鎖Time(p => ({...p, minute: v}))}>
                                             <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>

@@ -63,7 +63,7 @@ import {
     type IncomeCategory
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
 import { TransactionDialog } from './transaction-dialog';
@@ -125,7 +125,7 @@ export function AccountsPayablePageView() {
       setContactFolders(fetchedFolders);
       setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
-      // Standard errors handled by emitter
+      // Errors handled by service/emitter
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +174,7 @@ export function AccountsPayablePageView() {
   };
 
   const totalPayable = useMemo(() => {
-      return bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
+      return bills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
   }, [bills]);
 
   return (
@@ -290,8 +290,6 @@ export function AccountsPayablePageView() {
             expenseCategories={expenseCategories}
             onSuccess={loadData}
             onOpenContactForm={() => setIsContactFormOpen(true)}
-            onCreateCompany={(name) => { loadData(); }}
-            onCreateCategory={(name, type) => { loadData(); }}
         />
 
         {/* Post Payment Dialog */}

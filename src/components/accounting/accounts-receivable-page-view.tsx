@@ -106,7 +106,6 @@ export function AccountsReceivablePageView() {
                 getContactFolders(user.uid),
                 getIndustries(user.uid)
             ]);
-            // Strictly show outstanding invoices
             setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
             setCompanies(fetchedCompanies);
             setIncomeCategories(fetchedIncomeCategories);
@@ -115,7 +114,7 @@ export function AccountsReceivablePageView() {
             setContactFolders(fetchedFolders);
             setCustomIndustries(fetchedIndustries);
         } catch (error: any) {
-            // Errors handled by service
+            // Errors handled by emitter
         } finally {
             setIsLoading(false);
         }
@@ -269,7 +268,6 @@ export function AccountsReceivablePageView() {
                 </CardContent>
             </Card>
 
-            {/* Unified Transaction Dialog */}
             <TransactionDialog 
                 isOpen={isTransactionDialogOpen}
                 onOpenChange={setIsTransactionDialogOpen}
@@ -281,8 +279,6 @@ export function AccountsReceivablePageView() {
                 expenseCategories={expenseCategories}
                 onSuccess={loadData}
                 onOpenContactForm={() => setIsContactFormOpen(true)}
-                onCreateCompany={() => loadData()}
-                onCreateCategory={() => loadData()}
             />
 
             <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>

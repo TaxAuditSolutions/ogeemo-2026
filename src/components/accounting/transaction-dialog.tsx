@@ -51,6 +51,9 @@ import {
     updateExpenseTransaction,
     addPayableBill,
     addInvoiceWithLineItems,
+    addCompany,
+    addIncomeCategory,
+    addExpenseCategory,
     type IncomeTransaction,
     type ExpenseTransaction,
     type Company,
@@ -91,8 +94,6 @@ interface TransactionDialogProps {
     expenseCategories: ExpenseCategory[];
     onSuccess: () => void;
     onOpenContactForm: () => void;
-    onCreateCompany: (name: string) => void;
-    onCreateCategory: (name: string, type: 'income' | 'expense') => void;
 }
 
 const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
@@ -110,8 +111,6 @@ export function TransactionDialog({
     expenseCategories,
     onSuccess,
     onOpenContactForm,
-    onCreateCompany,
-    onCreateCategory
 }: TransactionDialogProps) {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -119,7 +118,7 @@ export function TransactionDialog({
     const [transactionType, setTransactionType] = React.useState<'income' | 'expense'>(initialType);
     const [isSaving, setIsSaving] = React.useState(false);
     
-    // Popover states
+    // Popover and internal creation states
     const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
@@ -146,6 +145,7 @@ export function TransactionDialog({
     const watchQuantity = form.watch('quantity');
     const watchUnitPrice = form.watch('unitPrice');
     const watchTaxRate = form.watch('taxRate');
+    const watchCategory = form.watch('category');
 
     const totals = React.useMemo(() => {
         const qty = parseFloat(String(watchQuantity)) || 0;
@@ -156,6 +156,15 @@ export function TransactionDialog({
         const tax = total - preTax;
         return { total, preTax, tax };
     }, [watchQuantity, watchUnitPrice, watchTaxRate]);
+
+    const currentCategories = React.useMemo(() => 
+        transactionType === 'income' ? incomeCategories : expenseCategories
+    , [transactionType, incomeCategories, expenseCategories]);
+
+    const categoryNumberDisplay = React.useMemo(() => {
+        const cat = currentCategories.find(c => c.id === watchCategory || c.categoryNumber === watchCategory);
+        return cat?.categoryNumber || '';
+    }, [currentCategories, watchCategory]);
 
     React.useEffect(() => {
         if (isOpen) {
@@ -168,7 +177,7 @@ export function TransactionDialog({
                     description: transactionToEdit.description || '',
                     quantity: transactionToEdit.quantity || 1,
                     unitPrice: transactionToEdit.unitPrice || transactionToEdit.totalAmount,
-                    taxRate: transactionToEdit.taxRate || preferences?.defaultTaxRate || 0,
+                    taxRate: transactionToEdit.taxRate ?? preferences?.defaultTaxRate ?? 0,
                     category: catNum || '',
                     type: transactionToEdit.type || 'business',
                     paymentMethod: transactionToEdit.paymentMethod || 'Bank Transfer',
@@ -202,6 +211,25 @@ export function TransactionDialog({
         if (!isNaN(rate)) {
             updatePreferences({ defaultTaxRate: rate });
             toast({ title: "Default Rate Saved", description: `${rate}% is now your default.` });
+        }
+    };
+
+    const handleInternalCreateCategory = async () => {
+        if (!user || !newCategoryName.trim()) return;
+        try {
+            if (transactionType === 'income') {
+                const newCat = await addIncomeCategory({ name: newCategoryName.trim(), userId: user.uid });
+                form.setValue('category', newCat.categoryNumber || newCat.id);
+            } else {
+                const newCat = await addExpenseCategory({ name: newCategoryName.trim(), userId: user.uid });
+                form.setValue('category', newCat.categoryNumber || newCat.id);
+            }
+            setShowAddCategory(false);
+            setNewCategoryName('');
+            onSuccess(); // Refresh lists in parent
+            toast({ title: 'Category Created' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
     };
 
@@ -293,8 +321,6 @@ export function TransactionDialog({
             setIsSaving(false);
         }
     };
-
-    const currentCategories = transactionType === 'income' ? incomeCategories : expenseCategories;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -398,11 +424,7 @@ export function TransactionDialog({
                                                             <Command>
                                                                 <CommandInput placeholder="Search or type name..." />
                                                                 <CommandList>
-                                                                    <CommandEmpty>
-                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => { onCreateCompany(field.value); setIsContactPopoverOpen(false); }}>
-                                                                            <Plus className="mr-2 h-4 w-4"/> Create "{field.value}"
-                                                                        </Button>
-                                                                    </CommandEmpty>
+                                                                    <CommandEmpty>No results found.</CommandEmpty>
                                                                     <CommandGroup>
                                                                         {contacts.map(c => (
                                                                             <CommandItem key={c.id} onSelect={() => { field.onChange(c.name); setIsContactPopoverOpen(false); }}>
@@ -490,10 +512,10 @@ export function TransactionDialog({
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                             <Command>
-                                                                <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
+                                                                <CommandInput placeholder="Search or type name..." onValueChange={setNewCategoryName}/>
                                                                 <CommandList>
                                                                     <CommandEmpty>
-                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => onCreateCategory(newCategoryName, transactionType)}>
+                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={handleInternalCreateCategory}>
                                                                             <Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"
                                                                         </Button>
                                                                     </CommandEmpty>
@@ -514,7 +536,7 @@ export function TransactionDialog({
                                                 {showAddCategory && (
                                                     <div className="flex gap-2 animate-in fade-in-50 pt-2">
                                                         <Input placeholder="New name..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="h-8" />
-                                                        <Button type="button" onClick={() => onCreateCategory(newCategoryName, transactionType)} size="sm">Add</Button>
+                                                        <Button type="button" onClick={handleInternalCreateCategory} size="sm">Add</Button>
                                                     </div>
                                                 )}
                                                 <FormMessage />
@@ -523,7 +545,7 @@ export function TransactionDialog({
                                     />
                                     <div className="space-y-2">
                                         <Label>CRA Line #</Label>
-                                        <Input readOnly disabled value={form.watch('category') || ''} className="bg-muted/50" />
+                                        <Input readOnly disabled value={categoryNumberDisplay} className="bg-muted/50" />
                                     </div>
                                 </div>
 

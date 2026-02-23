@@ -61,12 +61,12 @@ import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, deleteIncomeTransaction, type IncomeTransaction, 
     getExpenseTransactions, deleteExpenseTransaction, type ExpenseTransaction, 
-    getExpenseCategories, addExpenseCategory, type ExpenseCategory,
-    getIncomeCategories, addIncomeCategory, type IncomeCategory,
-    getCompanies, addCompany, type Company
+    getExpenseCategories, type ExpenseCategory,
+    getIncomeCategories, type IncomeCategory,
+    getCompanies, type Company
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
@@ -239,27 +239,6 @@ export function LedgersView() {
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
-  };
-
-  const handleCreateCompany = async (name: string) => {
-      if (!user || !name.trim()) return;
-      await addCompany({ name: name.trim(), userId: user.uid });
-      loadData();
-  };
-
-  const handleCreateCategory = async (name: string, type: 'income' | 'expense') => {
-    if (!user || !name.trim()) return;
-    try {
-        if (type === 'income') {
-            await addIncomeCategory({ name: name.trim(), userId: user.uid });
-        } else {
-            await addExpenseCategory({ name: name.trim(), userId: user.uid });
-        }
-        loadData();
-        toast({ title: 'Category Created' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
   };
 
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
@@ -435,8 +414,6 @@ export function LedgersView() {
             expenseCategories={expenseCategories}
             onSuccess={loadData}
             onOpenContactForm={() => setIsContactFormOpen(true)}
-            onCreateCompany={handleCreateCompany}
-            onCreateCategory={handleCreateCategory}
         />
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -35,24 +36,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Plus, Pencil } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Plus, Pencil, FileDigit } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInvoices, type Invoice, postInvoicePayment } from '@/services/accounting-service';
+import { 
+    getInvoices, 
+    type Invoice, 
+    postInvoicePayment, 
+    getCompanies, 
+    type Company, 
+    getIncomeCategories, 
+    type IncomeCategory,
+    getExpenseCategories,
+    type ExpenseCategory
+} from '@/services/accounting-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
-import Link from 'next/link';
+import { TransactionDialog } from './transaction-dialog';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
 
 export function AccountsReceivablePageView() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+    const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Dialog Controllers
+    const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+    const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     
@@ -73,11 +97,25 @@ export function AccountsReceivablePageView() {
         }
         setIsLoading(true);
         try {
-            const allInvoices = await getInvoices(user.uid);
+            const [allInvoices, fetchedCompanies, fetchedIncomeCategories, fetchedExpenseCategories, fetchedContacts, fetchedFolders, fetchedIndustries] = await Promise.all([
+                getInvoices(user.uid),
+                getCompanies(user.uid),
+                getIncomeCategories(user.uid),
+                getExpenseCategories(user.uid),
+                getContacts(user.uid),
+                getContactFolders(user.uid),
+                getIndustries(user.uid)
+            ]);
             // Strictly show outstanding invoices
             setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
+            setCompanies(fetchedCompanies);
+            setIncomeCategories(fetchedIncomeCategories);
+            setExpenseCategories(fetchedExpenseCategories);
+            setContacts(fetchedContacts);
+            setContactFolders(fetchedFolders);
+            setCustomIndustries(fetchedIndustries);
         } catch (error: any) {
-            // Contextual errors are handled by service layer
+            // Errors handled by service
         } finally {
             setIsLoading(false);
         }
@@ -94,7 +132,7 @@ export function AccountsReceivablePageView() {
         setIsPaymentDialogOpen(true);
     };
 
-    const handlePostPayment = () => {
+    const handlePostPayment = async () => {
         if (!user || !selectedInvoice) return;
         
         const amount = parseFloat(paymentAmount);
@@ -103,10 +141,17 @@ export function AccountsReceivablePageView() {
             return;
         }
 
-        postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
-        toast({ title: 'Payment Initiated', description: 'Recording payment and updating ledger.' });
-        setIsPaymentDialogOpen(false);
-        setTimeout(loadData, 500); // Refresh list
+        setIsSaving(true);
+        try {
+            await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
+            toast({ title: 'Payment Posted', description: 'The payment has been recorded in the General Ledger.' });
+            setIsPaymentDialogOpen(false);
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const totalOutstanding = useMemo(() => {
@@ -149,11 +194,16 @@ export function AccountsReceivablePageView() {
                         <CardTitle>Outstanding Invoices</CardTitle>
                         <CardDescription>Click "Post Payment" once the money arrives in your bank.</CardDescription>
                     </div>
-                    <Button asChild>
-                        <Link href="/accounting/invoices/create">
-                            <Plus className="mr-2 h-4 w-4" /> Create New Invoice
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Quick Log Receivable
+                        </Button>
+                        <Button asChild>
+                            <Link href="/accounting/invoices/create">
+                                <FileDigit className="mr-2 h-4 w-4" /> Create Professional Invoice
+                            </Link>
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
@@ -198,7 +248,7 @@ export function AccountsReceivablePageView() {
                                                                 localStorage.setItem('editInvoiceId', inv.id);
                                                                 router.push('/accounting/invoices/create');
                                                             }}>
-                                                                <Pencil className="mr-2 h-4 w-4" /> Edit Invoice
+                                                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -208,8 +258,8 @@ export function AccountsReceivablePageView() {
                                     );
                                 }) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            No outstanding receivables. All invoices are either paid (in GL) or haven't been created yet.
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground italic">
+                                            No outstanding receivables found.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -218,6 +268,22 @@ export function AccountsReceivablePageView() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Unified Transaction Dialog */}
+            <TransactionDialog 
+                isOpen={isTransactionDialogOpen}
+                onOpenChange={setIsTransactionDialogOpen}
+                initialType="income"
+                initialPaymentStatus="unpaid"
+                contacts={contacts}
+                companies={companies}
+                incomeCategories={incomeCategories}
+                expenseCategories={expenseCategories}
+                onSuccess={loadData}
+                onOpenContactForm={() => setIsContactFormOpen(true)}
+                onCreateCompany={() => loadData()}
+                onCreateCategory={() => loadData()}
+            />
 
             <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                 <DialogContent>
@@ -260,6 +326,19 @@ export function AccountsReceivablePageView() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ContactFormDialog
+                isOpen={isContactFormOpen}
+                onOpenChange={setIsContactFormOpen}
+                contactToEdit={null}
+                folders={contactFolders}
+                onFoldersChange={setContactFolders}
+                onSave={() => loadData()}
+                companies={companies}
+                onCompaniesChange={setCompanies}
+                customIndustries={customIndustries}
+                onCustomIndustriesChange={setCustomIndustries}
+            />
         </div>
     );
 }

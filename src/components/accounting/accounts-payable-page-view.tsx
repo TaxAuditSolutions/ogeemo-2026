@@ -26,19 +26,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -56,22 +43,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, FileDigit, ChevronsUpDown, Check, UserPlus, X } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getPayableBills, addPayableBill, updatePayableBill, postBillPayment, deletePayableBill, type PayableBill, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/services/accounting-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { 
+    getPayableBills, 
+    postBillPayment, 
+    deletePayableBill, 
+    type PayableBill, 
+    getCompanies, 
+    type Company, 
+    getExpenseCategories, 
+    type ExpenseCategory,
+    getIncomeCategories,
+    type IncomeCategory
+} from '@/services/accounting-service';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { type Contact } from '@/services/contact-service';
 import { AccountingPageHeader } from './page-header';
-import { cn } from '@/lib/utils';
+import { TransactionDialog } from './transaction-dialog';
 import ContactFormDialog from '../contacts/contact-form-dialog';
-import { Separator } from '../ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -79,38 +73,19 @@ const formatCurrency = (amount: number) => {
 
 const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
 
-const emptyBillForm = {
-    vendor: '',
-    invoiceNumber: '',
-    dueDate: format(new Date(), 'yyyy-MM-dd'),
-    quantity: '1',
-    unitPrice: '',
-    totalAmount: '',
-    taxRate: '',
-    preTaxAmount: '',
-    taxAmount: '',
-    category: '',
-    description: '',
-    documentUrl: '',
-};
-
 export function AccountsPayablePageView() {
   const [bills, setBills] = useState<PayableBill[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [categories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Bill Form State
-  const [isAddBillOpen, setIsAddAddBillOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [billToEditId, setBillToEditId] = useState<string | null>(null);
-  const [billForm, setBillForm] = useState(emptyBillForm);
-  const [isVendorPopoverOpen, setIsVendorPopoverOpen] = useState(false);
-  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
-
-  // New Supplier (Contact) State
+  // Dialog Controllers
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [billToEdit, setBillToEdit] = useState<any | null>(null);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   // Payment State
@@ -131,20 +106,24 @@ export function AccountsPayablePageView() {
     }
     setIsLoading(true);
     try {
-      const [fetchedBills, fetchedCompanies, fetchedCategories, fetchedFolders, fetchedIndustries] = await Promise.all([
+      const [fetchedBills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedContacts, fetchedFolders, fetchedIndustries] = await Promise.all([
         getPayableBills(user.uid),
         getCompanies(user.uid),
         getExpenseCategories(user.uid),
+        getIncomeCategories(user.uid),
+        getContacts(user.uid),
         getContactFolders(user.uid),
         getIndustries(user.uid)
       ]);
       setBills(fetchedBills);
       setCompanies(fetchedCompanies);
-      setExpenseCategories(fetchedCategories);
+      setExpenseCategories(fetchedExpenseCategories);
+      setIncomeCategories(fetchedIncomeCategories);
+      setContacts(fetchedContacts);
       setContactFolders(fetchedFolders);
       setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
-      // Standard errors are already handled by services emitting contextual errors
+      // Standard errors handled by emitter
     } finally {
       setIsLoading(false);
     }
@@ -154,107 +133,47 @@ export function AccountsPayablePageView() {
     loadData();
   }, [loadData]);
 
-  // Sync bill form calculations
-  useEffect(() => {
-    const qty = parseFloat(billForm.quantity) || 0;
-    const unitPrice = parseFloat(billForm.unitPrice) || 0;
-    const taxRate = parseFloat(billForm.taxRate) || 0;
-
-    const total = qty * unitPrice;
-    const preTax = total / (1 + taxRate / 100);
-    const tax = total - preTax;
-
-    setBillForm(prev => ({
-        ...prev,
-        totalAmount: total.toFixed(2),
-        preTaxAmount: preTax.toFixed(2),
-        taxAmount: tax.toFixed(2)
-    }));
-  }, [billForm.quantity, billForm.unitPrice, billForm.taxRate]);
-
   const handleOpenAddBill = () => {
-      setBillToEditId(null);
-      setBillForm(emptyBillForm);
-      setIsAddAddBillOpen(true);
+      setBillToEdit(null);
+      setIsTransactionDialogOpen(true);
   };
 
   const handleOpenEditBill = (bill: PayableBill) => {
-      setBillToEditId(bill.id);
-      setBillForm({
-          vendor: bill.vendor,
-          invoiceNumber: bill.invoiceNumber || '',
-          dueDate: bill.dueDate,
-          quantity: String(bill.quantity || '1'),
-          unitPrice: String(bill.unitPrice || bill.totalAmount),
-          totalAmount: String(bill.totalAmount),
-          taxRate: String(bill.taxRate || ''),
-          preTaxAmount: String(bill.preTaxAmount || ''),
-          taxAmount: String(bill.taxAmount || ''),
-          category: bill.category,
-          description: bill.description || '',
-          documentUrl: bill.documentUrl || '',
+      setBillToEdit({
+          ...bill,
+          transactionType: 'expense',
+          paymentStatus: 'unpaid'
       });
-      setIsAddAddBillOpen(true);
+      setIsTransactionDialogOpen(true);
   };
 
-  const handleSaveBill = () => {
-    if (!user || !billForm.vendor || !billForm.totalAmount || !billForm.category) {
-        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide supplier, amount, and category.' });
-        return;
-    }
-
-    const payload = {
-        ...billForm,
-        quantity: parseFloat(billForm.quantity) || 1,
-        unitPrice: parseFloat(billForm.unitPrice) || parseFloat(billForm.totalAmount),
-        totalAmount: parseFloat(billForm.totalAmount),
-        preTaxAmount: parseFloat(billForm.preTaxAmount),
-        taxAmount: parseFloat(billForm.taxAmount),
-        taxRate: parseFloat(billForm.taxRate) || 0,
-        userId: user.uid,
-    };
-
-    if (billToEditId) {
-        updatePayableBill(billToEditId, payload);
-        toast({ title: 'Bill Updated' });
-    } else {
-        addPayableBill(payload);
-        toast({ title: 'Bill Logged', description: 'Added to your Accounts Payable.' });
-    }
-    
-    setIsAddAddBillOpen(false);
-    setBillForm(emptyBillForm);
-    setBillToEditId(null);
-    setTimeout(loadData, 500);
-  };
-
-  const handlePostPayment = () => {
+  const handlePostPayment = async () => {
     if (!user || !billToPay) return;
-    postBillPayment(user.uid, billToPay.id, paymentDate, paymentMethod);
-    setBillToPay(null);
-    toast({ title: 'Payment Initiated', description: 'The payment record is being processed.' });
-    setTimeout(loadData, 500);
+    try {
+        await postBillPayment(user.uid, billToPay.id, paymentDate, paymentMethod);
+        setBillToPay(null);
+        toast({ title: 'Payment Posted', description: 'The bill has been moved to the General Ledger.' });
+        loadData();
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
       if (!billToDelete) return;
-      deletePayableBill(billToDelete.id);
-      setBillToDelete(null);
-      setTimeout(loadData, 500);
-  };
-
-  const handleSupplierSave = (savedContact: Contact) => {
-      loadData();
-      setBillForm(prev => ({ ...prev, vendor: savedContact.businessName || savedContact.name }));
-      setIsContactFormOpen(false);
-      setIsVendorPopoverOpen(false);
+      try {
+          await deletePayableBill(billToDelete.id);
+          setBillToDelete(null);
+          loadData();
+          toast({ title: 'Bill Deleted' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+      }
   };
 
   const totalPayable = useMemo(() => {
       return bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
   }, [bills]);
-
-  const suppliersFolder = contactFolders.find(f => f.name === 'Suppliers' && f.isSystem);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -345,7 +264,7 @@ export function AccountsPayablePageView() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">
                                         No outstanding bills found.
                                     </TableCell>
                                 </TableRow>
@@ -356,150 +275,22 @@ export function AccountsPayablePageView() {
             </CardContent>
         </Card>
 
-        {/* Log Bill Dialog */}
-        <Dialog open={isAddBillOpen} onOpenChange={setIsAddAddBillOpen}>
-            <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>{billToEditId ? 'Edit Outstanding Bill' : 'Log Outstanding Bill'}</DialogTitle>
-                    <DialogDescription>Add a Supplier</DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="flex-1 min-h-0">
-                    <div className="py-4 space-y-4 px-6">
-                        <div className="space-y-2">
-                            <Label>Supplier *</Label>
-                            <div className="flex gap-2">
-                                <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-between overflow-hidden">
-                                            <span className="truncate">{billForm.vendor || "Select a supplier..."}</span>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0"/>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search suppliers..." onValueChange={(val) => setBillForm(p => ({...p, vendor: val}))} />
-                                            <CommandList>
-                                                <CommandEmpty>No supplier found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {companies.map(c => (
-                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { setBillForm(p => ({...p, vendor: c.name})); setIsVendorPopoverOpen(false); }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", billForm.vendor === c.name ? "opacity-100" : "opacity-0")} /> {c.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <Button variant="outline" size="icon" onClick={() => setIsContactFormOpen(true)} title="Add New Supplier Record">
-                                    <UserPlus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Invoice #</Label>
-                                <Input value={billForm.invoiceNumber} onChange={e => setBillForm(p => ({...p, invoiceNumber: e.target.value}))} placeholder="Optional" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Due Date *</Label>
-                                <Input type="date" value={billForm.dueDate} onChange={e => setBillForm(p => ({...p, dueDate: e.target.value}))} />
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Quantity</Label>
-                                <Input type="number" value={billForm.quantity} onChange={e => setBillForm(p => ({...p, quantity: e.target.value}))} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Unit Price</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                    <Input type="number" step="0.01" value={billForm.unitPrice} onChange={e => setBillForm(p => ({...p, unitPrice: e.target.value}))} className="pl-7" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Total Amount *</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                    <Input value={billForm.totalAmount} readOnly disabled className="pl-7 bg-muted/50 font-bold" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Tax Rate (%)</Label>
-                                <div className="relative">
-                                    <Input type="number" step="0.1" value={billForm.taxRate} onChange={e => setBillForm(p => ({...p, taxRate: e.target.value}))} className="pr-8" />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Pre-Tax Amount</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                    <Input value={billForm.preTaxAmount} readOnly disabled className="pl-7 bg-muted/50" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Tax Amount</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                    <Input value={billForm.taxAmount} readOnly disabled className="pl-7 bg-muted/50" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-2">
-                            <Label>Tax Category *</Label>
-                            <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-between truncate">{categories.find(c => c.categoryNumber === billForm.category)?.name || "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 opacity-50"/></Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search category..." />
-                                        <CommandList>
-                                            <CommandGroup>
-                                                {categories.map(c => (
-                                                    <CommandItem key={c.id} onSelect={() => { setBillForm(p => ({...p, category: c.categoryNumber! })); setIsCategoryPopoverOpen(false); }}>
-                                                        <Check className={cn("mr-2 h-4 w-4", billForm.category === c.categoryNumber ? "opacity-100" : "opacity-0")} /> {c.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Description</Label>
-                            <Input value={billForm.description} onChange={e => setBillForm(p => ({...p, description: e.target.value}))} placeholder="Brief description of the bill..." />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Document Link</Label>
-                            <Input value={billForm.documentUrl} onChange={e => setBillForm(p => ({...p, documentUrl: e.target.value}))} placeholder="https://..." />
-                        </div>
-                    </div>
-                </ScrollArea>
-                <DialogFooter className="p-6 border-t shrink-0">
-                    <Button variant="ghost" onClick={() => setIsAddAddBillOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveBill} disabled={isSaving}>
-                        {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>}
-                        {billToEditId ? 'Save Changes' : 'Save Bill'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        {/* Unified Transaction Dialog */}
+        <TransactionDialog 
+            isOpen={isTransactionDialogOpen}
+            onOpenChange={setIsTransactionDialogOpen}
+            transactionToEdit={billToEdit}
+            initialType="expense"
+            initialPaymentStatus="unpaid"
+            contacts={contacts}
+            companies={companies}
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
+            onSuccess={loadData}
+            onOpenContactForm={() => setIsContactFormOpen(true)}
+            onCreateCompany={(name) => { loadData(); }}
+            onCreateCategory={(name, type) => { loadData(); }}
+        />
 
         {/* Post Payment Dialog */}
         <Dialog open={!!billToPay} onOpenChange={() => setBillToPay(null)}>
@@ -533,9 +324,8 @@ export function AccountsPayablePageView() {
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setBillToPay(null)}>Cancel</Button>
-                    <Button onClick={handlePostPayment} disabled={isSaving}>
-                        {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Post to GL
+                    <Button onClick={handlePostPayment}>
+                        <CheckCircle className="mr-2 h-4 w-4" /> Post to GL
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -562,12 +352,11 @@ export function AccountsPayablePageView() {
             contactToEdit={null}
             folders={contactFolders}
             onFoldersChange={setContactFolders}
-            onSave={handleSupplierSave}
+            onSave={() => loadData()}
             companies={companies}
             onCompaniesChange={setCompanies}
             customIndustries={customIndustries}
             onCustomIndustriesChange={setCustomIndustries}
-            forceFolderId={suppliersFolder?.id}
         />
     </div>
   );

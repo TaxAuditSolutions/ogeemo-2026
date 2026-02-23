@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
 import { addTimeLog, updateTimeLog, type TimeLog } from '@/services/timelog-service';
-import { LoaderCircle, Plus, ChevronsUpDown, Check, User, Users, Calendar as CalendarIcon, Clock, Info, Square, Mic } from 'lucide-react';
+import { LoaderCircle, Plus, ChevronsUpDown, Check, User, Users, Calendar as CalendarIcon, Clock, Info, Square, Mic, Save } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, formatTime } from '@/lib/utils';
 import { format, set } from 'date-fns';
@@ -232,7 +232,7 @@ export function LogTimeDialog({
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command>
+                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                             <CommandInput placeholder="Search contacts..." />
                                             <CommandList>
                                                 <CommandEmpty>No contact found.</CommandEmpty>
@@ -242,7 +242,7 @@ export function LogTimeDialog({
                                                         Internal / General Operations
                                                     </CommandItem>
                                                     {contacts.map(c => (
-                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
+                                                        <CommandItem key={c.id} value={`${c.name} - ${c.businessName || ''}`} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")}/>
                                                             <span className="font-medium">{c.name}</span>
                                                             {c.businessName && <span className="ml-2 text-muted-foreground">- {c.businessName}</span>}

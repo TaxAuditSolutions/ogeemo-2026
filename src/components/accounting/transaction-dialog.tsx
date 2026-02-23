@@ -19,6 +19,7 @@ import {
     Save,
     LoaderCircle,
     Info,
+    Percent,
 } from 'lucide-react';
 
 import {
@@ -134,7 +135,7 @@ export function TransactionDialog({
             quantity: 1,
             unitPrice: 0,
             taxType: "None",
-            taxRate: preferences?.defaultTaxRate || 0,
+            taxRate: 0,
             category: "",
             paymentMethod: "Bank Transfer",
             depositedTo: "Bank Account #1",
@@ -180,7 +181,7 @@ export function TransactionDialog({
                 quantity: 1,
                 unitPrice: 0,
                 taxType: "None",
-                taxRate: preferences?.defaultTaxRate || 0,
+                taxRate: 0,
                 category: "",
                 paymentMethod: "Bank Transfer",
                 depositedTo: "Bank Account #1",
@@ -336,7 +337,6 @@ export function TransactionDialog({
                 <ScrollArea className="flex-1">
                     <Form {...form}>
                         <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-8">
-                            {/* Section 1: Transaction Context */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <FormField
                                     control={form.control}
@@ -379,7 +379,6 @@ export function TransactionDialog({
 
                             <Separator />
 
-                            {/* Section 2: Core Audit Data */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField
                                     control={form.control}
@@ -501,9 +500,8 @@ export function TransactionDialog({
 
                             <Separator />
 
-                            {/* Section 3: High-Fidelity Financial Details */}
                             <div className="p-6 border-2 border-primary/10 rounded-2xl space-y-6 bg-primary/5">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                     <FormField
                                         control={form.control}
                                         name="quantity"
@@ -544,20 +542,6 @@ export function TransactionDialog({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <FormField
-                                        control={form.control}
-                                        name="taxRate"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-2">
-                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Override Tax Rate (%)</FormLabel>
-                                                <div className="relative">
-                                                    <FormControl><Input type="number" step="0.01" className="h-11 pr-10 font-mono" {...field} /></FormControl>
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
                                 </div>
 
                                 <div className="flex flex-wrap justify-between items-center gap-4 px-8 py-4 rounded-xl bg-white border border-primary/20 shadow-inner">
@@ -572,7 +556,7 @@ export function TransactionDialog({
                                     </div>
                                     <Separator orientation="vertical" className="h-12 hidden md:block" />
                                     <div className="text-center min-w-[120px]">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Tax Amount</p>
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Tax Portion ({form.watch('taxRate')}%)</p>
                                         <p className="font-mono text-xl font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
                                     </div>
                                 </div>
@@ -580,7 +564,6 @@ export function TransactionDialog({
 
                             <Separator />
 
-                            {/* Section 4: Operational Routing */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <FormField
@@ -642,16 +625,28 @@ export function TransactionDialog({
                                 </div>
                             </div>
 
-                            <FormField
-                                control={form.control}
-                                name="explanation"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-2">
-                                        <FormLabel className="text-sm uppercase font-bold text-primary">Audit Rationale (Notes)</FormLabel>
-                                        <FormControl><Textarea placeholder="Explain the business purpose of this transaction for audit records..." rows={3} className="resize-none" {...field} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-2">
+                                            <FormLabel className="text-sm uppercase font-bold text-primary">Short Description</FormLabel>
+                                            <FormControl><Input placeholder="Transaction summary..." className="h-11" {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="explanation"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-2">
+                                            <FormLabel className="text-sm uppercase font-bold text-primary">Audit Rationale (Notes)</FormLabel>
+                                            <FormControl><Textarea placeholder="Explain the business purpose for audit records..." rows={1} className="resize-none" {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </form>
                     </Form>
                 </ScrollArea>

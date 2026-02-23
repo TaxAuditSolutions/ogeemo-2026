@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense } from 'react';
@@ -12,7 +11,7 @@ const LedgersView = dynamic(
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading General Ledger...</p>
+          <p className="text-muted-foreground">Loading BKS General Ledger...</p>
         </div>
       </div>
     ),
@@ -25,7 +24,7 @@ export default function LedgersPage() {
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Initializing Ledger...</p>
+          <p className="text-muted-foreground">Initializing Ledger Context...</p>
         </div>
       </div>
     }>

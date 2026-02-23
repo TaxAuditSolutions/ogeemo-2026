@@ -19,7 +19,11 @@ import {
     LoaderCircle,
     Info,
     Plus,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    TrendingUp,
+    TrendingDown,
+    ShieldCheck,
+    Contact as ContactIcon
 } from 'lucide-react';
 
 import {
@@ -67,10 +71,9 @@ import {
     type IncomeCategory,
     type ExpenseCategory,
     type Company,
-    type TaxType,
-    type Invoice
+    type TaxType
 } from '@/services/accounting-service';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { type Contact } from '@/services/contact-service';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
 const transactionSchema = z.object({
@@ -117,7 +120,7 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
     const { user } = useAuth();
     const { toast } = useToast();
-    const { preferences, updatePreferences } = useUserPreferences();
+    const { preferences } = useUserPreferences();
     const [isSaving, setIsSaving] = React.useState(false);
     const [transactionType, setTransactionType] = React.useState(initialType);
     
@@ -155,14 +158,25 @@ export function TransactionDialog({
     const watchCategory = form.watch('category');
 
     const totals = React.useMemo(() => {
-        const gross = watchQuantity * watchUnitPrice;
-        const net = gross / (1 + (watchTaxRate / 100));
+        const gross = (Number(watchQuantity) || 0) * (Number(watchUnitPrice) || 0);
+        const net = gross / (1 + ((Number(watchTaxRate) || 0) / 100));
         const tax = gross - net;
         return { gross, net, tax };
     }, [watchQuantity, watchUnitPrice, watchTaxRate]);
 
-    const activeCategories = transactionType === 'income' || transactionType === 'receivable' ? incomeCategories : expenseCategories;
+    const activeCategories = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
     const selectedCategory = activeCategories.find(c => c.categoryNumber === watchCategory || c.id === watchCategory);
+
+    // Format contact list options to "Name - Business"
+    const contactOptions = React.useMemo(() => {
+        const standaloneCompanies = companies.map(c => ({ id: c.id, label: c.name, type: 'company' }));
+        const individualContacts = contacts.map(c => ({
+            id: c.id,
+            label: c.businessName ? `${c.name} - ${c.businessName}` : c.name,
+            type: 'contact'
+        }));
+        return [...standaloneCompanies, ...individualContacts].sort((a, b) => a.label.localeCompare(b.label));
+    }, [companies, contacts]);
 
     React.useEffect(() => {
         if (isOpen) {
@@ -277,14 +291,14 @@ export function TransactionDialog({
                 });
                 toast({ title: 'Payable Logged' });
             } else if (transactionType === 'receivable') {
-                const contact = contacts.find(c => c.name === values.company || c.businessName === values.company);
+                const contactMatch = contacts.find(c => c.name === values.company || (c.businessName && `${c.name} - ${c.businessName}` === values.company));
                 await addInvoiceWithLineItems({
                     invoiceNumber: values.documentNumber || `INV-${Date.now().toString().slice(-6)}`,
                     companyName: values.company,
-                    contactId: contact?.id || 'unknown',
+                    contactId: contactMatch?.id || 'unknown',
                     originalAmount: totals.gross,
                     amountPaid: 0,
-                    dueDate: addDays(new Date(values.date), 14),
+                    dueDate: new Date(new Date(values.date).getTime() + 14 * 24 * 60 * 60 * 1000),
                     invoiceDate: new Date(values.date),
                     status: 'outstanding',
                     notes: values.explanation || "",
@@ -313,12 +327,6 @@ export function TransactionDialog({
         }
     }
 
-    const addDays = (date: Date, days: number) => {
-        const result = new Date(date);
-        result.setDate(result.getDate() + days);
-        return result;
-    };
-
     return (
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -329,8 +337,8 @@ export function TransactionDialog({
                             <Calculator className="h-6 w-6" />
                         </div>
                         <div>
-                            <DialogTitle className="text-2xl font-headline">Unified Transaction Entry</DialogTitle>
-                            <DialogDescription>BKS System: Standardized Data Orchestration</DialogDescription>
+                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
+                            <DialogDescription>BKS System: High-Fidelity Data Orchestration</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -338,11 +346,11 @@ export function TransactionDialog({
                 <ScrollArea className="flex-1">
                     <Form {...form}>
                         <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
-                            {/* Type & Identity Section */}
+                            {/* Operational Context */}
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <Clock className="h-4 w-4" />
-                                    Core Identity
+                                    <ShieldCheck className="h-4 w-4" />
+                                    Operational Context
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
@@ -371,31 +379,37 @@ export function TransactionDialog({
                                         )}
                                     />
                                     <div className="space-y-2">
-                                        <Label>Transaction Context</Label>
-                                        <Select 
-                                            value={transactionType} 
-                                            onValueChange={(v: any) => setTransactionType(v)}
-                                        >
-                                            <SelectTrigger className="h-12">
+                                        <Label>Entry Mode</Label>
+                                        <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)}>
+                                            <SelectTrigger className="h-12 border-2">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="income">Income (Direct to GL)</SelectItem>
-                                                <SelectItem value="expense">Expense (Direct to GL)</SelectItem>
+                                                <SelectItem value="income">Income (Post to GL)</SelectItem>
+                                                <SelectItem value="expense">Expense (Post to GL)</SelectItem>
                                                 <SelectItem value="receivable">Receivable (Log Invoice)</SelectItem>
                                                 <SelectItem value="payable">Payable (Log Bill)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
+                            </section>
 
+                            <Separator />
+
+                            {/* Audit Identity */}
+                            <section className="space-y-4">
+                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+                                    <ContactIcon className="h-4 w-4" />
+                                    Identity & Timing
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
                                         name="date"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Operational Date</FormLabel>
+                                                <FormLabel>Transaction Date</FormLabel>
                                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
@@ -418,7 +432,7 @@ export function TransactionDialog({
                                         name="company"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Contact (Client/Vendor)</FormLabel>
+                                                <FormLabel>Select Contact (Name - Business association)</FormLabel>
                                                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
@@ -438,10 +452,10 @@ export function TransactionDialog({
                                                                     </Button>
                                                                 </CommandEmpty>
                                                                 <CommandGroup>
-                                                                    {[...companies, ...contacts.map(c => ({ id: c.id, name: c.name }))].map(c => (
-                                                                        <CommandItem key={c.id} onSelect={() => { field.onChange(c.name); setIsCompanyPopoverOpen(false); }}>
-                                                                            <Check className={cn("mr-2 h-4 w-4", field.value === c.name ? "opacity-100" : "opacity-0")} />
-                                                                            {c.name}
+                                                                    {contactOptions.map(opt => (
+                                                                        <CommandItem key={opt.id} onSelect={() => { field.onChange(opt.label); setIsCompanyPopoverOpen(false); }}>
+                                                                            <Check className={cn("mr-2 h-4 w-4", field.value === opt.label ? "opacity-100" : "opacity-0")} />
+                                                                            {opt.label}
                                                                         </CommandItem>
                                                                     ))}
                                                                 </CommandGroup>
@@ -458,98 +472,66 @@ export function TransactionDialog({
 
                             <Separator />
 
-                            {/* Categorization & Tax Section */}
+                            {/* Categorization Section */}
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
                                     <FileSignature className="h-4 w-4" />
-                                    Compliance Categorization
+                                    Tax Categorization
                                 </div>
-                                
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
                                         name="category"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Tax Category</FormLabel>
-                                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                                    <PopoverTrigger asChild>
-                                                        <FormControl>
-                                                            <Button variant="outline" role="combobox" className="h-12 justify-between font-normal">
-                                                                <span className="truncate">
-                                                                    {selectedCategory ? selectedCategory.name : "Select audit line..."}
-                                                                </span>
-                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                            </Button>
-                                                        </FormControl>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                        <Command>
-                                                            <CommandInput placeholder="Search CRA lines..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
-                                                            <CommandList>
-                                                                <CommandEmpty>
-                                                                    <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCategory(categorySearchValue)}>
-                                                                        <Plus className="mr-2 h-4 w-4" /> Add custom: "{categorySearchValue}"
-                                                                    </Button>
-                                                                </CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {activeCategories.map(cat => (
-                                                                        <CommandItem key={cat.id} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
-                                                                            <Check className={cn("mr-2 h-4 w-4", (field.value === cat.categoryNumber || field.value === cat.id) ? "opacity-100" : "opacity-0")} />
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-medium text-xs">({cat.categoryNumber})</span>
-                                                                                <span>{cat.name}</span>
-                                                                            </div>
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                        </Command>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <FormLabel>CRA Audit Category</FormLabel>
+                                                <div className="flex gap-2">
+                                                    <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button variant="outline" role="combobox" className="h-12 justify-between font-normal flex-1">
+                                                                    <span className="truncate">{selectedCategory ? selectedCategory.name : "Select audit line..."}</span>
+                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                            <Command>
+                                                                <CommandInput placeholder="Search CRA lines..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
+                                                                <CommandList>
+                                                                    <CommandEmpty>
+                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCategory(categorySearchValue)}>
+                                                                            <Plus className="mr-2 h-4 w-4" /> Add custom: "{categorySearchValue}"
+                                                                        </Button>
+                                                                    </CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {activeCategories.map(cat => (
+                                                                            <CommandItem key={cat.id} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
+                                                                                <Check className={cn("mr-2 h-4 w-4", (field.value === cat.categoryNumber || field.value === cat.id) ? "opacity-100" : "opacity-0")} />
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="font-medium text-[10px] text-muted-foreground">LINE {cat.categoryNumber}</span>
+                                                                                    <span className="text-sm">{cat.name}</span>
+                                                                                </div>
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCreateCategory('')}>
+                                                        <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
                                     <div className="space-y-2">
-                                        <Label>CRA Line # (Read-only Sync)</Label>
-                                        <Input readOnly disabled className="h-12 bg-muted/50 font-mono font-bold" value={selectedCategory?.categoryNumber || "N/A"} />
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-primary/5 rounded-lg border border-primary/10 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="font-bold flex items-center gap-2">
-                                            <Percent className="h-4 w-4" /> Select Tax Type
-                                        </Label>
-                                        <Button variant="link" size="sm" onClick={() => setIsManageTaxDialogOpen(true)} className="h-auto p-0 text-xs font-bold">
-                                            <Settings className="h-3 w-3 mr-1" /> Manage Types
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Select value={form.watch('taxType')} onValueChange={handleSelectTaxType}>
-                                            <SelectTrigger className="h-10 bg-white">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="None">No Tax (0%)</SelectItem>
-                                                {taxTypes.map(t => (
-                                                    <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormField
-                                            control={form.control}
-                                            name="taxRate"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="relative">
-                                                        <FormControl><Input type="number" step="0.01" className="h-10 bg-white pr-8" {...field} /></FormControl>
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">%</span>
-                                                    </div>
-                                                </FormItem>
-                                            )}
-                                        />
+                                        <Label>CRA Line # Mapping</Label>
+                                        <div className="h-12 flex items-center px-4 rounded-md border-2 border-primary/20 bg-primary/5 font-mono font-bold text-primary">
+                                            {selectedCategory?.categoryNumber || "None Assigned"}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -562,39 +544,57 @@ export function TransactionDialog({
                                     <Landmark className="h-4 w-4" />
                                     Financial Precision
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <FormField control={form.control} name="quantity" render={({ field }) => (<FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" step="0.01" className="h-12" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={form.control} name="unitPrice" render={({ field }) => (<FormItem><FormLabel>Unit Price ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" step="0.01" className="h-12 pl-7" {...field} /></FormControl></div></FormItem>)} />
+                                    <FormField control={form.control} name="unitPrice" render={({ field }) => (<FormItem><FormLabel>Unit Price ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span><FormControl><Input type="number" step="0.01" className="h-12 pl-7" {...field} /></FormControl></div></FormItem>)} />
+                                    
                                     <div className="space-y-2">
-                                        <Label className="text-primary font-bold">Gross Total (Result)</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary">$</span>
-                                            <Input readOnly disabled className="h-12 pl-7 bg-primary/5 border-primary/20 font-mono font-bold text-lg text-primary" value={totals.gross.toFixed(2)} />
+                                        <div className="flex justify-between items-center">
+                                            <Label>Select Tax Type</Label>
+                                            <Button variant="link" size="sm" onClick={() => setIsManageTaxDialogOpen(true)} className="h-auto p-0 text-[10px] font-bold">Manage</Button>
                                         </div>
+                                        <Select value={form.watch('taxType')} onValueChange={handleSelectTaxType}>
+                                            <SelectTrigger className="h-12">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="None">None (0%)</SelectItem>
+                                                {taxTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
+
+                                    <FormField control={form.control} name="taxRate" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Tax Rate (%)</FormLabel>
+                                            <div className="relative">
+                                                <FormControl><Input type="number" step="0.01" className="h-12 pr-8" {...field} /></FormControl>
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">%</span>
+                                            </div>
+                                        </FormItem>
+                                    )} />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Net Portion (Pre-Tax)</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                            <Input readOnly disabled className="h-10 pl-7 bg-muted/30 font-mono text-sm" value={totals.net.toFixed(2)} />
-                                        </div>
+                                {/* Calculation Summary Row */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border-2 border-primary/10 bg-primary/5">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Gross Total</p>
+                                        <p className="text-2xl font-mono font-bold text-primary">${totals.gross.toFixed(2)}</p>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Tax Portion</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                            <Input readOnly disabled className="h-10 pl-7 bg-muted/30 font-mono text-sm" value={totals.tax.toFixed(2)} />
-                                        </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Net (Pre-Tax)</p>
+                                        <p className="text-xl font-mono font-semibold text-foreground/70">${totals.net.toFixed(2)}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Tax Portion</p>
+                                        <p className="text-xl font-mono font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
                                     </div>
                                 </div>
                             </section>
 
                             <Separator />
 
-                            {/* Logistics Section */}
+                            {/* Logistics & Routing */}
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
                                     <Clock className="h-4 w-4" />
@@ -614,10 +614,10 @@ export function TransactionDialog({
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField control={form.control} name="documentNumber" render={({ field }) => (<FormItem><FormLabel>Doc / Invoice #</FormLabel><FormControl><Input placeholder="e.g., INV-1001" className="h-12" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={form.control} name="documentUrl" render={({ field }) => (<FormItem><FormLabel>Digital Proof Link</FormLabel><FormControl><Input placeholder="https://drive.google.com/..." className="h-12" {...field} /></FormControl></FormItem>)} />
+                                    <FormField control={form.control} name="documentUrl" render={({ field }) => (<FormItem><FormLabel>Digital Evidence Link</FormLabel><FormControl><Input placeholder="https://drive.google.com/..." className="h-12" {...field} /></FormControl></FormItem>)} />
                                 </div>
                                 <FormField control={form.control} name="explanation" render={({ field }) => (
-                                    <FormItem><FormLabel>Explanation / Notes</FormLabel><FormControl><Textarea placeholder="Audit-ready reason for this entry..." rows={3} {...field} /></FormControl></FormItem>
+                                    <FormItem><FormLabel>Audit Notes / Internal Reason</FormLabel><FormControl><Textarea placeholder="Explain the business purpose of this entry..." rows={3} {...field} /></FormControl></FormItem>
                                 )} />
                             </section>
                         </form>
@@ -625,15 +625,15 @@ export function TransactionDialog({
                 </ScrollArea>
 
                 <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic">
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium">
                         <Info className="h-3 w-3 text-primary" />
-                        One-click ledger synchronization
+                        One-click BKS Ledger synchronization
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
-                        <Button type="submit" form="transaction-form" className="flex-1 sm:flex-initial" disabled={isSaving}>
-                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Post Transaction
+                        <Button type="submit" form="transaction-form" className="flex-1 sm:flex-initial h-12 px-8 text-lg font-bold shadow-lg" disabled={isSaving}>
+                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                            {transactionType === 'payable' || transactionType === 'receivable' ? 'Log Promise' : 'Post Transaction'}
                         </Button>
                     </div>
                 </DialogFooter>

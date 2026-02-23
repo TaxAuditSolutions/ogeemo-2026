@@ -22,6 +22,7 @@ import { ChevronsUpDown, Check, Settings, PlusCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 
 interface LineItem {
   id: string;
@@ -66,18 +67,18 @@ export function AddLineItemDialog({
   const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
 
   const { toast } = useToast();
+  const { updatePreferences } = useUserPreferences();
   
   useEffect(() => {
     if (isOpen) {
         if (itemToEdit) {
             setDescription(itemToEdit.description);
-            setCustomItemDescription(''); // Clear custom input when editing
+            setCustomItemDescription('');
             setQuantity(itemToEdit.quantity);
             setPrice(itemToEdit.price);
             setTaxType(itemToEdit.taxType || '');
             setTaxRate(itemToEdit.taxRate || '');
         } else {
-            // Reset all fields for a new item
             setDescription('');
             setCustomItemDescription('');
             setQuantity(1);
@@ -93,7 +94,6 @@ export function AddLineItemDialog({
     const numQuantity = Number(quantity);
     const numPrice = Number(price);
     
-    // The main description field is the source of truth
     if (!description.trim() || isNaN(numQuantity) || numQuantity <= 0 || isNaN(numPrice) || numPrice < 0) {
         toast({
             variant: 'destructive',
@@ -131,20 +131,31 @@ export function AddLineItemDialog({
     setPrice(item.price);
     setTaxType(item.taxType || '');
     setTaxRate(item.taxRate || '');
-    setCustomItemDescription(''); // Clear custom input when a repeatable item is selected
+    setCustomItemDescription('');
     setIsSearchOpen(false);
   };
   
   const handleCustomItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setCustomItemDescription(value);
-      setDescription(value); // Update the main description field
+      setDescription(value);
   };
 
   const handleSelectTaxType = (taxType: TaxType) => {
     setTaxType(taxType.name);
     setTaxRate(taxType.rate);
     setIsTaxTypePopoverOpen(false);
+  };
+
+  const handleSetDefaultTaxRate = () => {
+      const rate = parseFloat(String(taxRate));
+      if (!isNaN(rate)) {
+          updatePreferences({ defaultTaxRate: rate });
+          toast({
+              title: "Default Rate Saved",
+              description: `${rate}% is now your default tax rate.`
+          });
+      }
   };
 
   return (
@@ -267,13 +278,22 @@ export function AddLineItemDialog({
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)}>
+                        <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
                             <Settings className="h-4 w-4"/>
                         </Button>
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                    <div className="flex justify-between items-center">
+                        <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                        <Button 
+                            variant="link" 
+                            className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary"
+                            onClick={handleSetDefaultTaxRate}
+                        >
+                            Set as default
+                        </Button>
+                    </div>
                     <Input
                     id="taxRate"
                     type="number"

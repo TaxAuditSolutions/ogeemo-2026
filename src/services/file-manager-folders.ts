@@ -1,4 +1,3 @@
-
 'use client';
 
 import { 
@@ -12,10 +11,21 @@ import {
     query, 
     where, 
     writeBatch,
-    Timestamp 
+    Timestamp,
+    setDoc,
+    getDoc
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import type { FolderItem } from '@/data/files';
+
+export interface FolderItem {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  userId: string;
+  createdAt: Date;
+  isSystem?: boolean;
+  driveLink?: string;
+}
 
 const FOLDERS_COLLECTION = 'fileManagerFolders';
 
@@ -55,8 +65,6 @@ export async function updateFolder(folderId: string, folderData: Partial<Omit<Fo
     await updateDoc(folderRef, folderData);
 }
 
-// NOTE: This delete function is simplified to only delete folders from the new collection.
-// It will not affect files.
 export async function deleteFolders(folderIds: string[]): Promise<void> {
     const db = getDb();
     if (folderIds.length === 0) return;
@@ -70,6 +78,65 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
     await batch.commit();
 }
 
+/**
+ * Ensures that mandated system folders exist for the user's document manager.
+ */
+export async function ensureDocumentSystemFolders(userId: string): Promise<FolderItem[]> {
+    const db = getDb();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+    const existing = snapshot.docs.map(docToFolder);
+    
+    const systemFoldersList = [
+        "Clients",
+        "Family",
+        "Friends",
+        "Miscellaneous",
+        "Ogeemo Users",
+        "Prospects",
+        "Suppliers",
+        "Contract Workers",
+        "Employee Workers",
+        "Images",
+        "Marketing",
+        "Ogeemo Notes",
+        "Knowledge Base"
+    ];
+
+    const batch = writeBatch(db);
+    let hasChanges = false;
+    const currentFolders = [...existing];
+
+    for (const folderName of systemFoldersList) {
+        const match = currentFolders.find(f => f.name.toLowerCase() === folderName.toLowerCase());
+        
+        if (match) {
+            if (!match.isSystem) {
+                batch.update(doc(db, FOLDERS_COLLECTION, match.id), { isSystem: true });
+                match.isSystem = true;
+                hasChanges = true;
+            }
+        } else {
+            const docRef = doc(collection(db, FOLDERS_COLLECTION));
+            const newFolder = {
+                name: folderName,
+                userId,
+                parentId: null,
+                isSystem: true,
+                createdAt: new Date(),
+            };
+            batch.set(docRef, newFolder);
+            currentFolders.push({ id: docRef.id, ...newFolder });
+            hasChanges = true;
+        }
+    }
+
+    if (hasChanges) {
+        await batch.commit();
+    }
+
+    return currentFolders;
+}
 
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     const db = getDb();

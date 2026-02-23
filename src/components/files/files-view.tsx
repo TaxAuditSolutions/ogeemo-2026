@@ -41,7 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type FileItem, type FolderItem } from '@/data/files';
 import { useToast } from '@/hooks/use-toast';
-import { getFolders, addFolder, updateFolder, deleteFolders } from '@/services/file-manager-folders';
+import { getFolders, addFolder, updateFolder, deleteFolders, ensureDocumentSystemFolders } from '@/services/file-manager-folders';
 import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/services/file-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -172,12 +172,14 @@ const FolderTreeItem = ({
     const hasChildren = allFolders.some(f => f.parentId === folder.id);
     const isExpanded = expandedFolders.has(folder.id);
     const isRenaming = renamingFolderId === folder.id;
+    const isSystem = !!folder.isSystem;
 
     const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: ItemTypes.FOLDER },
+      canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    }), [folder]);
+    }), [folder, isRenaming, isSystem]);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.FILE, ItemTypes.FOLDER],
@@ -204,11 +206,11 @@ const FolderTreeItem = ({
                 {hasChildren ? (
                     <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.id); }} />
                 ) : <div className="w-4" />}
-                <Folder className="h-4 w-4 text-primary ml-1" />
+                <Folder className={cn("h-4 w-4 ml-1", isSystem ? "text-primary/70" : "text-primary")} />
                  {isRenaming ? (
                     <Input autoFocus value={renameInputValue} onChange={e => onRenameChange(e.target.value)} onBlur={onRenameConfirm} onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} className="h-full py-0 px-2 text-xs font-medium bg-transparent" onClick={e => e.stopPropagation()} />
                 ) : (
-                    <span className="text-sm font-medium truncate ml-2 flex-1 flex items-center gap-1">
+                    <span className={cn("text-sm truncate ml-2 flex-1 flex items-center gap-1", isSystem && "font-bold")}>
                         {folder.name}
                     </span>
                 )}
@@ -220,17 +222,23 @@ const FolderTreeItem = ({
                   </Button>
                 )}
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                             <MoreVertical className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenuItem onSelect={() => onAddSubfolder(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => onRenameStart(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                      {!isSystem && <DropdownMenuItem onSelect={() => onRenameStart(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>}
                       <DropdownMenuItem onSelect={() => onLinkDrive(folder)}><LinkIcon className="mr-2 h-4 w-4" />Link Google Drive Folder</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                      {!isSystem ? (
+                          <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}>
+                              <Trash2 className="mr-2 h-4 w-4" />Delete
+                          </DropdownMenuItem>
+                      ) : (
+                          <DropdownMenuItem disabled className="text-xs text-muted-foreground italic">Protected System Folder</DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -309,11 +317,12 @@ export function FilesView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const [fetchedFolders, fetchedFiles] = await Promise.all([getFolders(user.uid), getFiles(user.uid)]);
-      setFolders(fetchedFolders);
+      const allFolders = await ensureDocumentSystemFolders(user.uid);
+      const fetchedFiles = await getFiles(user.uid);
+      setFolders(allFolders);
       setFiles(fetchedFiles);
-      if (fetchedFolders.length > 0) {
-        const rootFolder = fetchedFolders.find(f => !f.parentId);
+      if (allFolders.length > 0) {
+        const rootFolder = allFolders.find(f => !f.parentId);
         if (rootFolder) setExpandedFolders(new Set([rootFolder.id]));
       }
     } catch (error: any) {
@@ -374,13 +383,11 @@ export function FilesView() {
             toast({ title: "Folder Moved" });
         } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
     } else {
-        // Safe check to avoid redundant move if already in target folder
         const movedFile = item as FileItem;
         if (movedFile.folderId === newFolderId) return;
 
         try {
             await updateFile(movedFile.id, { folderId: newFolderId! });
-            // Strict move logic: Update the existing state record to reflect new location
             setFiles(prev => prev.map(f => f.id === movedFile.id ? { ...f, folderId: newFolderId! } : f));
             toast({ title: "File Moved", description: `Moved to ${newFolderId ? (folders.find(f => f.id === newFolderId)?.name || 'folder') : 'root'}.` });
             setSelectedFileIds([]);

@@ -8,22 +8,17 @@ import {
     Clock, 
     Landmark, 
     FileSignature, 
-    PlusCircle, 
     Calculator, 
     Settings, 
     Check, 
     ChevronsUpDown, 
-    X, 
-    Percent, 
-    Save, 
-    LoaderCircle,
-    Info,
     Plus,
     Calendar as CalendarIcon,
-    TrendingUp,
-    TrendingDown,
     ShieldCheck,
-    Contact as ContactIcon
+    Contact as ContactIcon,
+    Save,
+    LoaderCircle,
+    Info,
 } from 'lucide-react';
 
 import {
@@ -123,7 +118,6 @@ export function TransactionDialog({
     const [isSaving, setIsSaving] = React.useState(false);
     const [transactionType, setTransactionType] = React.useState(initialType);
     
-    // UI states
     const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
     const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
@@ -329,131 +323,158 @@ export function TransactionDialog({
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl flex flex-col max-h-[95vh] p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10">
-                    <div className="flex items-center gap-3 text-primary mb-1">
-                        <div className="p-2 bg-white rounded-lg shadow-sm border border-primary/10">
-                            <Calculator className="h-6 w-6" />
-                        </div>
+                <DialogHeader className="p-4 shrink-0 border-b bg-muted/10">
+                    <div className="flex items-center gap-3 text-primary">
+                        <Calculator className="h-5 w-5" />
                         <div>
-                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
-                            <DialogDescription>BKS System: High-Fidelity Data Orchestration</DialogDescription>
+                            <DialogTitle className="text-xl font-headline uppercase tracking-tight">Unified Entry</DialogTitle>
+                            <DialogDescription className="text-xs">High-Fidelity BKS Orchestration</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <ScrollArea className="flex-1">
                     <Form {...form}>
-                        <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
-                            {/* Operational Context */}
-                            <section className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <ShieldCheck className="h-4 w-4" />
-                                    Operational Context
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="type"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-3 p-4 border rounded-lg bg-muted/30">
-                                                <FormLabel>Operational Mode</FormLabel>
+                        <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
+                            {/* Section 1: Core Context & Timing (Compact) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1 p-3 border rounded-lg bg-muted/30">
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel className="text-xs uppercase font-bold text-primary flex items-center gap-1">
+                                                    <ShieldCheck className="h-3 w-3" /> Mode
+                                                </FormLabel>
                                                 <FormControl>
-                                                    <RadioGroup
-                                                        onValueChange={field.onChange}
-                                                        defaultValue={field.value}
-                                                        className="flex gap-4"
-                                                    >
-                                                        <FormItem className="flex items-center space-x-2 space-y-0">
-                                                            <FormControl><RadioGroupItem value="business" /></FormControl>
-                                                            <FormLabel className="font-normal">Business</FormLabel>
-                                                        </FormItem>
-                                                        <FormItem className="flex items-center space-x-2 space-y-0">
-                                                            <FormControl><RadioGroupItem value="personal" /></FormControl>
-                                                            <FormLabel className="font-normal">Personal</FormLabel>
-                                                        </FormItem>
+                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-3">
+                                                        <div className="flex items-center space-x-1"><RadioGroupItem value="business" id="m-biz"/><Label htmlFor="m-biz" className="text-xs">Business</Label></div>
+                                                        <div className="flex items-center space-x-1"><RadioGroupItem value="personal" id="m-pers"/><Label htmlFor="m-pers" className="text-xs">Personal</Label></div>
                                                     </RadioGroup>
                                                 </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <div className="space-y-2">
-                                        <Label>Entry Mode</Label>
-                                        <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)}>
-                                            <SelectTrigger className="h-12 border-2">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="income">Income (Post to GL)</SelectItem>
-                                                <SelectItem value="expense">Expense (Post to GL)</SelectItem>
-                                                <SelectItem value="receivable">Receivable (Log Invoice)</SelectItem>
-                                                <SelectItem value="payable">Payable (Log Bill)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="space-y-1">
+                                    <Label className="text-xs uppercase font-bold text-primary">Entry Mode</Label>
+                                    <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)}>
+                                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="income">Income (Post to GL)</SelectItem>
+                                            <SelectItem value="expense">Expense (Post to GL)</SelectItem>
+                                            <SelectItem value="receivable">Receivable (Invoice)</SelectItem>
+                                            <SelectItem value="payable">Payable (Bill)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            </section>
+                            </div>
 
-                            <Separator />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1">
+                                            <FormLabel className="text-xs uppercase font-bold text-primary flex items-center gap-1">
+                                                <CalendarIcon className="h-3 w-3" /> Date
+                                            </FormLabel>
+                                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant="outline" className={cn("h-9 w-full text-left font-normal px-3", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(parseISO(field.value), "PPP") : "Select..."}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <CustomCalendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(d) => { if(d) field.onChange(format(d, 'yyyy-MM-dd')); setIsDatePickerOpen(false); }} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="company"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1">
+                                            <FormLabel className="text-xs uppercase font-bold text-primary flex items-center gap-1">
+                                                <ContactIcon className="h-3 w-3" /> Contact Association
+                                            </FormLabel>
+                                            <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant="outline" role="combobox" className="h-9 w-full justify-between font-normal px-3">
+                                                            <span className="truncate">{field.value || "Select contact..."}</span>
+                                                            <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                    <Command>
+                                                        <CommandInput placeholder="Search..." value={companySearchValue} onValueChange={setCompanySearchValue} />
+                                                        <CommandList>
+                                                            <CommandEmpty>
+                                                                <Button variant="ghost" className="w-full justify-start text-xs text-primary" onClick={() => handleCreateCompany(companySearchValue)}>
+                                                                    <Plus className="mr-2 h-3 w-3" /> Create "{companySearchValue}"
+                                                                </Button>
+                                                            </CommandEmpty>
+                                                            <CommandGroup>
+                                                                {contactOptions.map(opt => (
+                                                                    <CommandItem key={opt.id} onSelect={() => { field.onChange(opt.label); setIsCompanyPopoverOpen(false); }}>
+                                                                        <Check className={cn("mr-2 h-3 w-3", field.value === opt.label ? "opacity-100" : "opacity-0")} />
+                                                                        {opt.label}
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
 
-                            {/* Identity & Timing */}
-                            <section className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <ContactIcon className="h-4 w-4" />
-                                    Identity & Timing
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="date"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col">
-                                                <FormLabel>Transaction Date</FormLabel>
-                                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            {/* Section 2: Audit Categorization (Compact) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <FormField
+                                    control={form.control}
+                                    name="category"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1">
+                                            <FormLabel className="text-xs uppercase font-bold text-primary flex items-center gap-1">
+                                                <FileSignature className="h-3 w-3" /> Audit Category
+                                            </FormLabel>
+                                            <div className="flex gap-1">
+                                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <Button variant="outline" className={cn("h-12 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                                {field.value ? format(parseISO(field.value), "PPP") : <span>Pick a date</span>}
-                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                            </Button>
-                                                        </FormControl>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <CustomCalendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(d) => { if(d) field.onChange(format(d, 'yyyy-MM-dd')); setIsDatePickerOpen(false); }} initialFocus />
-                                                    </PopoverContent>
-                                                </Popover>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="company"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col">
-                                                <FormLabel>Contact Association (Name - Business)</FormLabel>
-                                                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                                                    <PopoverTrigger asChild>
-                                                        <FormControl>
-                                                            <Button variant="outline" role="combobox" className="h-12 justify-between font-normal">
-                                                                <span className="truncate">{field.value || "Select contact..."}</span>
-                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            <Button variant="outline" role="combobox" className="h-9 flex-1 justify-between font-normal px-3 truncate">
+                                                                <span className="truncate">{selectedCategory ? selectedCategory.name : "Select audit line..."}</span>
+                                                                <ChevronsUpDown className="h-3 w-3 opacity-50" />
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                                         <Command>
-                                                            <CommandInput placeholder="Search contact..." value={companySearchValue} onValueChange={setCompanySearchValue} />
+                                                            <CommandInput placeholder="Search CRA..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
                                                             <CommandList>
                                                                 <CommandEmpty>
-                                                                    <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCompany(companySearchValue)}>
-                                                                        <Plus className="mr-2 h-4 w-4" /> Create "{companySearchValue}"
+                                                                    <Button variant="ghost" className="w-full justify-start text-xs text-primary" onClick={() => handleCreateCategory(categorySearchValue)}>
+                                                                        <Plus className="mr-2 h-3 w-3" /> Add custom
                                                                     </Button>
                                                                 </CommandEmpty>
                                                                 <CommandGroup>
-                                                                    {contactOptions.map(opt => (
-                                                                        <CommandItem key={opt.id} onSelect={() => { field.onChange(opt.label); setIsCompanyPopoverOpen(false); }}>
-                                                                            <Check className={cn("mr-2 h-4 w-4", field.value === opt.label ? "opacity-100" : "opacity-0")} />
-                                                                            {opt.label}
+                                                                    {activeCategories.map(cat => (
+                                                                        <CommandItem key={cat.id} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
+                                                                            <Check className={cn("mr-2 h-3 w-3", (field.value === cat.categoryNumber || field.value === cat.id) ? "opacity-100" : "opacity-0")} />
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-bold text-[10px] text-muted-foreground uppercase">Line {cat.categoryNumber}</span>
+                                                                                <span className="text-xs">{cat.name}</span>
+                                                                            </div>
                                                                         </CommandItem>
                                                                     ))}
                                                                 </CommandGroup>
@@ -461,176 +482,80 @@ export function TransactionDialog({
                                                         </Command>
                                                     </PopoverContent>
                                                 </Popover>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                                <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => handleCreateCategory('')}>
+                                                    <Plus className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="h-9 flex items-center px-3 rounded-md border bg-primary/5 font-mono font-bold text-primary text-xs">
+                                    CRA Line Mapping: {selectedCategory?.categoryNumber || "None"}
                                 </div>
-                            </section>
+                            </div>
 
-                            <Separator />
-
-                            {/* Categorization Section */}
-                            <section className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <FileSignature className="h-4 w-4" />
-                                    Tax Categorization
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="category"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col">
-                                                <FormLabel>CRA Audit Category</FormLabel>
-                                                <div className="flex gap-2">
-                                                    <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                                        <PopoverTrigger asChild>
-                                                            <FormControl>
-                                                                <Button variant="outline" role="combobox" className="h-12 justify-between font-normal flex-1">
-                                                                    <span className="truncate">{selectedCategory ? selectedCategory.name : "Select audit line..."}</span>
-                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                </Button>
-                                                            </FormControl>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                            <Command>
-                                                                <CommandInput placeholder="Search CRA lines..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
-                                                                <CommandList>
-                                                                    <CommandEmpty>
-                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={() => handleCreateCategory(categorySearchValue)}>
-                                                                            <Plus className="mr-2 h-4 w-4" /> Add custom: "{categorySearchValue}"
-                                                                        </Button>
-                                                                    </CommandEmpty>
-                                                                    <CommandGroup>
-                                                                        {activeCategories.map(cat => (
-                                                                            <CommandItem key={cat.id} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
-                                                                                <Check className={cn("mr-2 h-4 w-4", (field.value === cat.categoryNumber || field.value === cat.id) ? "opacity-100" : "opacity-0")} />
-                                                                                <div className="flex flex-col">
-                                                                                    <span className="font-medium text-[10px] text-muted-foreground">LINE {cat.categoryNumber}</span>
-                                                                                    <span className="text-sm">{cat.name}</span>
-                                                                                </div>
-                                                                            </CommandItem>
-                                                                        ))}
-                                                                    </CommandGroup>
-                                                                </CommandList>
-                                                            </Command>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                    <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCreateCategory('')}>
-                                                        <Plus className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <div className="space-y-2">
-                                        <Label>CRA Line # Mapping</Label>
-                                        <div className="h-12 flex items-center px-4 rounded-md border-2 border-primary/20 bg-primary/5 font-mono font-bold text-primary">
-                                            {selectedCategory?.categoryNumber || "None Assigned"}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <Separator />
-
-                            {/* Financial Details Section */}
-                            <section className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <Landmark className="h-4 w-4" />
-                                    Financial Precision
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <FormField control={form.control} name="quantity" render={({ field }) => (<FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" step="0.01" className="h-12" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={form.control} name="unitPrice" render={({ field }) => (<FormItem><FormLabel>Unit Price ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span><FormControl><Input type="number" step="0.01" className="h-12 pl-7" {...field} /></FormControl></div></FormItem>)} />
-                                    
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <Label>Select Tax Type</Label>
-                                            <Button variant="link" size="sm" onClick={() => setIsManageTaxDialogOpen(true)} className="h-auto p-0 text-[10px] font-bold">Manage</Button>
-                                        </div>
+                            {/* Section 3: Financial Details & Precision */}
+                            <div className="p-3 border rounded-lg space-y-3 bg-primary/5">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <FormField control={form.control} name="quantity" render={({ field }) => (<FormItem className="space-y-1"><FormLabel className="text-[10px] uppercase font-bold">Qty</FormLabel><FormControl><Input type="number" step="0.01" className="h-8 text-xs" {...field} /></FormControl></FormItem>)} />
+                                    <FormField control={form.control} name="unitPrice" render={({ field }) => (<FormItem className="space-y-1"><FormLabel className="text-[10px] uppercase font-bold">Price ($)</FormLabel><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px]">$</span><FormControl><Input type="number" step="0.01" className="h-8 pl-5 text-xs" {...field} /></FormControl></div></FormItem>)} />
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-bold">Tax Type</Label></div>
                                         <Select value={form.watch('taxType')} onValueChange={handleSelectTaxType}>
-                                            <SelectTrigger className="h-12">
-                                                <SelectValue />
-                                            </SelectTrigger>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="None">None (0%)</SelectItem>
+                                                <SelectItem value="None">None</SelectItem>
                                                 {taxTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
-
                                     <FormField control={form.control} name="taxRate" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Tax Rate (%)</FormLabel>
-                                            <div className="relative">
-                                                <FormControl><Input type="number" step="0.01" className="h-12 pr-8" {...field} /></FormControl>
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">%</span>
-                                            </div>
-                                        </FormItem>
+                                        <FormItem className="space-y-1"><FormLabel className="text-[10px] uppercase font-bold">Rate (%)</FormLabel><div className="relative"><FormControl><Input type="number" step="0.01" className="h-8 pr-5 text-xs" {...field} /></FormControl><span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px] font-bold">%</span></div></FormItem>
                                     )} />
                                 </div>
 
-                                {/* Calculation Summary Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border-2 border-primary/10 bg-primary/5">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Gross Total</p>
-                                        <p className="text-2xl font-mono font-bold text-primary">${totals.gross.toFixed(2)}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Net (Pre-Tax)</p>
-                                        <p className="text-xl font-mono font-semibold text-foreground/70">${totals.net.toFixed(2)}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Tax Portion</p>
-                                        <p className="text-xl font-mono font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
-                                    </div>
+                                <div className="flex justify-between items-center px-4 py-2 rounded-md bg-white border border-primary/20 shadow-inner">
+                                    <div className="text-center"><p className="text-[10px] uppercase font-bold text-muted-foreground">Gross</p><p className="font-mono font-bold text-primary">${totals.gross.toFixed(2)}</p></div>
+                                    <Separator orientation="vertical" className="h-8" />
+                                    <div className="text-center"><p className="text-[10px] uppercase font-bold text-muted-foreground">Net (Pre-Tax)</p><p className="font-mono font-semibold text-foreground/70">${totals.net.toFixed(2)}</p></div>
+                                    <Separator orientation="vertical" className="h-8" />
+                                    <div className="text-center"><p className="text-[10px] uppercase font-bold text-muted-foreground">Tax</p><p className="font-mono font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p></div>
                                 </div>
-                            </section>
+                            </div>
 
-                            <Separator />
-
-                            {/* Logistics & Routing */}
-                            <section className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                                    <Clock className="h-4 w-4" />
-                                    Operational Routing
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                                        <FormItem><FormLabel>Payment Method</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-12"><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                            {["Bank Transfer", "Credit Card", "Cash", "Cheque", "Email Transfer", "GL Adjustment"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                        </SelectContent></Select></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="depositedTo" render={({ field }) => (
-                                        <FormItem><FormLabel>{transactionType === 'income' ? 'Deposited To' : 'Paid From'}</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-12"><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                            {["Bank Account #1", "Credit Card #1", "Cash Account", "Trust Account"].map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                        </SelectContent></Select></FormItem>
-                                    )} />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="documentNumber" render={({ field }) => (<FormItem><FormLabel>Doc / Invoice #</FormLabel><FormControl><Input placeholder="e.g., INV-1001" className="h-12" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={form.control} name="documentUrl" render={({ field }) => (<FormItem><FormLabel>Digital Evidence Link</FormLabel><FormControl><Input placeholder="https://drive.google.com/..." className="h-12" {...field} /></FormControl></FormItem>)} />
-                                </div>
-                                <FormField control={form.control} name="explanation" render={({ field }) => (
-                                    <FormItem><FormLabel>Audit Notes / Internal Reason</FormLabel><FormControl><Textarea placeholder="Explain the business purpose of this entry..." rows={3} {...field} /></FormControl></FormItem>
+                            {/* Section 4: Operational Routing & Details */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+                                    <FormItem className="space-y-1"><FormLabel className="text-xs uppercase font-bold text-primary">Method</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                        {["Bank Transfer", "Credit Card", "Cash", "Cheque", "Email Transfer", "GL Adjustment"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                    </SelectContent></Select></FormItem>
                                 )} />
-                            </section>
+                                <FormField control={form.control} name="depositedTo" render={({ field }) => (
+                                    <FormItem className="space-y-1"><FormLabel className="text-xs uppercase font-bold text-primary">Account</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                        {["Bank Account #1", "Credit Card #1", "Cash Account", "Trust Account"].map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                    </SelectContent></Select></FormItem>
+                                )} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="documentNumber" render={({ field }) => (<FormItem className="space-y-1"><FormLabel className="text-xs uppercase font-bold text-primary">Doc / Invoice #</FormLabel><FormControl><Input placeholder="INV-..." className="h-9 text-xs" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={form.control} name="documentUrl" render={({ field }) => (<FormItem className="space-y-1"><FormLabel className="text-xs uppercase font-bold text-primary">Evidence Link</FormLabel><FormControl><Input placeholder="https://..." className="h-9 text-xs" {...field} /></FormControl></FormItem>)} />
+                            </div>
+                            <FormField control={form.control} name="explanation" render={({ field }) => (
+                                <FormItem className="space-y-1"><FormLabel className="text-xs uppercase font-bold text-primary">Audit Notes</FormLabel><FormControl><Textarea placeholder="Internal purpose..." rows={2} className="text-xs min-h-[60px]" {...field} /></FormControl></FormItem>
+                            )} />
                         </form>
                     </Form>
                 </ScrollArea>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium">
+                <DialogFooter className="p-4 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-2 text-[10px] text-muted-foreground italic font-medium">
                         <Info className="h-3 w-3 text-primary" />
-                        One-click BKS Ledger synchronization
+                        Live BKS Ledger Synchronization
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
-                        <Button type="submit" form="transaction-form" className="flex-1 sm:flex-initial h-12 px-8 text-lg font-bold shadow-lg" disabled={isSaving}>
-                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving} size="sm">Cancel</Button>
+                        <Button type="submit" form="transaction-form" className="flex-1 sm:flex-initial h-10 px-6 font-bold shadow-md" disabled={isSaving}>
+                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {transactionType === 'payable' || transactionType === 'receivable' ? 'Log Promise' : 'Post Transaction'}
                         </Button>
                     </div>

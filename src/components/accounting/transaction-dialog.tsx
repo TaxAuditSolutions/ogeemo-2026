@@ -219,6 +219,7 @@ export function TransactionDialog({
             setIsCategoryPopoverOpen(false);
             setCategorySearchValue("");
             onSuccess();
+            toast({ title: "Custom Category Created", description: `"${name}" added to your tax lines.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         }
@@ -470,7 +471,7 @@ export function TransactionDialog({
                                                             <CommandList>
                                                                 <CommandEmpty>
                                                                     <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCategory(categorySearchValue)}>
-                                                                        <Plus className="mr-2 h-4 w-4" /> Add custom category
+                                                                        <Plus className="mr-2 h-4 w-4" /> Create "{categorySearchValue}"
                                                                     </Button>
                                                                 </CommandEmpty>
                                                                 <CommandGroup>
@@ -488,7 +489,7 @@ export function TransactionDialog({
                                                         </Command>
                                                     </PopoverContent>
                                                 </Popover>
-                                                <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleCreateCategory('')}>
+                                                <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleCreateCategory(categorySearchValue)} title="Create New Category">
                                                     <Plus className="h-5 w-5" />
                                                 </Button>
                                             </div>
@@ -652,7 +653,7 @@ export function TransactionDialog({
                 </ScrollArea>
 
                 <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium">
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium max-w-md">
                         <Info className="h-4 w-4 text-primary" />
                         Records will be instantly synchronized with the Ogeemo BKS database.
                     </div>

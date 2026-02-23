@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,6 +12,8 @@ import {
   ShieldAlert,
   Archive,
   Undo,
+  PlusCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../ui/button';
 import { CategoryTable } from './category-table';
 import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '../ui/badge';
 
 type Category = IncomeCategory | ExpenseCategory;
 type CategoryType = 'income' | 'expense';
@@ -215,7 +217,7 @@ export function TaxCategoriesView() {
         await restoreExpenseCategory(category.id);
       }
       toast({ title: 'Category Restored' });
-      await loadData(); // Reload all data to reflect the change
+      await loadData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Restore failed', description: error.message });
     }
@@ -238,7 +240,6 @@ export function TaxCategoriesView() {
 
   const handleSaveExplanation = () => {
     if (!infoDialogState.category) return;
-    console.log("Saving explanation for", infoDialogState.category.name, ":", explanation);
     toast({ title: "Explanation Saved (Simulated)" });
     setInfoDialogState({ isOpen: false, category: null });
   };
@@ -261,7 +262,7 @@ export function TaxCategoriesView() {
             mergeDialogState.type
         );
         toast({ title: 'Merge Successful', description: `All transactions from "${mergeDialogState.category.name}" have been reassigned.` });
-        loadData(); // Reload all data
+        loadData();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
     } finally {
@@ -282,27 +283,32 @@ export function TaxCategoriesView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <AccountingPageHeader pageTitle="Tax Categories" hubPath="/accounting/tax" hubLabel="Tax Center" />
+        <AccountingPageHeader pageTitle="Tax Category Manager" hubPath="/accounting/tax" hubLabel="Tax Center" />
         <header className="text-center">
-          <h1 className="text-3xl font-bold font-headline text-primary">Tax Category Manager</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Manage your income and expense categories to ensure they align with tax forms. Standard CRA categories can be archived to hide them from view.
+          <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Tax Category Manager</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-lg mt-2">
+            Organize your business income and expenses. Distinguish between standard CRA lines and your unique custom nodes.
           </p>
-           <div className="mt-4">
-                <Button variant="secondary" onClick={() => setIsArchiveDialogOpen(true)}>
-                    <Archive className="mr-2 h-4 w-4" /> View Archived Categories
+           <div className="mt-6 flex justify-center gap-3">
+                <Button variant="outline" size="lg" onClick={() => setIsArchiveDialogOpen(true)} className="h-12 px-8">
+                    <Archive className="mr-2 h-5 w-5" /> Archived categories
+                </Button>
+                <Button size="lg" onClick={() => openDialog('expense', 'add')} className="h-12 px-8 shadow-lg">
+                    <PlusCircle className="mr-2 h-5 w-5" /> New custom category
                 </Button>
             </div>
         </header>
+
         {isLoading ? (
-            <div className="flex h-64 items-center justify-center">
-                <LoaderCircle className="h-8 w-8 animate-spin" />
+            <div className="flex h-64 items-center justify-center flex-col gap-4">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse font-bold uppercase tracking-widest text-xs">Syncing audit lines...</p>
             </div>
         ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[1600px] mx-auto">
                 <CategoryTable 
                     title="Income Categories"
-                    description="Categories for all business income."
+                    description="Standard and custom nodes for all revenue streams."
                     categories={incomeCategories}
                     onAdd={() => openDialog('income', 'add')}
                     onEdit={(cat) => openDialog('income', 'edit', cat)}
@@ -313,10 +319,11 @@ export function TaxCategoriesView() {
                     selectedIds={selectedIncomeIds}
                     onSelectedIdsChange={setSelectedIncomeIds}
                     onBulkDelete={() => setBulkDeleteType('income')}
+                    categoryType="income"
                 />
                  <CategoryTable 
                     title="Expense Categories"
-                    description="Categories for all business expenses."
+                    description="Nodes for managing business costs and deductions."
                     categories={expenseCategories}
                     onAdd={() => openDialog('expense', 'add')}
                     onEdit={(cat) => openDialog('expense', 'edit', cat)}
@@ -327,30 +334,43 @@ export function TaxCategoriesView() {
                     selectedIds={selectedExpenseIds}
                     onSelectedIdsChange={setSelectedExpenseIds}
                     onBulkDelete={() => setBulkDeleteType('expense')}
+                    categoryType="expense"
                 />
             </div>
         )}
       </div>
 
       <Dialog open={dialogState.isOpen} onOpenChange={(open) => setDialogState({ ...dialogState, isOpen: open })}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                  <DialogTitle>{dialogState.mode === 'add' ? 'Add' : 'Edit'} {dialogState.type} Category</DialogTitle>
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                      <FileSignature className="h-5 w-5" />
+                      <DialogTitle className="text-xl font-headline">{dialogState.mode === 'add' ? 'New' : 'Edit'} {dialogState.type} Category</DialogTitle>
+                  </div>
+                  <DialogDescription>Create a custom node for your BKS financial orchestration.</DialogDescription>
               </DialogHeader>
-              <div className="py-4 space-y-4">
+              <div className="py-6 space-y-6">
                 <div className="space-y-2">
-                    <Label htmlFor="category-name">Category Name</Label>
-                    <Input id="category-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+                    <Label htmlFor="category-name" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Category Label</Label>
+                    <Input id="category-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} className="h-12 text-lg font-semibold" placeholder="e.g., Digital Subscriptions" />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="category-number">Category Number (Optional)</Label>
-                    <Input id="category-number" value={categoryNumber} onChange={(e) => setCategoryNumber(e.target.value)} placeholder="e.g., C-101" />
-                    <p className="text-xs text-muted-foreground">If left blank, a custom number will be assigned automatically.</p>
+                    <Label htmlFor="category-number" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Reference # (Optional)</Label>
+                    <Input id="category-number" value={categoryNumber} onChange={(e) => setCategoryNumber(e.target.value)} placeholder="e.g., C-101" className="h-11 font-mono" />
+                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-dashed border-primary/20 mt-2">
+                        <Info className="h-4 w-4 text-primary shrink-0" />
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                            If left blank, Ogeemo will automatically assign a unique high-fidelity reference number starting with <strong>"C-"</strong>.
+                        </p>
+                    </div>
                 </div>
               </div>
-              <DialogFooter>
-                  <Button variant="ghost" onClick={() => setDialogState({ isOpen: false, type: null, mode: 'add', category: null })}>Cancel</Button>
-                  <Button onClick={handleSave}>Save</Button>
+              <DialogFooter className="bg-muted/10 -mx-6 -mb-6 p-6 rounded-b-lg gap-3">
+                  <Button variant="ghost" onClick={() => setDialogState({ isOpen: false, type: null, mode: 'add', category: null })} className="h-12 px-6">Cancel</Button>
+                  <Button onClick={handleSave} className="h-12 px-10 font-bold shadow-xl">
+                      <CheckCircle2 className="mr-2 h-5 w-5" />
+                      {dialogState.mode === 'add' ? 'Add Category' : 'Save Changes'}
+                  </Button>
               </DialogFooter>
           </DialogContent>
       </Dialog>
@@ -359,11 +379,11 @@ export function TaxCategoriesView() {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the category "{categoryToDelete?.category.name}". This action cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete the custom category "{categoryToDelete?.category.name}". Transactions already assigned to this category will remain unchanged but lose their parent link. This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete Permanently</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -373,54 +393,71 @@ export function TaxCategoriesView() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Archive Category?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Archiving "{categoryToArchive?.category.name}" will hide it from the list. Any transactions currently in this category will be moved to "Other expenses" or "Other income". Are you sure?
+                    Archiving "{categoryToArchive?.category.name}" will hide it from the primary audit list. Any transactions currently in this category will be moved to the generic "Other" category for compliance.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmArchive}>Archive</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmArchive}>Confirm Archive</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
        </AlertDialog>
 
        <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
-        <DialogContent className="max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Archived Categories</DialogTitle>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="p-6 border-b bg-muted/10 shrink-0">
+                <div className="flex items-center gap-2 text-primary mb-1">
+                    <Archive className="h-5 w-5" />
+                    <DialogTitle className="text-xl font-headline">Archived Audit Lines</DialogTitle>
+                </div>
                 <DialogDescription>
-                    These categories are hidden from the main view. You can restore them at any time.
+                    These nodes are currently hidden from your primary BKS workflow.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-6 py-4">
-                <div>
-                    <h3 className="font-semibold mb-2">Income</h3>
-                    <ScrollArea className="h-64 border rounded-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6 px-6 overflow-hidden flex-1">
+                <div className="flex flex-col min-h-0">
+                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-muted-foreground mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-3 w-3" /> Income Streams
+                    </h3>
+                    <ScrollArea className="flex-1 border rounded-xl bg-slate-50/50">
                         <div className="p-2 space-y-1">
                             {archivedIncome.length > 0 ? archivedIncome.map(cat => (
-                                <div key={cat.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                    <span className="text-sm">{cat.name}</span>
-                                    <Button size="sm" variant="ghost" onClick={() => handleRestore(cat, 'income')}><Undo className="mr-2 h-4 w-4" /> Restore</Button>
+                                <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg bg-white border shadow-sm group">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold truncate">{cat.name}</p>
+                                        <p className="text-[10px] font-mono text-muted-foreground">REF: {cat.categoryNumber}</p>
+                                    </div>
+                                    <Button size="sm" variant="ghost" onClick={() => handleRestore(cat, 'income')} className="h-8 hover:bg-primary/10 hover:text-primary transition-colors">
+                                        <Undo className="mr-2 h-3 w-3" /> Restore
+                                    </Button>
                                 </div>
-                            )) : <p className="text-sm text-center p-4 text-muted-foreground">No archived income categories.</p>}
+                            )) : <p className="text-xs text-center py-12 text-muted-foreground italic">No archived income nodes.</p>}
                         </div>
                     </ScrollArea>
                 </div>
-                 <div>
-                    <h3 className="font-semibold mb-2">Expenses</h3>
-                     <ScrollArea className="h-64 border rounded-md">
+                 <div className="flex flex-col min-h-0">
+                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-muted-foreground mb-3 flex items-center gap-2">
+                        <TrendingDown className="h-3 w-3" /> Expense Nodes
+                    </h3>
+                     <ScrollArea className="flex-1 border rounded-xl bg-slate-50/50">
                         <div className="p-2 space-y-1">
                             {archivedExpenses.length > 0 ? archivedExpenses.map(cat => (
-                                <div key={cat.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                    <span className="text-sm">{cat.name}</span>
-                                    <Button size="sm" variant="ghost" onClick={() => handleRestore(cat, 'expense')}><Undo className="mr-2 h-4 w-4" /> Restore</Button>
+                                <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg bg-white border shadow-sm group">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold truncate">{cat.name}</p>
+                                        <p className="text-[10px] font-mono text-muted-foreground">REF: {cat.categoryNumber}</p>
+                                    </div>
+                                    <Button size="sm" variant="ghost" onClick={() => handleRestore(cat, 'expense')} className="h-8 hover:bg-primary/10 hover:text-primary transition-colors">
+                                        <Undo className="mr-2 h-3 w-3" /> Restore
+                                    </Button>
                                 </div>
-                            )) : <p className="text-sm text-center p-4 text-muted-foreground">No archived expense categories.</p>}
+                            )) : <p className="text-xs text-center py-12 text-muted-foreground italic">No archived expense nodes.</p>}
                         </div>
                     </ScrollArea>
                 </div>
             </div>
-            <DialogFooter>
-                <Button onClick={() => setIsArchiveDialogOpen(false)}>Close</Button>
+            <DialogFooter className="p-4 border-t shrink-0">
+                <Button onClick={() => setIsArchiveDialogOpen(false)} className="w-full sm:w-auto">Close Registry</Button>
             </DialogFooter>
         </DialogContent>
        </Dialog>
@@ -428,32 +465,36 @@ export function TaxCategoriesView() {
       <AlertDialog open={!!bulkDeleteType} onOpenChange={() => setBulkDeleteType(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogTitle>Bulk Delete Categories?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This will permanently delete the selected {bulkDeleteType === 'income' ? selectedIncomeIds.length : selectedExpenseIds.length} categories. This action cannot be undone.
+                    You are about to permanently delete {bulkDeleteType === 'income' ? selectedIncomeIds.length : selectedExpenseIds.length} custom categories. This is a radical action that cannot be undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                    Delete
+                    Delete All Selected
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={infoDialogState.isOpen} onOpenChange={(open) => setInfoDialogState({ ...infoDialogState, isOpen: open })}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-xl">
               <DialogHeader>
-                  <DialogTitle>{infoDialogState.category?.name}</DialogTitle>
-                  <DialogDescription>View or edit the explanation for this category.</DialogDescription>
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                      <Info className="h-5 w-5" />
+                      <DialogTitle className="text-xl font-headline">{infoDialogState.category?.name}</DialogTitle>
+                  </div>
+                  <DialogDescription>BKS Audit Rationale & Category Explanation</DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                  <Textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={6} />
+              <div className="py-6">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest block mb-2">Internal Explanation</Label>
+                  <Textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={8} className="text-sm leading-relaxed" placeholder="Describe the business purpose of this category..." />
               </div>
               <DialogFooter>
                   <Button variant="ghost" onClick={() => setInfoDialogState({ isOpen: false, category: null })}>Cancel</Button>
-                  <Button onClick={handleSaveExplanation}>Save</Button>
+                  <Button onClick={handleSaveExplanation}>Save Rationale</Button>
               </DialogFooter>
           </DialogContent>
       </Dialog>
@@ -461,25 +502,33 @@ export function TaxCategoriesView() {
       <Dialog open={mergeDialogState.isOpen} onOpenChange={(open) => setMergeDialogState({ ...mergeDialogState, isOpen: open })}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Merge Category</DialogTitle>
+                <div className="flex items-center gap-2 text-primary mb-1">
+                    <GitMerge className="h-5 w-5" />
+                    <DialogTitle className="text-xl font-headline">Merge Operational Node</DialogTitle>
+                </div>
                 <DialogDescription>
-                    Merge "{mergeDialogState.category?.name}" into a standard category. All transactions will be reassigned. This action cannot be undone.
+                    Consolidate "{mergeDialogState.category?.name}" into a standard audit line.
                 </DialogDescription>
             </DialogHeader>
-             <div className="py-4">
-                <Label htmlFor="merge-target">Target Category</Label>
+             <div className="py-6 space-y-4">
+                <Label htmlFor="merge-target" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Master Target Category</Label>
                 <Select value={mergeTarget} onValueChange={setMergeTarget}>
-                    <SelectTrigger><SelectValue placeholder="Select a standard category..." /></SelectTrigger>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Select target audit line..." /></SelectTrigger>
                     <SelectContent>
                         {getMergeOptions(mergeDialogState.type).map(cat => (
-                            <SelectItem key={cat.line} value={cat.line}>{cat.description}</SelectItem>
+                            <SelectItem key={cat.line} value={cat.line}>({cat.line}) {cat.description}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
+                <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+                    <p className="text-xs text-destructive font-semibold">
+                        This action will reassign all historical transactions from the custom node to the master node and permanently delete the custom node.
+                    </p>
+                </div>
             </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setMergeDialogState({ isOpen: false, category: null, type: null })}>Cancel</Button>
-                <Button onClick={handleConfirmMerge} disabled={!mergeTarget} variant="destructive">Merge</Button>
+            <DialogFooter className="bg-muted/10 -mx-6 -mb-6 p-6 rounded-b-lg">
+                <Button variant="ghost" onClick={() => setMergeDialogState({ isOpen: false, category: null, type: null })} className="h-12 px-6">Cancel</Button>
+                <Button onClick={handleConfirmMerge} disabled={!mergeTarget} variant="destructive" className="h-12 px-10 font-bold shadow-xl">Confirm Merge</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

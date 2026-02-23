@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -239,8 +240,8 @@ const FolderTreeItem = ({
                 level={level + 1} 
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
-                onSelectFolder={onSelectFolder}
-                onToggleExpand={onToggleExpand}
+                onSelectFolder={handleSelectFolder}
+                onToggleExpand={handleToggleExpand}
                 onRenameStart={onRenameStart}
                 onDrop={onDrop}
                 onAddSubfolder={onAddSubfolder}
@@ -375,7 +376,7 @@ export function FilesView() {
             toast({ title: "File Moved" });
         } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
     }
-  }, [user, toast]);
+  }, [user, toast, folders]);
 
   const handleRenameConfirm = useCallback(async () => {
     if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
@@ -625,12 +626,29 @@ export function FilesView() {
                                     }}
                                     className="mr-2"
                                 />
-                              <div className="flex items-center flex-1 min-w-0 h-full cursor-pointer" onClick={() => {
-                                  if (file.driveLink) window.open(file.driveLink, '_blank');
-                                  else { setFileToLink(file); setDriveFileLink(''); setIsDriveFileLinkDialogOpen(true); }
-                              }}>
-                                <FileIconLucide className="h-4 w-4 text-primary" />
-                                <span className="text-xs font-medium truncate ml-2">{file.name}</span>
+                              <div className="flex items-center flex-1 min-w-0 h-full">
+                                  <div className="flex items-center flex-1 min-w-0 cursor-pointer" onClick={() => {
+                                      if (file.driveLink) window.open(file.driveLink, '_blank');
+                                      else { setFileToLink(file); setDriveFileLink(''); setIsDriveFileLinkDialogOpen(true); }
+                                  }}>
+                                    <FileIconLucide className="h-4 w-4 text-primary" />
+                                    {renamingFile?.id === file.id ? (
+                                        <Input 
+                                            autoFocus 
+                                            value={renameFileValue} 
+                                            onChange={(e) => setRenameFileValue(e.target.value)} 
+                                            onBlur={handleFileRenameConfirm} 
+                                            onKeyDown={(e) => { 
+                                                if (e.key === 'Enter') handleFileRenameConfirm(); 
+                                                if (e.key === 'Escape') setRenamingFile(null); 
+                                            }} 
+                                            className="h-7 py-0 px-2 text-xs font-medium ml-2" 
+                                            onClick={(e) => e.stopPropagation()} 
+                                        />
+                                    ) : (
+                                        <span className="text-xs font-medium truncate ml-2">{file.name}</span>
+                                    )}
+                                  </div>
                               </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>

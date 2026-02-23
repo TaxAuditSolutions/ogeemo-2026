@@ -172,25 +172,25 @@ export function LogTimeDialog({
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center sm:text-center">
-                    <DialogTitle className="text-3xl font-bold font-headline text-primary">
+                <DialogHeader className="p-4 shrink-0 border-b bg-muted/10 text-center sm:text-center">
+                    <DialogTitle className="text-2xl font-bold font-headline text-primary">
                         {entryToEdit ? 'Edit' : 'Log'} Time Card Entry
                     </DialogTitle>
-                    <DialogDescription className="text-base">
-                        A high-fidelity retrospective recording of an operational work session.
+                    <DialogDescription className="text-sm">
+                        High-fidelity retrospective recording of an operational work session.
                     </DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="flex-1">
-                    <div className="max-w-5xl mx-auto p-8 space-y-10">
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <User className="h-4 w-4" /> Worker Attribution (Payroll) *
+                    <div className="max-w-5xl mx-auto p-6 space-y-4">
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                                    <User className="h-3 w-3" /> Worker Attribution (Payroll) *
                                 </Label>
                                 <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-12 w-full justify-between px-4 text-base" disabled={!!entryToEdit}>
+                                        <Button variant="outline" role="combobox" className="h-10 w-full justify-between px-3 text-sm" disabled={!!entryToEdit}>
                                             <span className="truncate">
                                                 {selectedWorkerDisplay ? selectedWorkerDisplay.name : "Select a worker..."}
                                             </span>
@@ -218,13 +218,13 @@ export function LogTimeDialog({
                                     </PopoverContent>
                                 </Popover>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <Users className="h-4 w-4" /> Client Association
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                                    <Users className="h-3 w-3" /> Client Association
                                 </Label>
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-12 w-full justify-between px-4 text-base">
+                                        <Button variant="outline" role="combobox" className="h-10 w-full justify-between px-3 text-sm">
                                             <span className="truncate">
                                                 {selectedContactDisplay ? (selectedContactDisplay.businessName ? `${selectedContactDisplay.name} - ${selectedContactDisplay.businessName}` : selectedContactDisplay.name) : "Internal / General Operations"}
                                             </span>
@@ -256,16 +256,14 @@ export function LogTimeDialog({
                             </div>
                         </section>
 
-                        <Separator />
-
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                            <div className="space-y-2">
-                                <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                    <CalendarIcon className="h-4 w-4" /> Operational Date *
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                                    <CalendarIcon className="h-3 w-3" /> Operational Date *
                                 </Label>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("h-12 w-full justify-start text-left font-normal px-4 text-base", !date && "text-muted-foreground")}>
+                                        <Button variant={"outline"} className={cn("h-10 w-full justify-start text-left font-normal px-3 text-sm", !date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {date ? format(date, "PPPP") : <span>Pick a date</span>}
                                         </Button>
@@ -276,32 +274,32 @@ export function LogTimeDialog({
                                 </Popover>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                        <Clock className="h-4 w-4" /> Start Time
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                                        <Clock className="h-3 w-3" /> Start Time
                                     </Label>
                                     <div className="flex gap-1">
                                         <Select value={startTime.hour} onValueChange={(v) => setStartTime(p => ({...p, hour: v}))}>
-                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <Select value={startTime.minute} onValueChange={(v) => setStartTime(p => ({...p, minute: v}))}>
-                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                        <Clock className="h-4 w-4" /> End Time
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                                        <Clock className="h-3 w-3" /> End Time
                                     </Label>
                                     <div className="flex gap-1">
                                         <Select value={endTime.hour} onValueChange={(v) => setEndTime(p => ({...p, hour: v}))}>
-                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <Select value={endTime.minute} onValueChange={(v) => setEndTime(p => ({...p, minute: v}))}>
-                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                                         </Select>
                                     </div>
@@ -309,66 +307,61 @@ export function LogTimeDialog({
                             </div>
                         </section>
 
-                        <Separator />
-
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="subject" className="text-sm uppercase font-bold text-primary">Operational Summary (Subject)</Label>
-                                <Input id="subject" placeholder="What was the main focus of this work session?" className="h-12 text-lg font-semibold" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="subject" className="text-[10px] uppercase font-bold text-primary">Operational Summary (Subject)</Label>
+                                <Input id="subject" placeholder="What was the main focus of this work session?" className="h-10 text-base font-semibold" value={subject} onChange={(e) => setSubject(e.target.value)} />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description" className="text-sm uppercase font-bold text-primary">Breakdown of Tasks (Details) *</Label>
-                                <Textarea id="description" placeholder="Detailed log of specific actions performed..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={8} className="text-base leading-relaxed" />
+                            <div className="space-y-1">
+                                <Label htmlFor="description" className="text-[10px] uppercase font-bold text-primary">Breakdown of Tasks (Details) *</Label>
+                                <Textarea id="description" placeholder="Detailed log of specific actions performed..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={5} className="text-sm leading-relaxed" />
                             </div>
                         </div>
 
-                        <Separator />
-
-                        <section className="p-8 border-2 border-primary/10 rounded-2xl bg-primary/5 shadow-inner">
-                            <Label className="text-lg font-bold text-primary mb-6 block">Billing Configuration</Label>
+                        <section className="p-4 border rounded-xl bg-primary/5 shadow-inner">
+                            <Label className="text-sm font-bold text-primary mb-3 block uppercase tracking-wider">Billing Configuration</Label>
                             <RadioGroup value={isBillable ? 'billable' : 'non-billable'} onValueChange={(v) => setIsBillable(v === 'billable')} className="flex space-x-12">
                                 <div className="flex items-center space-x-3">
-                                    <RadioGroupItem value="non-billable" id="rb1" className="h-5 w-5" />
-                                    <Label htmlFor="rb1" className="text-base font-bold cursor-pointer">Non-Billable</Label>
+                                    <RadioGroupItem value="non-billable" id="rb1" className="h-4 w-4" />
+                                    <Label htmlFor="rb1" className="text-sm font-bold cursor-pointer">Non-Billable</Label>
                                 </div>
                                 <div className="flex items-center space-x-3">
-                                    <RadioGroupItem value="billable" id="rb2" className="h-5 w-5" />
-                                    <Label htmlFor="rb2" className="text-base font-bold cursor-pointer">Billable to Client</Label>
+                                    <RadioGroupItem value="billable" id="rb2" className="h-4 w-4" />
+                                    <Label htmlFor="rb2" className="text-sm font-bold cursor-pointer">Billable to Client</Label>
                                 </div>
                             </RadioGroup>
                             
                             {isBillable && (
-                                <div className="mt-10 space-y-3 max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
-                                    <Label htmlFor="rate" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Hourly Billable Rate ($/hr)</Label>
+                                <div className="mt-4 space-y-2 max-w-xs animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <Label htmlFor="rate" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Hourly Billable Rate ($/hr)</Label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-xl">$</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-base">$</span>
                                         <Input 
                                             id="rate" 
                                             type="number" 
                                             value={billableRate} 
                                             onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} 
-                                            className="h-14 pl-10 text-2xl font-mono font-bold border-primary/20 shadow-sm" 
+                                            className="h-10 pl-8 text-lg font-mono font-bold border-primary/20 shadow-sm" 
                                             placeholder="100.00" 
                                         />
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground italic pl-1">This rate will be used to automatically calculate the total for client invoices.</p>
                                 </div>
                             )}
                         </section>
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground italic font-medium max-w-md">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Info className="h-5 w-5 text-primary" />
+                <DialogFooter className="p-4 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground italic font-medium max-w-md">
+                        <div className="p-1.5 bg-primary/10 rounded-lg">
+                            <Info className="h-4 w-4 text-primary" />
                         </div>
-                        <span>This entry will be synchronized with the master Worker Time Log registry for payroll and billing automation.</span>
+                        <span>Synchronization with the master Worker Time Log registry is automated upon save.</span>
                     </div>
-                    <div className="flex gap-4 w-full sm:w-auto">
-                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-8 text-lg">Cancel</Button>
-                        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-12 font-bold shadow-2xl text-xl">
-                            {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-12 px-6 text-base">Cancel</Button>
+                        <Button onClick={handleSave} disabled={isSaving} className="h-12 px-10 font-bold shadow-xl text-lg">
+                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                             {entryToEdit ? 'Update Entry' : 'Log Time Entry'}
                         </Button>
                     </div>

@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { 
     PlusCircle, 
     MoreVertical, 
@@ -457,7 +458,7 @@ export function LedgersView() {
             contactToEdit={null}
             folders={contactFolders}
             onFoldersChange={setContactFolders}
-            onSave={handleContactSave}
+            onSave={loadData}
             companies={companies}
             onCompaniesChange={setCompanies}
             customIndustries={customIndustries}

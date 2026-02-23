@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -155,6 +154,12 @@ export function AddLineItemDialog({
               title: "Default Rate Saved",
               description: `${rate}% is now your default tax rate.`
           });
+      } else {
+          toast({
+              variant: 'destructive',
+              title: "Invalid Rate",
+              description: "Please enter a valid tax rate before setting it as the default."
+          });
       }
   };
 
@@ -288,19 +293,23 @@ export function AddLineItemDialog({
                         <Label htmlFor="taxRate">Tax Rate (%)</Label>
                         <Button 
                             variant="link" 
-                            className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary"
+                            className="h-auto p-0 text-xs font-bold text-primary hover:underline transition-all"
                             onClick={handleSetDefaultTaxRate}
                         >
                             Set as default
                         </Button>
                     </div>
-                    <Input
-                    id="taxRate"
-                    type="number"
-                    placeholder="e.g., 15"
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(e.target.value === '' ? '' : Number(e.target.value))}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="taxRate"
+                            type="number"
+                            placeholder="e.g., 15"
+                            className="pr-8"
+                            value={taxRate}
+                            onChange={(e) => setTaxRate(e.target.value === '' ? '' : Number(e.target.value))}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
                 </div>
             </div>
             {!itemToEdit && (

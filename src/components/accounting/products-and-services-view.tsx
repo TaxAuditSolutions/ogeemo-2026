@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -171,6 +170,12 @@ export function ProductsAndServicesView() {
               title: "Default Rate Saved",
               description: `${rate}% is now your default tax rate.`
           });
+      } else {
+          toast({
+              variant: 'destructive',
+              title: "Invalid Rate",
+              description: "Please enter a valid tax rate before setting it as the default."
+          });
       }
   };
 
@@ -286,7 +291,7 @@ export function ProductsAndServicesView() {
                         <Button 
                             type="button" 
                             variant="link" 
-                            className="h-auto p-0 text-[10px] text-muted-foreground hover:text-primary"
+                            className="h-auto p-0 text-xs font-bold text-primary hover:underline transition-all"
                             onClick={handleSetDefaultTaxRate}
                         >
                             Set as default
@@ -313,7 +318,7 @@ export function ProductsAndServicesView() {
         onTaxTypesChange={setTaxTypes}
       />
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+      <AlertDialog open={!!itemToDelete} onOpenChange={setItemToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item "{itemToDelete?.description}".</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>

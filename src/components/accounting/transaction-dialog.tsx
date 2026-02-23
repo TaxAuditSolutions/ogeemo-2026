@@ -416,7 +416,7 @@ export function TransactionDialog({
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal px-3">
-                                                            <span className="truncate">{field.value || "Select contact..."}</span>
+                                                            <span className="truncate">{field.value || "Select/Add Contact"}</span>
                                                             <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                                         </Button>
                                                     </FormControl>

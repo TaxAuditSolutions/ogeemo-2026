@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock, Pencil } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock, Pencil, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -79,6 +79,8 @@ function WorkerTimeLogReportContent() {
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
+
     const loadData = useCallback(async () => {
         if (!user) {
             setIsLoading(false);
@@ -86,7 +88,6 @@ function WorkerTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
-            // We wrap individual calls to capture specific permission errors for diagnostics
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
                 getContacts(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
@@ -171,12 +172,42 @@ function WorkerTimeLogReportContent() {
             combined = combined.filter(e => isWithinInterval(e.startTime, { start: startOfDay(dateRange.from!), end: rangeEnd }));
         }
 
-        return combined.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
-    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName]);
+        if (sortConfig) {
+            combined.sort((a, b) => {
+                let aValue: any;
+                let bValue: any;
+
+                if (sortConfig.key === 'startTime') {
+                    aValue = a.startTime.getTime();
+                    bValue = b.startTime.getTime();
+                } else if (sortConfig.key === 'isBillable') {
+                    aValue = a.isBillable ? 1 : 0;
+                    bValue = b.isBillable ? 1 : 0;
+                } else {
+                    aValue = String(a[sortConfig.key] || '').toLowerCase();
+                    bValue = String(b[sortConfig.key] || '').toLowerCase();
+                }
+
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return combined;
+    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
     const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
     const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
+
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -296,10 +327,26 @@ function WorkerTimeLogReportContent() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Worker</TableHead>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Billing</TableHead>
+                                        <TableHead className="p-0">
+                                            <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead className="p-0">
+                                            <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead className="p-0">
+                                            <Button variant="ghost" onClick={() => requestSort('startTime')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Date {sortConfig?.key === 'startTime' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead className="p-0">
+                                            <Button variant="ghost" onClick={() => requestSort('isBillable')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Billing {sortConfig?.key === 'isBillable' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            </Button>
+                                        </TableHead>
                                         <TableHead>Notes</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>

@@ -200,15 +200,18 @@ function ClientTimeLogReportContent() {
 
         if (sortConfig) {
             combined.sort((a, b) => {
-                let aValue: any = a[sortConfig.key];
-                let bValue: any = b[sortConfig.key];
+                let aValue: any;
+                let bValue: any;
 
                 if (sortConfig.key === 'startTime') {
                     aValue = a.startTime.getTime();
                     bValue = b.startTime.getTime();
+                } else if (sortConfig.key === 'isBillable') {
+                    aValue = a.isBillable ? 1 : 0;
+                    bValue = b.isBillable ? 1 : 0;
                 } else {
-                    aValue = String(aValue || '').toLowerCase();
-                    bValue = String(bValue || '').toLowerCase();
+                    aValue = String(a[sortConfig.key] || '').toLowerCase();
+                    bValue = String(b[sortConfig.key] || '').toLowerCase();
                 }
 
                 if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -361,7 +364,11 @@ function ClientTimeLogReportContent() {
                                         </TableHead>
                                         <TableHead>Subject</TableHead>
                                         <TableHead className="text-right">Duration</TableHead>
-                                        <TableHead className="text-right">Billable Amt</TableHead>
+                                        <TableHead className="p-0">
+                                            <Button variant="ghost" onClick={() => requestSort('isBillable')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
+                                                Billable {sortConfig?.key === 'isBillable' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                            </Button>
+                                        </TableHead>
                                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
                                 </TableHeader>

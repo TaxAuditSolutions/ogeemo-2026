@@ -116,8 +116,7 @@ const emptyTransactionForm = {
     taxRate: '', 
     preTaxAmount: '', 
     taxAmount: '', 
-    category: '', 
-    incomeCategory: '', 
+    category: '', // Unified category field
     explanation: '', 
     documentNumber: '', 
     documentUrl: '', 
@@ -161,7 +160,6 @@ export function LedgersView() {
   const [showAddCategory, setShowAddCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState('');
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
-  const [isIncomeCategoryPopoverOpen, setIsIncomeCategoryPopoverOpen] = React.useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -178,9 +176,9 @@ export function LedgersView() {
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
       if (type === 'income') {
-          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Uncategorized';
+          return incomeCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Select category...';
       }
-      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Uncategorized';
+      return expenseCategories.find(c => c.categoryNumber === categoryNumber)?.name || categoryNumber || 'Select category...';
   }, [incomeCategories, expenseCategories]);
 
   const loadData = React.useCallback(async () => {
@@ -206,7 +204,7 @@ export function LedgersView() {
         setCustomIndustries(fetchedIndustries);
         setCompanies(fetchedCompanies);
     } catch (e: any) { 
-        // Standard errors are already handled by emitting them from services
+        // Errors handled via emitter
     }
     finally { setIsLoading(false); }
   }, [user, toast]);
@@ -301,8 +299,7 @@ export function LedgersView() {
           taxRate: String(tx.taxRate || ''),
           preTaxAmount: String(tx.preTaxAmount || ''),
           taxAmount: String(tx.taxAmount || ''),
-          incomeCategory: tx.transactionType === 'income' ? currentCatNum : '',
-          category: tx.transactionType === 'expense' ? currentCatNum : '',
+          category: currentCatNum,
           explanation: tx.explanation || '',
           documentNumber: tx.documentNumber || '',
           documentUrl: tx.documentUrl || '',
@@ -357,18 +354,9 @@ export function LedgersView() {
     }));
   }, [newTransaction.quantity, newTransaction.unitPrice, newTransaction.taxRate]);
 
-  const requestSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
   const handleSaveTransaction = () => {
       if (!user) return;
       
-      // RE-CALCULATE LOCALLY TO AVOID STATE RACE CONDITIONS
       const quantityNum = parseFloat(newTransaction.quantity) || 1;
       const unitPriceNum = parseFloat(newTransaction.unitPrice);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
@@ -377,9 +365,8 @@ export function LedgersView() {
       const preTaxAmount = totalAmountNum / (1 + taxRateNum / 100);
       const taxAmount = totalAmountNum - preTaxAmount;
 
-      const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
+      const selectedCategoryNumber = newTransaction.category;
 
-      // DETAILED VALIDATION
       if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || isNaN(totalAmountNum) || totalAmountNum <= 0) {
           const missing = [];
           if (!newTransaction.date) missing.push("Date");
@@ -413,7 +400,6 @@ export function LedgersView() {
       };
 
       if (newTransaction.paymentStatus === 'unpaid') {
-          // Robust contact lookup
           const contact = contacts.find(c => c.name.trim().toLowerCase() === newTransaction.company.trim().toLowerCase());
           if (newTransactionType === 'income') {
               if (!contact) { toast({ variant: 'destructive', title: 'Contact Error', description: "A valid contact record is required for Accounts Receivable entries. Please select a contact from the dropdown." }); return; }
@@ -484,16 +470,9 @@ export function LedgersView() {
       const rate = parseFloat(newTransaction.taxRate);
       if (!isNaN(rate)) {
           updatePreferences({ defaultTaxRate: rate });
-          toast({
-              title: "Default Rate Saved",
-              description: `${rate}% is now your default tax rate.`
-          });
+          toast({ title: "Default Rate Saved", description: `${rate}% is now your default tax rate.` });
       } else {
-          toast({
-              variant: 'destructive',
-              title: "Invalid Rate",
-              description: "Please enter a valid tax rate before setting it as the default."
-          });
+          toast({ variant: 'destructive', title: "Invalid Rate", description: "Please enter a valid tax rate before setting it as the default." });
       }
   };
 
@@ -709,7 +688,7 @@ export function LedgersView() {
 
         <Dialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen}>
             <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
-                <DialogHeader className="text-center sm:text-center shrink-0">
+                <DialogHeader className="text-center shrink-0">
                     <DialogTitle className="text-2xl text-primary font-bold">
                         {transactionToEdit ? 'Edit' : 'Post'} {newTransactionType === 'income' ? 'Income' : 'Expense'}
                     </DialogTitle>
@@ -797,6 +776,53 @@ export function LedgersView() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Description</Label><Input value={newTransaction.description} onChange={e => setNewTransaction(p => ({...p, description: e.target.value}))} className="col-span-3" /></div>
                         
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Category *</Label>
+                            <div className="col-span-3">
+                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between truncate">
+                                            {getCategoryName(newTransaction.category, newTransactionType)}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
+                                            <CommandList>
+                                                <CommandEmpty><Button variant="ghost" className="w-full justify-start text-primary" onClick={handleCreateCategory}><Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"</Button></CommandEmpty>
+                                                <CommandGroup>
+                                                    {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
+                                                        <CommandItem key={c.id} onSelect={() => { 
+                                                            setNewTransaction(p => ({...p, category: c.categoryNumber || c.id})); 
+                                                            setIsCategoryPopoverOpen(false); 
+                                                        }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", newTransaction.category === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
+                                                            {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Category #</Label>
+                            <Input 
+                                id="tx-category-num-gl" 
+                                readOnly 
+                                disabled 
+                                value={(newTransactionType === 'income'
+                                    ? incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.categoryNumber
+                                    : expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.categoryNumber) || ''
+                                } 
+                                className="col-span-3 bg-muted/50" 
+                            />
+                        </div>
+
                         <Separator />
 
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -861,39 +887,6 @@ export function LedgersView() {
                                 </Select>
                             </div>
                         )}
-
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Category *</Label>
-                            <div className="col-span-3">
-                                <Popover open={newTransactionType === 'income' ? isIncomeCategoryPopoverOpen : isCategoryPopoverOpen} onOpenChange={newTransactionType === 'income' ? setIsIncomeCategoryPopoverOpen : setIsCategoryPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between truncate">
-                                            {getCategoryName(newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category, newTransactionType)}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search category..." value={newCategoryName} onValueChange={setNewCategoryName}/>
-                                            <CommandList>
-                                                <CommandEmpty><Button variant="ghost" className="w-full justify-start text-primary" onClick={handleCreateCategory}><Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"</Button></CommandEmpty>
-                                                <CommandGroup>
-                                                    {(newTransactionType === 'income' ? incomeCategories : expenseCategories).map(c => (
-                                                        <CommandItem key={c.id} onSelect={() => { 
-                                                            setNewTransaction(p => ({...p, [newTransactionType === 'income' ? 'incomeCategory' : 'category']: c.categoryNumber || c.id})); 
-                                                            newTransactionType === 'income' ? setIsIncomeCategoryPopoverOpen(false) : setIsCategoryPopoverOpen(false); 
-                                                        }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", (newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category) === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
-                                                            {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
 
                         {newTransactionType === 'income' && newTransaction.paymentStatus === 'paid' && (
                             <div className="grid grid-cols-4 items-center gap-4">

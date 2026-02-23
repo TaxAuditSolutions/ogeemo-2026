@@ -41,7 +41,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,7 +77,7 @@ import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
 const transactionSchema = z.object({
     date: z.string().min(1, "Date is required."),
-    company: z.string().min(1, "Contact name is required."),
+    company: z.string().min(1, "Contact selection is required."),
     description: z.string().optional(),
     quantity: z.coerce.number().min(0.01, "Quantity must be at least 0.01"),
     unitPrice: z.coerce.number().min(0, "Price must be positive"),
@@ -167,7 +166,7 @@ export function TransactionDialog({
     const activeCategories = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
     const selectedCategory = activeCategories.find(c => c.categoryNumber === watchCategory || c.id === watchCategory);
 
-    // Format contact list options to "Name - Business"
+    // High-Fidelity Contact Formatting: Name - Business
     const contactOptions = React.useMemo(() => {
         const standaloneCompanies = companies.map(c => ({ id: c.id, label: c.name, type: 'company' }));
         const individualContacts = contacts.map(c => ({
@@ -397,7 +396,7 @@ export function TransactionDialog({
 
                             <Separator />
 
-                            {/* Audit Identity */}
+                            {/* Identity & Timing */}
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
                                     <ContactIcon className="h-4 w-4" />
@@ -432,12 +431,12 @@ export function TransactionDialog({
                                         name="company"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Select Contact (Name - Business association)</FormLabel>
+                                                <FormLabel>Contact Association (Name - Business)</FormLabel>
                                                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
                                                             <Button variant="outline" role="combobox" className="h-12 justify-between font-normal">
-                                                                <span className="truncate">{field.value || "Select or search..."}</span>
+                                                                <span className="truncate">{field.value || "Select contact..."}</span>
                                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </FormControl>

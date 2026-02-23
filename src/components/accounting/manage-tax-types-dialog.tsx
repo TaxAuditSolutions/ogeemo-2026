@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,8 +33,9 @@ import { useToast } from '@/hooks/use-toast';
 import { type TaxType, addTaxType, updateTaxType, deleteTaxType } from '@/services/accounting-service';
 import { useAuth } from '@/context/auth-context';
 import { ScrollArea } from '../ui/scroll-area';
-import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
-
+import { Plus, MoreVertical, Edit, Trash2, Check, Star } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { Badge } from '../ui/badge';
 
 interface ManageTaxTypesDialogProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ export function ManageTaxTypesDialog({
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { preferences, updatePreferences } = useUserPreferences();
 
   const handleOpenForm = (taxType?: TaxType) => {
     if (taxType) {
@@ -106,37 +108,75 @@ export function ManageTaxTypesDialog({
       }
   };
 
+  const handleSetDefault = async (taxType: TaxType) => {
+    try {
+        await updatePreferences({ defaultTaxRate: taxType.rate });
+        toast({
+            title: "Default Tax Set",
+            description: `${taxType.name} (${taxType.rate}%) is now your default tax configuration.`
+        });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    }
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Manage Tax Types</DialogTitle>
-            <DialogDescription>Add, edit, or delete the tax types for your invoices.</DialogDescription>
+            <DialogDescription>Add, edit, or delete the tax types for your invoices. Set a default to automatically apply it to new entries.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Button onClick={() => handleOpenForm()} className="mb-4 w-full"><Plus className="mr-2 h-4 w-4"/> Add New Tax Type</Button>
+            <Button onClick={() => handleOpenForm()} className="mb-4 w-full">
+                <Plus className="mr-2 h-4 w-4"/> Add New Tax Type
+            </Button>
             <ScrollArea className="h-64 border rounded-md">
                 <div className="p-2 space-y-1">
-                {taxTypes.map(type => (
-                    <div key={type.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                        <div>
-                            <p className="font-medium text-sm">{type.name}</p>
-                            <p className="text-xs text-muted-foreground">{type.rate}%</p>
+                {taxTypes.map(type => {
+                    const isDefault = preferences?.defaultTaxRate === type.rate;
+                    return (
+                        <div key={type.id} className={cn(
+                            "flex items-center justify-between p-2 rounded-md transition-colors",
+                            isDefault ? "bg-primary/5 border border-primary/20" : "hover:bg-muted"
+                        )}>
+                            <div className="flex items-center gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium text-sm">{type.name}</p>
+                                        {isDefault && (
+                                            <Badge variant="secondary" className="h-4 text-[10px] px-1 uppercase tracking-widest font-bold bg-primary/10 text-primary border-primary/20">
+                                                Default
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{type.rate}%</p>
+                                </div>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleSetDefault(type)}>
+                                        <Star className={cn("mr-2 h-4 w-4", isDefault && "fill-current text-yellow-500")} />
+                                        Set as Default
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={() => handleOpenForm(type)}>
+                                        <Edit className="mr-2 h-4 w-4"/> Edit Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setTypeToDelete(type)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/> Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => handleOpenForm(type)}><Edit className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setTypeToDelete(type)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                ))}
+                    );
+                })}
                 </div>
             </ScrollArea>
           </div>
@@ -146,7 +186,6 @@ export function ManageTaxTypesDialog({
         </DialogContent>
       </Dialog>
       
-      {/* Nested Dialog for Add/Edit Form */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-sm">
             <DialogHeader>

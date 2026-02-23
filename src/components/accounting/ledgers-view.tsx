@@ -367,20 +367,34 @@ export function LedgersView() {
 
   const handleSaveTransaction = () => {
       if (!user) return;
-      const totalAmountNum = parseFloat(newTransaction.totalAmount);
+      
+      // RE-CALCULATE LOCALLY TO AVOID STATE RACE CONDITIONS
       const quantityNum = parseFloat(newTransaction.quantity) || 1;
-      const unitPriceNum = parseFloat(newTransaction.unitPrice) || totalAmountNum;
+      const unitPriceNum = parseFloat(newTransaction.unitPrice);
       const taxRateNum = parseFloat(newTransaction.taxRate) || 0;
+      
+      const totalAmountNum = quantityNum * unitPriceNum;
+      const preTaxAmount = totalAmountNum / (1 + taxRateNum / 100);
+      const taxAmount = totalAmountNum - preTaxAmount;
+
       const selectedCategoryNumber = newTransactionType === 'income' ? newTransaction.incomeCategory : newTransaction.category;
 
-      if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || isNaN(totalAmountNum)) {
-          toast({ variant: 'destructive', title: 'Missing Information', description: 'Please ensure Date, Contact, Category, and Amount are provided.' });
+      // DETAILED VALIDATION
+      if (!newTransaction.date || !newTransaction.company || !selectedCategoryNumber || isNaN(totalAmountNum) || totalAmountNum <= 0) {
+          const missing = [];
+          if (!newTransaction.date) missing.push("Date");
+          if (!newTransaction.company) missing.push("Contact");
+          if (!selectedCategoryNumber) missing.push("Category");
+          if (isNaN(totalAmountNum) || totalAmountNum <= 0) missing.push("a valid positive Amount");
+
+          toast({ 
+              variant: 'destructive', 
+              title: 'Validation Error', 
+              description: `Please provide the following: ${missing.join(', ')}.` 
+          });
           return;
       }
 
-      const preTaxAmount = totalAmountNum / (1 + taxRateNum / 100);
-      const taxAmount = totalAmountNum - preTaxAmount;
-      
       const baseData = {
           date: newTransaction.date,
           company: newTransaction.company,
@@ -399,9 +413,10 @@ export function LedgersView() {
       };
 
       if (newTransaction.paymentStatus === 'unpaid') {
-          const contact = contacts.find(c => c.name === newTransaction.company);
+          // Robust contact lookup
+          const contact = contacts.find(c => c.name.trim().toLowerCase() === newTransaction.company.trim().toLowerCase());
           if (newTransactionType === 'income') {
-              if (!contact) { toast({ variant: 'destructive', title: 'Error', description: "A valid contact record is required for Accounts Receivable entries." }); return; }
+              if (!contact) { toast({ variant: 'destructive', title: 'Contact Error', description: "A valid contact record is required for Accounts Receivable entries. Please select a contact from the dropdown." }); return; }
               addInvoiceWithLineItems({
                   invoiceNumber: newTransaction.documentNumber || `PRO-${Date.now()}`,
                   companyName: newTransaction.company,

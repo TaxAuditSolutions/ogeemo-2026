@@ -158,6 +158,11 @@ export function AccountsReceivablePageView() {
         }
     };
 
+    const handleCreateNewInvoice = () => {
+        localStorage.removeItem('editInvoiceId');
+        router.push('/accounting/invoices/create');
+    };
+
     const totalOutstanding = useMemo(() => {
         return invoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
     }, [invoices]);
@@ -202,10 +207,8 @@ export function AccountsReceivablePageView() {
                         <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Quick Log Receivable
                         </Button>
-                        <Button asChild>
-                            <Link href="/accounting/invoices/create">
-                                <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
-                            </Link>
+                        <Button onClick={handleCreateNewInvoice}>
+                            <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
                         </Button>
                     </div>
                 </CardHeader>

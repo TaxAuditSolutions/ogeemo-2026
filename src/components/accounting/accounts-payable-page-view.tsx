@@ -69,6 +69,7 @@ import { getFolders as getContactFolders, type FolderData } from '@/services/con
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
 import ContactFormDialog from '../contacts/contact-form-dialog';
+import { TransactionDialog } from './transaction-dialog';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -89,6 +90,7 @@ export function AccountsPayablePageView() {
   
   // Dialog Controllers
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
 
   // Payment State
   const [billToPay, setBillToPay] = useState<PayableBill | null>(null);
@@ -201,6 +203,9 @@ export function AccountsPayablePageView() {
                     <CardTitle>Accounts Payable Ledger</CardTitle>
                     <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
                 </div>
+                <Button onClick={() => setIsTransactionDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Log Payable Bill
+                </Button>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -261,6 +266,19 @@ export function AccountsPayablePageView() {
                 )}
             </CardContent>
         </Card>
+
+        {/* Rebuild Transaction Entry Trigger */}
+        <TransactionDialog
+            isOpen={isTransactionDialogOpen}
+            onOpenChange={setIsTransactionDialogOpen}
+            initialType="payable"
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
+            companies={companies}
+            contacts={contacts}
+            taxTypes={taxTypes}
+            onSuccess={loadData}
+        />
 
         {/* Post Payment Dialog */}
         <Dialog open={!!billToPay} onOpenChange={() => setBillToPay(null)}>

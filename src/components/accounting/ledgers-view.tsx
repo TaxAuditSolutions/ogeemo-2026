@@ -51,7 +51,8 @@ import {
     ArrowUpZA,
     Printer,
     FilterX,
-    Link as LinkIcon
+    Link as LinkIcon,
+    PlusCircle
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,7 @@ import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
+import { TransactionDialog } from "./transaction-dialog";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -90,7 +92,7 @@ export function LedgersView() {
   const [isLoading, setIsLoading] = React.useState(true);
   
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
-  
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -339,6 +341,9 @@ export function LedgersView() {
                     <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
                         <Printer className="mr-2 h-4 w-4" /> Print Ledger
                     </Button>
+                    <Button size="sm" onClick={() => setIsTransactionDialogOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="p-4 flex flex-wrap items-end justify-center gap-4">
@@ -395,6 +400,18 @@ export function LedgersView() {
                 <TabsContent value="expenses">{renderTable(filteredExpenses.map(e => ({...e, transactionType: 'expense'})), 'expense')}</TabsContent>
             </Tabs>
         </div>
+
+        <TransactionDialog
+            isOpen={isTransactionDialogOpen}
+            onOpenChange={setIsTransactionDialogOpen}
+            initialType={activeTab === 'income' ? 'income' : activeTab === 'expenses' ? 'expense' : 'income'}
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
+            companies={companies}
+            contacts={contacts}
+            taxTypes={taxTypes}
+            onSuccess={loadData}
+        />
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >
             <AlertDialogContent>

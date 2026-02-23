@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -34,10 +33,11 @@ import {
   ArrowDownUp,
   Link as LinkIcon,
   Info,
+  Save,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type FileItem, type FolderItem } from '@/data/files';
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +86,7 @@ const ItemTypes = {
   FOLDER: 'folder',
 };
 
-type DroppableItem = (FileItem & { type?: 'file' }) | (FolderItem & { type: 'folder' });
+type DroppableItem = (FileItem & { type?: string }) | (FolderItem & { type: 'folder' });
 
 const newFileSchema = z.object({
     fileName: z.string().min(1, 'File name is required.'),
@@ -182,7 +182,10 @@ const FolderTreeItem = ({
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.FILE, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
-      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
+      collect: (monitor) => ({ 
+          isOver: monitor.isOver({ shallow: true }), 
+          canDrop: monitor.canDrop() 
+      }),
     }), [folder.id, onDrop]);
 
     return (
@@ -240,8 +243,8 @@ const FolderTreeItem = ({
                 level={level + 1} 
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
-                onSelectFolder={handleSelectFolder}
-                onToggleExpand={handleToggleExpand}
+                onSelectFolder={onSelectFolder}
+                onToggleExpand={onToggleExpand}
                 onRenameStart={onRenameStart}
                 onDrop={onDrop}
                 onAddSubfolder={onAddSubfolder}
@@ -363,6 +366,7 @@ export function FilesView() {
   const handleDrop = useCallback(async (item: DroppableItem, newFolderId: string | null) => {
     if (!user) return;
     if (item.id === newFolderId) return;
+
     if ('type' in item && item.type === 'folder') {
         try {
             await updateFolder(item.id, { parentId: newFolderId });
@@ -370,13 +374,28 @@ export function FilesView() {
             toast({ title: "Folder Moved" });
         } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
     } else {
+        // Safe check to avoid redundant move if already in target folder
+        const movedFile = item as FileItem;
+        if (movedFile.folderId === newFolderId) return;
+
         try {
-            await updateFile(item.id, { folderId: newFolderId! });
-            setFiles(prev => prev.map(f => f.id === item.id ? { ...f, folderId: newFolderId! } : f));
-            toast({ title: "File Moved" });
-        } catch (e: any) { toast({ variant: "destructive", title: "Error", description: e.message }); }
+            await updateFile(movedFile.id, { folderId: newFolderId! });
+            // Strict move logic: Update the existing state record to reflect new location
+            setFiles(prev => prev.map(f => f.id === movedFile.id ? { ...f, folderId: newFolderId! } : f));
+            toast({ title: "File Moved", description: `Moved to ${newFolderId ? (folders.find(f => f.id === newFolderId)?.name || 'folder') : 'root'}.` });
+            setSelectedFileIds([]);
+        } catch (e: any) { toast({ variant: "destructive", title: "Move Failed", description: e.message }); }
     }
   }, [user, toast, folders]);
+
+  const [{ isOverRoot, canDropRoot }, dropRoot] = useDrop(() => ({
+    accept: [ItemTypes.FILE, ItemTypes.FOLDER],
+    drop: (item: DroppableItem) => handleDrop(item, null),
+    collect: (monitor) => ({ 
+        isOver: monitor.isOver({ shallow: true }), 
+        canDrop: monitor.canDrop() 
+    }),
+  }), [handleDrop]);
 
   const handleRenameConfirm = useCallback(async () => {
     if (!renamingFolder || !renameInputValue.trim() || renamingFolder.name === renameInputValue.trim()) {
@@ -563,7 +582,8 @@ export function FilesView() {
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
               <div
-                className={cn("p-2 border-b cursor-pointer", selectedFolderId === 'all' && 'bg-primary/20')}
+                ref={dropRoot}
+                className={cn("p-2 border-b cursor-pointer transition-colors", selectedFolderId === 'all' && 'bg-primary/20', (isOverRoot && canDropRoot) && 'bg-primary/30 ring-1 ring-primary')}
                 onClick={() => handleSelectFolder('all')}
               >
                   <Button variant="ghost" className="w-full justify-start gap-2 h-7"><Files className="h-4 w-4" />All Files</Button>
@@ -574,6 +594,7 @@ export function FilesView() {
                         key={folder.id} 
                         folder={folder} 
                         allFolders={folders} 
+                        level={0} 
                         selectedFolderId={selectedFolderId}
                         expandedFolders={expandedFolders}
                         onSelectFolder={handleSelectFolder}

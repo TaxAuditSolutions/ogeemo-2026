@@ -377,7 +377,7 @@ export function LogTimeDialog({
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="billable" id="rb2" className="h-4 w-4" />
-                                    <Label htmlFor="rb2" className="text-sm font-bold cursor-pointer">Billable to Client</Label>
+                                    <Label htmlFor="rb2" className="text-sm font-bold Hub-pointer">Billable to Client</Label>
                                 </div>
                             </RadioGroup>
                             

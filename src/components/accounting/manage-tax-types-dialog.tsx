@@ -36,6 +36,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Plus, MoreVertical, Edit, Trash2, Check, Star } from 'lucide-react';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ManageTaxTypesDialogProps {
   isOpen: boolean;

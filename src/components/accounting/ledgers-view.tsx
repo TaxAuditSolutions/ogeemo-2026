@@ -166,7 +166,7 @@ export function LedgersView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { handlePrint, contentRef } = useReactToPrint();
-  const { preferences } = useUserPreferences();
+  const { preferences, updatePreferences } = useUserPreferences();
   
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
@@ -463,6 +463,23 @@ export function LedgersView() {
       }
       setIsTransactionDialogOpen(false);
       setTimeout(loadData, 500);
+  };
+
+  const handleSetDefaultTaxRate = () => {
+      const rate = parseFloat(newTransaction.taxRate);
+      if (!isNaN(rate)) {
+          updatePreferences({ defaultTaxRate: rate });
+          toast({
+              title: "Default Rate Saved",
+              description: `${rate}% is now your default tax rate.`
+          });
+      } else {
+          toast({
+              variant: 'destructive',
+              title: "Invalid Rate",
+              description: "Please enter a valid tax rate before setting it as the default."
+          });
+      }
   };
 
   const handleConfirmDelete = () => {
@@ -773,7 +790,16 @@ export function LedgersView() {
                         </div>
                         
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Tax Rate (%)</Label>
+                            <div className="flex flex-col items-end">
+                                <Label className="text-right">Tax Rate (%)</Label>
+                                <Button 
+                                    variant="link" 
+                                    className="h-auto p-0 text-[10px] font-bold text-primary hover:underline transition-all"
+                                    onClick={handleSetDefaultTaxRate}
+                                >
+                                    Set as default
+                                </Button>
+                            </div>
                             <div className="relative col-span-3">
                                 <Input type="number" value={newTransaction.taxRate} onChange={e => setNewTransaction(prev => ({...prev, taxRate: e.target.value}))} className="pr-8" placeholder="e.g., 15"/>
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -872,7 +898,7 @@ export function LedgersView() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>

@@ -204,7 +204,7 @@ export function AccountsReceivablePageView() {
                         </Button>
                         <Button asChild>
                             <Link href="/accounting/invoices/create">
-                                <FileDigit className="mr-2 h-4 w-4" /> Create Professional Invoice
+                                <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
                             </Link>
                         </Button>
                     </div>

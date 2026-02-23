@@ -108,9 +108,9 @@ export function LedgersView() {
   
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
-  const initialTab = searchParams ? searchParams.get('tab') : 'all';
+  const initialTabFromParams = searchParams ? searchParams.get('tab') : 'all';
   
-  const [activeTab, setActiveTab] = React.useState(initialTab || 'all');
+  const [activeTab, setActiveTab] = React.useState(initialTabFromParams || 'all');
   const router = useRouter();
 
   const getCategoryName = React.useCallback((categoryNumber: string, type: 'income' | 'expense') => {
@@ -240,6 +240,12 @@ export function LedgersView() {
       setStartDate(undefined);
       setEndDate(undefined);
   };
+
+  const initialDialogType = React.useMemo(() => {
+      if (activeTab === 'income') return 'income';
+      if (activeTab === 'expenses') return 'expense';
+      return 'income';
+  }, [activeTab]);
 
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
     <div className="border rounded-md overflow-hidden bg-card">
@@ -408,6 +414,7 @@ export function LedgersView() {
             isOpen={isTransactionDialogOpen}
             onOpenChange={setIsTransactionDialogOpen}
             transactionToEdit={transactionToEdit}
+            initialType={initialDialogType}
             contacts={contacts}
             companies={companies}
             incomeCategories={incomeCategories}
@@ -416,7 +423,7 @@ export function LedgersView() {
             onOpenContactForm={() => setIsContactFormOpen(true)}
         />
 
-        <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>

@@ -37,7 +37,8 @@ import {
     Plus, 
     Calendar as CalendarIcon,
     UserPlus,
-    PlusCircle
+    PlusCircle,
+    Info
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -118,7 +119,6 @@ export function TransactionDialog({
     const [transactionType, setTransactionType] = React.useState<'income' | 'expense'>(initialType);
     const [isSaving, setIsSaving] = React.useState(false);
     
-    // Popover and internal creation states
     const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
@@ -226,7 +226,7 @@ export function TransactionDialog({
             }
             setShowAddCategory(false);
             setNewCategoryName('');
-            onSuccess(); // Refresh lists in parent
+            onSuccess();
             toast({ title: 'Category Created' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -339,7 +339,10 @@ export function TransactionDialog({
                                 {!transactionToEdit && (
                                     <RadioGroup 
                                         value={transactionType} 
-                                        onValueChange={(v) => setTransactionType(v as 'income' | 'expense')} 
+                                        onValueChange={(v) => {
+                                            setTransactionType(v as 'income' | 'expense');
+                                            form.setValue('category', ''); // Clear category when type changes
+                                        }} 
                                         className="grid grid-cols-2 gap-4"
                                     >
                                         <div><RadioGroupItem value="income" id="ut-income" className="peer sr-only" /><Label htmlFor="ut-income" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 cursor-pointer">Income</Label></div>
@@ -409,7 +412,7 @@ export function TransactionDialog({
                                                     <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                                         <PopoverTrigger asChild>
                                                             <FormControl>
-                                                                <Button variant="outline" role="combobox" className="w-full justify-between truncate">
+                                                                <Button variant="outline" role="combobox" className="w-full justify-between truncate font-normal">
                                                                     {field.value ? (
                                                                         (() => {
                                                                             const match = contacts.find(c => c.name === field.value);
@@ -445,7 +448,69 @@ export function TransactionDialog({
                                     />
                                 </div>
 
-                                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Briefly describe this transaction..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <div className="p-4 bg-primary/5 rounded-lg border border-primary/10 space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                                        <FileSignature className="h-4 w-4" />
+                                        Tax Categorization
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="category"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel>Tax Category *</FormLabel>
+                                                    <div className="flex gap-2">
+                                                        <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button variant="outline" role="combobox" className="w-full justify-between truncate font-normal">
+                                                                        {field.value ? (currentCategories.find(c => (c.categoryNumber || c.id) === field.value)?.name || field.value) : "Select category..."}
+                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                <Command>
+                                                                    <CommandInput placeholder="Search or type name..." onValueChange={setNewCategoryName}/>
+                                                                    <CommandList>
+                                                                        <CommandEmpty>
+                                                                            <Button variant="ghost" className="w-full justify-start text-primary" onClick={handleInternalCreateCategory}>
+                                                                                <Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"
+                                                                            </Button>
+                                                                        </CommandEmpty>
+                                                                        <CommandGroup>
+                                                                            {currentCategories.map(c => (
+                                                                                <CommandItem key={c.id} onSelect={() => { field.onChange(c.categoryNumber || c.id); setIsCategoryPopoverOpen(false); }}>
+                                                                                    <Check className={cn("mr-2 h-4 w-4", field.value === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
+                                                                                    {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
+                                                                                </CommandItem>
+                                                                            ))}
+                                                                        </CommandGroup>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Button type="button" variant="outline" size="icon" onClick={() => setShowAddCategory(!showAddCategory)} title="Quick Add Category"><PlusCircle className="h-4 w-4"/></Button>
+                                                    </div>
+                                                    {showAddCategory && (
+                                                        <div className="flex gap-2 animate-in fade-in-50 pt-2">
+                                                            <Input placeholder="New name..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="h-8" />
+                                                            <Button type="button" onClick={handleInternalCreateCategory} size="sm">Add</Button>
+                                                        </div>
+                                                    )}
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="space-y-2">
+                                            <Label>CRA Line #</Label>
+                                            <Input readOnly disabled value={categoryNumberDisplay} className="bg-muted/50" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Operational Description</FormLabel><FormControl><Input placeholder="Briefly describe this transaction..." {...field} /></FormControl><FormMessage /></FormItem> )} />
 
                                 <Separator />
 
@@ -494,64 +559,6 @@ export function TransactionDialog({
                                 <Separator />
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="category"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col">
-                                                <FormLabel>Tax Category *</FormLabel>
-                                                <div className="flex gap-2">
-                                                    <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                                        <PopoverTrigger asChild>
-                                                            <FormControl>
-                                                                <Button variant="outline" role="combobox" className="w-full justify-between truncate font-normal">
-                                                                    {field.value ? (currentCategories.find(c => (c.categoryNumber || c.id) === field.value)?.name || field.value) : "Select category..."}
-                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                </Button>
-                                                            </FormControl>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                            <Command>
-                                                                <CommandInput placeholder="Search or type name..." onValueChange={setNewCategoryName}/>
-                                                                <CommandList>
-                                                                    <CommandEmpty>
-                                                                        <Button variant="ghost" className="w-full justify-start text-primary" onClick={handleInternalCreateCategory}>
-                                                                            <Plus className="mr-2 h-4 w-4"/> Create "{newCategoryName}"
-                                                                        </Button>
-                                                                    </CommandEmpty>
-                                                                    <CommandGroup>
-                                                                        {currentCategories.map(c => (
-                                                                            <CommandItem key={c.id} onSelect={() => { field.onChange(c.categoryNumber || c.id); setIsCategoryPopoverOpen(false); }}>
-                                                                                <Check className={cn("mr-2 h-4 w-4", field.value === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/> 
-                                                                                {c.categoryNumber ? `(${c.categoryNumber}) ` : ''}{c.name}
-                                                                            </CommandItem>
-                                                                        ))}
-                                                                    </CommandGroup>
-                                                                </CommandList>
-                                                            </Command>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                    <Button type="button" variant="outline" size="icon" onClick={() => setShowAddCategory(!showAddCategory)} title="Quick Add Category"><PlusCircle className="h-4 w-4"/></Button>
-                                                </div>
-                                                {showAddCategory && (
-                                                    <div className="flex gap-2 animate-in fade-in-50 pt-2">
-                                                        <Input placeholder="New name..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="h-8" />
-                                                        <Button type="button" onClick={handleInternalCreateCategory} size="sm">Add</Button>
-                                                    </div>
-                                                )}
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <div className="space-y-2">
-                                        <Label>CRA Line #</Label>
-                                        <Input readOnly disabled value={categoryNumberDisplay} className="bg-muted/50" />
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {form.watch('paymentStatus') === 'paid' && (
                                         <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                                             <FormItem>
@@ -576,11 +583,11 @@ export function TransactionDialog({
                                     )}
                                 </div>
 
-                                <FormField control={form.control} name="explanation" render={({ field }) => ( <FormItem><FormLabel>Operational Explanation</FormLabel><FormControl><Textarea placeholder="Business reason for this transaction..." rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="explanation" render={({ field }) => ( <FormItem><FormLabel>Business Reason (Internal)</FormLabel><FormControl><Textarea placeholder="Explain why this transaction was made..." rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="documentNumber" render={({ field }) => ( <FormItem><FormLabel>Doc #</FormLabel><FormControl><Input placeholder="e.g., invoice number" {...field} /></FormControl></FormItem> )} />
-                                    <FormField control={form.control} name="documentUrl" render={({ field }) => ( <FormItem><FormLabel>Source Link (Evidence)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl></FormItem> )} />
+                                    <FormField control={form.control} name="documentNumber" render={({ field }) => ( <FormItem><FormLabel>Doc # (Invoice/Receipt)</FormLabel><FormControl><Input placeholder="e.g., INV-1001" {...field} /></FormControl></FormItem> )} />
+                                    <FormField control={form.control} name="documentUrl" render={({ field }) => ( <FormItem><FormLabel>Evidence Link (PDF/Image)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl></FormItem> )} />
                                 </div>
                             </div>
                         </ScrollArea>
@@ -588,7 +595,7 @@ export function TransactionDialog({
                         <DialogFooter className="p-6 border-t shrink-0">
                             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                             <Button type="submit" disabled={isSaving}>
-                                {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>}
+                                {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                                 {form.watch('paymentStatus') === 'unpaid' ? (transactionType === 'income' ? 'Record Receivable' : 'Record Payable') : 'Post to Ledger'}
                             </Button>
                         </DialogFooter>

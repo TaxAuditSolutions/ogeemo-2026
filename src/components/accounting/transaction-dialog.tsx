@@ -42,7 +42,6 @@ import {
     FileSignature,
     Settings,
     Percent,
-    MoreVertical,
     Calculator,
     Landmark,
     Clock

@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandInput, CommandGroup, CommandInput as CommandInputType, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -39,7 +39,9 @@ import {
     UserPlus,
     PlusCircle,
     Info,
-    FileSignature
+    FileSignature,
+    Settings,
+    Percent
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -60,10 +62,12 @@ import {
     type ExpenseTransaction,
     type Company,
     type ExpenseCategory,
-    type IncomeCategory
+    type IncomeCategory,
+    type TaxType
 } from '@/services/accounting-service';
 import { type Contact } from '@/services/contact-service';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
+import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
 const transactionSchema = z.object({
     date: z.string().min(1, "Date is required."),
@@ -71,6 +75,7 @@ const transactionSchema = z.object({
     description: z.string().optional(),
     quantity: z.coerce.number().min(0.01, "Quantity must be positive."),
     unitPrice: z.coerce.number().min(0, "Unit price must be non-negative."),
+    taxType: z.string().optional(),
     taxRate: z.coerce.number().min(0).max(100).optional(),
     category: z.string().min(1, "Category is required."),
     explanation: z.string().optional(),
@@ -94,6 +99,8 @@ interface TransactionDialogProps {
     companies: Company[];
     incomeCategories: IncomeCategory[];
     expenseCategories: ExpenseCategory[];
+    taxTypes: TaxType[];
+    onTaxTypesChange: (taxTypes: TaxType[]) => void;
     onSuccess: () => void;
     onOpenContactForm: () => void;
 }
@@ -111,6 +118,8 @@ export function TransactionDialog({
     companies,
     incomeCategories,
     expenseCategories,
+    taxTypes,
+    onTaxTypesChange,
     onSuccess,
     onOpenContactForm,
 }: TransactionDialogProps) {
@@ -125,6 +134,7 @@ export function TransactionDialog({
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
     const [showAddCategory, setShowAddCategory] = React.useState(false);
     const [newCategoryName, setNewCategoryName] = React.useState('');
+    const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = React.useState(false);
 
     const form = useForm<TransactionFormData>({
         resolver: zodResolver(transactionSchema),
@@ -134,6 +144,7 @@ export function TransactionDialog({
             description: '',
             quantity: 1,
             unitPrice: 0,
+            taxType: 'None',
             taxRate: preferences?.defaultTaxRate ?? 15,
             category: '',
             type: 'business',
@@ -178,6 +189,7 @@ export function TransactionDialog({
                     description: transactionToEdit.description || '',
                     quantity: transactionToEdit.quantity || 1,
                     unitPrice: transactionToEdit.unitPrice || transactionToEdit.totalAmount,
+                    taxType: transactionToEdit.taxType || 'None',
                     taxRate: transactionToEdit.taxRate ?? preferences?.defaultTaxRate ?? 0,
                     category: catNum || '',
                     type: transactionToEdit.type || 'business',
@@ -196,6 +208,7 @@ export function TransactionDialog({
                     description: '',
                     quantity: 1,
                     unitPrice: 0,
+                    taxType: 'None',
                     taxRate: preferences?.defaultTaxRate ?? 15,
                     category: '',
                     type: 'business',
@@ -212,6 +225,17 @@ export function TransactionDialog({
         if (!isNaN(rate)) {
             updatePreferences({ defaultTaxRate: rate });
             toast({ title: "Default Rate Saved", description: `${rate}% is now your default.` });
+        }
+    };
+
+    const handleSelectTaxType = (typeName: string) => {
+        const type = taxTypes.find(t => t.name === typeName);
+        if (type) {
+            form.setValue('taxType', type.name);
+            form.setValue('taxRate', type.rate);
+        } else {
+            form.setValue('taxType', 'None');
+            form.setValue('taxRate', preferences?.defaultTaxRate ?? 0);
         }
     };
 
@@ -248,6 +272,7 @@ export function TransactionDialog({
                 preTaxAmount: totals.preTax,
                 taxAmount: totals.tax,
                 taxRate: values.taxRate || 0,
+                taxType: values.taxType,
                 explanation: values.explanation || '',
                 documentNumber: values.documentNumber || '',
                 documentUrl: values.documentUrl || '',
@@ -269,13 +294,14 @@ export function TransactionDialog({
                         invoiceDate: new Date(values.date),
                         status: 'outstanding',
                         notes: values.description || '',
-                        taxType: 'standard',
+                        taxType: values.taxType || 'standard',
                         userId: user.uid,
                     }, [{
                         description: values.description || "Service Delivery",
                         quantity: values.quantity,
                         price: values.unitPrice,
                         taxRate: values.taxRate || 0,
+                        taxType: values.taxType,
                         userId: user.uid
                     }]);
                     toast({ title: "Sent to Accounts Receivable" });
@@ -290,6 +316,7 @@ export function TransactionDialog({
                         preTaxAmount: totals.preTax,
                         taxAmount: totals.tax,
                         taxRate: values.taxRate || 0,
+                        taxType: values.taxType,
                         category: values.category,
                         description: values.description,
                         documentUrl: values.documentUrl,
@@ -324,6 +351,7 @@ export function TransactionDialog({
     };
 
     return (
+        <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl flex flex-col max-h-[95vh] p-0">
                 <DialogHeader className="p-6 pb-2 shrink-0">
@@ -527,32 +555,73 @@ export function TransactionDialog({
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField control={form.control} name="taxRate" render={({ field }) => ( 
-                                        <FormItem>
-                                            <div className="flex justify-between items-center">
-                                                <FormLabel>Tax %</FormLabel>
-                                                <Button type="button" variant="link" className="h-auto p-0 text-[10px] font-bold text-primary" onClick={handleSetDefaultTaxRate}>Default</Button>
-                                            </div>
-                                            <div className="relative">
-                                                <FormControl><Input type="number" step="0.1" className="pr-8" {...field} /></FormControl>
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem> 
-                                    )} />
-                                    <div className="space-y-2">
-                                        <Label>Pre-Tax Amt</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                            <Input value={totals.preTax.toFixed(2)} readOnly disabled className="pl-7 bg-muted/50" />
-                                        </div>
+                                <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
+                                    <div className="flex items-center gap-2 text-muted-foreground font-bold text-xs uppercase tracking-widest">
+                                        <Percent className="h-3.5 w-3.5" />
+                                        Tax Configuration
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Tax Amt</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                            <Input value={totals.tax.toFixed(2)} readOnly disabled className="pl-7 bg-muted/50" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="taxType"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tax Type</FormLabel>
+                                                    <div className="flex gap-2">
+                                                        <Select value={field.value} onValueChange={handleSelectTaxType}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select tax type..." />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="None">No Tax</SelectItem>
+                                                                {taxTypes.map(t => (
+                                                                    <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
+                                                            <Settings className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="taxRate"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <div className="flex justify-between items-center">
+                                                        <FormLabel>Tax Rate (%)</FormLabel>
+                                                        <Button type="button" variant="link" className="h-auto p-0 text-[10px] font-bold text-primary" onClick={handleSetDefaultTaxRate}>Set Default</Button>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <FormControl>
+                                                            <Input type="number" step="0.1" className="pr-8" {...field} />
+                                                        </FormControl>
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Pre-Tax Amount</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                                <Input value={totals.preTax.toFixed(2)} readOnly disabled className="pl-7 h-8 bg-background/50 text-xs" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Tax Amount</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                                <Input value={totals.tax.toFixed(2)} readOnly disabled className="pl-7 h-8 bg-background/50 text-xs" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -604,5 +673,13 @@ export function TransactionDialog({
                 </Form>
             </DialogContent>
         </Dialog>
+
+        <ManageTaxTypesDialog
+            isOpen={isManageTaxDialogOpen}
+            onOpenChange={setIsManageTaxDialogOpen}
+            taxTypes={taxTypes}
+            onTaxTypesChange={onTaxTypesChange}
+        />
+        </>
     );
 }

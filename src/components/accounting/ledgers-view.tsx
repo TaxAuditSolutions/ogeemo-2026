@@ -63,7 +63,8 @@ import {
     getExpenseTransactions, deleteExpenseTransaction, type ExpenseTransaction, 
     getExpenseCategories, type ExpenseCategory,
     getIncomeCategories, type IncomeCategory,
-    getCompanies, type Company
+    getCompanies, type Company,
+    getTaxTypes, type TaxType
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -87,6 +88,7 @@ export function LedgersView() {
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
+  const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
@@ -124,7 +126,7 @@ export function LedgersView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies] = await Promise.all([
+        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
             getContacts(user.uid),
@@ -132,7 +134,8 @@ export function LedgersView() {
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),
             getIndustries(user.uid),
-            getCompanies(user.uid)
+            getCompanies(user.uid),
+            getTaxTypes(user.uid)
         ]);
         setIncomeLedger(income); 
         setExpenseLedger(expenses); 
@@ -142,6 +145,7 @@ export function LedgersView() {
         setIncomeCategories(fetchedIncomeCategories);
         setCustomIndustries(fetchedIndustries);
         setCompanies(fetchedCompanies);
+        setTaxTypes(fetchedTaxTypes);
     } catch (e: any) {}
     finally { setIsLoading(false); }
   }, [user]);
@@ -414,11 +418,13 @@ export function LedgersView() {
             isOpen={isTransactionDialogOpen}
             onOpenChange={setIsTransactionDialogOpen}
             transactionToEdit={transactionToEdit}
-            initialType={initialDialogType}
+            initialType={initialDialogType as any}
             contacts={contacts}
             companies={companies}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
+            taxTypes={taxTypes}
+            onTaxTypesChange={setTaxTypes}
             onSuccess={loadData}
             onOpenContactForm={() => setIsContactFormOpen(true)}
         />

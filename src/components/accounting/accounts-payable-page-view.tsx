@@ -60,7 +60,9 @@ import {
     getExpenseCategories, 
     type ExpenseCategory,
     getIncomeCategories,
-    type IncomeCategory
+    type IncomeCategory,
+    getTaxTypes,
+    type TaxType
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -83,6 +85,7 @@ export function AccountsPayablePageView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+  const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Dialog Controllers
@@ -108,14 +111,15 @@ export function AccountsPayablePageView() {
     }
     setIsLoading(true);
     try {
-      const [fetchedBills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedContacts, fetchedFolders, fetchedIndustries] = await Promise.all([
+      const [fetchedBills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedContacts, fetchedFolders, fetchedIndustries, fetchedTaxTypes] = await Promise.all([
         getPayableBills(user.uid),
         getCompanies(user.uid),
         getExpenseCategories(user.uid),
         getIncomeCategories(user.uid),
         getContacts(user.uid),
         getContactFolders(user.uid),
-        getIndustries(user.uid)
+        getIndustries(user.uid),
+        getTaxTypes(user.uid)
       ]);
       setBills(fetchedBills);
       setCompanies(fetchedCompanies);
@@ -124,6 +128,7 @@ export function AccountsPayablePageView() {
       setContacts(fetchedContacts);
       setContactFolders(fetchedFolders);
       setCustomIndustries(fetchedIndustries);
+      setTaxTypes(fetchedTaxTypes);
     } catch (error: any) {
       // Errors handled by service/emitter
     } finally {
@@ -288,6 +293,8 @@ export function AccountsPayablePageView() {
             companies={companies}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
+            taxTypes={taxTypes}
+            onTaxTypesChange={setTaxTypes}
             onSuccess={loadData}
             onOpenContactForm={() => setIsContactFormOpen(true)}
         />
@@ -301,13 +308,13 @@ export function AccountsPayablePageView() {
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
-                        <Label>Payment Date</Label>
-                        <Input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
+                        <Label htmlFor="p-date">Payment Date</Label>
+                        <Input id="p-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label>Payment Method</Label>
+                        <Label htmlFor="p-method">Payment Method</Label>
                         <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger>
+                            <SelectTrigger id="p-method">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

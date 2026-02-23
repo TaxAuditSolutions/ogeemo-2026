@@ -28,7 +28,7 @@ function getDb() {
 }
 
 // --- Base Interface ---
-interface BaseTransaction {
+export interface BaseTransaction {
   id: string;
   date: string;
   company: string;
@@ -39,6 +39,7 @@ interface BaseTransaction {
   preTaxAmount?: number;
   taxAmount?: number;
   taxRate?: number;
+  taxType?: string; // Descriptive label like HST, GST
   explanation?: string;
   documentNumber?: string;
   documentUrl?: string;
@@ -67,6 +68,7 @@ export interface PayableBill {
   preTaxAmount?: number;
   taxAmount?: number;
   taxRate?: number;
+  taxType?: string;
   category: string;
   description?: string;
   documentUrl?: string;
@@ -893,18 +895,18 @@ export async function getCompanies(userId: string): Promise<Company[]> {
 
 export async function addCompany(data: Omit<Company, 'id'>): Promise<Company> {
   const db = getDb();
-  const docRef = doc(collection(db, COMPANIES_COLLECTION));
-  const newCompany = { id: docRef.id, ...data };
-  setDoc(docRef, data).catch(async (error) => {
+  const docRef = collection(db, COMPANIES_COLLECTION);
+  const newCompanyDoc = await addDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+        path: COMPANIES_COLLECTION,
         operation: 'create',
         requestResourceData: data,
       }));
     }
+    throw error;
   });
-  return newCompany;
+  return { id: newCompanyDoc.id, ...data };
 }
 
 // --- Category Base ---
@@ -1002,7 +1004,7 @@ export async function addIncomeCategory(data: { name: string, userId: string, ca
 
   const dataToSave = { name: name.trim(), userId, categoryNumber: finalCategoryNumber, isArchived: false };
   const docRef = doc(collection(db, INCOME_CATEGORIES_COLLECTION));
-  setDoc(docRef, dataToSave).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1010,6 +1012,7 @@ export async function addIncomeCategory(data: { name: string, userId: string, ca
         requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
   return { id: docRef.id, ...dataToSave };
 }
@@ -1061,7 +1064,7 @@ export async function addExpenseCategory(data: { name: string, userId: string, c
 
   const dataToSave = { name: name.trim(), userId, categoryNumber: finalCategoryNumber, isArchived: false };
   const docRef = doc(collection(db, EXPENSE_CATEGORIES_COLLECTION));
-  setDoc(docRef, dataToSave).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1069,6 +1072,7 @@ export async function addExpenseCategory(data: { name: string, userId: string, c
         requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
   return { id: docRef.id, ...dataToSave };
 }
@@ -1118,15 +1122,15 @@ export async function getServiceItems(userId: string): Promise<ServiceItem[]> {
 
 export async function addServiceItem(data: Omit<ServiceItem, 'id'>): Promise<ServiceItem> {
   const db = getDb();
-  const docRef = doc(collection(db, SERVICE_ITEMS_COLLECTION));
-  setDoc(docRef, data).catch(async (error) => {
+  const docRef = await addDoc(collection(db, SERVICE_ITEMS_COLLECTION), data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+        path: SERVICE_ITEMS_COLLECTION,
         operation: 'create',
         requestResourceData: data,
       }));
     }
+    throw error;
   });
   return { id: docRef.id, ...data };
 }
@@ -1179,15 +1183,15 @@ export async function getTaxTypes(userId: string): Promise<TaxType[]> {
 
 export async function addTaxType(data: Omit<TaxType, 'id'>): Promise<TaxType> {
   const db = getDb();
-  const docRef = doc(collection(db, TAX_TYPES_COLLECTION));
-  setDoc(docRef, data).catch(async (error) => {
+  const docRef = await addDoc(collection(db, TAX_TYPES_COLLECTION), data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+        path: TAX_TYPES_COLLECTION,
         operation: 'create',
         requestResourceData: data,
       }));
     }
+    throw error;
   });
   return { id: docRef.id, ...data };
 }

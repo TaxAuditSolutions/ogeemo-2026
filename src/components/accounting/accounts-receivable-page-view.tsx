@@ -49,7 +49,9 @@ import {
     getIncomeCategories, 
     type IncomeCategory,
     getExpenseCategories,
-    type ExpenseCategory
+    type ExpenseCategory,
+    getTaxTypes,
+    type TaxType
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -72,6 +74,7 @@ export function AccountsReceivablePageView() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
     const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
+    const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     // Dialog Controllers
@@ -97,14 +100,15 @@ export function AccountsReceivablePageView() {
         }
         setIsLoading(true);
         try {
-            const [allInvoices, fetchedCompanies, fetchedIncomeCategories, fetchedExpenseCategories, fetchedContacts, fetchedFolders, fetchedIndustries] = await Promise.all([
+            const [allInvoices, fetchedCompanies, fetchedIncomeCategories, fetchedExpenseCategories, fetchedContacts, fetchedFolders, fetchedIndustries, fetchedTaxTypes] = await Promise.all([
                 getInvoices(user.uid),
                 getCompanies(user.uid),
                 getIncomeCategories(user.uid),
                 getExpenseCategories(user.uid),
                 getContacts(user.uid),
                 getContactFolders(user.uid),
-                getIndustries(user.uid)
+                getIndustries(user.uid),
+                getTaxTypes(user.uid)
             ]);
             setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
             setCompanies(fetchedCompanies);
@@ -113,6 +117,7 @@ export function AccountsReceivablePageView() {
             setContacts(fetchedContacts);
             setContactFolders(fetchedFolders);
             setCustomIndustries(fetchedIndustries);
+            setTaxTypes(fetchedTaxTypes);
         } catch (error: any) {
             // Errors handled by emitter
         } finally {
@@ -277,6 +282,8 @@ export function AccountsReceivablePageView() {
                 companies={companies}
                 incomeCategories={incomeCategories}
                 expenseCategories={expenseCategories}
+                taxTypes={taxTypes}
+                onTaxTypesChange={setTaxTypes}
                 onSuccess={loadData}
                 onOpenContactForm={() => setIsContactFormOpen(true)}
             />
@@ -291,20 +298,20 @@ export function AccountsReceivablePageView() {
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="pay-amount">Payment Amount</Label>
+                            <Label htmlFor="p-amount">Payment Amount</Label>
                             <div className="relative">
-                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                <Input id="pay-amount" type="number" step="0.01" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} className="pl-7" />
+                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground text-xs">$</span>
+                                <Input id="p-amount" type="number" step="0.01" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} className="pl-7" />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="pay-date">Date Received</Label>
-                            <Input id="pay-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
+                            <Label htmlFor="p-date">Date Received</Label>
+                            <Input id="p-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="pay-account">Deposit To</Label>
+                            <Label htmlFor="p-account">Deposit To</Label>
                             <Select value={depositAccount} onValueChange={setDepositAccount}>
-                                <SelectTrigger>
+                                <SelectTrigger id="p-account">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

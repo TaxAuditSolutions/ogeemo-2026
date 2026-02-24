@@ -92,9 +92,8 @@ type DroppableItem = (FileItem & { type?: string }) | (FolderItem & { type: 'fol
 
 const newFileSchema = z.object({
     fileName: z.string().min(1, 'File name is required.'),
-    fileType: z.enum(['file', 'link', 'gdrive']),
+    fileType: z.enum(['file', 'link']),
     fileUrl: z.string().optional(),
-    gdriveFileType: z.string().optional(),
     targetFolderId: z.string().min(1, 'Please select a folder.'),
 }).refine(data => {
     if (data.fileType === 'link') {
@@ -107,12 +106,6 @@ const newFileSchema = z.object({
 });
 
 type NewFileFormData = z.infer<typeof newFileSchema>;
-
-const googleDriveFileTypes = [
-  { label: 'Google Doc', value: 'doc', icon: FileText },
-  { label: 'Google Sheet', value: 'sheet', icon: Sheet },
-  { label: 'Google Slide', value: 'slide', icon: Presentation },
-];
 
 // --- Externalized Sub-components ---
 
@@ -260,7 +253,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={allFolders} 
+                allFolders={folders} 
                 level={level + 1} 
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -322,7 +315,7 @@ export function FilesView() {
 
   const form = useForm<NewFileFormData>({
     resolver: zodResolver(newFileSchema),
-    defaultValues: { fileName: '', fileType: 'file', fileUrl: '', gdriveFileType: 'doc', targetFolderId: 'all' },
+    defaultValues: { fileName: '', fileType: 'file', fileUrl: '', targetFolderId: 'all' },
   });
 
   const loadData = useCallback(async () => {
@@ -546,7 +539,7 @@ export function FilesView() {
               name: values.fileName,
               userId: user.uid,
               folderId: folderId,
-              type: values.fileType === 'link' ? 'url-link' : values.fileType === 'gdrive' ? values.gdriveFileType! : 'text/plain',
+              type: values.fileType === 'link' ? 'url-link' : 'text/plain',
               size: 0,
               modifiedAt: new Date(),
               storagePath: '',
@@ -745,13 +738,11 @@ export function FilesView() {
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
                                     <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="file" /></FormControl><FormLabel className="font-normal">Text File (Internal)</FormLabel></FormItem>
                                     <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="link" /></FormControl><FormLabel className="font-normal">Custom URL Link</FormLabel></FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="gdrive" /></FormControl><FormLabel className="font-normal">New Google Drive File</FormLabel></FormItem>
                                 </RadioGroup>
                             </FormControl>
                         </FormItem>
                     )} />
                     {form.watch('fileType') === 'link' && ( <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem><FormLabel>URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} /> )}
-                    {form.watch('fileType') === 'gdrive' && ( <FormField control={form.control} name="gdriveFileType" render={({ field }) => ( <FormItem><FormLabel>Google File Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{googleDriveFileTypes.map(t => <SelectItem key={t.value} value={t.value}><div className="flex items-center gap-2"><t.icon className="h-4 w-4"/><span>{t.label}</span></div></SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} /> )}
                     <FormField control={form.control} name="targetFolderId" render={({ field }) => ( <FormItem><FormLabel>Destination Folder</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select folder..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="all">Unassigned (Root)</SelectItem>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     <DialogFooter className="pt-4">
                         <Button type="button" variant="ghost" onClick={() => setIsNewFileDialogOpen(false)}>Cancel</Button>

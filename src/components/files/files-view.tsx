@@ -34,6 +34,7 @@ import {
   Link as LinkIcon,
   Info,
   Save,
+  BookOpen,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import Link from 'next/link';
 
 const ItemTypes = {
   FILE: 'file',
@@ -281,7 +283,6 @@ export function FilesView() {
   const [newFolderDriveLink, setNewFolderDriveLink] = useState('');
   const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
   const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
@@ -555,11 +556,13 @@ export function FilesView() {
   return (
     <>
     <div className="p-4 sm:p-6 space-y-4">
-        <header className="text-center">
+        <header className="text-center relative">
             <div className="flex items-center justify-center gap-2">
                 <h1 className="text-3xl font-bold font-headline text-primary">Document Manager</h1>
-                 <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
-                    <Info className="h-5 w-5 text-muted-foreground" />
+                 <Button asChild variant="ghost" size="icon">
+                    <Link href="/document-manager/instructions">
+                        <Info className="h-5 w-5 text-muted-foreground" />
+                    </Link>
                  </Button>
             </div>
             <p className="text-muted-foreground max-w-2xl mx-auto">An integration hub to manage Google Drive Files &amp; Folders</p>
@@ -776,7 +779,7 @@ export function FilesView() {
         </DialogContent>
     </Dialog>
 
-    <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
+    <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
@@ -786,7 +789,7 @@ export function FilesView() {
         </AlertDialogContent>
     </AlertDialog>
 
-    <AlertDialog open={!!fileToDelete} onOpenChange={() => setFileToDelete(null)}>
+    <AlertDialog open={!!fileToDelete} onOpenChange={setFileToDelete}>
         <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
@@ -805,22 +808,6 @@ export function FilesView() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-
-    <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
-            <DialogHeader><DialogTitle>How to use Document Manager</DialogTitle></DialogHeader>
-            <div className="py-4 prose prose-sm dark:prose-invert">
-                <p>Ogeemo's Document Manager is designed to be a unified portal for your business documentation.</p>
-                <ul>
-                    <li><strong>Integrated Google Drive:</strong> Link specific Ogeemo folders or files directly to your Google Workspace for seamless editing and sharing.</li>
-                    <li><strong>Smart Organization:</strong> Create hierarchical folder structures. Use the sidebar to navigate and the main view to manage files.</li>
-                    <li><strong>Multi-Mode Creation:</strong> Create internal notes, external URL shortcuts, or trigger the creation of new Google Docs/Sheets directly.</li>
-                    <li><strong>Drag &amp; Drop:</strong> Easily move files between folders or reorder your entire folder structure.</li>
-                </ul>
-            </div>
-            <DialogFooter><Button onClick={() => setIsInfoDialogOpen(false)}>Close</Button></DialogFooter>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }

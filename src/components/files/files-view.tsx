@@ -187,13 +187,6 @@ const FolderTreeItem = ({
 
     const handleFolderClick = (e: React.MouseEvent) => {
         if (isRenaming) return;
-        
-        // If linked, open GDrive in a new tab as the primary intuitive action
-        if (folder.driveLink) {
-            window.open(folder.driveLink, '_blank', 'noopener,noreferrer');
-        }
-        
-        // Always select in the UI to show mirrored content
         onSelectFolder(folder.id);
     };
 

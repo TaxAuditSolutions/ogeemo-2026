@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,7 +149,7 @@ export default function DocumentManagerInstructionsPage() {
 
                 <div className="bg-muted p-6 rounded-lg text-center border-2 border-dashed">
                     <p className="text-sm text-muted-foreground">
-                        This Dual-Mirror System is your GDrive foundation. It protects you from file chaos and ensures your business data is always audit-ready and easy to orchestrate.
+                        This Dual-Mirror System is your GDrive foundation. It protects you from file chaos and ensures your business data is always organized and easy to access.
                     </p>
                 </div>
             </div>

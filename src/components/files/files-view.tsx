@@ -192,6 +192,18 @@ const FolderTreeItem = ({
       }),
     }), [folder.id, onDrop]);
 
+    const handleFolderClick = (e: React.MouseEvent) => {
+        if (isRenaming) return;
+        
+        // If linked, open GDrive in a new tab as the primary intuitive action
+        if (folder.driveLink) {
+            window.open(folder.driveLink, '_blank', 'noopener,noreferrer');
+        }
+        
+        // Always select in the UI to show mirrored content
+        onSelectFolder(folder.id);
+    };
+
     return (
       <div style={{ marginLeft: level > 0 ? '1rem' : '0' }} className="my-0.5">
         <div
@@ -204,7 +216,7 @@ const FolderTreeItem = ({
             selectedFolderId === folder.id && !isRenaming && 'bg-accent'
           )}
         >
-             <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={() => !isRenaming && onSelectFolder(folder.id)}>
+             <div className="flex items-center flex-1 min-w-0 h-full pl-1 cursor-pointer" onClick={handleFolderClick}>
                 {hasChildren ? (
                     <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isExpanded && 'rotate-90')} onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.id); }} />
                 ) : <div className="w-4" />}
@@ -236,8 +248,7 @@ const FolderTreeItem = ({
                       <DropdownMenuSeparator />
                       {!isSystem ? (
                           <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}>
-                              <Trash2 className="mr-2 h-4 w-4" />Delete
-                          </DropdownMenuItem>
+                              <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                       ) : (
                           <DropdownMenuItem disabled className="text-xs text-muted-foreground italic">Protected System Folder</DropdownMenuItem>
                       )}
@@ -659,7 +670,7 @@ export function FilesView() {
                                 />
                               <div className="flex items-center flex-1 min-w-0 h-full">
                                   <div className="flex items-center flex-1 min-w-0 cursor-pointer" onClick={() => {
-                                      if (file.driveLink) window.open(file.driveLink, '_blank');
+                                      if (file.driveLink) window.open(file.driveLink, '_blank', 'noopener,noreferrer');
                                       else { setFileToLink(file); setDriveFileLink(''); setIsDriveFileLinkDialogOpen(true); }
                                   }}>
                                     <FileIconLucide className="h-4 w-4 text-primary" />

@@ -46,7 +46,7 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
-  { href: "/action-chips-info", label: "Action Chip Manager", icon: Zap },
+  { href: "/action-chips-info", label: "Action Chip Magic", icon: Zap },
   { href: "/master-mind", label: "Command Centre", icon: PlayCircle },
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
   { href: "/about", label: "About Ogeemo", icon: Globe },

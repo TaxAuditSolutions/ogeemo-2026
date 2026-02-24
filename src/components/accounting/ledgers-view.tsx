@@ -52,7 +52,8 @@ import {
     Printer,
     FilterX,
     Link as LinkIcon,
-    PlusCircle
+    PlusCircle,
+    FileSpreadsheet
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -238,6 +239,66 @@ export function LedgersView() {
       setEndDate(undefined);
   };
 
+  const handleDownloadCSV = () => {
+    let dataToExport: GeneralTransaction[] = [];
+    let fileName = "Ogeemo_General_Ledger";
+
+    if (activeTab === 'all') {
+      dataToExport = generalLedger;
+    } else if (activeTab === 'income') {
+      dataToExport = filteredIncome.map(i => ({ ...i, transactionType: 'income' as const }));
+      fileName = "Ogeemo_Income_Ledger";
+    } else if (activeTab === 'expenses') {
+      dataToExport = filteredExpenses.map(e => ({ ...e, transactionType: 'expense' as const }));
+      fileName = "Ogeemo_Expense_Ledger";
+    }
+
+    if (dataToExport.length === 0) {
+      toast({ variant: 'destructive', title: "No data to export", description: "The current view has no transactions." });
+      return;
+    }
+
+    // CSV Headers
+    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Notes", "Document Link"];
+    
+    // Rows
+    const csvRows = dataToExport.map(item => {
+      const catNum = item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
+      const catName = getCategoryName(catNum, item.transactionType);
+      const notesValue = item.description || "";
+      const explanationValue = item.explanation || "";
+      const combinedNotes = `${notesValue}${explanationValue ? ' - ' + explanationValue : ''}`;
+      
+      return [
+        item.date,
+        `"${item.company.replace(/"/g, '""')}"`, 
+        `"${catName.replace(/"/g, '""')}"`,
+        catNum,
+        item.transactionType.toUpperCase(),
+        item.totalAmount.toFixed(2),
+        `"${combinedNotes.replace(/"/g, '""')}"`,
+        item.documentUrl || ""
+      ];
+    });
+
+    const csvString = [
+      headers.join(","),
+      ...csvRows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${fileName}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({ title: "Export Successful", description: "Your ledger has been saved to your downloads folder." });
+  };
+
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
     <div className="border rounded-md overflow-hidden bg-card">
         <Table>
@@ -338,6 +399,9 @@ export function LedgersView() {
                     <CardTitle className="text-sm font-medium">Filter & Report Options</CardTitle>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDownloadCSV} disabled={generalLedger.length === 0}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Download CSV
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
                         <Printer className="mr-2 h-4 w-4" /> Print Ledger
                     </Button>

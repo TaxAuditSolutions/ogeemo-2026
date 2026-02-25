@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderSync, ExternalLink, MoreVertical, Link as LinkIcon, Plus, Info, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FolderSync, MoreVertical, Link as LinkIcon, Plus, Info, ShieldCheck, CheckCircle2, FileDigit } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Separator } from "@/components/ui/separator";
 
 export default function DocumentManagerInstructionsPage() {
     return (
@@ -119,7 +120,7 @@ export default function DocumentManagerInstructionsPage() {
                                             <li>Select <strong>"Link Google Drive Folder"</strong> and paste the link.</li>
                                         </ol>
                                         <p className="text-xs italic text-muted-foreground mt-2">
-                                            Tip: Once linked, a link icon <LinkIcon className="inline h-3 w-3 text-blue-500"/> will appear. Clicking this takes you directly into GDrive.
+                                            Tip: Once linked, a link icon <LinkIcon className="inline h-3 w-3 text-blue-500"/> will appear.
                                         </p>
                                     </div>
                                 </AccordionContent>
@@ -144,6 +145,29 @@ export default function DocumentManagerInstructionsPage() {
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-muted/30 border-dashed border-primary/30">
+                    <CardHeader>
+                        <CardTitle className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                            <FileDigit className="h-4 w-4 text-primary" />
+                            High-Fidelity Naming Protocol
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            To ensure your files are chronologically sorted and easily searchable across the Dual-Mirror System, always use the following naming convention when saving PDFs (including emails):
+                        </p>
+                        <div className="bg-white p-4 rounded-lg border font-mono text-sm shadow-inner">
+                            <p className="text-primary font-bold">YYYYMMDD Client Name, Subject, Initial, v#</p>
+                            <Separator className="my-2" />
+                            <p className="text-muted-foreground italic">Example: "20260225 John Smith Subject line JS and v1"</p>
+                        </div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                            This protocol prevents "Assumptive Liability" and ensures your business data is always organized and easy to access.
+                        </p>
                     </CardContent>
                 </Card>
 

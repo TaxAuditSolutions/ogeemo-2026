@@ -165,17 +165,6 @@ export default function LogEmailPage() {
         body: body,
         sourceLink: sourceLink,
       });
-      toast({
-        title: 'Email Logged',
-        description: `The email record has been saved to the "${contact.name}" folder in your Document Manager.`,
-        action: (
-            <Button variant="link" asChild>
-                <Link href={`/document-manager?folderId=${savedFile.folderId}`}>
-                    View File
-                </Link>
-            </Button>
-        )
-      });
       return { success: true, fileId: savedFile.id, folderId: savedFile.folderId };
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -193,8 +182,8 @@ export default function LogEmailPage() {
     }
     
     const query = new URLSearchParams();
-    query.append('source', 'log-email'); // Add this specific parameter
-    if (subject) query.append('title', subject);
+    query.append('source', 'log-email'); 
+    if (subject) query.append('title', `Email: ${subject}`);
     if (body) query.append('notes', body);
     if (selectedContactId) query.append('contactId', selectedContactId);
 
@@ -209,11 +198,12 @@ export default function LogEmailPage() {
         finalEndDate = set(finalEndDateDatePart, { hours: parseInt(finalEndHour), minutes: parseInt(finalEndMinute) });
 
         if (finalEndDate <= finalStartDate) {
-            finalEndDate = new Date(finalStartDate.getTime() + 30 * 60000); // Default to 30 min duration
+            finalEndDate = new Date(finalStartDate.getTime() + 30 * 60000); 
         }
         query.append('end', finalEndDate.toISOString());
     }
     
+    toast({ title: 'Transferring to Master Mind', description: 'Redirecting to finalize the scheduling and billable rate.' });
     router.push(`/master-mind?${query.toString()}`);
   };
 
@@ -221,8 +211,8 @@ export default function LogEmailPage() {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
           if(selectedContactId === savedContact.id) {
-            setSelectedContactId(savedContact.id); // Re-set to trigger updates
-            setFrom(savedContact.email || ''); // Update from field
+            setSelectedContactId(savedContact.id);
+            setFrom(savedContact.email || '');
           }
       } else {
           setContacts(prev => [...prev, savedContact]);
@@ -265,28 +255,27 @@ export default function LogEmailPage() {
             </Link>
           </Button>
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-3xl font-bold font-headline text-primary">Log an Email</h1>
+            <h1 className="text-3xl font-bold font-headline text-primary">Schedule & Bill Email Activity</h1>
              <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
                 <Info className="h-5 w-5 text-muted-foreground" />
              </Button>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Copy and paste an email to create a permanent record for a contact. Clicking 'Save to Calendar and client log' saves the email and lets you schedule it as a task.
+            While the PDF in your GDrive is the permanent record, use this tool to log billable time and orchestrate follow-up tasks.
           </p>
         </header>
 
         <Card className="w-full flex-1 flex flex-col">
           <CardHeader>
-            <CardTitle>Email Details</CardTitle>
+            <CardTitle>Activity Details</CardTitle>
             <CardDescription>
-              This information will be saved as a document in the contact's
-              folder within the Document Manager.
+              Link this email event to a client and worker record for payroll and invoicing sync.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 flex-1 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Contact Name</Label>
+                  <Label>Client / Contact</Label>
                   <div className="flex items-center gap-2">
                     <Popover
                       open={isContactPopoverOpen}
@@ -311,7 +300,7 @@ export default function LogEmailPage() {
                               {isLoading ? (
                                 <div className="flex justify-center p-2"><LoaderCircle className="h-4 w-4 animate-spin" /></div>
                               ) : (
-                                'No client found.'
+                                'No contact found.'
                               )}
                             </CommandEmpty>
                             <CommandGroup>
@@ -346,49 +335,33 @@ export default function LogEmailPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="from">Contact Email Address</Label>
-                  <Input
-                    id="from"
-                    placeholder="sender@example.com"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                  <Label htmlFor="subject">Subject of Activity</Label>
                   <Input
                     id="subject"
-                    placeholder="Email subject line"
+                    placeholder="e.g., Reviewing contract terms"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Create link to Source Email</Label>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setIsLinkDialogOpen(true)}>
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    {sourceLink ? "Edit link to Source Email" : "Create link to Source Email"}
-                    {sourceLink && <Check className="ml-auto h-4 w-4 text-green-500" />}
-                  </Button>
-                </div>
             </div>
             <div className="space-y-2 flex-1 flex flex-col">
-              <Label htmlFor="body">Body</Label>
-              <p className="text-xs text-muted-foreground">Plain text only. Formatting and images will not be saved.</p>
+              <Label htmlFor="body">Context / Notes</Label>
               <Textarea
                 id="body"
-                placeholder="Paste the email body here..."
+                placeholder="Briefly describe the work performed or copy relevant snippets..."
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 className="flex-1"
               />
             </div>
-             <Card className="mt-4">
-              <CardHeader>
-                <CardTitle className="text-base">Scheduling (Optional)</CardTitle>
-                <CardDescription>Schedule this email as a task or event on your calendar.</CardDescription>
+             <Card className="mt-4 bg-muted/30">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Operational Timing
+                </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                   <div className="space-y-2">
                       <Label>Start Time</Label>
                        <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
@@ -438,10 +411,10 @@ export default function LogEmailPage() {
               </CardContent>
             </Card>
           </CardContent>
-          <CardFooter className="justify-end">
-            <Button onClick={handleLogTime} disabled={isSaving}>
-              {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-              Save to Calendar and client log
+          <CardFooter className="justify-end bg-muted/10 border-t p-4">
+            <Button onClick={handleLogTime} disabled={isSaving} size="lg" className="font-bold shadow-md">
+              {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
+              Send to Master Mind for Billing & Follow-up
             </Button>
           </CardFooter>
         </Card>
@@ -459,66 +432,28 @@ export default function LogEmailPage() {
         customIndustries={customIndustries}
         onCustomIndustriesChange={setCustomIndustries}
       />
-      
-      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Link to Source Email</DialogTitle>
-                <DialogDescription>
-                    Go to the specific email in your client (e.g., Gmail), copy its unique URL from the address bar, and paste it below.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <Label htmlFor="source-link-input">Email URL</Label>
-                <Input 
-                    id="source-link-input"
-                    value={sourceLink}
-                    onChange={(e) => setSourceLink(e.target.value)}
-                    placeholder="https://mail.google.com/mail/u/0/#inbox/..."
-                />
-            </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsLinkDialogOpen(false)}>Cancel</Button>
-                <Button onClick={() => setIsLinkDialogOpen(false)}>Save</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>How the Email Hub Integrates with Ogeemo</DialogTitle>
+                <DialogTitle>The Operational Bridge</DialogTitle>
                 <DialogDescription>
-                    The Email Hub is the bridge between your external communications and your internal workspace.
+                    Use this tool to convert communication into operational value.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="flex items-start gap-4">
-                    <Contact className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                    <FileDigit className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Contact History</h4>
-                        <p className="text-sm text-muted-foreground">Each logged email is tied to a specific contact, building a complete, chronological history of your communication with them.</p>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-4">
-                    <Folder className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Document Manager</h4>
-                        <p className="text-sm text-muted-foreground">Every log is saved as a permanent file, automatically organized into a dedicated folder for that contact, creating a single source of truth.</p>
+                        <h4 className="font-semibold">Accounting Alignment</h4>
+                        <p className="text-sm text-muted-foreground">Log the exact time spent reading or drafting an email. This duration is then pushed to the client statement for invoicing.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Task & Project Management</h4>
-                        <p className="text-sm text-muted-foreground">Use the "Save to Calendar and client log" button from a logged email to instantly send its details to the Task & Event Manager, pre-filling the form to create tasks or calendar events linked to the correct client and project.</p>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-4">
-                    <FileDigit className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Accounting</h4>
-                        <p className="text-sm text-muted-foreground">Time logged against an email becomes a billable entry, which can be automatically pulled into an invoice for that client, ensuring you get paid for all your work.</p>
+                        <h4 className="font-semibold">Action Orchestration</h4>
+                        <p className="text-sm text-muted-foreground">Clicking "Send to Master Mind" pre-fills your scheduler, allowing you to quickly book a follow-up task or set a reminder related to this email.</p>
                     </div>
                 </div>
             </div>

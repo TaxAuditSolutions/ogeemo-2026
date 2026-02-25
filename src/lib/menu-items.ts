@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Users,
@@ -33,6 +34,7 @@ import {
   PlayCircle,
   Zap,
   BookOpen,
+  Scale,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -49,6 +51,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/action-chips-info", label: "Action Chip Magic", icon: Zap },
   { href: "/master-mind", label: "Command Centre", icon: PlayCircle },
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
+  { href: "/philosophy/record-keeping", label: "Record Keeping Credo", icon: Scale },
   { href: "/about", label: "About Ogeemo", icon: Globe },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },

@@ -1,8 +1,9 @@
+
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { 
@@ -15,7 +16,9 @@ import {
     Ban, 
     Clock, 
     CheckCircle2,
-    Info
+    Info,
+    ArrowRight,
+    BookOpen
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -28,7 +31,7 @@ export default function AuditReadinessPage() {
         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
             <ShieldCheck className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Audit Readiness</h1>
+        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight uppercase">Audit Readiness</h1>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             "The power to audit is the power to destroy." – Expert perspective on maintaining a defensible business.
         </p>
@@ -41,6 +44,14 @@ export default function AuditReadinessPage() {
             An Auditor can assume all bank deposits could be <strong>income</strong> and any expenses may not be <strong>deductible</strong> unless they are obviously deductible, or your records show the proof. In the absence of a written business reason, auditors can and might assume any or all expenses are personal.
         </AlertDescription>
       </Alert>
+
+      <div className="flex justify-center">
+          <Button asChild size="lg" className="h-14 px-10 text-lg font-bold shadow-xl border-b-4 border-black/20 active:mt-1 active:border-b-0">
+              <Link href="/philosophy/record-keeping">
+                  <BookOpen className="mr-2 h-5 w-5" /> Read the Philosophy of Good Record Keeping
+              </Link>
+          </Button>
+      </div>
 
       <Card className="border-2 border-primary/10">
         <CardHeader className="bg-primary/5 border-b">
@@ -59,14 +70,14 @@ export default function AuditReadinessPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                 <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
-                    <div className="flex items-center gap-2 text-primary font-bold">
+                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider">
                         <Ban className="h-5 w-5" />
                         Avoid Net Worth Assessments
                     </div>
                     <p className="text-sm text-muted-foreground">In the absence of good records, the Agency can perform a Net Worth Assessment. You will owe the assessed amount unless you fight it via a Notice of Objection or in Tax Court.</p>
                 </div>
                 <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
-                    <div className="flex items-center gap-2 text-primary font-bold">
+                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider">
                         <Scale className="h-5 w-5" />
                         The Risk Management Choice
                     </div>

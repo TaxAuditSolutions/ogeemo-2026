@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Plus, ArrowLeft, Trash2, ArrowDownAZ, ArrowUpZA, Save, BookOpen } from 'lucide-react';
+import { LoaderCircle, Plus, ArrowLeft, Trash2, ArrowDownAZ, ArrowUpZA, Save, BookOpen, Zap } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -257,6 +257,11 @@ export function ManageDashboardView() {
                 </p>
             </div>
             <div className="flex items-center gap-2">
+                <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
+                    <Link href="/action-chips-info">
+                        <Zap className="mr-2 h-4 w-4 text-primary" /> Action Chip Magic
+                    </Link>
+                </Button>
                 <Button asChild className="h-6 px-2 py-1 text-xs">
                     <Link href="/action-manager/manage/instructions"><BookOpen className="mr-2 h-4 w-4"/> Instructions</Link>
                 </Button>

@@ -5,6 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ArrowRight, Mail, Printer, Save, Info, Contact, Folder, Clock, FileDigit, Link as LinkIcon, Briefcase, X, FileText, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,

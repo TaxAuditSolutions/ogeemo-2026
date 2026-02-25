@@ -9,7 +9,6 @@ import {
   LoaderCircle,
   FolderPlus,
   ChevronRight,
-  ExternalLink,
   MoreVertical,
   Trash2,
   Users,
@@ -218,7 +217,7 @@ const FolderTreeItem = ({
             <div className="flex items-center">
                 {folder.driveLink && (
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
-                    <ExternalLink className="h-4 w-4 text-blue-500" />
+                    <LinkIcon className="h-4 w-4 text-blue-500" />
                   </Button>
                 )}
                 <DropdownMenu>
@@ -259,9 +258,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={onRenameChange}
-                onRenameConfirm={onRenameConfirm}
-                onRenameCancel={onRenameCancel}
+                onRenameChange={setRenameInputValue}
+                onRenameConfirm={handleRenameConfirm}
+                onRenameCancel={() => setRenamingFolder(null)}
                 sortDirection={sortDirection}
             />
         ))}

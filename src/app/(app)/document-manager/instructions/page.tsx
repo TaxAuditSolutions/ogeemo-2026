@@ -119,7 +119,7 @@ export default function DocumentManagerInstructionsPage() {
                                             <li>Select <strong>"Link Google Drive Folder"</strong> and paste the link.</li>
                                         </ol>
                                         <p className="text-xs italic text-muted-foreground mt-2">
-                                            Tip: Once linked, an external link icon <ExternalLink className="inline h-3 w-3"/> will appear. Clicking this takes you directly into GDrive.
+                                            Tip: Once linked, a link icon <LinkIcon className="inline h-3 w-3 text-blue-500"/> will appear. Clicking this takes you directly into GDrive.
                                         </p>
                                     </div>
                                 </AccordionContent>

@@ -59,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <p>Action Manager</p>
+                          <p>Action Manager: One Action to Rule them All</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

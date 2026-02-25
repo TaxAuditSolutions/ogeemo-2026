@@ -245,7 +245,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1} 
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -258,9 +258,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={setRenameInputValue}
-                onRenameConfirm={handleRenameConfirm}
-                onRenameCancel={() => setRenamingFolder(null)}
+                onRenameChange={onRenameChange}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
                 sortDirection={sortDirection}
             />
         ))}

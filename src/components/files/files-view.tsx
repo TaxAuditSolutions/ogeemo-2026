@@ -499,7 +499,7 @@ export function FilesView() {
           await updateFolder(folderToLink.id, { driveLink: driveFolderLink.trim() || undefined });
           setFolders(prev => prev.map(f => f.id === folderToLink.id ? { ...f, driveLink: driveFolderLink.trim() || undefined } : f));
           toast({ title: "Drive Link Updated" });
-      } catch (e: any) {
+      } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: e.message });
       } finally {
           setIsDriveLinkDialogOpen(false);
@@ -514,7 +514,7 @@ export function FilesView() {
           await updateFile(fileToLink.id, { driveLink: driveFileLink.trim() || undefined, type });
           setFiles(prev => prev.map(f => f.id === fileToLink.id ? { ...f, driveLink: driveFileLink.trim() || undefined, type } : f));
           toast({ title: "Drive Link Updated" });
-      } catch (e: any) {
+      } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: e.message });
       } finally {
           setIsDriveFileLinkDialogOpen(false);
@@ -673,7 +673,10 @@ export function FilesView() {
                                             onClick={(e) => e.stopPropagation()} 
                                         />
                                     ) : (
-                                        <span className="text-xs font-medium truncate ml-2">{file.name}</span>
+                                        <span className="text-xs font-medium truncate ml-2">
+                                            {file.name}
+                                            {file.driveLink && <LinkIcon className="h-3 w-3 ml-1.5 text-blue-500 inline-block" />}
+                                        </span>
                                     )}
                                   </div>
                               </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -17,7 +16,25 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ArrowLeft, Calendar, MousePointerClick, GripVertical, Columns, Clock, Zap, BrainCircuit, ShieldCheck, Route, Briefcase, ListTodo, Lightbulb, FolderSync, ArrowRight } from "lucide-react";
+import { 
+    ArrowLeft, 
+    Calendar, 
+    MousePointerClick, 
+    GripVertical, 
+    Columns, 
+    Clock, 
+    Zap, 
+    BrainCircuit, 
+    ShieldCheck, 
+    Route, 
+    Briefcase, 
+    ListTodo, 
+    Lightbulb, 
+    FolderSync, 
+    ArrowRight,
+    Calculator,
+    Users
+} from "lucide-react";
 
 /**
  * @fileOverview Operational instructions for the Command Centre (Calendar).
@@ -89,7 +106,7 @@ export default function CalendarInstructionsPage() {
                         </blockquote>
                         <div className="flex justify-center pt-2">
                             <Button asChild variant="secondary" size="lg" className="h-14 px-10 text-lg font-bold shadow-2xl">
-                                <Link href="/accounting/audit-ready">
+                                <Link href="/accounting/audit-readiness">
                                     Become Audit Ready <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>

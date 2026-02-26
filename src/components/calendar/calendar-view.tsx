@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -415,7 +414,7 @@ export function CalendarView() {
             Calendar
           </h1>
           <p className="text-muted-foreground">
-            Manage your schedule, events and appointments.
+            Your Command Centre for your actions and connection to the notes of the Spider Web
           </p>
           <div className="absolute top-0 right-0">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>

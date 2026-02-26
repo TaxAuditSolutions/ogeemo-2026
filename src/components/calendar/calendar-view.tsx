@@ -459,6 +459,16 @@ export function CalendarView() {
                     </TooltipTrigger>
                     <TooltipContent><p>Capture and triage your ideas</p></TooltipContent>
                 </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" asChild size="sm">
+                            <Link href="/calendar/instructions">
+                                <BookOpen className="mr-2 h-4 w-4" /> Instructions
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>How to use the Command Centre</p></TooltipContent>
+                </Tooltip>
             </TooltipProvider>
           </div>
 

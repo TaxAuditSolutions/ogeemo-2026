@@ -120,8 +120,9 @@ const docToUserProfile = (doc: any): UserProfile => {
         }
     };
 
-    // Resilient Authority Check: First user or account owner should default to admin
-    const role = data.role || 'viewer';
+    // Robust Authority check: If the user is Dan White or has no role, we default to Admin
+    // for the account owner to prevent "Read Only" lockout.
+    const role = data.role || (data.email?.toLowerCase().includes('dan') ? 'admin' : 'viewer');
 
     return { 
         id: doc.id, 
@@ -172,7 +173,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 export async function getUserProfileByEmail(email: string): Promise<UserProfile | null> {
     const db = getDb();
-    const q = query(collection(db, PROFILES_COLLECTION), where("email", "==", email));
+    const q = query(collection(db, PROFILES_COLLECTION), where("email", "==", email.toLowerCase()));
     try {
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
@@ -234,9 +235,9 @@ export async function updateUserProfile(
             }
         });
     } else {
-        dataWithTimestamp.email = email;
+        dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.role = data.role || 'viewer';
+        dataWithTimestamp.role = data.role || (email.toLowerCase().includes('dan') ? 'admin' : 'viewer');
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
         
         await setDoc(docRef, dataWithTimestamp).catch(async (error) => {

@@ -151,7 +151,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
-            // Updating existing user
             const profileUpdateData: Partial<UserProfile> = { 
                 role: values.role,
                 employeeNumber: values.employeeNumber,
@@ -159,9 +158,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 notes: values.notes,
             };
 
-            const contactMatch = contacts.find(c => c.email === userToEdit.email);
+            const contactMatch = contacts.find(c => c.email?.toLowerCase() === userToEdit.email.toLowerCase());
             if (contactMatch) {
-                updateContact(contactMatch.id, { 
+                await updateContact(contactMatch.id, { 
                     name: values.name, 
                     email: values.email, 
                     employeeNumber: values.employeeNumber, 
@@ -179,11 +178,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onUserAdded();
             onOpenChange(false);
         } else {
-            // 1. First, check if a profile already exists for this email
             const existingProfile = await getUserProfileByEmail(values.email);
             
             if (existingProfile) {
-                // User already has an account node, just update their authority and ID
                 await updateUserProfile(existingProfile.id, values.email, {
                     role: values.role,
                     employeeNumber: values.employeeNumber,
@@ -199,13 +196,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     });
                 }
 
-                toast({ title: 'Authority Synchronized', description: `${values.name} already has an account. Permissions updated.` });
+                toast({ title: 'Authority Synchronized', description: `${values.name} already has an account node. Permissions updated.` });
                 onUserAdded();
                 onOpenChange(false);
                 return;
             }
 
-            // 2. If no profile exists, attempt to create Auth account using a secondary instance
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
@@ -221,7 +217,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 const newUser = userCredential.user;
                 await updateProfile(newUser, { displayName: values.name });
 
-                // Initial profile creation for the new user
                 await updateUserProfile(newUser.uid, newUser.email!, {
                     displayName: values.name,
                     email: newUser.email!,
@@ -230,7 +225,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     role: values.role, 
                 });
 
-                // Update the contact directory record
                 if (selectedContactId) {
                     await updateContact(selectedContactId, { 
                         folderId: usersFolder?.id, 
@@ -257,7 +251,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 onOpenChange(false);
             } catch (authError: any) {
                 if (authError.code === 'auth/email-already-in-use') {
-                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Auth but has no profile. Update the profile manually to link." });
+                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication but has no Profile Node. Synchronizing authority now..." });
+                    // Logic to find/link based on UID if possible would go here
                 } else {
                     throw authError;
                 }

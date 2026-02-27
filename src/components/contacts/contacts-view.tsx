@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -36,7 +35,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
+import { getContacts, deleteContacts, updateContact, mergeContacts, addContact } from '@/services/contact-service';
 import { getFolders, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -57,7 +56,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogFooter,
@@ -262,7 +260,7 @@ const FolderTreeItem = ({
 };
 
 export function ContactsView() {
-  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [folders, setFolders] = useState<FolderData[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -326,8 +324,40 @@ export function ContactsView() {
             getWorkers(user.uid),
             getUsers()
         ]);
+        
+        // Automated Seeding: Ensure Core Team exists in Ogeemo Users folder
+        const usersFolder = allFolders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+        if (usersFolder) {
+            const coreTeam = [
+                { name: "Dan White", role: 'admin' },
+                { name: "Julie White", role: 'editor' },
+                { name: "Nick Illiopoulos", role: 'editor' }
+            ];
+            
+            for (const member of coreTeam) {
+                const exists = fetchedContacts.some(c => c.name === member.name && c.folderId === usersFolder.id);
+                if (!exists) {
+                    await addContact({
+                        name: member.name,
+                        folderId: usersFolder.id,
+                        userId: user.uid,
+                        role: member.role,
+                        notes: "Core Ogeemo team member seeded for orchestration."
+                    });
+                }
+            }
+            // Re-fetch contacts if we seeded anything
+            if (coreTeam.some(m => !fetchedContacts.some(c => c.name === m.name && c.folderId === usersFolder.id))) {
+                const updatedContacts = await getContacts(user.uid);
+                setContacts(updatedContacts);
+            } else {
+                setContacts(fetchedContacts);
+            }
+        } else {
+            setContacts(fetchedContacts);
+        }
+
         setFolders(allFolders);
-        setContacts(fetchedContacts);
         setCompanies(fetchedCompanies);
         setCustomIndustries(fetchedIndustries);
         setUserProfiles(fetchedProfiles);
@@ -347,7 +377,6 @@ export function ContactsView() {
         };
         setWorkersForSelection([adminWorker, ...fetchedWorkers]);
 
-        const usersFolder = allFolders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
         if (usersFolder) {
             setExpandedFolders(new Set([usersFolder.id]));
         }
@@ -579,22 +608,24 @@ export function ContactsView() {
   };
 
   const handleEditUser = (contact: Contact) => {
-      const profile = userProfiles.find(p => p.email === contact.email || p.id === contact.id);
+      const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
       if (profile) {
           setUserToEdit(profile);
           setIsAddUserDialogOpen(true);
       } else {
-          toast({ variant: 'destructive', title: 'Profile Not Found', description: 'Could not find a secure user profile for this directory record.' });
+          // If no profile exists, open form to create one (promoting)
+          setContactToEdit(contact);
+          setIsContactFormOpen(true);
       }
   };
 
   const handleChangePassword = (contact: Contact) => {
-      const profile = userProfiles.find(p => p.email === contact.email || p.id === contact.id);
+      const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
       if (profile) {
           setUserForPasswordChange(profile);
           setIsChangePasswordOpen(true);
       } else {
-          toast({ variant: 'destructive', title: 'Profile Not Found' });
+          toast({ variant: 'destructive', title: 'Profile Not Found', description: "This member doesn't have a login account node yet. Use 'Edit Details' to promote them." });
       }
   };
 

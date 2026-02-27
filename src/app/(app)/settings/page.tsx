@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -132,12 +131,12 @@ export default function SettingsPage() {
                         <CardTitle>Team & Authority</CardTitle>
                     </div>
                     <CardDescription>
-                        Consolidated user management is now handled within the Contacts Hub.
+                        Manage your team's digital identities and secure access levels within the centralized directory.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full font-bold shadow-lg">
-                        <Link href="/contacts?highlight=all">
+                        <Link href="/contacts?folderName=Ogeemo%20Users">
                             Manage Team Directory <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>

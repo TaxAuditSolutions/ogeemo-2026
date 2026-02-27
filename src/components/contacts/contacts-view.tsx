@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -215,7 +214,7 @@ const FolderTreeItem = ({
             </div>
             <div className="flex items-center">
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 px-1.5">
                             <MoreVertical className="h-4 w-4" />
                         </Button>
@@ -303,6 +302,7 @@ export function ContactsView() {
   const searchParams = useSearchParams();
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
+  const folderNameParam = searchParams ? searchParams.get('folderName') : null;
 
   const isUsersFolderSelected = useMemo(() => {
       const folder = folders.find(f => f.id === selectedFolderId);
@@ -359,6 +359,20 @@ export function ContactsView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Effect to handle deep linking to specific folders
+  useEffect(() => {
+    if (folderNameParam && !isLoading && folders.length > 0) {
+        const target = folders.find(f => f.name.toLowerCase() === folderNameParam.toLowerCase());
+        if (target) {
+            setSelectedFolderId(target.id);
+            // If the folder has a parent, ensure it is expanded
+            if (target.parentId) {
+                setExpandedFolders(p => new Set([...p, target.parentId!]));
+            }
+        }
+    }
+  }, [folderNameParam, isLoading, folders]);
 
   const selectedFolder = useMemo(
     () => folders.find((f) => f && f.id === selectedFolderId),

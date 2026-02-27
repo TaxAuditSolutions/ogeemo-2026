@@ -35,8 +35,9 @@ import {
     Shield, 
     Trash2, 
     MoreVertical, 
-    ShieldX,
-    UserX
+    UserX,
+    Lock,
+    Pencil
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -91,7 +92,7 @@ export function TeamManagementCard() {
       case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
       case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
-      case 'none': return <ShieldX className="h-4 w-4 text-destructive" />;
+      case 'none': return <UserX className="h-4 w-4 text-destructive" />;
       default: return <Shield className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -110,7 +111,7 @@ export function TeamManagementCard() {
   const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
 
   return (
-    <Card>
+    <Card className="shadow-md">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-1">
           <CardTitle>Team & Authority</CardTitle>
@@ -126,18 +127,18 @@ export function TeamManagementCard() {
         {isLoading ? (
           <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
-          <div className="border rounded-md">
+          <div className="border rounded-md overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead>User</TableHead>
+                  <TableHead>User Identity</TableHead>
                   <TableHead>Authority Level</TableHead>
                   <TableHead className="text-right w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((teamUser) => (
-                  <TableRow key={teamUser.id}>
+                  <TableRow key={teamUser.id} className="group">
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-semibold">{teamUser.displayName || 'Unnamed User'}</span>
@@ -147,39 +148,59 @@ export function TeamManagementCard() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getRoleIcon(teamUser.role)}
-                        <span className="text-sm font-medium">{getRoleLabel(teamUser.role)}</span>
-                        {teamUser.id === user?.uid && <Badge variant="outline" className="text-[10px] uppercase ml-2">You</Badge>}
+                        <span className={cn(
+                            "text-sm font-medium",
+                            teamUser.role === 'none' && "text-destructive font-bold"
+                        )}>
+                            {getRoleLabel(teamUser.role)}
+                        </span>
+                        {teamUser.id === user?.uid && (
+                            <Badge variant="secondary" className="text-[10px] uppercase ml-2 bg-primary/10 text-primary border-primary/20">You (Owner)</Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {canManageTeam && teamUser.id !== user?.uid && (
+                      {canManageTeam && teamUser.id !== user?.uid ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
                               <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
+                              <span className="sr-only">Manage Authority</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Set Authority</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
-                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full)
+                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Orchestration)
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
-                              <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit
+                              <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit (Operational)
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'viewer')}>
-                              <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only
+                              <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only (Intelligence)
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive font-bold">
-                              <UserX className="mr-2 h-4 w-4" /> No Access
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
+                              <Lock className="mr-2 h-4 w-4" /> No Access (Revoke)
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete Member
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Member Record
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      ) : teamUser.id === user?.uid && (
+                          <div className="flex justify-end pr-2">
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <ShieldAlert className="h-4 w-4 text-primary opacity-20" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p className="text-xs">Self-management disabled to prevent lockouts.</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                          </div>
                       )}
                     </TableCell>
                   </TableRow>

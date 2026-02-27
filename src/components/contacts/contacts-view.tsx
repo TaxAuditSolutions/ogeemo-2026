@@ -60,7 +60,7 @@ import {
   AlertDialogTitle,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from '@/components/ui/resizable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -250,7 +250,7 @@ const FolderTreeItem = ({
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
                 onRenameChange={onRenameChange}
-                onRenameConfirm={handleRenameConfirm}
+                onRenameConfirm={onRenameConfirm}
                 onRenameCancel={onRenameCancel}
             />
         ))}
@@ -573,8 +573,6 @@ export function ContactsView() {
     }
   };
 
-  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
-
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -825,7 +823,7 @@ export function ContactsView() {
       
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} record(s)?</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><Label>Delete {selectedContactIds.length} record(s)?</Label></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction>

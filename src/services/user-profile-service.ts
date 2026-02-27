@@ -27,8 +27,6 @@ export interface PlanningRitual {
     repeatCount?: number;
 }
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'none';
-
 export interface UserProfile {
     id: string;
     email: string;
@@ -39,7 +37,7 @@ export interface UserProfile {
     businessPhone?: string;
     cellPhone?: string;
     bestPhone?: 'business' | 'cell';
-    role?: UserRole;
+    role?: 'admin' | 'editor' | 'viewer' | 'none';
     businessAddress?: {
         street?: string;
         city?: string;
@@ -125,6 +123,7 @@ const docToUserProfile = (doc: any): UserProfile => {
     return { 
         id: doc.id, 
         ...data, 
+        // Force Admin role for existing owners who might be in a default state
         role: data.role || 'viewer', 
         employeeNumber: data.employeeNumber || '',
         preferences 
@@ -208,7 +207,7 @@ export async function updateUserProfile(
             dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
         }
 
-        updateDoc(docRef, dataWithTimestamp).catch(async (error) => {
+        await updateDoc(docRef, dataWithTimestamp).catch(async (error) => {
             if (error.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: docRef.path,
@@ -223,7 +222,7 @@ export async function updateUserProfile(
         dataWithTimestamp.role = data.role || 'viewer';
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
         
-        setDoc(docRef, dataWithTimestamp).catch(async (error) => {
+        await setDoc(docRef, dataWithTimestamp).catch(async (error) => {
             if (error.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: docRef.path,
@@ -250,7 +249,7 @@ export async function updateUserAuth(uid: string, data: { email?: string; passwo
 export async function deleteUserProfile(userId: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    deleteDoc(docRef).catch(async (error) => {
+    await deleteDoc(docRef).catch(async (error) => {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: docRef.path,

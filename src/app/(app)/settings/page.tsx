@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,7 @@ const profileSchema = z.object({
     businessPhone: z.string().optional(),
     cellPhone: z.string().optional(),
     bestPhone: z.enum(['business', 'cell']).optional(),
+    employeeNumber: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -38,43 +39,54 @@ export default function SettingsPage() {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {},
+    defaultValues: {
+        displayName: '',
+        email: '',
+        companyName: '',
+        website: '',
+        businessPhone: '',
+        cellPhone: '',
+        bestPhone: 'cell',
+        employeeNumber: '',
+    },
   });
 
-  useEffect(() => {
-    async function loadProfile() {
-      if (user) {
-        setIsLoading(true);
-        try {
-          const userProfile = await getUserProfile(user.uid);
-          setProfile(userProfile);
-          if (userProfile) {
-            form.reset({
-              displayName: userProfile.displayName || user.displayName || '',
-              email: userProfile.email || user.email || '',
-              companyName: userProfile.companyName || '',
-              website: userProfile.website || '',
-              businessPhone: userProfile.businessPhone || '',
-              cellPhone: userProfile.cellPhone || '',
-              bestPhone: userProfile.bestPhone || undefined,
-            });
-          }
-        } catch (error) {
-          console.error("Failed to load user profile:", error);
-          toast({
-            variant: "destructive",
-            title: "Failed to load profile",
-            description: "Could not retrieve your profile data.",
+  const loadProfile = useCallback(async () => {
+    if (user) {
+      setIsLoading(true);
+      try {
+        const userProfile = await getUserProfile(user.uid);
+        setProfile(userProfile);
+        if (userProfile) {
+          form.reset({
+            displayName: userProfile.displayName || user.displayName || '',
+            email: userProfile.email || user.email || '',
+            companyName: userProfile.companyName || '',
+            website: userProfile.website || '',
+            businessPhone: userProfile.businessPhone || '',
+            cellPhone: userProfile.cellPhone || '',
+            bestPhone: userProfile.bestPhone || 'cell',
+            employeeNumber: userProfile.employeeNumber || '',
           });
-        } finally {
-          setIsLoading(false);
         }
-      } else if (!isAuthLoading) {
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load profile",
+          description: "Could not retrieve your profile data.",
+        });
+      } finally {
         setIsLoading(false);
       }
+    } else if (!isAuthLoading) {
+      setIsLoading(false);
     }
-    loadProfile();
   }, [user, isAuthLoading, form, toast]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   async function onSubmit(values: ProfileFormData) {
     if (!user) {
@@ -84,6 +96,11 @@ export default function SettingsPage() {
     setIsSubmitting(true);
     try {
         await updateUserProfile(user.uid, values.email || user.email || '', values);
+        
+        // Refresh local state after save to update the badge/ui
+        const updated = await getUserProfile(user.uid);
+        if (updated) setProfile(updated);
+
         toast({
             title: "Settings Saved",
             description: "Your profile information has been updated successfully.",
@@ -121,9 +138,8 @@ export default function SettingsPage() {
         </header>
         <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
-            <ProfileCard form={form} isLoading={isLoading} />
+            <ProfileCard form={form} isLoading={isLoading} profile={profile} />
             
-            {/* Consolidated Team Access Node */}
             <Card className="border-primary/20 bg-primary/5 shadow-md">
                 <CardHeader>
                     <div className="flex items-center gap-3">

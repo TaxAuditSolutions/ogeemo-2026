@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,7 +10,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getUserProfile, type UserRole } from "@/services/user-profile-service";
+import { getUserProfile } from "@/services/user-profile-service";
 import { Badge } from "../ui/badge";
 import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
@@ -31,36 +30,28 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 interface ProfileCardProps {
   form: UseFormReturn<ProfileFormData>;
   isLoading: boolean;
+  profile: any;
 }
 
-export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => {
+export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profile }) => {
   const { user } = useAuth();
-  const [role, setRole] = useState<UserRole | null>(null);
   
-  useEffect(() => {
-    if (user) {
-        getUserProfile(user.uid).then(profile => {
-            if (profile?.role) setRole(profile.role);
-        });
-    }
-  }, [user]);
-
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  const getRoleLabel = (r: UserRole | null) => {
+  const getRoleLabel = (r: string | undefined) => {
     switch (r) {
       case 'admin': return 'Admin (Full Orchestration)';
       case 'editor': return 'Read/Edit (Operational)';
       case 'viewer': return 'Read Only (Intelligence)';
       case 'none': return 'No Access (Revoked)';
-      default: return 'Viewer';
+      default: return 'User';
     }
   };
 
-  const getRoleIcon = (r: UserRole | null) => {
+  const getRoleIcon = (r: string | undefined) => {
     switch (r) {
       case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
@@ -93,16 +84,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+          <div className="space-y-1">
             <CardTitle>My Profile</CardTitle>
             <CardDescription>Update your secure operational details.</CardDescription>
           </div>
-          {role && (
-              <Badge variant="outline" className="flex items-center gap-1.5 py-1 px-3 bg-muted/50">
-                  {getRoleIcon(role)}
-                  <span className="text-[10px] uppercase font-bold tracking-widest">{getRoleLabel(role)}</span>
-              </Badge>
-          )}
+          <Badge variant="outline" className="flex items-center gap-1.5 py-1 px-3 bg-muted/50">
+              {getRoleIcon(profile?.role)}
+              <span className="text-[10px] uppercase font-bold tracking-widest">{getRoleLabel(profile?.role)}</span>
+          </Badge>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-4">

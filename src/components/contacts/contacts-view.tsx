@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -83,6 +84,7 @@ import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
+import { Badge } from '../ui/badge';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -260,7 +262,7 @@ const FolderTreeItem = ({
 };
 
 export function ContactsView() {
-  const [folders, setFolders] = useState<FolderData[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -722,7 +724,8 @@ export function ContactsView() {
                               {displayedContacts.map((contact) => {
                                 const folderName = folders.find(f => f.id === contact.folderId)?.name || 'Unassigned';
                                 const primaryPhoneNumber = contact.primaryPhoneType && contact[contact.primaryPhoneType] ? contact[contact.primaryPhoneType] : contact.cellPhone || contact.businessPhone || contact.homePhone;
-                                
+                                const isMe = contact.id === user?.uid || contact.email === user?.email;
+
                                 return (
                                   <DraggableTableRow 
                                     key={contact.id} 
@@ -731,9 +734,14 @@ export function ContactsView() {
                                   >
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">
-                                        <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
-                                          {contact.name}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
+                                            {contact.name}
+                                            </button>
+                                            {isMe && (
+                                                <Badge variant="secondary" className="text-[10px] uppercase h-4 px-1.5 bg-primary/10 text-primary border-primary/20">You</Badge>
+                                            )}
+                                        </div>
                                       </TableCell>
                                       <TableCell>{contact.email}</TableCell>
                                       {isUsersFolderSelected ? (
@@ -853,7 +861,7 @@ export function ContactsView() {
           </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!folderToDelete} onOpenChange={() => setFolderToDelete(null)}>
+      <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

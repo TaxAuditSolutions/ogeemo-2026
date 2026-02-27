@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/context/auth-context";
@@ -11,6 +11,9 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getUserProfile, type UserRole } from "@/services/user-profile-service";
+import { Badge } from "../ui/badge";
+import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -32,10 +35,39 @@ interface ProfileCardProps {
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => {
   const { user } = useAuth();
+  const [role, setRole] = useState<UserRole | null>(null);
   
+  useEffect(() => {
+    if (user) {
+        getUserProfile(user.uid).then(profile => {
+            if (profile?.role) setRole(profile.role);
+        });
+    }
+  }, [user]);
+
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
+
+  const getRoleLabel = (r: UserRole | null) => {
+    switch (r) {
+      case 'admin': return 'Admin (Full Orchestration)';
+      case 'editor': return 'Read/Edit (Operational)';
+      case 'viewer': return 'Read Only (Intelligence)';
+      case 'none': return 'No Access (Revoked)';
+      default: return 'Viewer';
+    }
+  };
+
+  const getRoleIcon = (r: UserRole | null) => {
+    switch (r) {
+      case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
+      case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
+      case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
+      case 'none': return <Lock className="h-4 w-4 text-destructive" />;
+      default: return <Shield className="h-4 w-4 text-muted-foreground" />;
+    }
   };
   
   if (isLoading || !user) {
@@ -60,12 +92,18 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>My Profile</CardTitle>
+          {role && (
+              <Badge variant="outline" className="flex items-center gap-1.5 py-1 px-3 bg-muted/50">
+                  {getRoleIcon(role)}
+                  <span className="text-[10px] uppercase font-bold tracking-widest">{getRoleLabel(role)}</span>
+              </Badge>
+          )}
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
+          <Avatar className="h-16 w-16 border-2 border-primary/10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} />
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>

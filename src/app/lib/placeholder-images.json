@@ -20,6 +20,10 @@
     "url": "https://picsum.photos/seed/julie-white/400/400",
     "hint": "professional female accountant"
   },
+  "about-header-graphic": {
+    "url": "https://picsum.photos/seed/about-header/800/400",
+    "hint": "business technology concept"
+  },
   "story-sarah": {
     "url": "https://picsum.photos/seed/sarah-story/800/600",
     "hint": "professional woman working remote"

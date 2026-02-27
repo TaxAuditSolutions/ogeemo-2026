@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -34,6 +35,12 @@ export default function AboutLandingPage() {
             <h1 className="text-5xl md:text-7xl font-bold font-headline text-primary tracking-tighter mb-6 max-w-4xl">
               One Command Centre. <br /> Total Business Orchestration.
             </h1>
+
+            {/* New Image Placeholder */}
+            <div className="w-full max-w-2xl aspect-[2/1] mb-8 rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white relative">
+                <ImagePlaceholder id="about-header-graphic" className="object-cover" />
+            </div>
+
             <p className="text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
               Stop juggling disconnected apps. Ogeemo unifies accounting, project execution, and client relationships into a single AI-powered "Master Mind."
             </p>

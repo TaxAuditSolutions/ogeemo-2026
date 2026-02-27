@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUserProfile, type UserRole } from "@/services/user-profile-service";
 import { Badge } from "../ui/badge";
 import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
@@ -115,7 +114,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>User ID</FormLabel><FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
 
         <FormField

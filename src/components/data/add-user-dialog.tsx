@@ -151,14 +151,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
-            const profileUpdateData: Partial<UserProfile> = { role: values.role };
-            if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
-            if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
-            if (values.employeeNumber !== userToEdit.employeeNumber) profileUpdateData.employeeNumber = values.employeeNumber;
-
-            const authUpdateData: { email?: string; password?: string } = {};
-            if (values.email !== userToEdit.email) authUpdateData.email = values.email;
-            if (values.password && values.password.length >= 6) authUpdateData.password = values.password;
+            const profileUpdateData: Partial<UserProfile> = { 
+                role: values.role,
+                employeeNumber: values.employeeNumber,
+                displayName: values.name,
+                notes: values.notes,
+            };
 
             const contactMatch = contacts.find(c => c.email === userToEdit.email);
             if (contactMatch) {
@@ -170,9 +168,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 });
             }
 
-            updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData);
-            if (Object.keys(authUpdateData).length > 0) {
-                await updateUserAuth(userToEdit.id, authUpdateData);
+            await updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData);
+            
+            if (values.password && values.password.length >= 6) {
+                await updateUserAuth(userToEdit.id, { password: values.password });
             }
 
             toast({ title: 'User Updated' });
@@ -285,7 +284,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="promote" id="mode-promote" />
-                                <Label htmlFor="mode-promote" className="font-semibold cursor-pointer">Promote Existing Contact</Label>
+                                <Label htmlFor="mode-promote" className="font-semibold cursor-pointer">Promote Existing Contact (Julie, Nick, etc.)</Label>
                             </div>
                         </RadioGroup>
 
@@ -368,7 +367,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                     name="employeeNumber"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>User ID / Employee #</FormLabel>
+                                            <FormLabel>Original ID / Employee #</FormLabel>
                                             <FormControl><Input placeholder="e.g. U-1001" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>

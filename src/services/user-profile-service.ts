@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where } from 'firebase/firestore';
@@ -126,7 +125,8 @@ const docToUserProfile = (doc: any): UserProfile => {
     return { 
         id: doc.id, 
         ...data, 
-        role: data.role || 'viewer', // Ensure role is present
+        role: data.role || 'viewer', 
+        employeeNumber: data.employeeNumber || '',
         preferences 
     } as UserProfile;
 };

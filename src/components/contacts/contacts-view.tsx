@@ -392,13 +392,11 @@ export function ContactsView() {
     loadData();
   }, [loadData]);
 
-  // Effect to handle deep linking to specific folders
   useEffect(() => {
     if (folderNameParam && !isLoading && folders.length > 0) {
         const target = folders.find(f => f.name.toLowerCase() === folderNameParam.toLowerCase());
         if (target) {
             setSelectedFolderId(target.id);
-            // If the folder has a parent, ensure it is expanded
             if (target.parentId) {
                 setExpandedFolders(p => new Set([...p, target.parentId!]));
             }
@@ -448,7 +446,7 @@ export function ContactsView() {
     if (!user) return;
     if (item.id === newFolderId) return;
 
-    if ('email' in item) { // It's a contact
+    if ('email' in item) { 
         if (item.folderId === newFolderId) return;
         try {
             await updateContact(item.id, { folderId: newFolderId! });
@@ -457,7 +455,7 @@ export function ContactsView() {
         } catch (error: any) {
             toast({ variant: "destructive", title: "Move Failed", description: error.message });
         }
-    } else { // It's a folder
+    } else {
         if (item.parentId === newFolderId) return;
         const folder = folders.find(f => f.id === item.id);
         if (folder?.isSystem) {
@@ -614,9 +612,8 @@ export function ContactsView() {
           setUserToEdit(profile);
           setIsAddUserDialogOpen(true);
       } else {
-          // If no profile exists, open form to create one (promoting)
           setContactToEdit(contact);
-          setIsContactFormOpen(true);
+          setIsAddUserDialogOpen(true);
       }
   };
 
@@ -767,7 +764,7 @@ export function ContactsView() {
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
-                                            <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
+                                            <button className="text-left hover:underline" onClick={() => isUsersFolderSelected ? handleEditUser(contact) : (setContactToEdit(contact), setIsContactFormOpen(true))}>
                                             {contact.name}
                                             </button>
                                             {isMe && (

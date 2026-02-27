@@ -97,7 +97,7 @@ const defaultPreferences: UserProfile['preferences'] = {
 };
 
 /**
- * High-fidelity doc converter that applies system defaults.
+ * High-fidelity doc converter that applies system defaults and enforces Admin authority.
  */
 const docToUserProfile = (doc: any): UserProfile => {
     const data = doc.data();

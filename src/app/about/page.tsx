@@ -31,8 +31,8 @@ export default function AboutLandingPage() {
             <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
               The Future of Business Operations
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-bold font-headline text-primary tracking-tighter mb-6 max-w-4xl">
-              One Command Centre. <br /> Total Business Orchestration.
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline text-primary tracking-tighter mb-6 max-w-5xl">
+              One Command Centre. <br className="hidden sm:block" /> Total Business Orchestration.
             </h1>
 
             {/* New Image Placeholder */}

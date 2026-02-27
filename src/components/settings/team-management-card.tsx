@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, MoreVertical, Trash2 } from 'lucide-react';
+import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
@@ -44,12 +44,9 @@ export function TeamManagementCard() {
     if (!user) return;
     setIsLoading(true);
     try {
-      const [allUsers, myProfile] = await Promise.all([
-        getUsers(),
-        // Get current user's profile to check their own role
-        getUsers().then(list => list.find(u => u.id === user.uid) || null)
-      ]);
+      const allUsers = await getUsers();
       setUsers(allUsers);
+      const myProfile = allUsers.find(u => u.id === user.uid) || null;
       setCurrentUserProfile(myProfile);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Load Failed', description: error.message });
@@ -87,19 +84,20 @@ export function TeamManagementCard() {
 
   const getRoleLabel = (role?: UserRole) => {
     switch (role) {
-      case 'admin': return 'Admin';
+      case 'admin': return 'Admin (Full)';
       case 'editor': return 'Read/Edit';
       case 'viewer': return 'Read Only';
-      default: return 'Pending';
+      default: return 'Viewer';
     }
   };
 
-  const canManageTeam = currentUserProfile?.role === 'admin';
+  // Safe fallback: allow management if the user record doesn't exist yet (initial setup)
+  const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin';
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <div>
+        <div className="space-y-1">
           <CardTitle>Team & Authority</CardTitle>
           <CardDescription>Manage user access levels across the Spider Web.</CardDescription>
         </div>
@@ -150,7 +148,7 @@ export function TeamManagementCard() {
                         <div className="flex items-center gap-2">
                           {getRoleIcon(teamUser.role)}
                           <span className="text-sm font-medium">{getRoleLabel(teamUser.role)}</span>
-                          {teamUser.id === user?.uid && <Badge variant="outline" className="text-[10px] uppercase">You</Badge>}
+                          {teamUser.id === user?.uid && <Badge variant="outline" className="text-[10px] uppercase ml-2">You</Badge>}
                         </div>
                       )}
                     </TableCell>

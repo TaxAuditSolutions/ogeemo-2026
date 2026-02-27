@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { TermsDialog } from '@/components/auth/terms-dialog';
 import { findOrCreateFolder, addContact } from '@/services/contact-service';
+import { updateUserProfile } from '@/services/user-profile-service';
 
 const registerSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -26,7 +27,6 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-// Re-compilation trigger comment to resolve vendor-chunk error
 export default function RegisterPage() {
   const { toast } = useToast();
   const { auth } = useAuth();
@@ -58,24 +58,28 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
-        const contactsFolder = await findOrCreateFolder(user.uid, "Subscribers to Ogeemo");
+        // 1. Initialize the User Profile with Admin authority
+        await updateUserProfile(user.uid, formData.email, {
+            displayName: formData.name,
+            role: 'admin', // The user who registers is the owner/admin
+            companyName: formData.businessName,
+        });
 
-        const notes = `New user sign-up on ${new Date().toLocaleDateString()}.`;
-
+        // 2. Create internal contact record
+        const contactsFolder = await findOrCreateFolder(user.uid, "Ogeemo Users");
         const newContactData = {
             name: formData.name,
             email: formData.email,
             businessName: formData.businessName,
             folderId: contactsFolder.id,
-            notes: notes.trim(),
+            notes: `System User created on ${new Date().toLocaleDateString()}.`,
             userId: user.uid,
         };
-
         await addContact(newContactData);
 
         toast({
             title: "Welcome to Ogeemo!",
-            description: "Your account has been created successfully. Your 30-day free trial has begun.",
+            description: "Your account has been created successfully with Admin authority.",
         });
         
     } catch (error: any) {

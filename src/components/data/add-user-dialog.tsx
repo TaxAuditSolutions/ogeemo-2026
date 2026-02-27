@@ -47,7 +47,8 @@ import {
     ShieldCheck, 
     Shield, 
     Lock,
-    Wand2
+    UserPlus2,
+    Plus
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -82,6 +83,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [contactSearchValue, setContactSearchValue] = useState("");
 
   const { auth, user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -143,6 +145,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const clearSelection = () => {
       setSelectedContactId(null);
       form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
+      toast({ title: "Form Cleared", description: "Starting fresh with a new user record." });
   };
 
   const onSubmit = async (values: UserFormData) => {
@@ -170,7 +173,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 return;
             }
 
-            // Sync role to contact record if it exists in Ogeemo Users folder
             const contactMatch = contacts.find(c => c.email === userToEdit.email);
             if (contactMatch) {
                 await updateContact(contactMatch.id, { 
@@ -203,7 +205,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             
             await updateProfile(newUser, { displayName: values.name });
             
-            // Link to contact or create a new one in Ogeemo Users folder
             if (selectedContactId) {
                 await updateContact(selectedContactId, { 
                     folderId: usersFolder?.id, 
@@ -273,7 +274,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 {!userToEdit && (
                     <div className="space-y-2">
                         <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            <Search className="h-3 w-3" /> 1. Promote Existing Contact (Optional)
+                            <Search className="h-3 w-3" /> 1. Find Contact to Promote (Optional)
                         </Label>
                         <div className="flex gap-2">
                             <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
@@ -281,21 +282,33 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                     <Button variant="outline" role="combobox" className="flex-1 justify-between text-sm font-normal">
                                         <div className="flex items-center gap-2 truncate">
                                             <Users className="h-4 w-4 opacity-50" />
-                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Search all contacts..."}
+                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Search for a contact to promote..."}
                                         </div>
                                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                     <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
-                                        <CommandInput placeholder="Type to filter..." />
+                                        <CommandInput placeholder="Search name or business..." value={contactSearchValue} onValueChange={setContactSearchValue} />
                                         <CommandList>
                                             <CommandEmpty>
                                                 {isLoadingContacts ? (
                                                     <div className="p-4 flex items-center justify-center gap-2 text-xs">
                                                         <LoaderCircle className="h-3 w-3 animate-spin" /> Indexing...
                                                     </div>
-                                                ) : "No contact found."}
+                                                ) : (
+                                                    <div className="p-2 text-center">
+                                                        <p className="text-xs text-muted-foreground mb-2">No contact found.</p>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="sm" 
+                                                            className="w-full text-xs text-primary"
+                                                            onClick={clearSelection}
+                                                        >
+                                                            <UserPlus2 className="mr-2 h-3.5 w-3.5" /> Start fresh with new user
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </CommandEmpty>
                                             <CommandGroup>
                                                 {contacts.map(c => (
@@ -316,11 +329,14 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                            {selectedContactId && (
-                                <Button variant="ghost" size="icon" onClick={clearSelection} title="Clear selection">
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            )}
+                            <Button 
+                                variant={selectedContactId ? "ghost" : "outline"} 
+                                size="icon" 
+                                onClick={clearSelection} 
+                                title={selectedContactId ? "Clear selection" : "Create new user from scratch"}
+                            >
+                                {selectedContactId ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -467,7 +483,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
             <div className="hidden sm:flex flex-1 items-center gap-2 text-xs text-muted-foreground italic">
                 <Info className="h-4 w-4 text-primary shrink-0" />
-                <span>Creating a user will generate a new login account immediately.</span>
+                <span>New users will receive their login credentials via the Firm's standard protocol.</span>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

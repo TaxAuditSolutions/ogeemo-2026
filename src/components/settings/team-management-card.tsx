@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -37,12 +36,12 @@ import {
     MoreVertical, 
     UserX,
     Lock,
-    Pencil
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
 import { AddUserDialog } from '@/components/data/add-user-dialog';
+import { cn } from '@/lib/utils';
 
 export function TeamManagementCard() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -75,7 +74,6 @@ export function TeamManagementCard() {
   const handleRoleChange = async (userId: string, email: string, newRole: UserRole) => {
     if (!user) return;
     
-    // Optimistic update
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
 
     try {
@@ -83,7 +81,7 @@ export function TeamManagementCard() {
       toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-      loadTeam(); // Revert on failure
+      loadTeam();
     }
   };
 
@@ -107,7 +105,6 @@ export function TeamManagementCard() {
     }
   };
 
-  // Allow management if user is admin or if role is not yet set (to avoid lockouts during initial setup)
   const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
 
   return (
@@ -188,20 +185,7 @@ export function TeamManagementCard() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      ) : teamUser.id === user?.uid && (
-                          <div className="flex justify-end pr-2">
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <ShieldAlert className="h-4 w-4 text-primary opacity-20" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p className="text-xs">Self-management disabled to prevent lockouts.</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                          </div>
-                      )}
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}

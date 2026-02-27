@@ -123,7 +123,6 @@ const docToUserProfile = (doc: any): UserProfile => {
     return { 
         id: doc.id, 
         ...data, 
-        // Force Admin role for existing owners who might be in a default state
         role: data.role || 'viewer', 
         employeeNumber: data.employeeNumber || '',
         preferences 
@@ -165,6 +164,21 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
             } satisfies SecurityRuleContext));
         }
         throw error;
+    }
+}
+
+export async function getUserProfileByEmail(email: string): Promise<UserProfile | null> {
+    const db = getDb();
+    const q = query(collection(db, PROFILES_COLLECTION), where("email", "==", email));
+    try {
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+            return docToUserProfile(snapshot.docs[0]);
+        }
+        return null;
+    } catch (error: any) {
+        console.warn("Failed to find user by email:", error);
+        return null;
     }
 }
 

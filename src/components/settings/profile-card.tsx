@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/context/auth-context";
@@ -10,8 +10,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getUserProfile } from "@/services/user-profile-service";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
 const profileSchema = z.object({
@@ -38,7 +37,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
   
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
-    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length > 1) {
+        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    if (parts[0]) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+    return 'U';
   };
 
   const getRoleLabel = (r: string | undefined) => {

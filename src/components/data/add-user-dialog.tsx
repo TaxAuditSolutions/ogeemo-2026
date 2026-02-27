@@ -29,7 +29,7 @@ import { useAuth } from '@/context/auth-context';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import firebaseConfig from '@/lib/config';
-import { updateUserProfile, updateUserAuth, type UserProfile, type UserRole } from '@/services/user-profile-service';
+import { updateUserProfile, updateUserAuth, getUserProfileByEmail, type UserProfile, type UserRole } from '@/services/user-profile-service';
 import { getContacts, updateContact, addContact, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { 
@@ -151,6 +151,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
+            // Updating existing user
             const profileUpdateData: Partial<UserProfile> = { 
                 role: values.role,
                 employeeNumber: values.employeeNumber,
@@ -178,6 +179,34 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onUserAdded();
             onOpenChange(false);
         } else {
+            // Creating new user or promoting contact
+            // 1. Check if a profile already exists for this email
+            const existingProfile = await getUserProfileByEmail(values.email);
+            
+            if (existingProfile) {
+                // User already has an account, just update their role
+                await updateUserProfile(existingProfile.id, values.email, {
+                    role: values.role,
+                    employeeNumber: values.employeeNumber,
+                    displayName: values.name,
+                    notes: values.notes,
+                });
+
+                if (selectedContactId) {
+                    await updateContact(selectedContactId, { 
+                        folderId: usersFolder?.id, 
+                        role: values.role,
+                        employeeNumber: values.employeeNumber
+                    });
+                }
+
+                toast({ title: 'Authority Synchronized', description: `${values.name} already has an account. Permissions updated.` });
+                onUserAdded();
+                onOpenChange(false);
+                return;
+            }
+
+            // 2. No profile found, attempt to create Auth account
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
@@ -188,61 +217,58 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
             const secondaryAuth = getAuth(secondaryApp);
             
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
-            const newUser = userCredential.user;
-            await updateProfile(newUser, { displayName: values.name });
+            try {
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
+                const newUser = userCredential.user;
+                await updateProfile(newUser, { displayName: values.name });
 
-            await updateUserProfile(newUser.uid, newUser.email!, {
-                displayName: values.name,
-                email: newUser.email!,
-                employeeNumber: values.employeeNumber,
-                notes: values.notes,
-                role: values.role, 
-            });
-
-            if (selectedContactId) {
-                await updateContact(selectedContactId, { 
-                    folderId: usersFolder?.id, 
-                    role: values.role,
-                    employeeNumber: values.employeeNumber
-                });
-            } else {
-                await addContact({
-                    name: values.name,
-                    email: values.email,
+                await updateUserProfile(newUser.uid, newUser.email!, {
+                    displayName: values.name,
+                    email: newUser.email!,
                     employeeNumber: values.employeeNumber,
-                    folderId: usersFolder?.id || '',
-                    role: values.role,
-                    userId: currentUser.uid, 
+                    notes: values.notes,
+                    role: values.role, 
                 });
-            }
-            
-            await signOut(secondaryAuth);
-            await deleteApp(secondaryApp);
-            secondaryApp = null;
 
-            toast({ title: 'User Created', description: `${values.name} added to team.` });
-            onUserAdded();
-            onOpenChange(false);
+                if (selectedContactId) {
+                    await updateContact(selectedContactId, { 
+                        folderId: usersFolder?.id, 
+                        role: values.role,
+                        employeeNumber: values.employeeNumber
+                    });
+                } else {
+                    await addContact({
+                        name: values.name,
+                        email: values.email,
+                        employeeNumber: values.employeeNumber,
+                        folderId: usersFolder?.id || '',
+                        role: values.role,
+                        userId: currentUser.uid, 
+                    });
+                }
+                
+                await signOut(secondaryAuth);
+                await deleteApp(secondaryApp);
+                secondaryApp = null;
+
+                toast({ title: 'User Created', description: `${values.name} added to team.` });
+                onUserAdded();
+                onOpenChange(false);
+            } catch (authError: any) {
+                if (authError.code === 'auth/email-already-in-use') {
+                    // This handles the edge case where Auth exists but no Firestore profile was found initially
+                    toast({ variant: 'destructive', title: 'Action Required', description: "This email exists in Authentication but has no profile. Please contact Support to link the account." });
+                } else {
+                    throw authError;
+                }
+            }
         }
     } catch (error: any) {
-        let errorMessage = "An unexpected error occurred during user management.";
-        const errorCode = error.code || (error.cause as any)?.code;
-
-        if (errorCode === 'auth/email-already-in-use') {
-            errorMessage = "This email is already associated with an account.";
-        } else if (errorCode === 'auth/weak-password') {
-            errorMessage = "The password provided is too weak.";
-        } else if (errorCode === 'auth/invalid-email') {
-            errorMessage = "The email address is invalid.";
-        }
-
         toast({
             variant: 'destructive',
             title: 'Action Failed',
-            description: errorMessage
+            description: error.message || "An unexpected error occurred during user management."
         });
-        
         console.warn("User Management Action Issue:", error);
     } finally {
       if (secondaryApp) {
@@ -415,7 +441,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                 name="role"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger className="h-11">
                                                     <SelectValue placeholder="Assign authority level..." />

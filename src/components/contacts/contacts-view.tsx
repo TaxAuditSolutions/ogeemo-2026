@@ -56,9 +56,9 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import {
@@ -237,7 +237,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={allFolders} 
+                allFolders={folders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -250,7 +250,7 @@ const FolderTreeItem = ({
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
                 onRenameChange={onRenameChange}
-                onRenameConfirm={onRenameConfirm}
+                onRenameConfirm={handleRenameConfirm}
                 onRenameCancel={onRenameCancel}
             />
         ))}
@@ -572,6 +572,8 @@ export function ContactsView() {
       default: return 'Viewer';
     }
   };
+
+  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   if (isLoading) {
     return (

@@ -83,7 +83,6 @@ async function createClientAccount(userId: string, contactId: string, contactNam
 // --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
-  // Removed redundant orderBy("userId") which can cause index errors when combined with equality filters
   const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
@@ -109,7 +108,7 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
       businessName: contactData.businessName || '',
       email: contactData.email || '',
       industryCode: contactData.industryCode || '',
-      status: contactData.status || 'Unscheduled Leads', // Default for CRM
+      status: contactData.status || 'Unscheduled Leads',
       keywords: generateKeywords(contactData.name, contactData.email || '', contactData.businessName),
     };
 

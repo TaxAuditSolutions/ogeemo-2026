@@ -28,9 +28,27 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { updateUserProfile, updateUserAuth, type UserProfile, type UserRole } from '@/services/user-profile-service';
-import { getContacts, updateContact, type Contact } from '@/services/contact-service';
+import { getContacts, updateContact, addContact, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
-import { LoaderCircle, Eye, EyeOff, UserPlus, ChevronsUpDown, Check, Search, X, Users, Pencil, Save, Info, ShieldAlert, ShieldCheck, Shield, Lock } from 'lucide-react';
+import { 
+    LoaderCircle, 
+    Eye, 
+    EyeOff, 
+    UserPlus, 
+    ChevronsUpDown, 
+    Check, 
+    Search, 
+    X, 
+    Users, 
+    Pencil, 
+    Save, 
+    Info, 
+    ShieldAlert, 
+    ShieldCheck, 
+    Shield, 
+    Lock,
+    Wand2
+} from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -185,7 +203,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             
             await updateProfile(newUser, { displayName: values.name });
             
-            // Sync to contact record
+            // Link to contact or create a new one in Ogeemo Users folder
             if (selectedContactId) {
                 await updateContact(selectedContactId, { 
                     folderId: usersFolder?.id, 
@@ -193,12 +211,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     employeeNumber: values.employeeNumber
                 });
             } else {
-                // Create new contact record in Ogeemo Users folder
-                await updateContact(newUser.uid, {
+                await addContact({
                     name: values.name,
                     email: values.email,
                     employeeNumber: values.employeeNumber,
-                    folderId: usersFolder?.id,
+                    folderId: usersFolder?.id || '',
                     role: values.role,
                     userId: currentUser.uid,
                 });
@@ -225,6 +242,16 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         toast({ variant: 'destructive', title: 'Save Failed', description });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
+      case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
+      case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
+      case 'none': return <Lock className="h-4 w-4 text-destructive" />;
+      default: return null;
     }
   };
 

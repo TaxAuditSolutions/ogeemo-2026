@@ -36,18 +36,26 @@ import {
     MoreVertical, 
     UserX,
     Lock,
+    Pencil,
+    KeyRound,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
+import { getUsers, updateUserProfile, type UserProfile, type UserRole, deleteUserProfile } from '@/services/user-profile-service';
 import { AddUserDialog } from '@/components/data/add-user-dialog';
+import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { cn } from '@/lib/utils';
 
 export function TeamManagementCard() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Dialog State
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -74,6 +82,7 @@ export function TeamManagementCard() {
   const handleRoleChange = async (userId: string, email: string, newRole: UserRole) => {
     if (!user) return;
     
+    // Optimistic UI update
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
 
     try {
@@ -81,8 +90,30 @@ export function TeamManagementCard() {
       toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-      loadTeam();
+      loadTeam(); // Revert on failure
     }
+  };
+
+  const handleEditUser = (targetUser: UserProfile) => {
+      setUserToEdit(targetUser);
+      setIsAddUserOpen(true);
+  };
+
+  const handleChangePassword = (targetUser: UserProfile) => {
+      setUserForPasswordChange(targetUser);
+      setIsChangePasswordOpen(true);
+  };
+
+  const handleDeleteMember = async (userId: string) => {
+      if (!confirm("Are you sure you want to remove this user profile? The user's login account will remain but they will lose access to this workspace.")) return;
+      
+      try {
+          await deleteUserProfile(userId);
+          toast({ title: "Member Removed", description: "The user profile has been deleted." });
+          loadTeam();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Removal Failed', description: error.message });
+      }
   };
 
   const getRoleIcon = (role?: UserRole) => {
@@ -105,18 +136,20 @@ export function TeamManagementCard() {
     }
   };
 
-  const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
+  // Only admins can manage the team. If profile not yet loaded, we wait.
+  const isAdmin = currentUserProfile?.role === 'admin';
 
   return (
+    <>
     <Card className="shadow-md">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-1">
           <CardTitle>Team & Authority</CardTitle>
           <CardDescription>Manage user access levels across the Spider Web.</CardDescription>
         </div>
-        {canManageTeam && (
-          <Button size="sm" onClick={() => setIsAddUserOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" /> Add Member
+        {isAdmin && (
+          <Button size="sm" onClick={() => { setUserToEdit(null); setIsAddUserOpen(true); }}>
+            <UserPlus className="mr-2 h-4 w-4" /> Add User
           </Button>
         )}
       </CardHeader>
@@ -152,12 +185,12 @@ export function TeamManagementCard() {
                             {getRoleLabel(teamUser.role)}
                         </span>
                         {teamUser.id === user?.uid && (
-                            <Badge variant="secondary" className="text-[10px] uppercase ml-2 bg-primary/10 text-primary border-primary/20">You (Owner)</Badge>
+                            <Badge variant="secondary" className="text-[10px] uppercase ml-2 bg-primary/10 text-primary border-primary/20">You</Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {canManageTeam && teamUser.id !== user?.uid ? (
+                      {isAdmin && teamUser.id !== user?.uid ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
@@ -166,9 +199,18 @@ export function TeamManagementCard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">User Management</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={() => handleEditUser(teamUser)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Profile Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleChangePassword(teamUser)}>
+                                <KeyRound className="mr-2 h-4 w-4" /> Change Password
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
-                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Orchestration)
+                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Access)
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
                               <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit (Operational)
@@ -177,10 +219,10 @@ export function TeamManagementCard() {
                               <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only (Intelligence)
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
-                              <Lock className="mr-2 h-4 w-4" /> No Access (Revoke)
+                              <Lock className="mr-2 h-4 w-4" /> No Access (Revoked)
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem className="text-destructive" onSelect={() => handleDeleteMember(teamUser.id)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Member Record
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -194,13 +236,24 @@ export function TeamManagementCard() {
           </div>
         )}
       </CardContent>
-      
-      <AddUserDialog 
-        isOpen={isAddUserOpen} 
-        onOpenChange={setIsAddUserOpen} 
-        onUserAdded={loadTeam} 
-        userToEdit={null} 
-      />
     </Card>
+
+    <AddUserDialog 
+        isOpen={isAddUserOpen} 
+        onOpenChange={(open) => {
+            setIsAddUserOpen(open);
+            if (!open) setUserToEdit(null);
+        }} 
+        onUserAdded={loadTeam} 
+        userToEdit={userToEdit} 
+    />
+
+    <ChangePasswordDialog
+        isOpen={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        user={userForPasswordChange}
+        onPasswordChanged={loadTeam}
+    />
+    </>
   );
 }

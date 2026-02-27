@@ -71,12 +71,13 @@ interface AddUserDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onUserAdded: () => void;
   userToEdit: UserProfile | null;
+  contactToPromote?: Contact | null;
 }
 
-export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }: AddUserDialogProps) {
+export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, contactToPromote }: AddUserDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [mode, setMode] = useState<'new' | 'promote'>('new');
+  const [mode, setMode] = useState<'new' | 'promote' | 'edit'>('new');
   
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [folders, setFolders] = useState<FolderData[]>([]);
@@ -117,6 +118,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   useEffect(() => {
     if (isOpen) {
       if (userToEdit) {
+        setMode('edit');
         form.reset({
           name: userToEdit.displayName || '',
           email: userToEdit.email || '',
@@ -125,13 +127,24 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
           password: '',
           role: userToEdit.role || 'viewer',
         });
+      } else if (contactToPromote) {
+        setMode('promote');
+        setSelectedContactId(contactToPromote.id);
+        form.reset({
+          name: contactToPromote.name || '',
+          email: contactToPromote.email || '',
+          employeeNumber: contactToPromote.employeeNumber || '',
+          notes: contactToPromote.notes || '',
+          password: '',
+          role: (contactToPromote.role as any) || 'viewer',
+        });
       } else {
         form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
         setSelectedContactId(null);
         setMode('new');
       }
     }
-  }, [isOpen, userToEdit, form]);
+  }, [isOpen, userToEdit, contactToPromote, form]);
 
   const handleSelectContact = (contact: Contact) => {
       setSelectedContactId(contact.id);
@@ -150,7 +163,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     try {
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
-        if (userToEdit) {
+        if (mode === 'edit' && userToEdit) {
             const profileUpdateData: Partial<UserProfile> = { 
                 role: values.role,
                 employeeNumber: values.employeeNumber,
@@ -188,8 +201,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     notes: values.notes,
                 });
 
-                if (selectedContactId) {
-                    await updateContact(selectedContactId, { 
+                const linkId = selectedContactId || (contactToPromote?.id);
+                if (linkId) {
+                    await updateContact(linkId, { 
                         folderId: usersFolder?.id, 
                         role: values.role,
                         employeeNumber: values.employeeNumber
@@ -225,8 +239,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     role: values.role, 
                 });
 
-                if (selectedContactId) {
-                    await updateContact(selectedContactId, { 
+                const linkId = selectedContactId || (contactToPromote?.id);
+                if (linkId) {
+                    await updateContact(linkId, { 
                         folderId: usersFolder?.id, 
                         role: values.role,
                         employeeNumber: values.employeeNumber
@@ -252,7 +267,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             } catch (authError: any) {
                 if (authError.code === 'auth/email-already-in-use') {
                     toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication but has no Profile Node. Synchronizing authority now..." });
-                    // Logic to find/link based on UID if possible would go here
                 } else {
                     throw authError;
                 }
@@ -279,23 +293,23 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <UserPlus className="h-6 w-6 text-primary" />
-            {userToEdit ? 'Edit User Profile' : 'Add New User'}
+            {mode === 'edit' ? 'Edit User Profile' : mode === 'promote' ? 'Promote to User' : 'Add New User'}
           </DialogTitle>
           <DialogDescription>
-            {userToEdit ? 'Update the details for this user.' : 'Select a creation path to build your team.'}
+            {mode === 'edit' ? 'Update the details for this user.' : 'Set credentials and authority for this team member.'}
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6">
             <div className="space-y-6 py-4">
-                {!userToEdit && (
+                {mode === 'new' && (
                     <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
                         <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                             1. Select Creation Mode
                         </Label>
                         <RadioGroup 
                             defaultValue="new" 
-                            value={mode} 
+                            value={mode === 'edit' ? 'new' : mode} 
                             onValueChange={(v) => setMode(v as any)}
                             className="flex flex-col space-y-2"
                         >
@@ -309,7 +323,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                             </div>
                         </RadioGroup>
 
-                        {mode === 'promote' && (
+                        {mode === 'promote' && !contactToPromote && (
                             <div className="pt-2 animate-in fade-in slide-in-from-top-1">
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -356,7 +370,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-4">
                             <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                2. User Details & Credentials
+                                {mode === 'edit' ? 'Update User Identity' : 'Credentials & Identity'}
                             </Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
@@ -399,12 +413,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                     name="password"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{userToEdit ? 'New Password (Optional)' : 'Set Password'}</FormLabel>
+                                            <FormLabel>{mode === 'edit' ? 'New Password (Optional)' : 'Set Password'}</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Input 
                                                         type={showPassword ? 'text' : 'password'}
-                                                        placeholder={userToEdit ? "Keep current" : "Min 6 characters"} 
+                                                        placeholder={mode === 'edit' ? "Keep current" : "Min 6 characters"} 
                                                         {...field} 
                                                     />
                                                     <Button
@@ -429,7 +443,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
                         <div className="space-y-4">
                             <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                3. Authority Level
+                                Authority Configuration
                             </Label>
                             <FormField
                                 control={form.control}
@@ -478,7 +492,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                 name="notes"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Internal Notes</FormLabel>
+                                        <FormLabel>Audit Notes</FormLabel>
                                         <FormControl><Textarea placeholder="Notes for internal record keeping..." className="resize-none" rows={3} {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -493,13 +507,13 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
             <div className="hidden sm:flex flex-1 items-center gap-2 text-xs text-muted-foreground italic">
                 <Info className="h-4 w-4 text-primary shrink-0" />
-                <span>User nodes are synchronized across Profile and Directory.</span>
+                <span>Team identities are synchronized across the master directory.</span>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
                     {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {userToEdit ? 'Save Changes' : 'Create User'}
+                    {mode === 'edit' ? 'Update User' : mode === 'promote' ? 'Promote & Save' : 'Create User'}
                 </Button>
             </div>
         </DialogFooter>

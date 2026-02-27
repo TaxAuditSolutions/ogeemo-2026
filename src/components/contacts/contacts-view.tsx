@@ -110,11 +110,13 @@ const ItemTypes = {
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const dragSpec = useMemo(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
-        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+        collect: (monitor: any) => ({ isDragging: !!monitor.isDragging() }),
     }), [contact]);
+
+    const [{ isDragging }, drag] = useDrag(dragSpec);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -168,12 +170,14 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+    const dragSpec = useMemo(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
-      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+      collect: (monitor: any) => ({ isDragging: !!monitor.isDragging() }),
     }), [folder, isRenaming, isSystem]);
+
+    const [{ isDragging }, drag, dragPreview] = useDrag(dragSpec);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
@@ -326,7 +330,6 @@ export function ContactsView() {
             getUsers()
         ]);
         
-        // Automated Seeding: Ensure Core Team exists in Ogeemo Users folder
         const usersFolder = allFolders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
         if (usersFolder) {
             const coreTeam = [
@@ -347,7 +350,6 @@ export function ContactsView() {
                     });
                 }
             }
-            // Re-fetch contacts if we seeded anything
             if (coreTeam.some(m => !fetchedContacts.some(c => c.name === m.name && c.folderId === usersFolder.id))) {
                 const updatedContacts = await getContacts(user.uid);
                 setContacts(updatedContacts);
@@ -610,9 +612,11 @@ export function ContactsView() {
       const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
       if (profile) {
           setUserToEdit(profile);
+          setContactToEdit(null); // Clear contactToEdit to ensure AddUserDialog uses the profile
           setIsAddUserDialogOpen(true);
       } else {
-          setContactToEdit(contact);
+          setUserToEdit(null);
+          setContactToEdit(contact); // Pass contact to AddUserDialog for "promotion" pre-fill
           setIsAddUserDialogOpen(true);
       }
   };
@@ -866,6 +870,7 @@ export function ContactsView() {
             onOpenChange={setIsAddUserDialogOpen}
             onUserAdded={loadData}
             userToEdit={userToEdit}
+            contactToPromote={contactToEdit}
           />
       )}
 

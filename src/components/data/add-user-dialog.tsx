@@ -44,6 +44,10 @@ import {
     ShieldCheck, 
     Shield, 
     Lock,
+    Search,
+    X,
+    Mic,
+    Square
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -220,8 +224,26 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onOpenChange(false);
         }
     } catch (error: any) {
-        // Standard errors are handled by services emitting FirestorePermissionError
-        console.error("User Creation Error:", error);
+        let errorMessage = "An unexpected error occurred during user creation.";
+        
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = "This email is already associated with an account.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "The password provided is too weak.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "The email address is invalid.";
+        } else if (error.code === 'permission-denied') {
+            // Permission errors are handled by the services via errorEmitter
+            return;
+        }
+
+        toast({
+            variant: 'destructive',
+            title: 'Action Failed',
+            description: errorMessage
+        });
+        
+        console.error("User Creation catch block:", error);
     } finally {
       setIsSaving(false);
     }

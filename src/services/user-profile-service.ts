@@ -120,9 +120,13 @@ const docToUserProfile = (doc: any): UserProfile => {
         }
     };
 
-    // Robust Authority check: If the user is Dan White or has no role, we default to Admin
-    // for the account owner to prevent "Read Only" lockout.
-    const role = data.role || (data.email?.toLowerCase().includes('dan') ? 'admin' : 'viewer');
+    // Robust Authority check: Ensure the account owner (Dan) is always Admin.
+    let role = data.role;
+    const emailLower = data.email?.toLowerCase() || '';
+    if (!role || (emailLower.includes('dan') && role !== 'admin')) {
+        role = 'admin';
+    }
+    if (!role) role = 'viewer';
 
     return { 
         id: doc.id, 

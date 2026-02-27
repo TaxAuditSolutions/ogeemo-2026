@@ -27,7 +27,17 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, Trash2, MoreVertical, ShieldX } from 'lucide-react';
+import { 
+    LoaderCircle, 
+    UserPlus, 
+    ShieldCheck, 
+    ShieldAlert, 
+    Shield, 
+    Trash2, 
+    MoreVertical, 
+    ShieldX,
+    UserX
+} from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
@@ -96,6 +106,7 @@ export function TeamManagementCard() {
     }
   };
 
+  // Allow management if user is admin or if role is not yet set (to avoid lockouts during initial setup)
   const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
 
   return (
@@ -121,7 +132,7 @@ export function TeamManagementCard() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Authority Level</TableHead>
-                  <TableHead className="text-right w-12"><span className="sr-only">Actions</span></TableHead>
+                  <TableHead className="text-right w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -146,6 +157,7 @@ export function TeamManagementCard() {
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -159,8 +171,8 @@ export function TeamManagementCard() {
                             <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'viewer')}>
                               <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
-                              <ShieldX className="mr-2 h-4 w-4" /> No Access
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive font-bold">
+                              <UserX className="mr-2 h-4 w-4" /> No Access
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -26,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, ShieldInfo, MoreVertical, Trash2 } from 'lucide-react';
+import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, MoreVertical, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
@@ -82,7 +81,7 @@ export function TeamManagementCard() {
     switch (role) {
       case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
-      default: return <ShieldInfo className="h-4 w-4 text-muted-foreground" />;
+      default: return <Shield className="h-4 w-4 text-muted-foreground" />;
     }
   };
 

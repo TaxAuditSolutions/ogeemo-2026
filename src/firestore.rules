@@ -19,7 +19,7 @@ service cloud.firestore {
     }
 
     function isViewer() {
-      return request.auth != null;
+      return request.auth != null && (getUserData().role == 'viewer' || getUserData().role == 'editor' || getUserData().role == 'admin');
     }
 
     function isOwner(userId) {

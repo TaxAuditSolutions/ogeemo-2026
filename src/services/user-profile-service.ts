@@ -29,7 +29,7 @@ export interface PlanningRitual {
     repeatCount?: number; // For daily repeats
 }
 
-export type UserRole = 'admin' | 'editor' | 'viewer';
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'none';
 
 export interface UserProfile {
     id: string; // This will be the user's UID

@@ -11,7 +11,7 @@
         "photoURL": { "type": "string", "format": "uri" },
         "employeeNumber": { "type": "string", "description": "Unique identifier for the user (User ID)." },
         "notes": { "type": "string", "description": "General notes about the user." },
-        "role": { "type": "string", "enum": ["admin", "editor", "viewer"], "description": "User authority level: admin (Full), editor (Read/Edit), viewer (Read Only)." }
+        "role": { "type": "string", "enum": ["admin", "editor", "viewer", "none"], "description": "User authority level: admin (Full), editor (Read/Edit), viewer (Read Only), none (No Access)." }
       }
     },
     "Contact": {
@@ -637,11 +637,7 @@
     },
     "/siteImages/{imageId}": {
       "schema": { "$ref": "#/entities/SiteImage" },
-      "description": "Stores URLs for globally used site images like heroes and logos.",
-      "rules": {
-        "allow_read": "true",
-        "allow_write": "request.auth != null"
-      }
+      "description": "Stores URLs for globally used site images like heroes and logos."
     },
     "/inquiries/{inquiryId}": {
       "schema": { "$ref": "#/entities/ContactInquiry" },

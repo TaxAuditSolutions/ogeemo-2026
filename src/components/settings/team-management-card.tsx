@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,14 +19,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, Trash2 } from 'lucide-react';
+import { LoaderCircle, UserPlus, ShieldCheck, ShieldAlert, Shield, Trash2, MoreVertical, ShieldX } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUserProfile, type UserProfile, type UserRole } from '@/services/user-profile-service';
@@ -78,6 +80,8 @@ export function TeamManagementCard() {
     switch (role) {
       case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
+      case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
+      case 'none': return <ShieldX className="h-4 w-4 text-destructive" />;
       default: return <Shield className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -87,11 +91,11 @@ export function TeamManagementCard() {
       case 'admin': return 'Admin (Full)';
       case 'editor': return 'Read/Edit';
       case 'viewer': return 'Read Only';
+      case 'none': return 'No Access';
       default: return 'Viewer';
     }
   };
 
-  // Allow management if user is admin OR if role is not set yet (first user setup)
   const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
 
   return (
@@ -117,7 +121,7 @@ export function TeamManagementCard() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Authority Level</TableHead>
-                  {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
+                  <TableHead className="text-right w-12"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -130,35 +134,42 @@ export function TeamManagementCard() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {canManageTeam && teamUser.id !== user?.uid ? (
-                        <Select 
-                          value={teamUser.role || 'viewer'} 
-                          onValueChange={(val: UserRole) => handleRoleChange(teamUser.id, teamUser.email, val)}
-                        >
-                          <SelectTrigger className="h-8 w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin (Full)</SelectItem>
-                            <SelectItem value="editor">Read/Edit</SelectItem>
-                            <SelectItem value="viewer">Read Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(teamUser.role)}
-                          <span className="text-sm font-medium">{getRoleLabel(teamUser.role)}</span>
-                          {teamUser.id === user?.uid && <Badge variant="outline" className="text-[10px] uppercase ml-2">You</Badge>}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        {getRoleIcon(teamUser.role)}
+                        <span className="text-sm font-medium">{getRoleLabel(teamUser.role)}</span>
+                        {teamUser.id === user?.uid && <Badge variant="outline" className="text-[10px] uppercase ml-2">You</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canManageTeam && teamUser.id !== user?.uid && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Set Authority</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
+                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
+                              <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'viewer')}>
+                              <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
+                              <ShieldX className="mr-2 h-4 w-4" /> No Access
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Member
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </TableCell>
-                    {canManageTeam && (
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={teamUser.id === user?.uid}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
               </TableBody>

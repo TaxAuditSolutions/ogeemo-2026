@@ -25,6 +25,12 @@ import {
   FileDigit,
   Briefcase,
   Clock,
+  UserPlus,
+  ShieldCheck,
+  ShieldAlert,
+  Shield,
+  Lock,
+  UserX,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -65,6 +71,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   Table,
@@ -78,7 +85,7 @@ import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import { LogTimeDialog } from '../reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile, type UserRole } from '@/services/user-profile-service';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -87,6 +94,10 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
       <LoaderCircle className="h-10 w-10 animate-spin text-white" />
     </div>
   ),
+});
+
+const AddUserDialog = dynamic(() => import('@/components/data/add-user-dialog').then(mod => mod.AddUserDialog), {
+    ssr: false,
 });
 
 const MergeContactsDialog = dynamic(() => import('@/components/contacts/MergeContactsDialog'), {
@@ -100,8 +111,6 @@ const ItemTypes = {
 
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
-// --- Externalized Sub-components ---
-
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
@@ -110,11 +119,17 @@ const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Cont
     }), [contact]);
 
     return (
-      <TableRow id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
+      <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
         {children}
-      </TableRow>
+      </DraggableTableRowInner>
     );
 };
+
+// Internal fix for ref forwarding on TableRow if needed, otherwise standard TableRow works
+const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.ComponentProps<typeof TableRow>>((props, ref) => (
+    <TableRow {...props} ref={ref} />
+));
+DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const FolderTreeItem = ({ 
     folder, 
@@ -159,9 +174,9 @@ const FolderTreeItem = ({
     const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
-      canDrag: !isRenaming, // Can't drag while renaming
+      canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    }), [folder, isRenaming]);
+    }), [folder, isRenaming, isSystem]);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
@@ -213,8 +228,13 @@ const FolderTreeItem = ({
                       <DropdownMenuItem onSelect={() => onAddSubfolder(folder.id)}><FolderPlus className="mr-2 h-4 w-4" />Create subfolder</DropdownMenuItem>
                       {!isSystem && <DropdownMenuItem onSelect={() => onRenameStart(folder)}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>}
                       <DropdownMenuSeparator />
-                      {!isSystem && <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>}
-                      {isSystem && <DropdownMenuItem disabled className="text-xs text-muted-foreground">Protected System Folder</DropdownMenuItem>}
+                      {!isSystem ? (
+                          <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}>
+                              <Trash2 className="mr-2 h-4 w-4" />Delete
+                          </DropdownMenuItem>
+                      ) : (
+                          <DropdownMenuItem disabled className="text-xs text-muted-foreground italic">Protected System Folder</DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -257,6 +277,7 @@ export function ContactsView() {
   const [renameInputValue, setRenameInputValue] = useState("");
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
@@ -282,6 +303,11 @@ export function ContactsView() {
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const autoEdit = searchParams ? searchParams.get('edit') === 'true' : false;
+
+  const isUsersFolderSelected = useMemo(() => {
+      const folder = folders.find(f => f.id === selectedFolderId);
+      return folder?.name === 'Ogeemo Users' && folder?.isSystem;
+  }, [folders, selectedFolderId]);
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -309,7 +335,7 @@ export function ContactsView() {
             id: user?.uid || '',
             name: `${adminName} (Admin)`,
             email: user?.email || '',
-            workerType: 'employee',
+            workerType: 'employee', 
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
@@ -317,9 +343,9 @@ export function ContactsView() {
         };
         setWorkersForSelection([adminWorker, ...fetchedWorkers]);
 
-        const workersFolder = allFolders.find(f => f.name === 'Workers' && f.isSystem);
-        if (workersFolder) {
-            setExpandedFolders(new Set([workersFolder.id]));
+        const usersFolder = allFolders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+        if (usersFolder) {
+            setExpandedFolders(new Set([usersFolder.id]));
         }
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to load data", description: error.message });
@@ -331,67 +357,6 @@ export function ContactsView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // Deep linking and scroll effect
-  useEffect(() => {
-    if (highlightedId && !isLoading && contacts.length > 0) {
-        const contact = contacts.find(c => c.id === highlightedId);
-        if (contact) {
-            // Auto-select the folder
-            setSelectedFolderId(contact.folderId);
-            
-            // Handle "One-Click Edit"
-            if (autoEdit) {
-                setContactToEdit(contact);
-                setIsContactFormOpen(true);
-            }
-
-            // Expand the parent if needed
-            const folder = folders.find(f => f.id === contact.folderId);
-            if (folder && folder.parentId) {
-                setExpandedFolders(prev => new Set([...prev, folder.parentId!]));
-            }
-
-            // Use a short timeout to ensure the DOM has rendered the specific row
-            const timeoutId = setTimeout(() => {
-                const rowElement = document.getElementById(`row-${highlightedId}`);
-                if (rowElement) {
-                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 300);
-            
-            return () => clearTimeout(timeoutId);
-        }
-    }
-  }, [highlightedId, isLoading, contacts, folders, autoEdit]);
-
-  useEffect(() => {
-    if (!isLoading && folders.length > 0) {
-        const action = searchParams.get('action');
-        if (action === 'new') {
-            const source = searchParams.get('source');
-            const data: Partial<Contact> = {
-                name: searchParams.get('name') || '',
-                email: searchParams.get('email') || '',
-                businessName: searchParams.get('company') || '',
-                notes: searchParams.get('notes') || '',
-            };
-
-            if (source === 'lead') {
-                const prospectsFolder = folders.find(f => f.name === 'Prospects' && f.isSystem);
-                if (prospectsFolder) data.folderId = prospectsFolder.id;
-            } else if (source === 'user') {
-                const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
-                if (usersFolder) data.folderId = usersFolder.id;
-            }
-
-            setInitialDialogData(data);
-            setContactToEdit(null);
-            setIsContactFormOpen(true);
-            router.replace('/contacts');
-        }
-    }
-  }, [isLoading, folders, searchParams, router]);
 
   const selectedFolder = useMemo(
     () => folders.find((f) => f && f.id === selectedFolderId),
@@ -477,11 +442,16 @@ export function ContactsView() {
     }
   }, [renamingFolder, renameInputValue, toast]);
 
-  const handleNewContactClick = useCallback(() => {
-    setInitialDialogData({});
-    setContactToEdit(null);
-    setIsContactFormOpen(true);
-  }, []);
+  const handleNewActionClick = useCallback(() => {
+    if (isUsersFolderSelected) {
+        setContactToEdit(null);
+        setIsAddUserDialogOpen(true);
+    } else {
+        setInitialDialogData({});
+        setContactToEdit(null);
+        setIsContactFormOpen(true);
+    }
+  }, [isUsersFolderSelected]);
 
   const handleToggleSelectAll = useCallback(() => {
     setSelectedContactIds(allVisibleSelected ? [] : displayedContacts.map(c => c.id));
@@ -574,22 +544,36 @@ export function ContactsView() {
       setIsNewFolderDialogOpen(true);
   };
 
-  const handleScheduleTask = useCallback((contact: Contact) => {
-    router.push(`/master-mind?contactId=${contact.id}&title=${encodeURIComponent(`Meeting with ${contact.name}`)}`);
-  }, [router]);
+  const handleRoleChange = async (userId: string, email: string, newRole: UserRole) => {
+    if (!user) return;
+    try {
+      await updateUserProfile(userId, email, { role: newRole });
+      toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    }
+  };
 
-  const handleCreateInvoice = useCallback((contact: Contact) => {
-    router.push(`/accounting/invoices/create?contactId=${contact.id}`);
-  }, [router]);
+  const getRoleIcon = (role?: UserRole) => {
+    switch (role) {
+      case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
+      case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
+      case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
+      case 'none': return <UserX className="h-4 w-4 text-destructive" />;
+      default: return <Shield className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
 
-  const handleStartProject = useCallback((contact: Contact) => {
-    router.push(`/projects/create?contactId=${contact.id}`);
-  }, [router]);
-
-  const handleLogTimeRetrospective = useCallback((contact: Contact) => {
-    setPreselectedContactId(contact.id);
-    setIsLogTimeDialogOpen(true);
-  }, []);
+  const getRoleLabel = (role?: UserRole) => {
+    switch (role) {
+      case 'admin': return 'Admin (Full)';
+      case 'editor': return 'Read/Edit';
+      case 'viewer': return 'Read Only';
+      case 'none': return 'No Access';
+      default: return 'Viewer';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -637,6 +621,7 @@ export function ContactsView() {
                             key={folder.id} 
                             folder={folder} 
                             allFolders={folders} 
+                            level={0} 
                             selectedFolderId={selectedFolderId}
                             expandedFolders={expandedFolders}
                             onSelectFolder={handleSelectFolder}
@@ -661,7 +646,7 @@ export function ContactsView() {
                   <div className="flex items-center justify-between p-4 border-b h-20">
                       <div>
                           <h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : selectedFolder?.name}</h2>
-                          <p className="text-sm text-muted-foreground">{displayedContacts.length} contact(s)</p>
+                          <p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedContactIds.length > 0 && (
@@ -669,8 +654,9 @@ export function ContactsView() {
                                <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedContactIds.length})
                            </Button>
                         )}
-                        <Button onClick={handleNewContactClick} disabled={selectedFolderId === 'all'}>
-                            <Plus className="mr-2 h-4 w-4" /> New Contact
+                        <Button onClick={handleNewActionClick} disabled={selectedFolderId === 'all'}>
+                            {isUsersFolderSelected ? <UserPlus className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {isUsersFolderSelected ? 'Add System User' : 'New Contact'}
                         </Button>
                       </div>
                   </div>
@@ -686,7 +672,7 @@ export function ContactsView() {
                                   </TableHead>
                                   <TableHead>Name</TableHead>
                                   <TableHead>Email</TableHead>
-                                  <TableHead>Phone</TableHead>
+                                  {isUsersFolderSelected ? <TableHead>Authority</TableHead> : <TableHead>Phone</TableHead>}
                                   {selectedFolderId === 'all' && <TableHead>Folder</TableHead>}
                                   <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                               </TableRow>
@@ -695,6 +681,7 @@ export function ContactsView() {
                               {displayedContacts.map((contact) => {
                                 const folderName = folders.find(f => f.id === contact.folderId)?.name || 'Unassigned';
                                 const primaryPhoneNumber = contact.primaryPhoneType && contact[contact.primaryPhoneType] ? contact[contact.primaryPhoneType] : contact.cellPhone || contact.businessPhone || contact.homePhone;
+                                
                                 return (
                                   <DraggableTableRow 
                                     key={contact.id} 
@@ -708,22 +695,56 @@ export function ContactsView() {
                                         </button>
                                       </TableCell>
                                       <TableCell>{contact.email}</TableCell>
-                                      <TableCell>{primaryPhoneNumber}</TableCell>
+                                      {isUsersFolderSelected ? (
+                                          <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                  {getRoleIcon(contact.role as UserRole)}
+                                                  <span className="text-xs font-medium">{getRoleLabel(contact.role as UserRole)}</span>
+                                              </div>
+                                          </TableCell>
+                                      ) : (
+                                          <TableCell>{primaryPhoneNumber}</TableCell>
+                                      )}
                                       {selectedFolderId === 'all' && <TableCell>{folderName}</TableCell>}
                                       <TableCell onClick={(e) => e.stopPropagation()}>
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
                                                   <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                  <DropdownMenuSeparator />
-                                                  <DropdownMenuItem onSelect={() => handleLogTimeRetrospective(contact)}><Clock className="mr-2 h-4 w-4" /> Log Retrospective Time</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => handleScheduleTask(contact)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => handleCreateInvoice(contact)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
-                                                  <DropdownMenuItem onSelect={() => handleStartProject(contact)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
+                                                  
+                                                  {isUsersFolderSelected && (
+                                                      <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Manage Authority</DropdownMenuLabel>
+                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'admin')}>
+                                                            <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full)
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'editor')}>
+                                                            <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'viewer')}>
+                                                            <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'none')} className="text-destructive">
+                                                            <Lock className="mr-2 h-4 w-4" /> No Access
+                                                        </DropdownMenuItem>
+                                                      </>
+                                                  )}
+
+                                                  {!isUsersFolderSelected && (
+                                                      <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Retrospective Time</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => router.push(`/master-mind?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
+                                                      </>
+                                                  )}
+                                                  
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem onSelect={() => { setContactToMerge(contact); setIsMergeDialogOpen(true); }}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
-                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}> <Trash2 className="mr-2 h-4 w-4" />Delete Contact</DropdownMenuItem>
+                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}> <Trash2 className="mr-2 h-4 w-4" />Delete Record</DropdownMenuItem>
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>
@@ -756,6 +777,15 @@ export function ContactsView() {
         />
       )}
 
+      {isAddUserDialogOpen && (
+          <AddUserDialog
+            isOpen={isAddUserDialogOpen}
+            onOpenChange={setIsAddUserDialogOpen}
+            onUserAdded={loadData}
+            userToEdit={null}
+          />
+      )}
+
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
@@ -774,7 +804,7 @@ export function ContactsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and contacts?</AlertDialogDescription>
+            <AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and records?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -795,7 +825,7 @@ export function ContactsView() {
       
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} contact(s)?</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} record(s)?</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction>

@@ -65,14 +65,14 @@ export default function RegisterPage() {
             companyName: formData.businessName,
         });
 
-        // 2. Create internal contact record
-        const contactsFolder = await findOrCreateFolder(user.uid, "Ogeemo Users");
+        // 2. Create internal contact record in the protected "Ogeemo Users" folder
+        const usersFolder = await findOrCreateFolder(user.uid, "Ogeemo Users");
         const newContactData = {
             name: formData.name,
             email: formData.email,
             businessName: formData.businessName,
-            folderId: contactsFolder.id,
-            notes: `System User created on ${new Date().toLocaleDateString()}.`,
+            folderId: usersFolder.id,
+            notes: `System Administrator created via registration on ${new Date().toLocaleDateString()}.`,
             userId: user.uid,
         };
         await addContact(newContactData);

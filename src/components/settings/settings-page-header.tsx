@@ -35,9 +35,9 @@ export function SettingsPageHeader({ pageTitle }: SettingsPageHeaderProps) {
       </Breadcrumb>
       <div className="flex items-center gap-2">
         <Button asChild variant="outline">
-          <Link href="/website">
+          <Link href="/about">
             <Globe className="mr-2 h-4 w-4" />
-            Back to Website
+            Back to About Ogeemo
           </Link>
         </Button>
         <Button asChild>

@@ -9,7 +9,6 @@ import {
   LoaderCircle,
   FolderPlus,
   ChevronRight,
-  ExternalLink,
   MoreVertical,
   Trash2,
   Users,
@@ -20,11 +19,10 @@ import {
   Check,
   ChevronsUpDown,
   X,
-  Mail,
+  Clock,
   Calendar,
   FileDigit,
   Briefcase,
-  Clock,
   UserPlus,
   ShieldCheck,
   ShieldAlert,
@@ -34,12 +32,10 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, deleteContacts, updateContact, mergeContacts } from '@/services/contact-service';
-import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { useAuth } from '@/context/auth-context';
@@ -52,8 +48,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +60,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,9 +77,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Checkbox } from '../ui/checkbox';
-import Link from 'next/link';
-import { LogTimeDialog } from '../reports/log-time-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getUserProfile, updateUserProfile, type UserRole } from '@/services/user-profile-service';
 
@@ -125,7 +120,6 @@ const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Cont
     );
 };
 
-// Internal fix for ref forwarding on TableRow if needed, otherwise standard TableRow works
 const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.ComponentProps<typeof TableRow>>((props, ref) => (
     <TableRow {...props} ref={ref} />
 ));
@@ -302,7 +296,6 @@ export function ContactsView() {
   const router = useRouter();
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
-  const autoEdit = searchParams ? searchParams.get('edit') === 'true' : false;
 
   const isUsersFolderSelected = useMemo(() => {
       const folder = folders.find(f => f.id === selectedFolderId);
@@ -548,6 +541,11 @@ export function ContactsView() {
     if (!user) return;
     try {
       await updateUserProfile(userId, email, { role: newRole });
+      // Also update the contact record role for visibility
+      const contactMatch = contacts.find(c => c.id === userId || c.email === email);
+      if (contactMatch) {
+          await updateContact(contactMatch.id, { role: newRole });
+      }
       toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
       loadData();
     } catch (error: any) {

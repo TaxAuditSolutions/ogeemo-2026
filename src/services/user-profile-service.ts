@@ -125,8 +125,8 @@ const docToUserProfile = (doc: any): UserProfile => {
 
     return { 
         id: doc.id, 
-        role: 'viewer', // Default to viewer if role is missing in DB
         ...data, 
+        role: data.role || 'viewer', // Ensure role is present
         preferences 
     } as UserProfile;
 };

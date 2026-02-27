@@ -137,8 +137,7 @@ export function TeamManagementCard() {
     }
   };
 
-  // High-fidelity access check: Ensure the current user can manage the team.
-  // We assume the user is an admin if they are the only user or if their role is explicitly set.
+  // Resilient access check: If the user is the only one in the list, or we have an admin profile, allow management.
   const canManageTeam = currentUserProfile?.role === 'admin' || users.length === 1;
 
   return (

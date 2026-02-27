@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
@@ -98,9 +99,36 @@ const defaultPreferences: UserProfile['preferences'] = {
     }
 };
 
+/**
+ * High-fidelity doc converter that applies system defaults.
+ */
 const docToUserProfile = (doc: any): UserProfile => {
     const data = doc.data();
-    return { id: doc.id, ...data } as UserProfile;
+    if (!data) return { id: doc.id, email: '', role: 'viewer' } as UserProfile;
+
+    const preferences = { 
+        ...defaultPreferences, 
+        ...(data.preferences || {}),
+        planningRituals: {
+            ...defaultPreferences.planningRituals,
+            ...(data.preferences?.planningRituals || {}),
+            daily: {
+                ...defaultPreferences.planningRituals?.daily,
+                ...(data.preferences?.planningRituals?.daily || {}),
+            },
+            weekly: {
+                ...defaultPreferences.planningRituals?.weekly,
+                ...(data.preferences?.planningRituals?.weekly || {}),
+            }
+        }
+    };
+
+    return { 
+        id: doc.id, 
+        role: 'viewer', // Default to viewer if role is missing in DB
+        ...data, 
+        preferences 
+    } as UserProfile;
 };
 
 export async function getUsers(): Promise<UserProfile[]> {
@@ -116,24 +144,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-        const data = docSnap.data();
-        const preferences = { 
-            ...defaultPreferences, 
-            ...(data.preferences || {}),
-            planningRituals: {
-                ...defaultPreferences.planningRituals,
-                ...(data.preferences?.planningRituals || {}),
-                daily: {
-                    ...defaultPreferences.planningRituals?.daily,
-                    ...(data.preferences?.planningRituals?.daily || {}),
-                },
-                weekly: {
-                    ...defaultPreferences.planningRituals?.weekly,
-                    ...(data.preferences?.planningRituals?.weekly || {}),
-                }
-            }
-        };
-        return { id: docSnap.id, ...data, preferences } as UserProfile;
+        return docToUserProfile(docSnap);
     } else {
         return null;
     }

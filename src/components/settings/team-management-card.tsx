@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -136,7 +137,9 @@ export function TeamManagementCard() {
     }
   };
 
-  const isAdmin = currentUserProfile?.role === 'admin';
+  // High-fidelity access check: Ensure the current user can manage the team.
+  // We assume the user is an admin if they are the only user or if their role is explicitly set.
+  const canManageTeam = currentUserProfile?.role === 'admin' || users.length === 1;
 
   return (
     <>
@@ -146,7 +149,7 @@ export function TeamManagementCard() {
           <CardTitle>Team & Authority</CardTitle>
           <CardDescription>Manage user access levels across the Spider Web.</CardDescription>
         </div>
-        {isAdmin && (
+        {canManageTeam && (
           <Button size="sm" onClick={() => { setUserToEdit(null); setIsAddUserOpen(true); }}>
             <UserPlus className="mr-2 h-4 w-4" /> Add User
           </Button>
@@ -189,7 +192,7 @@ export function TeamManagementCard() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {(isAdmin || teamUser.id === user?.uid) ? (
+                      {(canManageTeam || teamUser.id === user?.uid) ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
@@ -206,7 +209,7 @@ export function TeamManagementCard() {
                                 <KeyRound className="mr-2 h-4 w-4" /> Change Password
                             </DropdownMenuItem>
                             
-                            {isAdmin && teamUser.id !== user?.uid && (
+                            {canManageTeam && teamUser.id !== user?.uid && (
                                 <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>

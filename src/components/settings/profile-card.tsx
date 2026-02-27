@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getUserProfile, type UserRole } from "@/services/user-profile-service";
 import { Badge } from "../ui/badge";
 import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
@@ -92,7 +93,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>My Profile</CardTitle>
+          <div>
+            <CardTitle>My Profile</CardTitle>
+            <CardDescription>Update your secure operational details.</CardDescription>
+          </div>
           {role && (
               <Badge variant="outline" className="flex items-center gap-1.5 py-1 px-3 bg-muted/50">
                   {getRoleIcon(role)}
@@ -108,7 +112,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading }) => 
           </Avatar>
           <div className="space-y-4 flex-1">
             <FormField control={form.control} name="displayName" render={({ field }) => ( <FormItem> <FormLabel>Display Name</FormLabel> <FormControl><Input placeholder="Your Name" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input type="email" placeholder="your@email.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly className="bg-muted/50" /></FormControl> <FormMessage /> </FormItem> )} />
           </div>
         </div>
         

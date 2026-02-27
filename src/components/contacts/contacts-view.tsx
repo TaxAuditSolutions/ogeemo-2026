@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -29,6 +30,7 @@ import {
   Shield,
   Lock,
   UserX,
+  KeyRound,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -80,7 +82,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getUserProfile, updateUserProfile, type UserRole } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
+import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -260,6 +263,7 @@ const FolderTreeItem = ({
 export function ContactsView() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,6 +276,7 @@ export function ContactsView() {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -287,12 +292,15 @@ export function ContactsView() {
   const [preselectedContactId, setPreselectedContactId] = useState<string | null>(null);
   const [workersForDialog, setWorkersForSelection] = useState<Worker[]>([]);
 
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
+
   const [initialContactData, setInitialDialogData] = useState<Partial<Contact>>({});
 
   const { toast } = useToast();
   const { user } = useAuth();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
 
@@ -309,20 +317,22 @@ export function ContactsView() {
     setIsLoading(true);
     try {
         const allFolders = await ensureSystemFolders(user.uid);
-        const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers, profile] = await Promise.all([
+        const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers, fetchedProfiles] = await Promise.all([
             getContacts(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
             getWorkers(user.uid),
-            getUserProfile(user.uid)
+            getUsers()
         ]);
         setFolders(allFolders);
         setContacts(fetchedContacts);
         setCompanies(fetchedCompanies);
         setCustomIndustries(fetchedIndustries);
+        setUserProfiles(fetchedProfiles);
 
-        const adminName = profile?.displayName || user.displayName || user.email || 'Admin';
-        const adminIdNumber = profile?.employeeNumber || '';
+        const myProfile = fetchedProfiles.find(p => p.id === user.uid);
+        const adminName = myProfile?.displayName || user.displayName || user.email || 'Admin';
+        const adminIdNumber = myProfile?.employeeNumber || '';
         const adminWorker: Worker = {
             id: user?.uid || '',
             name: `${adminName} (Admin)`,
@@ -437,6 +447,7 @@ export function ContactsView() {
   const handleNewActionClick = useCallback(() => {
     if (isUsersFolderSelected) {
         setContactToEdit(null);
+        setUserToEdit(null);
         setIsAddUserDialogOpen(true);
     } else {
         setInitialDialogData({});
@@ -540,7 +551,6 @@ export function ContactsView() {
     if (!user) return;
     try {
       await updateUserProfile(userId, email, { role: newRole });
-      // Also update the contact record role for visibility
       const contactMatch = contacts.find(c => c.id === userId || c.email === email);
       if (contactMatch) {
           await updateContact(contactMatch.id, { role: newRole });
@@ -550,6 +560,26 @@ export function ContactsView() {
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     }
+  };
+
+  const handleEditUser = (contact: Contact) => {
+      const profile = userProfiles.find(p => p.email === contact.email || p.id === contact.id);
+      if (profile) {
+          setUserToEdit(profile);
+          setIsAddUserDialogOpen(true);
+      } else {
+          toast({ variant: 'destructive', title: 'Profile Not Found', description: 'Could not find a secure user profile for this directory record.' });
+      }
+  };
+
+  const handleChangePassword = (contact: Contact) => {
+      const profile = userProfiles.find(p => p.email === contact.email || p.id === contact.id);
+      if (profile) {
+          setUserForPasswordChange(profile);
+          setIsChangePasswordOpen(true);
+      } else {
+          toast({ variant: 'destructive', title: 'Profile Not Found' });
+      }
   };
 
   const getRoleIcon = (role?: UserRole) => {
@@ -707,10 +737,15 @@ export function ContactsView() {
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                  <DropdownMenuItem onSelect={() => isUsersFolderSelected ? handleEditUser(contact) : (setContactToEdit(contact), setIsContactFormOpen(true))}>
+                                                      <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                  </DropdownMenuItem>
                                                   
                                                   {isUsersFolderSelected && (
                                                       <>
+                                                        <DropdownMenuItem onSelect={() => handleChangePassword(contact)}>
+                                                            <KeyRound className="mr-2 h-4 w-4" /> Change Password
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Manage Authority</DropdownMenuLabel>
                                                         <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'admin')}>
@@ -779,9 +814,16 @@ export function ContactsView() {
             isOpen={isAddUserDialogOpen}
             onOpenChange={setIsAddUserDialogOpen}
             onUserAdded={loadData}
-            userToEdit={null}
+            userToEdit={userToEdit}
           />
       )}
+
+      <ChangePasswordDialog
+        isOpen={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        user={userForPasswordChange}
+        onPasswordChanged={loadData}
+      />
 
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md">

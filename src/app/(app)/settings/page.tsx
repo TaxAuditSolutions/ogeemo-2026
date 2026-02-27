@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Save, LoaderCircle, X } from "lucide-react";
+import { Save, LoaderCircle, X, Users2, ArrowRight } from "lucide-react";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { PreferencesCard } from "@/components/settings/preferences-card";
@@ -16,7 +16,7 @@ import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
-import { TeamManagementCard } from "@/components/settings/team-management-card";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -123,7 +123,27 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
             <ProfileCard form={form} isLoading={isLoading} />
-            <TeamManagementCard />
+            
+            {/* Consolidated Team Access Node */}
+            <Card className="border-primary/20 bg-primary/5 shadow-md">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <Users2 className="h-6 w-6 text-primary" />
+                        <CardTitle>Team & Authority</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Consolidated user management is now handled within the Contacts Hub.
+                    </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild className="w-full font-bold shadow-lg">
+                        <Link href="/contacts?highlight=all">
+                            Manage Team Directory <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+
             <PreferencesCard />
           </div>
           <div className="space-y-6">

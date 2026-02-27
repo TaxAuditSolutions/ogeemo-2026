@@ -1,7 +1,7 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -134,19 +134,38 @@ const docToUserProfile = (doc: any): UserProfile => {
 export async function getUsers(): Promise<UserProfile[]> {
   const db = getDb();
   const q = query(collection(db, PROFILES_COLLECTION));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToUserProfile);
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToUserProfile);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: PROFILES_COLLECTION,
+            operation: 'list',
+        } satisfies SecurityRuleContext));
+    }
+    throw error;
+  }
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-        return docToUserProfile(docSnap);
-    } else {
-        return null;
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docToUserProfile(docSnap);
+        } else {
+            return null;
+        }
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'get',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
     }
 }
 

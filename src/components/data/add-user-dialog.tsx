@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -46,10 +47,6 @@ import {
     ShieldCheck, 
     Shield, 
     Lock,
-    Search,
-    X,
-    Mic,
-    Square
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -155,7 +152,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
-            // Standard update logic remains the same
             const profileUpdateData: Partial<UserProfile> = { role: values.role };
             if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
             if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
@@ -184,14 +180,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onUserAdded();
             onOpenChange(false);
         } else {
-            // CREATE LOGIC - Preventing session swap with Secondary App
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
                 return;
             }
 
-            // Initialize a temporary secondary app to create the user without signing out the admin
             const secondaryAppName = `Secondary-${Date.now()}`;
             secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
             const secondaryAuth = getAuth(secondaryApp);
@@ -200,7 +194,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             const newUser = userCredential.user;
             await updateProfile(newUser, { displayName: values.name });
 
-            // 1. Create secure profile for new user
             await updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
@@ -209,7 +202,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 role: values.role, 
             });
 
-            // 2. Create/Update contact record under ADMIN's ownership
             if (selectedContactId) {
                 await updateContact(selectedContactId, { 
                     folderId: usersFolder?.id, 
@@ -223,11 +215,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     employeeNumber: values.employeeNumber,
                     folderId: usersFolder?.id || '',
                     role: values.role,
-                    userId: currentUser.uid, // Owned by admin
+                    userId: currentUser.uid, 
                 });
             }
             
-            // 3. Cleanup secondary app
             await signOut(secondaryAuth);
             await deleteApp(secondaryApp);
             secondaryApp = null;
@@ -237,13 +228,14 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onOpenChange(false);
         }
     } catch (error: any) {
-        let errorMessage = "An unexpected error occurred during user creation.";
-        
-        if (error.code === 'auth/email-already-in-use') {
+        let errorMessage = "An unexpected error occurred during user management.";
+        const errorCode = error.code || (error.cause as any)?.code;
+
+        if (errorCode === 'auth/email-already-in-use') {
             errorMessage = "This email is already associated with an account.";
-        } else if (error.code === 'auth/weak-password') {
+        } else if (errorCode === 'auth/weak-password') {
             errorMessage = "The password provided is too weak.";
-        } else if (error.code === 'auth/invalid-email') {
+        } else if (errorCode === 'auth/invalid-email') {
             errorMessage = "The email address is invalid.";
         }
 
@@ -253,7 +245,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             description: errorMessage
         });
         
-        console.error("User Creation catch block:", error);
+        console.warn("User Management Action Issue:", error);
     } finally {
       if (secondaryApp) {
           try { await deleteApp(secondaryApp); } catch (e) {}

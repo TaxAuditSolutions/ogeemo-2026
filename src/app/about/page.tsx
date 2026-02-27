@@ -19,6 +19,10 @@ import {
     CheckCircle2
 } from 'lucide-react';
 
+/**
+ * @fileOverview The About landing page for Ogeemo.
+ * This page serves as the primary marketing vehicle for the platform's vision.
+ */
 export default function AboutLandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -35,16 +39,21 @@ export default function AboutLandingPage() {
               One Command Centre. <br className="hidden sm:block" /> Total Business Orchestration.
             </h1>
 
-            {/* New Image Placeholder */}
-            <div className="w-full max-w-2xl aspect-[2/1] mb-8 rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white relative">
+            {/* Strategic Header Image */}
+            <div className="w-full max-w-3xl aspect-[2/1] mb-6 rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white relative">
                 <ImagePlaceholder id="about-header-graphic" className="object-cover" />
             </div>
+
+            {/* Masterclass Credo Statement */}
+            <p className="text-lg md:text-xl font-medium italic text-primary/80 mb-8 max-w-3xl leading-relaxed">
+              "The high-fidelity orchestration engine that doubles as your business masterclass."
+            </p>
 
             <p className="text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
               Stop juggling disconnected apps. Ogeemo unifies accounting, project execution, and client relationships into a single AI-powered "Master Mind."
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <Button asChild size="lg" className="h-12 px-8 text-lg font-bold">
+              <Button asChild size="lg" className="h-12 px-8 text-lg font-bold shadow-lg hover:shadow-xl transition-all">
                 <Link href="/register">Start 30-Day Free Trial</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="h-12 px-8 text-lg">
@@ -120,7 +129,7 @@ export default function AboutLandingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <Card className="text-center p-6 border-primary/10 bg-primary/5">
+                    <Card className="text-center p-6 border-primary/10 bg-primary/5 shadow-sm hover:shadow-md transition-all">
                         <CardContent className="pt-6 space-y-2">
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-2">
                                 <Globe className="h-6 w-6" />
@@ -129,7 +138,7 @@ export default function AboutLandingPage() {
                             <p className="text-sm text-muted-foreground">Every piece of data is connected. Invoices link to time logs, which link to projects.</p>
                         </CardContent>
                     </Card>
-                    <Card className="text-center p-6 border-primary/10 bg-primary/5">
+                    <Card className="text-center p-6 border-primary/10 bg-primary/5 shadow-sm hover:shadow-md transition-all">
                         <CardContent className="pt-6 space-y-2">
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-2">
                                 <Rocket className="h-6 w-6" />
@@ -138,7 +147,7 @@ export default function AboutLandingPage() {
                             <p className="text-sm text-muted-foreground">BKS keeps you prepared for tax season 365 days a year by default.</p>
                         </CardContent>
                     </Card>
-                    <Card className="text-center p-6 border-primary/10 bg-primary/5">
+                    <Card className="text-center p-6 border-primary/10 bg-primary/5 shadow-sm hover:shadow-md transition-all">
                         <CardContent className="pt-6 space-y-2">
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-2">
                                 <Users className="h-6 w-6" />

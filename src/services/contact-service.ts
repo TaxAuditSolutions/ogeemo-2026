@@ -1,7 +1,6 @@
 'use client';
 
 import { 
-    getFirestore, 
     collection, 
     getDocs, 
     doc, 
@@ -11,22 +10,16 @@ import {
     query, 
     where, 
     writeBatch,
-    Timestamp,
     getDoc,
+    setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { Contact } from '@/data/contacts';
 
 const CONTACTS_COLLECTION = 'contacts';
 const CLIENT_ACCOUNTS_COLLECTION = 'clientAccounts';
-
-interface ClientAccount {
-  id: string;
-  name: string;
-  contactId: string;
-  userId: string;
-  createdAt: Date;
-}
 
 // --- Helper Functions ---
 function getDb() {
@@ -41,7 +34,6 @@ const docToContact = (doc: any): Contact => {
         ...data,
     } as Contact;
 };
-
 
 const generateKeywords = (name: string, email: string, businessName?: string): string[] => {
     const keywords = new Set<string>();
@@ -62,25 +54,27 @@ const generateKeywords = (name: string, email: string, businessName?: string): s
     return Array.from(keywords);
 };
 
-
-// --- Client Account Function ---
 async function createClientAccount(userId: string, contactId: string, contactName: string): Promise<void> {
     const db = getDb();
-    const q = query(collection(db, CLIENT_ACCOUNTS_COLLECTION), where("contactId", "==", contactId), where("userId", "==", userId));
-    const existingAccount = await getDocs(q);
+    const collectionRef = collection(db, CLIENT_ACCOUNTS_COLLECTION);
+    const accountData = {
+        name: contactName,
+        contactId,
+        userId,
+        createdAt: new Date(),
+    };
 
-    if (existingAccount.empty) {
-      await addDoc(collection(db, CLIENT_ACCOUNTS_COLLECTION), {
-          name: contactName,
-          contactId,
-          userId,
-          createdAt: new Date(),
-      });
-    }
+    addDoc(collectionRef, accountData).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: collectionRef.path,
+                operation: 'create',
+                requestResourceData: accountData,
+            } satisfies SecurityRuleContext));
+        }
+    });
 }
 
-
-// --- Contact functions ---
 export async function getContacts(userId: string): Promise<Contact[]> {
   const db = getDb();
   const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId));
@@ -98,10 +92,11 @@ export async function getContactById(contactId: string): Promise<Contact | null>
     return null;
 }
 
-
 export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {
     const db = getDb();
     const collectionRef = collection(db, CONTACTS_COLLECTION);
+    const docRef = doc(collectionRef);
+    
     const dataToSave = {
       ...contactData,
       website: contactData.website || '',
@@ -112,10 +107,18 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
       keywords: generateKeywords(contactData.name, contactData.email || '', contactData.businessName),
     };
 
-    const docRef = await addDoc(collectionRef, dataToSave);
-    const newContact = { id: docRef.id, ...dataToSave };
-    await createClientAccount(contactData.userId, docRef.id, contactData.name);
-    return newContact;
+    setDoc(docRef, dataToSave).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'create',
+                requestResourceData: dataToSave,
+            } satisfies SecurityRuleContext));
+        }
+    });
+
+    createClientAccount(contactData.userId, docRef.id, contactData.name);
+    return { id: docRef.id, ...dataToSave };
 }
 
 export async function updateContact(contactId: string, contactData: Partial<Omit<Contact, 'id' | 'userId'>>): Promise<void> {
@@ -135,9 +138,16 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
         }
     }
 
-    await updateDoc(contactRef, dataToUpdate);
+    updateDoc(contactRef, dataToUpdate).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: contactRef.path,
+                operation: 'update',
+                requestResourceData: dataToUpdate,
+            } satisfies SecurityRuleContext));
+        }
+    });
 }
-
 
 export async function deleteContacts(contactIds: string[]): Promise<void> {
     const db = getDb();
@@ -149,16 +159,28 @@ export async function deleteContacts(contactIds: string[]): Promise<void> {
         batch.delete(contactRef);
     });
 
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch',
+                operation: 'delete',
+            } satisfies SecurityRuleContext));
+        }
+    });
 }
-
 
 export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
     const db = getDb();
     const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
-    await deleteDoc(sourceRef);
+    deleteDoc(sourceRef).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: sourceRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext));
+        }
+    });
 }
-
 
 export async function findOrCreateFolder(userId: string, folderName: string): Promise<any> {
     const db = getDb();

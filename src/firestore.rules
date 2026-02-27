@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -7,19 +6,23 @@ service cloud.firestore {
     // --- RBAC Helpers ---
     
     function getUserData() {
+      // Safely fetch user data, returning null if not found
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function isAdmin() {
-      return request.auth != null && getUserData().role == 'admin';
+      let data = getUserData();
+      return request.auth != null && data != null && data.role == 'admin';
     }
 
     function isEditor() {
-      return request.auth != null && (getUserData().role == 'editor' || getUserData().role == 'admin');
+      let data = getUserData();
+      return request.auth != null && data != null && (data.role == 'editor' || data.role == 'admin');
     }
 
     function isViewer() {
-      return request.auth != null && (getUserData().role == 'viewer' || getUserData().role == 'editor' || getUserData().role == 'admin');
+      let data = getUserData();
+      return request.auth != null && data != null && (data.role == 'viewer' || data.role == 'editor' || data.role == 'admin');
     }
 
     function isOwner(userId) {
@@ -30,7 +33,10 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
+      // Allow any authenticated user to create their own initial profile
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Admins can create other users' profiles
+      allow create: if isAdmin();
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 

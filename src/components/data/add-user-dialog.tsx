@@ -37,18 +37,13 @@ import {
     UserPlus, 
     ChevronsUpDown, 
     Check, 
-    Search, 
-    X, 
     Users, 
-    Pencil, 
     Save, 
     Info, 
     ShieldAlert, 
     ShieldCheck, 
     Shield, 
     Lock,
-    Plus,
-    UserPlus2
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -107,7 +102,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         setContacts(fetchedContacts);
         setFolders(fetchedFolders);
     } catch (error) {
-        console.error("Failed to load contacts for user creation:", error);
+        console.error("Failed to load support data:", error);
     } finally {
         setIsLoadingContacts(false);
     }
@@ -146,14 +141,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
       toast({ title: "Contact Linked", description: `Pre-filled data for ${contact.name}.` });
   };
 
-  const handleModeChange = (newMode: 'new' | 'promote') => {
-      setMode(newMode);
-      if (newMode === 'new') {
-          setSelectedContactId(null);
-          form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
-      }
-  };
-
   const onSubmit = async (values: UserFormData) => {
     if (!currentUser) return;
     setIsSaving(true);
@@ -161,23 +148,18 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
-            // Editing existing user
-            const profileUpdateData: Partial<UserProfile> = {
-                role: values.role
-            };
+            const profileUpdateData: Partial<UserProfile> = { role: values.role };
             if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
             if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
             if (values.employeeNumber !== userToEdit.employeeNumber) profileUpdateData.employeeNumber = values.employeeNumber;
 
             const authUpdateData: { email?: string; password?: string } = {};
             if (values.email !== userToEdit.email) authUpdateData.email = values.email;
-            if (values.password && values.password.length >= 6) {
-                authUpdateData.password = values.password;
-            }
+            if (values.password && values.password.length >= 6) authUpdateData.password = values.password;
 
             const contactMatch = contacts.find(c => c.email === userToEdit.email);
             if (contactMatch) {
-                await updateContact(contactMatch.id, { 
+                updateContact(contactMatch.id, { 
                     name: values.name, 
                     email: values.email, 
                     employeeNumber: values.employeeNumber, 
@@ -185,40 +167,31 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 });
             }
 
-            await Promise.all([
-                updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData),
-                Object.keys(authUpdateData).length > 0 ? updateUserAuth(userToEdit.id, authUpdateData) : Promise.resolve(),
-            ]);
+            updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData);
+            if (Object.keys(authUpdateData).length > 0) {
+                await updateUserAuth(userToEdit.id, authUpdateData);
+            }
 
-            toast({ title: 'User Updated', description: `Information for ${values.name} has been updated.` });
+            toast({ title: 'User Updated' });
             onUserAdded();
             onOpenChange(false);
         } else {
-            // Creating new user
-            if (!auth) throw new Error("Authentication service is not available.");
+            if (!auth) throw new Error("Authentication service unavailable.");
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
                 return;
             }
             
-            // NOTE: In a real multi-tenant admin app, this would be a server-side action 
-            // to avoid signing out the current admin. For this prototype, we follow the 
-            // pattern of creating the profile and contact record.
-            
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-            const newUser = userCredential.user;
-            
-            await updateProfile(newUser, { displayName: values.name });
-            
+            // 1. Initiate Firestore records while still authenticated as Admin
             if (selectedContactId) {
-                await updateContact(selectedContactId, { 
+                updateContact(selectedContactId, { 
                     folderId: usersFolder?.id, 
                     role: values.role,
                     employeeNumber: values.employeeNumber
                 });
             } else {
-                await addContact({
+                addContact({
                     name: values.name,
                     email: values.email,
                     employeeNumber: values.employeeNumber,
@@ -228,7 +201,13 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 });
             }
 
-            await updateUserProfile(newUser.uid, newUser.email!, {
+            // 2. Create Auth user (signs out Admin)
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const newUser = userCredential.user;
+            await updateProfile(newUser, { displayName: values.name });
+
+            // 3. Set profile for new user
+            updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
@@ -236,13 +215,13 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 role: values.role, 
             });
             
-            toast({ title: 'User Created', description: `Account for ${values.name} has been created.` });
+            toast({ title: 'User Created', description: `Signed in as ${values.name}.` });
             onUserAdded();
             onOpenChange(false);
         }
-
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        // Standard errors are handled by services emitting FirestorePermissionError
+        console.error("User Creation Error:", error);
     } finally {
       setIsSaving(false);
     }
@@ -251,7 +230,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
+        <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <UserPlus className="h-6 w-6 text-primary" />
             {userToEdit ? 'Edit User Profile' : 'Add New User'}
@@ -271,7 +250,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                         <RadioGroup 
                             defaultValue="new" 
                             value={mode} 
-                            onValueChange={(v) => handleModeChange(v as any)}
+                            onValueChange={(v) => setMode(v as any)}
                             className="flex flex-col space-y-2"
                         >
                             <div className="flex items-center space-x-2">

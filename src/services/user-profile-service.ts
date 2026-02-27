@@ -1,13 +1,12 @@
-
 'use client';
 
-import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
 
-
-// --- Firebase Initialization (Self-contained) ---
 function getDb() {
     const { db } = getFirebaseServices();
     return db;
@@ -18,21 +17,20 @@ function getFunctionsService() {
     return functions;
 }
 
-
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
 export interface PlanningRitual {
-    time: string; // e.g., "17:00"
-    duration: number; // in minutes
-    day?: DayOfWeek; // Only for weekly
-    repeatEnabled?: boolean; // For daily repeats
-    repeatCount?: number; // For daily repeats
+    time: string;
+    duration: number;
+    day?: DayOfWeek;
+    repeatEnabled?: boolean;
+    repeatCount?: number;
 }
 
 export type UserRole = 'admin' | 'editor' | 'viewer' | 'none';
 
 export interface UserProfile {
-    id: string; // This will be the user's UID
+    id: string;
     email: string;
     displayName?: string;
     employeeNumber?: string;
@@ -149,56 +147,61 @@ export async function updateUserProfile(
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
     
-    try {
-        const docSnap = await getDoc(docRef);
+    const docSnap = await getDoc(docRef);
+    const dataWithTimestamp: { [key: string]: any } = {
+        ...data,
+        updatedAt: serverTimestamp(),
+    };
 
-        const dataWithTimestamp: { [key: string]: any } = {
-            ...data,
-            updatedAt: serverTimestamp(),
-        };
-
-        if (docSnap.exists()) {
-            const existingData = docSnap.data();
-            
-            if (data.preferences) {
-                const existingPrefs = existingData.preferences || {};
-                dataWithTimestamp.preferences = {
-                    ...existingPrefs,
-                    ...data.preferences,
-                    planningRituals: {
-                        ...existingPrefs.planningRituals,
-                        ...(data.preferences.planningRituals || {}),
-                    },
-                };
-            }
-            
-            if (data.businessAddress) {
-                const existingAddress = existingData.businessAddress || {};
-                dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
-            }
-            
-            if (data.homeAddress) {
-                const existingAddress = existingData.homeAddress || {};
-                dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
-            }
-
-            await updateDoc(docRef, dataWithTimestamp);
-        } else {
-            dataWithTimestamp.email = email;
-            dataWithTimestamp.createdAt = serverTimestamp();
-            dataWithTimestamp.role = data.role || 'viewer'; // Default role for new users
-            dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-            
-            await setDoc(docRef, dataWithTimestamp);
+    if (docSnap.exists()) {
+        const existingData = docSnap.data();
+        
+        if (data.preferences) {
+            const existingPrefs = existingData.preferences || {};
+            dataWithTimestamp.preferences = {
+                ...existingPrefs,
+                ...data.preferences,
+                planningRituals: {
+                    ...existingPrefs.planningRituals,
+                    ...(data.preferences.planningRituals || {}),
+                },
+            };
         }
-    } catch (error: any) {
-        console.error(`Error updating user profile (${docRef.path}):`, {
-            operation: 'update/set',
-            path: docRef.path,
-            requestData: data,
-            error,
+        
+        if (data.businessAddress) {
+            const existingAddress = existingData.businessAddress || {};
+            dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
+        }
+        
+        if (data.homeAddress) {
+            const existingAddress = existingData.homeAddress || {};
+            dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
+        }
+
+        updateDoc(docRef, dataWithTimestamp).catch(async (error) => {
+            if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'update',
+                    requestResourceData: dataWithTimestamp,
+                } satisfies SecurityRuleContext));
+            }
         });
-        throw error;
+    } else {
+        dataWithTimestamp.email = email;
+        dataWithTimestamp.createdAt = serverTimestamp();
+        dataWithTimestamp.role = data.role || 'viewer';
+        dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
+        
+        setDoc(docRef, dataWithTimestamp).catch(async (error) => {
+            if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'create',
+                    requestResourceData: dataWithTimestamp,
+                } satisfies SecurityRuleContext));
+            }
+        });
     }
 }
 
@@ -214,14 +217,15 @@ export async function updateUserAuth(uid: string, data: { email?: string; passwo
     }
 }
 
-
 export async function deleteUserProfile(userId: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    try {
-        await deleteDoc(docRef);
-    } catch (error: any) {
-        console.error(`Error deleting user profile (${docRef.path}):`, error);
-        throw error;
-    }
+    deleteDoc(docRef).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext));
+        }
+    });
 }

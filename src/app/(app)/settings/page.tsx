@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,7 @@ import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
+import { TeamManagementCard } from "@/components/settings/team-management-card";
 
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -121,6 +123,7 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
             <ProfileCard form={form} isLoading={isLoading} />
+            <TeamManagementCard />
             <PreferencesCard />
           </div>
           <div className="space-y-6">

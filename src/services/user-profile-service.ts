@@ -29,6 +29,8 @@ export interface PlanningRitual {
     repeatCount?: number; // For daily repeats
 }
 
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
 export interface UserProfile {
     id: string; // This will be the user's UID
     email: string;
@@ -39,6 +41,7 @@ export interface UserProfile {
     businessPhone?: string;
     cellPhone?: string;
     bestPhone?: 'business' | 'cell';
+    role?: UserRole;
     businessAddress?: {
         street?: string;
         city?: string;
@@ -183,6 +186,7 @@ export async function updateUserProfile(
         } else {
             dataWithTimestamp.email = email;
             dataWithTimestamp.createdAt = serverTimestamp();
+            dataWithTimestamp.role = data.role || 'viewer'; // Default role for new users
             dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
             
             await setDoc(docRef, dataWithTimestamp);

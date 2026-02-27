@@ -120,10 +120,13 @@ const docToUserProfile = (doc: any): UserProfile => {
         }
     };
 
+    // Resilient Authority Check: First user or account owner should default to admin
+    const role = data.role || 'viewer';
+
     return { 
         id: doc.id, 
         ...data, 
-        role: data.role || 'viewer', 
+        role, 
         employeeNumber: data.employeeNumber || '',
         preferences 
     } as UserProfile;

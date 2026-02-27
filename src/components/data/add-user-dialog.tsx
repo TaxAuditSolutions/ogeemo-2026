@@ -179,12 +179,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onUserAdded();
             onOpenChange(false);
         } else {
-            // Creating new user or promoting contact
-            // 1. Check if a profile already exists for this email
+            // 1. First, check if a profile already exists for this email
             const existingProfile = await getUserProfileByEmail(values.email);
             
             if (existingProfile) {
-                // User already has an account, just update their role
+                // User already has an account node, just update their authority and ID
                 await updateUserProfile(existingProfile.id, values.email, {
                     role: values.role,
                     employeeNumber: values.employeeNumber,
@@ -206,7 +205,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 return;
             }
 
-            // 2. No profile found, attempt to create Auth account
+            // 2. If no profile exists, attempt to create Auth account using a secondary instance
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
@@ -222,6 +221,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 const newUser = userCredential.user;
                 await updateProfile(newUser, { displayName: values.name });
 
+                // Initial profile creation for the new user
                 await updateUserProfile(newUser.uid, newUser.email!, {
                     displayName: values.name,
                     email: newUser.email!,
@@ -230,6 +230,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     role: values.role, 
                 });
 
+                // Update the contact directory record
                 if (selectedContactId) {
                     await updateContact(selectedContactId, { 
                         folderId: usersFolder?.id, 
@@ -256,20 +257,19 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 onOpenChange(false);
             } catch (authError: any) {
                 if (authError.code === 'auth/email-already-in-use') {
-                    // This handles the edge case where Auth exists but no Firestore profile was found initially
-                    toast({ variant: 'destructive', title: 'Action Required', description: "This email exists in Authentication but has no profile. Please contact Support to link the account." });
+                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Auth but has no profile. Update the profile manually to link." });
                 } else {
                     throw authError;
                 }
             }
         }
     } catch (error: any) {
+        console.warn("User Management Action Issue:", error);
         toast({
             variant: 'destructive',
             title: 'Action Failed',
-            description: error.message || "An unexpected error occurred during user management."
+            description: error.message || "An unexpected error occurred."
         });
-        console.warn("User Management Action Issue:", error);
     } finally {
       if (secondaryApp) {
           try { await deleteApp(secondaryApp); } catch (e) {}

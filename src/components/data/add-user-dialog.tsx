@@ -26,7 +26,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+import firebaseConfig from '@/lib/config';
 import { updateUserProfile, updateUserAuth, type UserProfile, type UserRole } from '@/services/user-profile-service';
 import { getContacts, updateContact, addContact, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
@@ -87,7 +89,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [contactSearchValue, setContactSearchValue] = useState("");
 
-  const { auth, user: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<UserFormData>({
@@ -148,10 +150,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const onSubmit = async (values: UserFormData) => {
     if (!currentUser) return;
     setIsSaving(true);
+    let secondaryApp;
     try {
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
         if (userToEdit) {
+            // Standard update logic remains the same
             const profileUpdateData: Partial<UserProfile> = { role: values.role };
             if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
             if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
@@ -180,46 +184,55 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             onUserAdded();
             onOpenChange(false);
         } else {
-            if (!auth) throw new Error("Authentication service unavailable.");
+            // CREATE LOGIC - Preventing session swap with Secondary App
             if (!values.password || values.password.length < 6) {
                 form.setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
                 return;
             }
-            
-            // 1. Initiate Firestore records while still authenticated as Admin
-            if (selectedContactId) {
-                updateContact(selectedContactId, { 
-                    folderId: usersFolder?.id, 
-                    role: values.role,
-                    employeeNumber: values.employeeNumber
-                });
-            } else {
-                addContact({
-                    name: values.name,
-                    email: values.email,
-                    employeeNumber: values.employeeNumber,
-                    folderId: usersFolder?.id || '',
-                    role: values.role,
-                    userId: currentUser.uid,
-                });
-            }
 
-            // 2. Create Auth user (signs out Admin)
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            // Initialize a temporary secondary app to create the user without signing out the admin
+            const secondaryAppName = `Secondary-${Date.now()}`;
+            secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+            const secondaryAuth = getAuth(secondaryApp);
+            
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
             const newUser = userCredential.user;
             await updateProfile(newUser, { displayName: values.name });
 
-            // 3. Set profile for new user
-            updateUserProfile(newUser.uid, newUser.email!, {
+            // 1. Create secure profile for new user
+            await updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
                 notes: values.notes,
                 role: values.role, 
             });
+
+            // 2. Create/Update contact record under ADMIN's ownership
+            if (selectedContactId) {
+                await updateContact(selectedContactId, { 
+                    folderId: usersFolder?.id, 
+                    role: values.role,
+                    employeeNumber: values.employeeNumber
+                });
+            } else {
+                await addContact({
+                    name: values.name,
+                    email: values.email,
+                    employeeNumber: values.employeeNumber,
+                    folderId: usersFolder?.id || '',
+                    role: values.role,
+                    userId: currentUser.uid, // Owned by admin
+                });
+            }
             
-            toast({ title: 'User Created', description: `Signed in as ${values.name}.` });
+            // 3. Cleanup secondary app
+            await signOut(secondaryAuth);
+            await deleteApp(secondaryApp);
+            secondaryApp = null;
+
+            toast({ title: 'User Created', description: `${values.name} added to team.` });
             onUserAdded();
             onOpenChange(false);
         }
@@ -232,9 +245,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             errorMessage = "The password provided is too weak.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "The email address is invalid.";
-        } else if (error.code === 'permission-denied') {
-            // Permission errors are handled by the services via errorEmitter
-            return;
         }
 
         toast({
@@ -245,6 +255,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         
         console.error("User Creation catch block:", error);
     } finally {
+      if (secondaryApp) {
+          try { await deleteApp(secondaryApp); } catch (e) {}
+      }
       setIsSaving(false);
     }
   };

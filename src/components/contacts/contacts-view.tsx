@@ -202,7 +202,7 @@ const FolderTreeItem = ({
                     autoFocus 
                     value={renameInputValue} 
                     onChange={e => onRenameChange(e.target.value)} 
-                    onBlur={onRenameConfirm} 
+                    onRenameConfirm={onRenameConfirm} 
                     onKeyDown={e => { if (e.key === 'Enter') onRenameConfirm(); if (e.key === 'Escape') onRenameCancel(); }} 
                     className="h-7" 
                     onClick={e => e.stopPropagation()} 

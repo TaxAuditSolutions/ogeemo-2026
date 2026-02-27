@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -28,15 +27,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { updateUserProfile, updateUserAuth, type UserProfile } from '@/services/user-profile-service';
+import { updateUserProfile, updateUserAuth, type UserProfile, type UserRole } from '@/services/user-profile-service';
 import { getContacts, updateContact, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
-import { LoaderCircle, Eye, EyeOff, UserPlus, ChevronsUpDown, Check, Search, X, Users, Pencil, Save, Info } from 'lucide-react';
+import { LoaderCircle, Eye, EyeOff, UserPlus, ChevronsUpDown, Check, Search, X, Users, Pencil, Save, Info, ShieldAlert, ShieldCheck, Shield, Lock } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const userSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -44,6 +44,7 @@ const userSchema = z.object({
   employeeNumber: z.string().optional(),
   password: z.string().optional(),
   notes: z.string().optional(),
+  role: z.enum(['admin', 'editor', 'viewer', 'none']).default('viewer'),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -69,7 +70,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '' },
+    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' },
   });
 
   const loadSupportData = useCallback(async () => {
@@ -102,9 +103,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
           employeeNumber: userToEdit.employeeNumber || '',
           notes: userToEdit.notes || '',
           password: '',
+          role: userToEdit.role || 'viewer',
         });
       } else {
-        form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '' });
+        form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
         setSelectedContactId(null);
       }
     }
@@ -122,7 +124,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
   const clearSelection = () => {
       setSelectedContactId(null);
-      form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '' });
+      form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
   };
 
   const onSubmit = async (values: UserFormData) => {
@@ -131,7 +133,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     try {
         if (userToEdit) {
             // Editing existing user
-            const profileUpdateData: Partial<UserProfile> = {};
+            const profileUpdateData: Partial<UserProfile> = {
+                role: values.role
+            };
             if (values.name !== userToEdit.displayName) profileUpdateData.displayName = values.name;
             if (values.notes !== userToEdit.notes) profileUpdateData.notes = values.notes;
             if (values.employeeNumber !== userToEdit.employeeNumber) profileUpdateData.employeeNumber = values.employeeNumber;
@@ -147,7 +151,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             }
 
             await Promise.all([
-                Object.keys(profileUpdateData).length > 0 ? updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData) : Promise.resolve(),
+                updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData),
                 Object.keys(authUpdateData).length > 0 ? updateUserAuth(userToEdit.id, authUpdateData) : Promise.resolve(),
             ]);
 
@@ -181,10 +185,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
                 notes: values.notes,
-                role: 'viewer', 
+                role: values.role, 
             });
             
-            toast({ title: 'User Created', description: `Account for ${values.name} has been created.` });
+            toast({ title: 'User Created', description: `Account for ${values.name} has been created with ${values.role} authority.` });
             onUserAdded();
             onOpenChange(false);
         }
@@ -199,8 +203,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
       setIsSaving(false);
     }
   };
-  
-  const selectedContact = contacts.find(c => c.id === selectedContactId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -228,7 +230,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                     <Button variant="outline" role="combobox" className="flex-1 justify-between text-sm font-normal">
                                         <div className="flex items-center gap-2 truncate">
                                             <Users className="h-4 w-4 opacity-50" />
-                                            {selectedContact ? selectedContact.name : "Search all contacts..."}
+                                            {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Search all contacts..."}
                                         </div>
                                         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -275,84 +277,137 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 <Separator />
 
                 <Form {...form}>
-                    <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            <Pencil className="h-3 w-3" /> 2. Verify User Details
-                        </Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="space-y-4">
+                            <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Pencil className="h-3 w-3" /> 2. Verify User Details
+                            </Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full Name</FormLabel>
+                                            <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Login Email</FormLabel>
+                                            <FormControl><Input type="email" placeholder="jane.doe@example.com" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                             <FormField
                                 control={form.control}
-                                name="name"
+                                name="employeeNumber"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Full Name</FormLabel>
-                                        <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
+                                        <FormLabel>User ID / Employee #</FormLabel>
+                                        <FormControl><Input placeholder="e.g. U-1001" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                             <FormField
                                 control={form.control}
-                                name="email"
+                                name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Login Email</FormLabel>
-                                        <FormControl><Input type="email" placeholder="jane.doe@example.com" {...field} /></FormControl>
+                                        <FormLabel>{userToEdit ? 'New Password (Optional)' : 'Access Password'}</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input 
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    placeholder={userToEdit ? "Leave blank to keep current" : "Minimum 6 characters"} 
+                                                    {...field} 
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </Button>
+                                            </div>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
-                        <FormField
-                            control={form.control}
-                            name="employeeNumber"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>User ID / Employee #</FormLabel>
-                                    <FormControl><Input placeholder="e.g. U-1001" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{userToEdit ? 'New Password (Optional)' : 'Access Password'}</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Input 
-                                                type={showPassword ? 'text' : 'password'}
-                                                placeholder={userToEdit ? "Leave blank to keep current" : "Minimum 6 characters"} 
-                                                {...field} 
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                            </Button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Internal Notes</FormLabel>
-                                    <FormControl><Textarea placeholder="Permissions rationale, start dates, etc." className="resize-none" rows={3} {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                            <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                <ShieldCheck className="h-3 w-3" /> 3. Authority & Permissions
+                            </Label>
+                            <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Assigned Role</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="h-11">
+                                                    <SelectValue placeholder="Assign authority level..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="admin">
+                                                    <div className="flex items-center gap-2">
+                                                        <ShieldAlert className="h-4 w-4 text-destructive" />
+                                                        <span>Admin (Full Orchestration)</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="editor">
+                                                    <div className="flex items-center gap-2">
+                                                        <ShieldCheck className="h-4 w-4 text-primary" />
+                                                        <span>Read/Edit (Operational)</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="viewer">
+                                                    <div className="flex items-center gap-2">
+                                                        <Shield className="h-4 w-4 text-muted-foreground" />
+                                                        <span>Read Only (Intelligence)</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="none">
+                                                    <div className="flex items-center gap-2">
+                                                        <Lock className="h-4 w-4 text-destructive" />
+                                                        <span>No Access (Revoked)</span>
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="notes"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Internal Notes</FormLabel>
+                                        <FormControl><Textarea placeholder="Permissions rationale, start dates, etc." className="resize-none" rows={3} {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </form>
                 </Form>
             </div>
@@ -367,7 +422,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
                     {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {userToEdit ? 'Save Changes' : 'Create Login & Link Contact'}
+                    {userToEdit ? 'Save Changes' : 'Create User & Account'}
                 </Button>
             </div>
         </DialogFooter>

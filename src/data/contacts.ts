@@ -31,9 +31,8 @@ export interface Contact {
   userId: string;
   status?: string;
   keywords?: string[];
+  role?: string; // Added to support authority visibility in the Contacts Hub
 }
 
 export const mockFolders = [];
 export const mockContacts = [];
-
-    

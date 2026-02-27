@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -131,6 +132,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     if (!currentUser) return;
     setIsSaving(true);
     try {
+        const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+
         if (userToEdit) {
             // Editing existing user
             const profileUpdateData: Partial<UserProfile> = {
@@ -148,6 +151,17 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 form.setError('password', { message: 'New password must be at least 6 characters.' });
                 setIsSaving(false);
                 return;
+            }
+
+            // Sync role to contact record if it exists in Ogeemo Users folder
+            const contactMatch = contacts.find(c => c.email === userToEdit.email);
+            if (contactMatch) {
+                await updateContact(contactMatch.id, { 
+                    name: values.name, 
+                    email: values.email, 
+                    employeeNumber: values.employeeNumber, 
+                    role: values.role 
+                });
             }
 
             await Promise.all([
@@ -172,12 +186,23 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             
             await updateProfile(newUser, { displayName: values.name });
             
-            // Move contact to "Ogeemo Users" if promoting existing contact
+            // Sync to contact record
             if (selectedContactId) {
-                const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
-                if (usersFolder) {
-                    await updateContact(selectedContactId, { folderId: usersFolder.id });
-                }
+                await updateContact(selectedContactId, { 
+                    folderId: usersFolder?.id, 
+                    role: values.role,
+                    employeeNumber: values.employeeNumber
+                });
+            } else {
+                // Create new contact record in Ogeemo Users folder
+                await updateContact(newUser.uid, {
+                    name: values.name,
+                    email: values.email,
+                    employeeNumber: values.employeeNumber,
+                    folderId: usersFolder?.id,
+                    role: values.role,
+                    userId: currentUser.uid,
+                });
             }
 
             await updateUserProfile(newUser.uid, newUser.email!, {

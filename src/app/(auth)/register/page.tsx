@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -72,6 +73,7 @@ export default function RegisterPage() {
             email: formData.email,
             businessName: formData.businessName,
             folderId: usersFolder.id,
+            role: 'admin', // Mirror the role on the contact record for hub visibility
             notes: `System Administrator created via registration on ${new Date().toLocaleDateString()}.`,
             userId: user.uid,
         };

@@ -110,13 +110,11 @@ const ItemTypes = {
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const dragSpec = useMemo(() => ({
+    const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
-        collect: (monitor: any) => ({ isDragging: !!monitor.isDragging() }),
+        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [contact]);
-
-    const [{ isDragging }, drag] = useDrag(dragSpec);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -170,14 +168,12 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const dragSpec = useMemo(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
-      collect: (monitor: any) => ({ isDragging: !!monitor.isDragging() }),
+      collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [folder, isRenaming, isSystem]);
-
-    const [{ isDragging }, drag, dragPreview] = useDrag(dragSpec);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
@@ -612,11 +608,11 @@ export function ContactsView() {
       const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
       if (profile) {
           setUserToEdit(profile);
-          setContactToEdit(null); // Clear contactToEdit to ensure AddUserDialog uses the profile
+          setContactToEdit(null);
           setIsAddUserDialogOpen(true);
       } else {
           setUserToEdit(null);
-          setContactToEdit(contact); // Pass contact to AddUserDialog for "promotion" pre-fill
+          setContactToEdit(contact);
           setIsAddUserDialogOpen(true);
       }
   };

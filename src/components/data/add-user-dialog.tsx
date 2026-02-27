@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -30,7 +31,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { updateUserProfile, updateUserAuth, type UserProfile } from '@/services/user-profile-service';
 import { getContacts, updateContact, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
-import { LoaderCircle, Eye, EyeOff, UserPlus, ChevronsUpDown, Check, Search, X, Users } from 'lucide-react';
+import { LoaderCircle, Eye, EyeOff, UserPlus, ChevronsUpDown, Check, Search, X, Users, Pencil, Save, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -162,8 +163,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 return;
             }
             
-            // Note: This signs out the Admin. 
-            // Orchestration Note: To create users without logout, a Cloud Function is required.
+            // Note: This signs out the Admin if not handled via a background process.
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
             const newUser = userCredential.user;
             
@@ -364,7 +364,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 <Info className="h-4 w-4 text-primary shrink-0" />
                 <span>Creating a user will generate a new login account immediately.</span>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
                     {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

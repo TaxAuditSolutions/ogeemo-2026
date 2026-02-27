@@ -136,7 +136,6 @@ export function TeamManagementCard() {
     }
   };
 
-  // Only admins can manage the team. If profile not yet loaded, we wait.
   const isAdmin = currentUserProfile?.role === 'admin';
 
   return (
@@ -190,7 +189,7 @@ export function TeamManagementCard() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {isAdmin && teamUser.id !== user?.uid ? (
+                      {(isAdmin || teamUser.id === user?.uid) ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
@@ -207,24 +206,28 @@ export function TeamManagementCard() {
                                 <KeyRound className="mr-2 h-4 w-4" /> Change Password
                             </DropdownMenuItem>
                             
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
-                              <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Access)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
-                              <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit (Operational)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'viewer')}>
-                              <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only (Intelligence)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
-                              <Lock className="mr-2 h-4 w-4" /> No Access (Revoked)
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onSelect={() => handleDeleteMember(teamUser.id)}>
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete Member Record
-                            </DropdownMenuItem>
+                            {isAdmin && teamUser.id !== user?.uid && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
+                                    <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Access)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
+                                    <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit (Operational)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'viewer')}>
+                                    <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only (Intelligence)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'none')} className="text-destructive">
+                                    <Lock className="mr-2 h-4 w-4" /> No Access (Revoked)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive" onSelect={() => handleDeleteMember(teamUser.id)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Member Record
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : null}

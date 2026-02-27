@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -113,6 +112,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 return;
             }
             
+            // Note: In a real production environment, creating a user for someone else 
+            // should be handled via a secure Cloud Function using the Admin SDK to prevent
+            // the current admin from being signed out.
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
             const newUser = userCredential.user;
             
@@ -123,19 +125,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
                 notes: values.notes,
+                role: 'viewer', // Default to safest role
             });
             
             toast({ title: 'User Created', description: `Account for ${values.name} has been created.` });
-            
-            // Redirect to Contacts Hub to finalize the record in Ogeemo Users
-            const query = new URLSearchParams({
-                action: 'new',
-                source: 'user',
-                name: values.name,
-                email: values.email,
-                notes: `System User ID: ${values.employeeNumber || 'N/A'}\nNotes: ${values.notes || ''}`
-            });
-            router.push(`/contacts?${query.toString()}`);
+            onUserAdded();
             onOpenChange(false);
         }
 
@@ -244,14 +238,14 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             {!userToEdit && (
                 <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 text-xs text-muted-foreground flex items-center gap-2">
                     <UserPlus className="h-4 w-4 text-primary shrink-0" />
-                    <span>Proceeding will create the login account and then finalize their contact record in the hub.</span>
+                    <span>Proceeding will create the login account immediately.</span>
                 </div>
             )}
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" disabled={isSaving}>
                     {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                    {userToEdit ? 'Save Changes' : 'Create & Finalize'}
+                    {userToEdit ? 'Save Changes' : 'Create Member'}
                 </Button>
             </DialogFooter>
           </form>

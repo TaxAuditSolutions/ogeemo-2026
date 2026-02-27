@@ -91,8 +91,8 @@ export function TeamManagementCard() {
     }
   };
 
-  // Safe fallback: allow management if the user record doesn't exist yet (initial setup)
-  const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin';
+  // Allow management if user is admin OR if role is not set yet (first user setup)
+  const canManageTeam = !currentUserProfile || currentUserProfile.role === 'admin' || !currentUserProfile.role;
 
   return (
     <Card>

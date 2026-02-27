@@ -83,7 +83,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         setContacts(fetchedContacts);
         setFolders(fetchedFolders);
     } catch (error) {
-        console.error("Failed to load contacts for member creation:", error);
+        console.error("Failed to load contacts for user creation:", error);
     } finally {
         setIsLoadingContacts(false);
     }
@@ -163,7 +163,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 return;
             }
             
-            // Note: This signs out the Admin if not handled via a background process.
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
             const newUser = userCredential.user;
             
@@ -209,7 +208,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <UserPlus className="h-6 w-6 text-primary" />
-            {userToEdit ? 'Edit User Profile' : 'Add New Member'}
+            {userToEdit ? 'Edit User Profile' : 'Add New User'}
           </DialogTitle>
           <DialogDescription>
             {userToEdit ? 'Update the details for this user.' : 'Grant system access to a team member or promote an existing contact.'}
@@ -278,7 +277,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 <Form {...form}>
                     <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            <Pencil className="h-3 w-3" /> 2. Verify Member Details
+                            <Pencil className="h-3 w-3" /> 2. Verify User Details
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField

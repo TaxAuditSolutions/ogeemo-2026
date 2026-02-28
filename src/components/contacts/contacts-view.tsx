@@ -437,10 +437,9 @@ export function ContactsView() {
             baseList = contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
         }
 
+        // Apply strict source isolation for the main list
         if (isUsersFolderSelected) {
-            // STRICT SOURCE ISOLATION: Explicitly filter out any record tagged as 'system' OR matches the protected names
-            const protectedNames = ['Dan White', 'Julie White', 'Nick Illiopoulos'];
-            return baseList.filter(c => c.setupSource !== 'system' && !protectedNames.includes(c.name));
+            return baseList.filter(c => c.setupSource !== 'system' && !['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name));
         }
 
         return baseList;

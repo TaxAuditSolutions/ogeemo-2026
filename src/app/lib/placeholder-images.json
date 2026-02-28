@@ -91,5 +91,9 @@
   "audit-shield-banner": {
     "url": "https://picsum.photos/seed/audit-shield/1200/400",
     "hint": "secure vault"
+  },
+  "pricing-hero": {
+    "url": "https://picsum.photos/seed/pricing/1200/400",
+    "hint": "business growth"
   }
 }

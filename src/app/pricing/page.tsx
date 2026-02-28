@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -33,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 
 export default function PricingPage() {
   const [isSyncInfoOpen, setIsSyncInfoOpen] = useState(false);
@@ -52,6 +54,11 @@ export default function PricingPage() {
               Pay for Results, <br />
               <span className="text-primary">Not for Shelfware.</span>
             </h1>
+
+            <div className="w-full max-w-4xl aspect-[21/9] mx-auto my-8 rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white relative">
+                <ImagePlaceholder id="pricing-hero" className="object-cover" />
+            </div>
+
             <p className="text-xl text-muted-foreground leading-relaxed">
               Ogeemo's pricing is built on a radical principle: Your cost should scale with your activity. We've eliminated the "subscription penalty" for quiet months.
             </p>
@@ -140,9 +147,9 @@ export default function PricingPage() {
                                 "AI Dispatch Terminal Access",
                                 "Native Google Workspace Integration",
                                 "BKS Ledger Management",
-                                "Payroll Processing & Remittances",
                                 "Daily Automated Backups",
                                 "Unlimited Contact Records",
+                                "Payroll Processing & Remittances",
                                 "Regular System Upgrades",
                                 "Full Access to All Features"
                             ].map((item) => (

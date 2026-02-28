@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -24,7 +23,17 @@ import {
   Calendar,
   FileDigit,
   Briefcase,
-  UserPlus,
+  FilePlus,
+  FileText,
+  Sheet,
+  Presentation,
+  ArrowDownAZ,
+  ArrowUpZA,
+  ArrowDownUp,
+  Link as LinkIcon,
+  Info,
+  Save,
+  BookOpen,
   ShieldCheck,
   ShieldAlert,
   Shield,
@@ -86,6 +95,12 @@ import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserPr
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -112,11 +127,11 @@ const ItemTypes = {
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [contact]);
+    }), [contact]);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -170,12 +185,12 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [folder, isRenaming, isSystem]);
+    }), [folder, isRenaming, isSystem]);
 
     const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],

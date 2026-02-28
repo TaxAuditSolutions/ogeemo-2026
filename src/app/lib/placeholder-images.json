@@ -87,5 +87,9 @@
   "welcome-graphic": {
     "url": "https://picsum.photos/seed/welcome/1200/500",
     "hint": "futuristic digital interface connection"
+  },
+  "audit-shield-banner": {
+    "url": "https://picsum.photos/seed/audit-shield/1200/400",
+    "hint": "secure vault"
   }
 }

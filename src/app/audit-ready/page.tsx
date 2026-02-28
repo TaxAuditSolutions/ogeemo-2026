@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -43,6 +44,12 @@ export default function AuditReadyLandingPage() {
               Your Audit Shield. <br />
               <span className="text-primary">Defensible Books</span> by Design.
             </h1>
+
+            {/* Strategic Banner Image */}
+            <div className="w-full max-w-5xl aspect-[21/9] mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-slate-900 relative">
+                <ImagePlaceholder id="audit-shield-banner" className="object-cover" />
+            </div>
+
             <p className="text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed">
               "The power to audit is the power to destroy." Don't just keep books—build a fortress of evidence with Bookkeeping Kept Simple (BKS) and The Ogeemo Method.
             </p>

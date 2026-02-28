@@ -13,6 +13,7 @@ import {
   Trash2,
   Users,
   Plus,
+  UserPlus,
   GitMerge,
   Pencil,
   Files,
@@ -442,9 +443,7 @@ export function ContactsView() {
             baseList = contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
         }
 
-        // Filter based on folder context
         if (isUsersFolderSelected) {
-            // Only show 'app' users in the main list
             return baseList.filter(c => c.setupSource !== 'system');
         }
 

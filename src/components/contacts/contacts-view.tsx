@@ -438,8 +438,9 @@ export function ContactsView() {
         }
 
         if (isUsersFolderSelected) {
-            // STRICT SOURCE ISOLATION: Explicitly filter out any record tagged as 'system'
-            return baseList.filter(c => c.setupSource !== 'system');
+            // STRICT SOURCE ISOLATION: Explicitly filter out any record tagged as 'system' OR matches the protected names
+            const protectedNames = ['Dan White', 'Julie White', 'Nick Illiopoulos'];
+            return baseList.filter(c => c.setupSource !== 'system' && !protectedNames.includes(c.name));
         }
 
         return baseList;
@@ -448,7 +449,7 @@ export function ContactsView() {
   );
 
   const systemRegistryContacts = useMemo(
-      () => contacts.filter(c => c.setupSource === 'system'),
+      () => contacts.filter(c => c.setupSource === 'system' || ['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name)),
       [contacts]
   );
 

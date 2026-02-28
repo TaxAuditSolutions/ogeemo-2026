@@ -89,13 +89,18 @@ export function VisualIdentityCard() {
         <div className="flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
             <Label htmlFor={id} className="text-sm font-medium flex-1 cursor-pointer">{label}</Label>
             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase">{value}</span>
+                <Input 
+                    value={value || ''} 
+                    onChange={(e) => handleColorChange(id, e.target.value)}
+                    className="h-8 w-24 text-[10px] font-mono uppercase text-center"
+                    placeholder="#000000"
+                />
                 <input 
                     type="color" 
                     id={id} 
-                    value={value || '#000000'} 
+                    value={value && value.startsWith('#') && value.length === 7 ? value : '#000000'} 
                     onChange={(e) => handleColorChange(id, e.target.value)}
-                    className="h-8 w-8 rounded cursor-pointer border-none bg-transparent"
+                    className="h-8 w-8 rounded cursor-pointer border-none bg-transparent shrink-0"
                 />
             </div>
         </div>

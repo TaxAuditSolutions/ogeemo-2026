@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { Palette, RefreshCw, CheckCircle2, ShieldCheck, Save, Plus, Trash2, Heart } from 'lucide-react';
+import { Palette, RefreshCw, CheckCircle2, ShieldCheck, Save, Plus, Trash2, Heart, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 

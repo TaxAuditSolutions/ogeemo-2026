@@ -319,7 +319,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="promote" id="mode-promote" />
-                                <Label htmlFor="mode-promote" className="font-semibold cursor-pointer">Promote Existing Contact (Julie, Nick, etc.)</Label>
+                                <Label htmlFor="mode-promote" className="font-semibold cursor-pointer">Promote Existing Contact</Label>
                             </div>
                         </RadioGroup>
 

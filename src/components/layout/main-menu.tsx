@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
@@ -17,6 +16,7 @@ import { ActionChipMenu } from './ActionChipMenu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarView } from '@/context/sidebar-view-context';
+import { cn } from '@/lib/utils';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
@@ -37,7 +37,7 @@ const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
       return (
         <AccordionItem value={groupName} key={groupName} className="border-b-0">
           <AccordionTrigger className="p-0 hover:no-underline">
-              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
+              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <CategoryIcon className="h-4 w-4" />
                   {groupName}
               </div>
@@ -62,7 +62,7 @@ const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
     })}
      <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
           <AccordionTrigger className="p-0 hover:no-underline">
-              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent">
+              <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <Wand2 className="h-4 w-4" />
                   Google Apps
               </div>
@@ -76,7 +76,7 @@ const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
                           key={app.href}
                           asChild
                           variant="ghost"
-                          className="w-full justify-start gap-3 h-9 text-sm"
+                          className="w-full justify-start gap-3 h-9 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       >
                           <a href={app.href} target="_blank" rel="noopener noreferrer">
                               <AppIcon className="h-4 w-4" />

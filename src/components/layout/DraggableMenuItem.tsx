@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -85,7 +84,7 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
                 "w-full justify-start gap-3",
                 isDraggable ? "pl-8" : "pl-3",
                 isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
-                isActive ? "" : "hover:bg-sidebar-accent/90"
+                isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
             >
                 <a href={item.href} target="_blank" rel="noopener noreferrer">
@@ -100,7 +99,7 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
                 "w-full justify-start gap-3",
                 isDraggable ? "pl-8" : "pl-3",
                 isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
-                isActive ? "" : "hover:bg-sidebar-accent/90"
+                isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
             >
             <Link href={item.href}>

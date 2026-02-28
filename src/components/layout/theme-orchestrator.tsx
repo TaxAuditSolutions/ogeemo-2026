@@ -49,7 +49,7 @@ function hexToHSLData(hex: string) {
 /**
  * Orchestrates the application of global visual identity settings.
  * Injects CSS variables into the document root based on user preferences.
- * Calculates optimal contrast for readability.
+ * Calculates optimal contrast for readability during both idle and hover states.
  */
 export function ThemeOrchestrator() {
   const { preferences, isLoading } = useUserPreferences();
@@ -89,8 +89,13 @@ export function ThemeOrchestrator() {
       const foreground = isLight ? '240 5.9% 10%' : '240 4.8% 95.9%';
       const mutedForeground = isLight ? '240 3.8% 46.1%' : '240 5% 64.9%';
       
+      // Calculate a distinct hover background (accent) that maintains contrast
+      const accentL = isLight ? Math.max(0, hsl.l - 8) : Math.min(100, hsl.l + 12);
+      const accentValues = `${hsl.h} ${hsl.s}% ${accentL}%`;
+
       root.style.setProperty('--sidebar-foreground', foreground);
       root.style.setProperty('--sidebar-primary-foreground', isLight ? '0 0% 100%' : '0 0% 0%');
+      root.style.setProperty('--sidebar-accent', accentValues);
       root.style.setProperty('--sidebar-accent-foreground', foreground);
       root.style.setProperty('--sidebar-muted-foreground', mutedForeground);
     }
@@ -105,7 +110,6 @@ export function ThemeOrchestrator() {
 
     // 5. Command Bar (Header)
     if (colors.header) {
-      // Header can be a gradient or flat hex
       root.style.setProperty('--header-bg', colors.header);
     }
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -52,8 +51,9 @@ export function ActionChipMenu({ chips, isLoading }: ActionChipMenuProps) {
                         variant={isActive ? "secondary" : "ghost"}
                         className={cn(
                             "w-full justify-start gap-3",
-                            "h-5 text-sm py-1 border-b-4 border-transparent hover:border-sidebar-accent/50",
-                            isActive ? "border-sidebar-primary" : "border-black"
+                            "h-9 text-sm py-1 border-b-4 border-transparent",
+                            isActive ? "border-sidebar-primary" : "border-black",
+                            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
                     >
                         <Link href={chip.href}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -124,6 +123,11 @@ const ItemTypes = {
 
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
+const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.ComponentProps<typeof TableRow>>((props, ref) => (
+    <TableRow {...props} ref={ref} />
+));
+DraggableTableRowInner.displayName = "DraggableTableRowInner";
+
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
@@ -137,11 +141,6 @@ const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Cont
       </DraggableTableRowInner>
     );
 };
-
-const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.ComponentProps<typeof TableRow>>((props, ref) => (
-    <TableRow {...props} ref={ref} />
-));
-DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const FolderTreeItem = ({ 
     folder, 
@@ -253,7 +252,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={allFolders} 
+                allFolders={folders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -876,7 +875,7 @@ export function ContactsView() {
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>
-                                  </Inter-row>
+                                  </DraggableTableRow>
                                 );
                               })}
                           </TableBody>

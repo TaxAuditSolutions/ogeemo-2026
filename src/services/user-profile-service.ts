@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where } from 'firebase/firestore';
@@ -280,6 +279,7 @@ export async function deleteUserProfile(userId: string): Promise<void> {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: docRef.path,
                 operation: 'delete',
+                requestResourceData: null,
             } satisfies SecurityRuleContext));
         }
     });

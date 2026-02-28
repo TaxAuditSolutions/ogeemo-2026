@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -111,6 +110,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
     loadSupportData();
   }, [loadSupportData]);
 
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' },
+  });
+
   useEffect(() => {
     if (isOpen) {
       if (userToEdit) {
@@ -140,7 +144,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         setMode('new');
       }
     }
-  }, [isOpen, userToEdit, contactToPromote]);
+  }, [isOpen, userToEdit, contactToPromote, form]);
 
   const handleSelectContact = (contact: Contact) => {
       setSelectedContactId(contact.id);
@@ -158,6 +162,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
     let secondaryApp;
     try {
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+        const existingProfile = await getUserProfileByEmail(values.email);
 
         if (existingProfile) {
             await updateUserProfile(existingProfile.id, values.email, {
@@ -183,7 +188,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         }
 
         // Standard creation logic
-        if (!values.password || values.password.length < 6) {
+        if (mode !== 'edit' && (!values.password || values.password.length < 6)) {
             form.setError('password', { message: 'Password must be at least 6 characters.' });
             setIsSaving(false);
             return;
@@ -194,7 +199,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         const secondaryAuth = getAuth(secondaryApp);
         
         try {
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password!);
             const newUser = userCredential.user;
             await updateProfile(newUser, { displayName: values.name });
 
@@ -262,11 +267,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
       setIsSaving(false);
     }
   };
-
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' },
-  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

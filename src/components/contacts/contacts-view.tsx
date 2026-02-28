@@ -127,7 +127,7 @@ const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Cont
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
-        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [contact]);
 
     return (
@@ -189,11 +189,11 @@ const FolderTreeItem = ({
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop({
+    const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
-      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
-    }, [folder.id, onDrop]);
+      collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
+    }), [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
@@ -240,8 +240,7 @@ const FolderTreeItem = ({
                       <DropdownMenuSeparator />
                       {!isSystem ? (
                           <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); onDelete(folder); }}>
-                              <Trash2 className="mr-2 h-4 w-4" />Delete
-                          </DropdownMenuItem>
+                              <Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                       ) : (
                           <DropdownMenuItem disabled className="text-xs text-muted-foreground italic">Protected System Folder</DropdownMenuItem>
                       )}
@@ -439,7 +438,7 @@ export function ContactsView() {
         }
 
         if (isUsersFolderSelected) {
-            // CRITICAL: Filter out system identities (Dan, Julie, Nick) from the default list
+            // STRICT SOURCE ISOLATION: Explicitly filter out any record tagged as 'system'
             return baseList.filter(c => c.setupSource !== 'system');
         }
 

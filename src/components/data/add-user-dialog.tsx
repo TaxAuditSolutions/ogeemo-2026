@@ -97,7 +97,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             getContacts(currentUser.uid),
             getFolders(currentUser.uid)
         ]);
-        setContacts(fetchedContacts);
+        setContacts(fetchedContacts.filter(c => c.setupSource !== 'system'));
         setFolders(fetchedFolders);
     } catch (error) {
         console.error("Failed to load support data:", error);
@@ -302,14 +302,14 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
 
         <ScrollArea className="flex-1 px-6">
             <div className="space-y-6 py-4">
-                {mode === 'new' && (
+                {mode !== 'edit' && (
                     <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
                         <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                             1. Select Creation Mode
                         </Label>
                         <RadioGroup 
                             defaultValue="new" 
-                            value={mode === 'edit' ? 'new' : mode} 
+                            value={mode} 
                             onValueChange={(v) => setMode(v as any)}
                             className="flex flex-col space-y-2"
                         >
@@ -323,7 +323,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                             </div>
                         </RadioGroup>
 
-                        {mode === 'promote' && !contactToPromote && (
+                        {mode === 'promote' && (
                             <div className="pt-2 animate-in fade-in slide-in-from-top-1">
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -493,7 +493,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Notes</FormLabel>
-                                        <FormControl><Textarea placeholder="Notes for internal record keeping..." className="resize-none" rows={3} {...field} /></FormControl>
+                                        <FormControl><Textarea placeholder="Internal record keeping..." className="resize-none" rows={3} {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

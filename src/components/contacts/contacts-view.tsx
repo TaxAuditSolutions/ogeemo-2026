@@ -264,9 +264,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={onRenameChange}
-                onRenameConfirm={onRenameConfirm}
-                onRenameCancel={onRenameCancel}
+                onRenameChange={setRenameInputValue}
+                onRenameConfirm={handleRenameConfirm}
+                onRenameCancel={() => setRenamingFolder(null)}
             />
         ))}
       </div>

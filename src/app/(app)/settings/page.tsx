@@ -9,6 +9,7 @@ import { Save, LoaderCircle, X, Users2, ArrowRight } from "lucide-react";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { PreferencesCard } from "@/components/settings/preferences-card";
+import { VisualIdentityCard } from "@/components/settings/visual-identity-card";
 import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/user-profile-service';
@@ -136,7 +137,7 @@ export default function SettingsPage() {
             </Button>
           </div>
         </header>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-20">
           <div className="space-y-6">
             <ProfileCard form={form} isLoading={isLoading} profile={profile} />
             
@@ -162,6 +163,7 @@ export default function SettingsPage() {
             <PreferencesCard />
           </div>
           <div className="space-y-6">
+             <VisualIdentityCard />
              <PlanningRitualsCard />
              <SiteImagesSettingsCard />
           </div>

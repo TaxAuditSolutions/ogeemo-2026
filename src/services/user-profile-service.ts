@@ -27,6 +27,14 @@ export interface PlanningRitual {
     repeatCount?: number;
 }
 
+export interface ThemeColors {
+    primary?: string;
+    background?: string;
+    sidebar?: string;
+    header?: string;
+    border?: string;
+}
+
 export interface UserProfile {
     id: string;
     email: string;
@@ -74,7 +82,8 @@ export interface UserProfile {
         planningRituals?: {
             daily: Omit<PlanningRitual, 'day'>;
             weekly: Omit<PlanningRitual, 'repeatEnabled' | 'repeatCount'>;
-        }
+        };
+        themeColors?: ThemeColors;
     };
 }
 
@@ -94,6 +103,13 @@ const defaultPreferences: UserProfile['preferences'] = {
     planningRituals: {
         daily: { time: '17:00', duration: 25, repeatEnabled: false, repeatCount: 5 },
         weekly: { day: 'Friday', time: '15:00', duration: 90 },
+    },
+    themeColors: {
+        primary: '#1E8E86',
+        background: '#ffffff',
+        sidebar: '#1e293b',
+        header: '#3DD5C0',
+        border: '#e2e8f0',
     }
 };
 
@@ -118,6 +134,10 @@ const docToUserProfile = (doc: any): UserProfile => {
                 ...defaultPreferences.planningRituals?.weekly,
                 ...(data.preferences?.planningRituals?.weekly || {}),
             }
+        },
+        themeColors: {
+            ...defaultPreferences.themeColors,
+            ...(data.preferences?.themeColors || {})
         }
     };
 
@@ -218,6 +238,10 @@ export async function updateUserProfile(
                     ...existingPrefs.planningRituals,
                     ...(data.preferences.planningRituals || {}),
                 },
+                themeColors: {
+                    ...existingPrefs.themeColors,
+                    ...(data.preferences.themeColors || {}),
+                }
             };
         }
         

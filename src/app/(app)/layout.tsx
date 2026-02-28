@@ -16,12 +16,14 @@ import {
 } from "@/components/ui/tooltip";
 import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
+import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <DndProviderWrapper>
         <SidebarViewProvider>
+          <ThemeOrchestrator />
           <div className="flex h-screen w-full bg-muted">
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
@@ -45,7 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             
             {/* Main Content */}
             <div className="flex flex-1 flex-col overflow-hidden">
-              <header className="flex h-16 items-center justify-between gap-4 bg-gradient-to-r from-[#3DD5C0] to-[#1E8E86] px-4 md:px-6">
+              <header className="flex h-16 items-center justify-between gap-4 bg-[var(--header-bg)] px-4 md:px-6" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
                  <div className="flex items-center gap-4">
                    <SidebarTrigger className="md:hidden" />
                    <TooltipProvider>

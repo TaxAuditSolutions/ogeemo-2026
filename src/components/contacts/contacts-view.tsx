@@ -85,6 +85,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Checkbox } from '@/components/ui/checkbox';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
@@ -92,12 +98,6 @@ import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserPr
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -361,12 +361,10 @@ export function ContactsView() {
                         notes: "Core Ogeemo team member established by backend setup."
                     });
                 } else if (contactMatch.setupSource !== 'system') {
-                    // Update the existing contact to have the system source so they appear in the registry
                     await updateContact(contactMatch.id, { setupSource: 'system', role: member.role });
                 }
             }
             
-            // Re-fetch contacts to ensure local state reflects the system tags
             const finalContactsList = await getContacts(user.uid);
             setContacts(finalContactsList);
         } else {
@@ -441,6 +439,7 @@ export function ContactsView() {
         }
 
         if (isUsersFolderSelected) {
+            // CRITICAL: Filter out system identities (Dan, Julie, Nick) from the default list
             return baseList.filter(c => c.setupSource !== 'system');
         }
 
@@ -652,7 +651,7 @@ export function ContactsView() {
           setUserForPasswordChange(profile);
           setIsChangePasswordOpen(true);
       } else {
-          toast({ variant: 'destructive', title: 'Profile Not Found', description: "This member doesn't have a login account node yet. Use 'Edit Details' to promote them." });
+          toast({ variant: 'destructive', title: 'Profile Not Found', description: "This member doesn't have a login account node yet." });
       }
   };
 
@@ -758,7 +757,7 @@ export function ContactsView() {
                                               <ShieldCheck className="h-6 w-6" />
                                           </Button>
                                       </TooltipTrigger>
-                                      <TooltipContent side="bottom"><p>System Team Registry (Nick's Nodes)</p></TooltipContent>
+                                      <TooltipContent side="bottom"><p>System Team Registry</p></TooltipContent>
                                   </Tooltip>
                               </TooltipProvider>
                           )}
@@ -771,7 +770,7 @@ export function ContactsView() {
                         )}
                         <Button onClick={handleNewActionClick} disabled={selectedFolderId === 'all'}>
                             {isUsersFolderSelected ? <UserPlus className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                            {isUsersFolderSelected ? 'Add System User' : 'New Contact'}
+                            {isUsersFolderSelected ? 'Add App User' : 'New Contact'}
                         </Button>
                       </div>
                   </div>

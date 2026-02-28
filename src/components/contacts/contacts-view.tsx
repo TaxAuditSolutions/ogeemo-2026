@@ -24,10 +24,6 @@ import {
   Calendar,
   FileDigit,
   Briefcase,
-  FilePlus,
-  FileText,
-  Sheet,
-  Presentation,
   ArrowDownAZ,
   ArrowUpZA,
   ArrowDownUp,
@@ -257,7 +253,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -354,8 +350,8 @@ export function ContactsView() {
             ];
             
             for (const member of coreTeam) {
-                const exists = fetchedContacts.some(c => c.name === member.name && c.folderId === usersFolder.id);
-                if (!exists) {
+                const contactMatch = fetchedContacts.find(c => c.name === member.name && c.folderId === usersFolder.id);
+                if (!contactMatch) {
                     await addContact({
                         name: member.name,
                         folderId: usersFolder.id,
@@ -364,14 +360,15 @@ export function ContactsView() {
                         setupSource: 'system',
                         notes: "Core Ogeemo team member established by backend setup."
                     });
+                } else if (contactMatch.setupSource !== 'system') {
+                    // Update the existing contact to have the system source so they appear in the registry
+                    await updateContact(contactMatch.id, { setupSource: 'system', role: member.role });
                 }
             }
-            if (coreTeam.some(m => !fetchedContacts.some(c => c.name === m.name && c.folderId === usersFolder.id))) {
-                const updatedContacts = await getContacts(user.uid);
-                setContacts(updatedContacts);
-            } else {
-                setContacts(fetchedContacts);
-            }
+            
+            // Re-fetch contacts to ensure local state reflects the system tags
+            const finalContactsList = await getContacts(user.uid);
+            setContacts(finalContactsList);
         } else {
             setContacts(fetchedContacts);
         }

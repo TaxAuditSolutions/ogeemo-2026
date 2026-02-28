@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 
 /**
- * Converts a Hex color code to an HSL string compatible with Ogeemo's CSS variables.
- * Format: "H S% L%"
+ * Converts a Hex color code to HSL components and a formatted string values.
+ * Format: { h, s, l, values: "H S% L%" }
  */
-function hexToHSL(hex: string): string {
+function hexToHSLData(hex: string) {
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
     r = parseInt(hex[1] + hex[1], 16);
@@ -34,12 +34,22 @@ function hexToHSL(hex: string): string {
     h /= 6;
   }
 
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  const hDeg = Math.round(h * 360);
+  const sPct = Math.round(s * 100);
+  const lPct = Math.round(l * 100);
+
+  return {
+    h: hDeg,
+    s: sPct,
+    l: lPct,
+    values: `${hDeg} ${sPct}% ${lPct}%`
+  };
 }
 
 /**
  * Orchestrates the application of global visual identity settings.
  * Injects CSS variables into the document root based on user preferences.
+ * Calculates optimal contrast for readability.
  */
 export function ThemeOrchestrator() {
   const { preferences, isLoading } = useUserPreferences();
@@ -50,21 +60,52 @@ export function ThemeOrchestrator() {
     const root = document.documentElement;
     const colors = preferences.themeColors;
 
+    // 1. Primary Branding
     if (colors.primary) {
-      root.style.setProperty('--primary', hexToHSL(colors.primary));
+      const hsl = hexToHSLData(colors.primary);
+      root.style.setProperty('--primary', hsl.values);
+      // High contrast text for primary background (buttons, badges)
+      root.style.setProperty('--primary-foreground', hsl.l > 65 ? '0 0% 0%' : '0 0% 100%');
     }
+
+    // 2. Workspace Surface (Background)
     if (colors.background) {
-      root.style.setProperty('--background', hexToHSL(colors.background));
-      // Sync card background for consistency
-      root.style.setProperty('--card', hexToHSL(colors.background));
+      const hsl = hexToHSLData(colors.background);
+      root.style.setProperty('--background', hsl.values);
+      root.style.setProperty('--card', hsl.values);
+      root.style.setProperty('--popover', hsl.values);
+      // High contrast text for main workspace
+      root.style.setProperty('--foreground', hsl.l > 60 ? '222.2 84% 4.9%' : '210 20% 98%');
+      root.style.setProperty('--card-foreground', hsl.l > 60 ? '222.2 84% 4.9%' : '210 20% 98%');
     }
+
+    // 3. Navigation Strip (Sidebar)
     if (colors.sidebar) {
-      root.style.setProperty('--sidebar-background', hexToHSL(colors.sidebar));
+      const hsl = hexToHSLData(colors.sidebar);
+      root.style.setProperty('--sidebar-background', hsl.values);
+      
+      // CRITICAL CONTRAST: If background is light, use dark text. If dark, use light text.
+      const isLight = hsl.l > 60;
+      const foreground = isLight ? '240 5.9% 10%' : '240 4.8% 95.9%';
+      const mutedForeground = isLight ? '240 3.8% 46.1%' : '240 5% 64.9%';
+      
+      root.style.setProperty('--sidebar-foreground', foreground);
+      root.style.setProperty('--sidebar-primary-foreground', isLight ? '0 0% 100%' : '0 0% 0%');
+      root.style.setProperty('--sidebar-accent-foreground', foreground);
+      root.style.setProperty('--sidebar-muted-foreground', mutedForeground);
     }
+
+    // 4. Audit Borders
     if (colors.border) {
-      root.style.setProperty('--border', hexToHSL(colors.border));
+      const hsl = hexToHSLData(colors.border);
+      root.style.setProperty('--border', hsl.values);
+      root.style.setProperty('--input', hsl.values);
+      root.style.setProperty('--sidebar-border', hsl.values);
     }
+
+    // 5. Command Bar (Header)
     if (colors.header) {
+      // Header can be a gradient or flat hex
       root.style.setProperty('--header-bg', colors.header);
     }
 

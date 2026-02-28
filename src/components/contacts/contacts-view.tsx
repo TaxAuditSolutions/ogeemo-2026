@@ -110,11 +110,11 @@ const ItemTypes = {
 type DroppableItem = (Contact & { type?: 'contact' }) | (FolderData & { type: 'folder' });
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [contact]);
+    }, [contact]);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>

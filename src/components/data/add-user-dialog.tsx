@@ -477,7 +477,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                                 </SelectItem>
                                                 <SelectItem value="none">
                                                     <div className="flex items-center gap-2">
-                                                        <Lock className="h-4 w-4 text-destructive" />
+                                                        <Lock className="mr-2 h-4 w-4 text-destructive" />
                                                         <span>No Access (Revoked)</span>
                                                     </div>
                                                 </SelectItem>

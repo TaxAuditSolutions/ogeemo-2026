@@ -16,12 +16,12 @@ import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 const profileSchema = z.object({
     displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
     email: z.string().email({ message: "Please enter a valid email address." }).optional(),
-    employeeNumber: z.string().optional(),
     companyName: z.string().optional(),
     website: z.string().optional(),
     businessPhone: z.string().optional(),
     cellPhone: z.string().optional(),
     bestPhone: z.enum(['business', 'cell']).optional(),
+    employeeNumber: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;

@@ -140,8 +140,11 @@ export default function PricingPage() {
                                 "AI Dispatch Terminal Access",
                                 "Native Google Workspace Integration",
                                 "BKS Ledger Management",
+                                "Payroll Processing & Remittances",
                                 "Daily Automated Backups",
-                                "Unlimited Contact Records"
+                                "Unlimited Contact Records",
+                                "Regular System Upgrades",
+                                "Full Access to All Features"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />

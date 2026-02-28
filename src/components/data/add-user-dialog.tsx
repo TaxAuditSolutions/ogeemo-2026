@@ -45,6 +45,7 @@ import {
     ShieldAlert, 
     ShieldCheck, 
     Lock,
+    X,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -96,7 +97,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             getContacts(currentUser.uid),
             getFolders(currentUser.uid)
         ]);
-        // Filter out system identities to avoid promoting protected nodes
         setContacts(fetchedContacts.filter(c => c.setupSource !== 'system'));
         setFolders(fetchedFolders);
     } catch (error) {
@@ -187,7 +187,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             return;
         }
 
-        // Standard creation logic
         if (mode !== 'edit' && (!values.password || values.password.length < 6)) {
             form.setError('password', { message: 'Password must be at least 6 characters.' });
             setIsSaving(false);
@@ -250,7 +249,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     onOpenChange(false);
                 } else {
                     toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication. Synchronizing authority now..." });
-                    // Attempt profile update anyway
                     const profile = await getUserProfileByEmail(values.email);
                     if (profile) {
                         await updateUserProfile(profile.id, values.email, { role: values.role, employeeNumber: values.employeeNumber });
@@ -270,68 +268,73 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10 text-center sm:text-center">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <UserPlus className="h-6 w-6 text-primary" />
-            {mode === 'edit' ? 'Edit User Profile' : 'Add New User'}
+      <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-4 border-b bg-muted/10 text-center sm:text-center shrink-0 relative">
+          <DialogTitle className="text-3xl font-bold flex items-center justify-center gap-3">
+            <UserPlus className="h-8 w-8 text-primary" />
+            {mode === 'edit' ? 'Edit User Profile' : 'Add New Ogeemo User'}
           </DialogTitle>
-          <DialogDescription>
-            {mode === 'edit' ? 'Update details for this user.' : 'Set credentials and authority for this team member.'}
+          <DialogDescription className="text-base">
+            {mode === 'edit' ? 'Update secure details for this operational node.' : 'Establish credentials and authority for a new team member.'}
           </DialogDescription>
+          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
+            <X className="h-6 w-6" />
+          </Button>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-            <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1">
+            <div className="max-w-4xl mx-auto py-10 px-6 space-y-10">
                 {mode !== 'edit' && (
-                    <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
-                        <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            1. Select Creation Mode
+                    <div className="space-y-4 p-6 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/20">
+                        <Label className="text-sm uppercase font-bold text-primary flex items-center gap-2 mb-4">
+                            1. Operational Context
                         </Label>
                         <RadioGroup 
                             defaultValue="new" 
                             value={mode} 
                             onValueChange={(v) => setMode(v as any)}
-                            className="flex flex-col space-y-2"
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                         >
-                            <div className="flex items-center space-x-2">
+                            <div className={cn("flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer", mode === 'new' ? "bg-white border-primary shadow-md" : "bg-muted/50 border-transparent")}>
                                 <RadioGroupItem value="new" id="mode-new" />
-                                <Label htmlFor="mode-new" className="font-semibold cursor-pointer">Create Brand New User</Label>
+                                <Label htmlFor="mode-new" className="font-bold cursor-pointer text-base">New Identity</Label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className={cn("flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer", mode === 'promote' ? "bg-white border-primary shadow-md" : "bg-muted/50 border-transparent")}>
                                 <RadioGroupItem value="promote" id="mode-promote" />
-                                <Label htmlFor="mode-promote" className="font-semibold cursor-pointer">Promote Existing Contact</Label>
+                                <Label htmlFor="mode-promote" className="font-bold cursor-pointer text-base">Promote Contact</Label>
                             </div>
                         </RadioGroup>
 
                         {mode === 'promote' && (
-                            <div className="pt-2 animate-in fade-in slide-in-from-top-1">
+                            <div className="pt-4 animate-in fade-in slide-in-from-top-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">Search Directory</Label>
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between text-sm font-normal">
-                                            <div className="flex items-center gap-2 truncate">
-                                                <Users className="h-4 w-4 opacity-50" />
-                                                {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Search directory..."}
+                                        <Button variant="outline" role="combobox" className="w-full h-12 justify-between text-base font-normal px-4">
+                                            <div className="flex items-center gap-3 truncate">
+                                                <Users className="h-5 w-5 text-primary opacity-70" />
+                                                {selectedContactId ? contacts.find(c => c.id === selectedContactId)?.name : "Find contact to promote..."}
                                             </div>
-                                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                                            <ChevronsUpDown className="h-5 w-5 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
-                                            <CommandInput placeholder="Search name or business..." value={contactSearchValue} onValueChange={setContactSearchValue} />
-                                            <CommandList>
-                                                <CommandEmpty>No contact found.</CommandEmpty>
+                                            <CommandInput placeholder="Search name or business..." value={contactSearchValue} onValueChange={setContactSearchValue} className="h-12" />
+                                            <CommandList className="max-h-[300px]">
+                                                <CommandEmpty>No directory match found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {contacts.map(c => (
                                                         <CommandItem 
                                                             key={c.id} 
                                                             value={c.name}
                                                             onSelect={() => handleSelectContact(c)}
+                                                            className="py-3"
                                                         >
-                                                            <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")} />
+                                                            <Check className={cn("mr-3 h-5 w-5", selectedContactId === c.id ? "opacity-100" : "opacity-0")} />
                                                             <div className="flex flex-col">
-                                                                <span className="font-medium">{c.name}</span>
-                                                                <span className="text-[10px] text-muted-foreground">{c.email || 'No email set'}</span>
+                                                                <span className="font-bold">{c.name}</span>
+                                                                <span className="text-xs text-muted-foreground">{c.email || 'No Email Record'}</span>
                                                             </div>
                                                         </CommandItem>
                                                     ))}
@@ -345,20 +348,21 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     </div>
                 )}
 
-                <Separator />
-
                 <Form {...form}>
-                    <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="space-y-4">
-                            <Label className="text-xs font-bold uppercase tracking-widest text-primary">Credentials & Identity</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+                        <section className="space-y-6">
+                            <h3 className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4" />
+                                2. Credentials & Registry
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Full Name</FormLabel>
-                                            <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
+                                            <FormLabel className="font-bold">Full Legal Name</FormLabel>
+                                            <FormControl><Input placeholder="John Smith" className="h-12 text-lg" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -368,21 +372,21 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Login Email</FormLabel>
-                                            <FormControl><Input type="email" placeholder="jane.doe@example.com" {...field} /></FormControl>
+                                            <FormLabel className="font-bold">Login Email</FormLabel>
+                                            <FormControl><Input type="email" placeholder="john@ogeemo.biz" className="h-12 text-lg" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="employeeNumber"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Original ID / Employee #</FormLabel>
-                                            <FormControl><Input placeholder="e.g. U-1001" {...field} /></FormControl>
+                                            <FormLabel className="font-bold">Operational ID / Employee #</FormLabel>
+                                            <FormControl><Input placeholder="e.g. U-1001" className="h-12 text-lg font-mono" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -392,22 +396,23 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                     name="password"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{mode === 'edit' ? 'New Password (Optional)' : 'Set Password'}</FormLabel>
+                                            <FormLabel className="font-bold">{mode === 'edit' ? 'New Password (Optional)' : 'Secure Password'}</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Input 
                                                         type={showPassword ? 'text' : 'password'}
-                                                        placeholder={mode === 'edit' ? "Keep current" : "Min 6 characters"} 
+                                                        placeholder={mode === 'edit' ? "Leave blank to keep current" : "Minimum 6 characters"} 
+                                                        className="h-12 text-lg pr-12"
                                                         {...field} 
                                                     />
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10"
                                                         onClick={() => setShowPassword(!showPassword)}
                                                     >
-                                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                                     </Button>
                                                 </div>
                                             </FormControl>
@@ -416,57 +421,81 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                     )}
                                 />
                             </div>
-                        </div>
+                        </section>
 
                         <Separator />
 
-                        <div className="space-y-4">
-                            <Label className="text-xs font-bold uppercase tracking-widest text-primary">Authority Level</Label>
-                            <FormField
-                                control={form.control}
-                                name="role"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="h-11">
-                                                    <SelectValue placeholder="Assign authority level..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="admin">Admin (Full Orchestration)</SelectItem>
-                                                <SelectItem value="editor">Read/Edit (Operational)</SelectItem>
-                                                <SelectItem value="viewer">Read Only (Intelligence)</SelectItem>
-                                                <SelectItem value="none">No Access (Revoked)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="notes"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Notes</FormLabel>
-                                        <FormControl><Textarea placeholder="Internal records..." className="resize-none" rows={3} {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                        <section className="space-y-6">
+                            <h3 className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                                <Lock className="h-4 w-4" />
+                                3. Authority & Scope
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="md:col-span-1 space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="role"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="font-bold">Access Level</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="h-12 text-base border-2">
+                                                            <SelectValue placeholder="Assign level..." />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="admin">Admin (Full Control)</SelectItem>
+                                                        <SelectItem value="editor">Editor (Standard Ops)</SelectItem>
+                                                        <SelectItem value="viewer">Viewer (Intelligence)</SelectItem>
+                                                        <SelectItem value="none">No Access (Revoked)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <div className="p-4 bg-muted/50 rounded-xl border border-dashed text-xs text-muted-foreground space-y-2">
+                                        <p className="flex items-center gap-2 font-bold text-primary">
+                                            <Info className="h-3.5 w-3.5" /> Authority Guide
+                                        </p>
+                                        <p><strong>Admin:</strong> Complete platform orchestration.</p>
+                                        <p><strong>Editor:</strong> Manage contacts, BKS, and projects.</p>
+                                        <p><strong>Viewer:</strong> Intelligence and report access only.</p>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="notes"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="font-bold">Operational Notes</FormLabel>
+                                                <FormControl><Textarea placeholder="Background, internal context, or special access requirements..." className="resize-none text-base leading-relaxed" rows={8} {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </section>
                     </form>
                 </Form>
             </div>
         </ScrollArea>
 
-        <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
-                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {mode === 'edit' ? 'Update User' : 'Save User Node'}
-            </Button>
+        <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-6">
+            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground italic font-medium max-w-lg">
+                <ShieldAlert className="h-5 w-5 text-primary" />
+                <span>Synchronizing user identity with the master registry and Firebase Authentication. This operation is encrypted.</span>
+            </div>
+            <div className="flex gap-4 w-full sm:w-auto">
+                <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
+                <Button type="submit" form="add-user-form" disabled={isSaving} size="lg" className="h-14 px-12 text-xl font-bold shadow-xl">
+                    {isSaving ? <LoaderCircle className="mr-3 h-6 w-6 animate-spin" /> : <Save className="mr-3 h-6 w-6" />}
+                    {mode === 'edit' ? 'Update Profile' : 'Save User Node'}
+                </Button>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

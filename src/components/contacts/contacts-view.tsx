@@ -425,7 +425,6 @@ export function ContactsView() {
     () => {
         let list = contacts;
         
-        // Globally exclude system nodes from the main tables
         list = list.filter(c => {
             const isSystem = c.setupSource === 'system' || 
                              ['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name);

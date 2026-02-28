@@ -127,7 +127,7 @@ const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Cont
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
-        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
+        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     }), [contact]);
 
     return (

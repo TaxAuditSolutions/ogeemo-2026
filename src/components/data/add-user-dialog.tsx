@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -44,7 +45,6 @@ import {
     Info, 
     ShieldAlert, 
     ShieldCheck, 
-    Shield, 
     Lock,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -97,6 +97,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             getContacts(currentUser.uid),
             getFolders(currentUser.uid)
         ]);
+        // Filter out system identities to avoid promoting protected nodes
         setContacts(fetchedContacts.filter(c => c.setupSource !== 'system'));
         setFolders(fetchedFolders);
     } catch (error) {
@@ -158,126 +159,106 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
     try {
         const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
 
-        if (mode === 'edit' && userToEdit) {
-            const profileUpdateData: Partial<UserProfile> = { 
+        if (existingProfile) {
+            await updateUserProfile(existingProfile.id, values.email, {
                 role: values.role,
                 employeeNumber: values.employeeNumber,
                 displayName: values.name,
                 notes: values.notes,
-            };
+            });
 
-            const contactMatch = contacts.find(c => c.email?.toLowerCase() === userToEdit.email.toLowerCase());
-            if (contactMatch) {
-                await updateContact(contactMatch.id, { 
-                    name: values.name, 
-                    email: values.email, 
-                    employeeNumber: values.employeeNumber, 
-                    role: values.role 
+            const linkId = selectedContactId || (contactToPromote?.id);
+            if (linkId) {
+                await updateContact(linkId, { 
+                    folderId: usersFolder?.id, 
+                    role: values.role,
+                    employeeNumber: values.employeeNumber
                 });
             }
 
-            await updateUserProfile(userToEdit.id, userToEdit.email, profileUpdateData);
-            
-            if (values.password && values.password.length >= 6) {
-                await updateUserAuth(userToEdit.id, { password: values.password });
-            }
-
-            toast({ title: 'User Updated' });
+            toast({ title: 'Authority Synchronized', description: `${values.name} already has an account node. Permissions updated.` });
             onUserAdded();
             onOpenChange(false);
-        } else {
-            const existingProfile = await getUserProfileByEmail(values.email);
-            
-            if (existingProfile) {
-                await updateUserProfile(existingProfile.id, values.email, {
+            return;
+        }
+
+        // Standard creation logic
+        if (!values.password || values.password.length < 6) {
+            form.setError('password', { message: 'Password must be at least 6 characters.' });
+            setIsSaving(false);
+            return;
+        }
+
+        const secondaryAppName = `Secondary-${Date.now()}`;
+        secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+        const secondaryAuth = getAuth(secondaryApp);
+        
+        try {
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
+            const newUser = userCredential.user;
+            await updateProfile(newUser, { displayName: values.name });
+
+            await updateUserProfile(newUser.uid, newUser.email!, {
+                displayName: values.name,
+                email: newUser.email!,
+                employeeNumber: values.employeeNumber,
+                notes: values.notes,
+                role: values.role, 
+            });
+
+            const linkId = selectedContactId || (contactToPromote?.id);
+            if (linkId) {
+                await updateContact(linkId, { 
+                    folderId: usersFolder?.id, 
                     role: values.role,
-                    employeeNumber: values.employeeNumber,
-                    displayName: values.name,
-                    notes: values.notes,
+                    employeeNumber: values.employeeNumber
                 });
-
-                const linkId = selectedContactId || (contactToPromote?.id);
-                if (linkId) {
-                    await updateContact(linkId, { 
-                        folderId: usersFolder?.id, 
-                        role: values.role,
-                        employeeNumber: values.employeeNumber
-                    });
-                }
-
-                toast({ title: 'Authority Synchronized', description: `${values.name} already has an account node. Permissions updated.` });
-                onUserAdded();
-                onOpenChange(false);
-                return;
+            } else {
+                await addContact({
+                    name: values.name,
+                    email: values.email,
+                    employeeNumber: values.employeeNumber,
+                    folderId: usersFolder?.id || '',
+                    role: values.role,
+                    userId: currentUser.uid, 
+                });
             }
-
-            if (!values.password || values.password.length < 6) {
-                form.setError('password', { message: 'Password must be at least 6 characters.' });
-                setIsSaving(false);
-                return;
-            }
-
-            const secondaryAppName = `Secondary-${Date.now()}`;
-            secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
-            const secondaryAuth = getAuth(secondaryApp);
             
-            try {
-                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
-                const newUser = userCredential.user;
-                await updateProfile(newUser, { displayName: values.name });
+            await signOut(secondaryAuth);
+            await deleteApp(secondaryApp);
+            secondaryApp = null;
 
-                await updateUserProfile(newUser.uid, newUser.email!, {
-                    displayName: values.name,
-                    email: newUser.email!,
-                    employeeNumber: values.employeeNumber,
-                    notes: values.notes,
-                    role: values.role, 
-                });
-
-                const linkId = selectedContactId || (contactToPromote?.id);
-                if (linkId) {
-                    await updateContact(linkId, { 
-                        folderId: usersFolder?.id, 
+            toast({ title: 'User Created', description: `${values.name} added to team.` });
+            onUserAdded();
+            onOpenChange(false);
+        } catch (authError: any) {
+            if (authError.code === 'auth/email-already-in-use') {
+                if (values.email.toLowerCase() === currentUser.email?.toLowerCase()) {
+                    await updateUserProfile(currentUser.uid, values.email, {
                         role: values.role,
-                        employeeNumber: values.employeeNumber
-                    });
-                } else {
-                    await addContact({
-                        name: values.name,
-                        email: values.email,
                         employeeNumber: values.employeeNumber,
-                        folderId: usersFolder?.id || '',
-                        role: values.role,
-                        userId: currentUser.uid, 
+                        displayName: values.name,
+                        notes: values.notes,
                     });
-                }
-                
-                await signOut(secondaryAuth);
-                await deleteApp(secondaryApp);
-                secondaryApp = null;
-
-                toast({ title: 'User Created', description: `${values.name} added to team.` });
-                onUserAdded();
-                onOpenChange(false);
-            } catch (authError: any) {
-                if (authError.code === 'auth/email-already-in-use') {
-                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication but has no Profile Node. Synchronizing authority now..." });
+                    toast({ title: 'Profile Synchronized', description: "Your existing account has been promoted to your contact node." });
+                    onUserAdded();
+                    onOpenChange(false);
                 } else {
-                    throw authError;
+                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication. Synchronizing authority now..." });
+                    // Attempt profile update anyway
+                    const profile = await getUserProfileByEmail(values.email);
+                    if (profile) {
+                        await updateUserProfile(profile.id, values.email, { role: values.role, employeeNumber: values.employeeNumber });
+                        onUserAdded();
+                        onOpenChange(false);
+                    }
                 }
-            }
+            } else { throw authError; }
         }
     } catch (error: any) {
-        console.warn("User Management Action Issue:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Action Failed',
-            description: error.message || "An unexpected error occurred."
-        });
+        toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
     } finally {
-      if (secondaryApp) {
-          try { await deleteApp(secondaryApp); } catch (e) {}
-      }
+      if (secondaryApp) try { await deleteApp(secondaryApp); } catch (e) {}
       setIsSaving(false);
     }
   };
@@ -290,13 +271,13 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10">
+        <DialogHeader className="p-6 pb-2 shrink-0 border-b bg-muted/10 text-center sm:text-center">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <UserPlus className="h-6 w-6 text-primary" />
-            {mode === 'edit' ? 'Edit User Profile' : mode === 'promote' ? 'Promote to User' : 'Add New User'}
+            {mode === 'edit' ? 'Edit User Profile' : 'Add New User'}
           </DialogTitle>
           <DialogDescription>
-            {mode === 'edit' ? 'Update the details for this user.' : 'Set credentials and authority for this team member.'}
+            {mode === 'edit' ? 'Update details for this user.' : 'Set credentials and authority for this team member.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -369,9 +350,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                 <Form {...form}>
                     <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-4">
-                            <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                {mode === 'edit' ? 'Update User Identity' : 'Credentials & Identity'}
-                            </Label>
+                            <Label className="text-xs font-bold uppercase tracking-widest text-primary">Credentials & Identity</Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
@@ -442,9 +421,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                         <Separator />
 
                         <div className="space-y-4">
-                            <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                Authority Configuration
-                            </Label>
+                            <Label className="text-xs font-bold uppercase tracking-widest text-primary">Authority Level</Label>
                             <FormField
                                 control={form.control}
                                 name="role"
@@ -457,30 +434,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="admin">
-                                                    <div className="flex items-center gap-2">
-                                                        <ShieldAlert className="h-4 w-4 text-destructive" />
-                                                        <span>Admin (Full Orchestration)</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="editor">
-                                                    <div className="flex items-center gap-2">
-                                                        <ShieldCheck className="h-4 w-4 text-primary" />
-                                                        <span>Read/Edit (Operational)</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="viewer">
-                                                    <div className="flex items-center gap-2">
-                                                        <Shield className="h-4 w-4 text-muted-foreground" />
-                                                        <span>Read Only (Intelligence)</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="none">
-                                                    <div className="flex items-center gap-2">
-                                                        <Lock className="mr-2 h-4 w-4 text-destructive" />
-                                                        <span>No Access (Revoked)</span>
-                                                    </div>
-                                                </SelectItem>
+                                                <SelectItem value="admin">Admin (Full Orchestration)</SelectItem>
+                                                <SelectItem value="editor">Read/Edit (Operational)</SelectItem>
+                                                <SelectItem value="viewer">Read Only (Intelligence)</SelectItem>
+                                                <SelectItem value="none">No Access (Revoked)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -493,7 +450,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Notes</FormLabel>
-                                        <FormControl><Textarea placeholder="Internal record keeping..." className="resize-none" rows={3} {...field} /></FormControl>
+                                        <FormControl><Textarea placeholder="Internal records..." className="resize-none" rows={3} {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -505,17 +462,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         </ScrollArea>
 
         <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-            <div className="hidden sm:flex flex-1 items-center gap-2 text-xs text-muted-foreground italic">
-                <Info className="h-4 w-4 text-primary shrink-0" />
-                <span>Team identities are synchronized across the master directory.</span>
-            </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
-                    {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {mode === 'edit' ? 'Update User' : mode === 'promote' ? 'Promote & Save' : 'Create User'}
-                </Button>
-            </div>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" form="add-user-form" disabled={isSaving} className="font-bold shadow-md">
+                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {mode === 'edit' ? 'Update User' : 'Save User Node'}
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -96,8 +97,8 @@ import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
-import { Badge } from '../ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -252,7 +253,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -264,9 +265,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={setRenameInputValue}
-                onRenameConfirm={handleRenameConfirm}
-                onRenameCancel={() => setRenamingFolder(null)}
+                onRenameChange={onRenameChange}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
             />
         ))}
       </div>
@@ -875,7 +876,7 @@ export function ContactsView() {
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>
-                                  </DraggableTableRow>
+                                  </Inter-row>
                                 );
                               })}
                           </TableBody>

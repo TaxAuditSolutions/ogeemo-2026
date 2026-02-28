@@ -35,6 +35,11 @@ export interface ThemeColors {
     border?: string;
 }
 
+export interface ThemePreset {
+    name: string;
+    colors: ThemeColors;
+}
+
 export interface UserProfile {
     id: string;
     email: string;
@@ -84,6 +89,7 @@ export interface UserProfile {
             weekly: Omit<PlanningRitual, 'repeatEnabled' | 'repeatCount'>;
         };
         themeColors?: ThemeColors;
+        customPresets?: ThemePreset[];
     };
 }
 
@@ -110,7 +116,8 @@ const defaultPreferences: UserProfile['preferences'] = {
         sidebar: '#1e293b',
         header: '#3DD5C0',
         border: '#e2e8f0',
-    }
+    },
+    customPresets: [],
 };
 
 /**
@@ -138,7 +145,8 @@ const docToUserProfile = (doc: any): UserProfile => {
         themeColors: {
             ...defaultPreferences.themeColors,
             ...(data.preferences?.themeColors || {})
-        }
+        },
+        customPresets: data.preferences?.customPresets || []
     };
 
     // Robust Authority check: Ensure the account owner (Dan) is always Admin.
@@ -241,7 +249,8 @@ export async function updateUserProfile(
                 themeColors: {
                     ...existingPrefs.themeColors,
                     ...(data.preferences.themeColors || {}),
-                }
+                },
+                customPresets: data.preferences.customPresets ?? existingPrefs.customPresets ?? []
             };
         }
         

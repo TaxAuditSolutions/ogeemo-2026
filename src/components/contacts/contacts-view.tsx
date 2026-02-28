@@ -252,7 +252,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={allFolders} 
+                allFolders={folders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}

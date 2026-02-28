@@ -45,7 +45,6 @@ import {
     ShieldAlert, 
     ShieldCheck, 
     Lock,
-    X,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -97,6 +96,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             getContacts(currentUser.uid),
             getFolders(currentUser.uid)
         ]);
+        // Filter out system nodes from the selection to prevent circular loops
         setContacts(fetchedContacts.filter(c => c.setupSource !== 'system'));
         setFolders(fetchedFolders);
     } catch (error) {
@@ -277,9 +277,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
           <DialogDescription className="text-base">
             {mode === 'edit' ? 'Update secure details for this operational node.' : 'Establish credentials and authority for a new team member.'}
           </DialogDescription>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
-            <X className="h-6 w-6" />
-          </Button>
         </DialogHeader>
 
         <ScrollArea className="flex-1">
@@ -301,7 +298,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer", mode === 'promote' ? "bg-white border-primary shadow-md" : "bg-muted/50 border-transparent")}>
                                 <RadioGroupItem value="promote" id="mode-promote" />
-                                <Label htmlFor="mode-promote" className="font-bold cursor-pointer text-base">Promote Contact</Label>
+                                <Label htmlFor="mode-promote" className="font-bold cursor-pointer text-base">Promote Existing Contact</Label>
                             </div>
                         </RadioGroup>
 
@@ -470,7 +467,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                         name="notes"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="font-bold">Operational Notes</FormLabel>
+                                                <FormLabel className="font-bold">Notes</FormLabel>
                                                 <FormControl><Textarea placeholder="Background, internal context, or special access requirements..." className="resize-none text-base leading-relaxed" rows={8} {...field} /></FormControl>
                                                 <FormMessage />
                                             </FormItem>

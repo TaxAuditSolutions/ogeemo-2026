@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -8,6 +9,10 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
  * Format: { h, s, l, values: "H S% L%" }
  */
 function hexToHSLData(hex: string) {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || (hex.length !== 4 && hex.length !== 7)) {
+      return { h: 0, s: 0, l: 0, values: "0 0% 0%" };
+  }
+
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
     r = parseInt(hex[1] + hex[1], 16);

@@ -423,7 +423,15 @@ export function ContactsView() {
 
   const displayedContacts = useMemo(
     () => {
-        let baseList = contacts;
+        let list = contacts;
+        
+        // Globally exclude system nodes from the main tables
+        list = list.filter(c => {
+            const isSystem = c.setupSource === 'system' || 
+                             ['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name);
+            return !isSystem;
+        });
+
         if (selectedFolderId !== 'all') {
             const getDescendantFolderIds = (folderId: string): string[] => {
                 let ids = [folderId];
@@ -434,17 +442,12 @@ export function ContactsView() {
                 return ids;
             };
             const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
-            baseList = contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
+            list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
         }
 
-        // Apply strict source isolation for the main list
-        if (isUsersFolderSelected) {
-            return baseList.filter(c => c.setupSource !== 'system' && !['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name));
-        }
-
-        return baseList;
+        return list;
     },
-    [contacts, folders, selectedFolderId, isUsersFolderSelected]
+    [contacts, folders, selectedFolderId]
   );
 
   const systemRegistryContacts = useMemo(

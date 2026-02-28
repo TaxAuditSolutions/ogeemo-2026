@@ -89,11 +89,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' },
-  });
-
   const loadSupportData = useCallback(async () => {
     if (!currentUser || !isOpen) return;
     setIsLoadingContacts(true);
@@ -144,7 +139,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         setMode('new');
       }
     }
-  }, [isOpen, userToEdit, contactToPromote, form]);
+  }, [isOpen, userToEdit, contactToPromote]);
 
   const handleSelectContact = (contact: Contact) => {
       setSelectedContactId(contact.id);
@@ -286,6 +281,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
       setIsSaving(false);
     }
   };
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' },
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -492,7 +492,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                                 name="notes"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Audit Notes</FormLabel>
+                                        <FormLabel>Notes</FormLabel>
                                         <FormControl><Textarea placeholder="Notes for internal record keeping..." className="resize-none" rows={3} {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>

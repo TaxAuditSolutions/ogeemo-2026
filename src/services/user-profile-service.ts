@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where } from 'firebase/firestore';
@@ -38,6 +39,7 @@ export interface UserProfile {
     cellPhone?: string;
     bestPhone?: 'business' | 'cell';
     role?: 'admin' | 'editor' | 'viewer' | 'none';
+    setupSource?: 'system' | 'app';
     businessAddress?: {
         street?: string;
         city?: string;
@@ -133,6 +135,7 @@ const docToUserProfile = (doc: any): UserProfile => {
         ...data, 
         role, 
         employeeNumber: data.employeeNumber || '',
+        setupSource: data.setupSource || 'app',
         preferences 
     } as UserProfile;
 };
@@ -243,6 +246,7 @@ export async function updateUserProfile(
         dataWithTimestamp.createdAt = serverTimestamp();
         dataWithTimestamp.role = data.role || (email.toLowerCase().includes('dan') ? 'admin' : 'viewer');
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
+        dataWithTimestamp.setupSource = data.setupSource || 'app';
         
         await setDoc(docRef, dataWithTimestamp).catch(async (error) => {
             if (error.code === 'permission-denied') {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -84,6 +85,7 @@ import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -168,18 +170,18 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [folder, isRenaming, isSystem]);
+    }, [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
-    }), [folder.id, onDrop]);
+    }, [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
@@ -296,6 +298,7 @@ export function ContactsView() {
   const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
 
   const [initialContactData, setInitialDialogData] = useState<Partial<Contact>>({});
+  const [isSystemRegistryOpen, setIsSystemRegistryOpen] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -342,7 +345,8 @@ export function ContactsView() {
                         folderId: usersFolder.id,
                         userId: user.uid,
                         role: member.role,
-                        notes: "Core Ogeemo team member seeded for orchestration."
+                        setupSource: 'system',
+                        notes: "Core Ogeemo team member established by backend setup."
                     });
                 }
             }
@@ -409,20 +413,34 @@ export function ContactsView() {
 
   const displayedContacts = useMemo(
     () => {
-        if (selectedFolderId === 'all') return contacts;
-        const getDescendantFolderIds = (folderId: string): string[] => {
-            let ids = [folderId];
-            const children = folders.filter(f => f.parentId === folderId);
-            children.forEach(child => {
-                ids = [...ids, ...getDescendantFolderIds(child.id)];
-            });
-            return ids;
-        };
+        let baseList = contacts;
+        if (selectedFolderId !== 'all') {
+            const getDescendantFolderIds = (folderId: string): string[] => {
+                let ids = [folderId];
+                const children = folders.filter(f => f.parentId === folderId);
+                children.forEach(child => {
+                    ids = [...ids, ...getDescendantFolderIds(child.id)];
+                });
+                return ids;
+            };
+            const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
+            baseList = contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
+        }
 
-        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
-        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
+        // Filter based on folder context
+        if (isUsersFolderSelected) {
+            // Only show 'app' users in the main list
+            return baseList.filter(c => c.setupSource !== 'system');
+        }
+
+        return baseList;
     },
-    [contacts, folders, selectedFolderId]
+    [contacts, folders, selectedFolderId, isUsersFolderSelected]
+  );
+
+  const systemRegistryContacts = useMemo(
+      () => contacts.filter(c => c.setupSource === 'system'),
+      [contacts]
   );
 
   const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
@@ -716,9 +734,23 @@ export function ContactsView() {
             <ResizablePanel defaultSize={75}>
               <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b h-20">
-                      <div>
-                          <h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : selectedFolder?.name}</h2>
-                          <p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p>
+                      <div className="flex items-center gap-3">
+                          <div>
+                            <h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : selectedFolder?.name}</h2>
+                            <p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p>
+                          </div>
+                          {isUsersFolderSelected && (
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-10 w-10 text-primary border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 rounded-full" onClick={() => setIsSystemRegistryOpen(true)}>
+                                              <ShieldCheck className="h-6 w-6" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="bottom"><p>System Team Registry (Nick's Nodes)</p></TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                          )}
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedContactIds.length > 0 && (
@@ -943,6 +975,55 @@ export function ContactsView() {
             preselectedContactId={preselectedContactId}
           />
       )}
+
+      <Dialog open={isSystemRegistryOpen} onOpenChange={setIsSystemRegistryOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
+              <DialogHeader className="p-6 border-b bg-muted/10 shrink-0">
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                      <ShieldCheck className="h-6 w-6" />
+                      <DialogTitle className="text-2xl font-headline">System Team Registry</DialogTitle>
+                  </div>
+                  <DialogDescription>
+                      Nick's Nodes: Back-end seeded identities. These records are protected and cannot be edited via the UI.
+                  </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="flex-1 p-6">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead>Identity</TableHead>
+                              <TableHead>System Authority</TableHead>
+                              <TableHead className="text-right">Status</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {systemRegistryContacts.map(c => (
+                              <TableRow key={c.id}>
+                                  <TableCell>
+                                      <div className="flex flex-col">
+                                          <span className="font-bold">{c.name}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell>
+                                      <div className="flex items-center gap-2">
+                                          {getRoleIcon(c.role as UserRole)}
+                                          <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">Protected Node</Badge>
+                                  </TableCell>
+                              </TableRow>
+                          ))}
+                      </TableBody>
+                  </Table>
+              </ScrollArea>
+              <DialogFooter className="p-4 border-t bg-muted/30">
+                  <Button onClick={() => setIsSystemRegistryOpen(false)}>Close Registry</Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </>
   );
 }

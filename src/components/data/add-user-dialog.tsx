@@ -33,7 +33,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import firebaseConfig from '@/lib/config';
 import { updateUserProfile, type UserProfile } from '@/services/user-profile-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X } from 'lucide-react';
+import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';

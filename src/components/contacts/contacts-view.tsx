@@ -24,6 +24,7 @@ import {
   Calendar,
   FileDigit,
   Briefcase,
+  Clock,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -266,14 +267,16 @@ export function ContactsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
+  const contactRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
         const allFolders = await ensureSystemFolders(user.uid);
+        // Using global fetch for shared workspace visibility
         const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
-            getContacts(user.uid),
+            getContacts(), 
             getCompanies(user.uid),
             getIndustries(user.uid),
             getWorkers(user.uid),
@@ -296,7 +299,7 @@ export function ContactsView() {
     if (isEditing) {
         setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
     } else {
-        setContacts(prev => [...prev, savedContact]);
+        setContacts(prev => [savedContact, ...prev]);
     }
     setIsContactFormOpen(false);
   };
@@ -403,6 +406,21 @@ export function ContactsView() {
       } catch (error: any) { toast({ variant: "destructive", title: "Error", description: error.message }); }
   };
 
+  useEffect(() => {
+    if (highlightedId && !isLoading && contacts.length > 0) {
+        const contact = contacts.find(c => c.id === highlightedId);
+        if (contact) {
+            const timeoutId = setTimeout(() => {
+                const rowElement = contactRefs.current.get(highlightedId);
+                if (rowElement) {
+                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }
+  }, [highlightedId, isLoading, contacts]);
+
   if (isLoading) return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
 
   return (
@@ -437,7 +455,7 @@ export function ContactsView() {
                   <div className="flex items-center justify-between p-4 border-b h-20">
                       <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p></div>
                       <div className="flex items-center gap-2">
-                        {selectedContactIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedContactIds.length})</Button>}
+                        {selectedContactIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-3" /> Delete ({selectedContactIds.length})</Button>}
                         <Button onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }} disabled={selectedFolderId === 'all'}><Plus className="mr-2 h-4 w-4" /> New Contact</Button>
                       </div>
                   </div>
@@ -457,7 +475,11 @@ export function ContactsView() {
                               {displayedContacts.map((contact) => (
                                   <DraggableTableRow key={contact.id} contact={contact} isHighlighted={highlightedId === contact.id}>
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={(checked) => setSelectedContactIds(prev => checked ? [...prev, contact.id] : prev.filter(id => id !== contact.id))} /></TableCell>
-                                      <TableCell className="font-medium"><button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>{contact.name}</button></TableCell>
+                                      <TableCell className="font-medium">
+                                          <div className="flex items-center" ref={(el) => contactRefs.current.set(contact.id, el)}>
+                                              <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>{contact.name}</button>
+                                          </div>
+                                      </TableCell>
                                       <TableCell>{contact.email}</TableCell>
                                       <TableCell>{contact.cellPhone || contact.businessPhone || contact.homePhone || '-'}</TableCell>
                                       {selectedFolderId === 'all' && <TableCell>{folders.find(f => f.id === contact.folderId)?.name || 'Unassigned'}</TableCell>}

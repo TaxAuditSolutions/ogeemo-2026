@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
@@ -249,7 +250,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             )}
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
+                <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             {userToEdit ? "User Details" : "2. Identity Credentials"}
@@ -283,7 +284,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
         <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
-          <Button type="submit" form="add-user-form" onClick={form.handleSubmit(onSubmit)} className="px-8 font-bold shadow-lg" disabled={isSaving}>
+          <Button type="submit" form="add-user-form" className="px-8 font-bold shadow-lg" disabled={isSaving}>
             {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             {userToEdit ? 'Save Changes' : 'Provision User'}
           </Button>

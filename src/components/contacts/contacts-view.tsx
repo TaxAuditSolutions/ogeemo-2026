@@ -274,7 +274,7 @@ export function ContactsView() {
     setIsLoading(true);
     try {
         const allFolders = await ensureSystemFolders(user.uid);
-        // Using global fetch for shared workspace visibility
+        // Fetch all contacts without filtering by user to support shared directory access
         const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
             getContacts(), 
             getCompanies(user.uid),

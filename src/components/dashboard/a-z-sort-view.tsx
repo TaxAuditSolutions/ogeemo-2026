@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { useDrag, useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, ArrowLeft, ArrowDownAZ, ArrowUpZA, Save, GripVertical, type LucideIcon } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, ArrowDownAZ, ArrowUpZA, Save, GripVertical } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
-import { getUserProfile, updateUserProfile } from '@/services/user-profile-service';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 
 interface DraggableItemProps {
@@ -29,7 +29,7 @@ const DraggableMenuItem = ({ item, index, moveMenuItem }: DraggableItemProps) =>
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
-    });
+    }, [item.href, index]);
 
     const [, drop] = useDrop({
         accept: 'MENU_ITEM_SORT',
@@ -43,7 +43,7 @@ const DraggableMenuItem = ({ item, index, moveMenuItem }: DraggableItemProps) =>
             moveMenuItem(dragIndex, hoverIndex);
             draggedItem.index = hoverIndex;
         },
-    });
+    }, [index, moveMenuItem]);
     
     drag(drop(ref));
 
@@ -69,13 +69,11 @@ export function AZSortView() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { preferences, updatePreferences, isLoading: isLoadingPrefs } = useUserPreferences();
 
-  const loadMenuOrder = useCallback(async () => {
-    if (user) {
-      setIsLoading(true);
-      try {
-        const profile = await getUserProfile(user.uid);
-        const savedOrder = profile?.preferences?.menuOrder;
+  useEffect(() => {
+    if (!isLoadingPrefs && preferences) {
+        const savedOrder = preferences.menuOrder;
         
         if (savedOrder && savedOrder.length > 0) {
             const orderedItems = savedOrder
@@ -86,25 +84,9 @@ export function AZSortView() {
         } else {
             setMenuItems([...allMenuItems].sort((a, b) => a.label.localeCompare(b.label)));
         }
-
-      } catch (error) {
-        console.error("Failed to load menu order:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Failed to load menu order',
-          description: error instanceof Error ? error.message : 'An unknown error occurred.',
-        });
-      } finally {
         setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
     }
-  }, [user, toast]);
-
-  useEffect(() => {
-    loadMenuOrder();
-  }, [loadMenuOrder]);
+  }, [preferences, isLoadingPrefs]);
 
   const handleSort = (direction: 'asc' | 'desc') => {
     const sorted = [...menuItems].sort((a, b) => {
@@ -128,11 +110,9 @@ export function AZSortView() {
     if (!user) return;
     try {
         const orderToSave = menuItems.map(item => item.href);
-        const profile = await getUserProfile(user.uid);
-        await updateUserProfile(user.uid, user.email || '', {
-            ...profile,
-            preferences: { ...profile?.preferences, menuOrder: orderToSave }
-        });
+        // Using updatePreferences ensures only the menuOrder is sent to the backend,
+        // avoiding permission errors caused by sending protected fields like 'role'.
+        await updatePreferences({ menuOrder: orderToSave });
         
         // Dispatch custom event to notify the sidebar to update
         window.dispatchEvent(new CustomEvent('menuOrderChanged'));
@@ -142,11 +122,12 @@ export function AZSortView() {
             description: "Your new menu order has been saved and the sidebar has been updated."
         });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        // The service already handles the "red card" error display via errorEmitter.
+        // We catch here just to prevent unhandled promise rejection in the UI.
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingPrefs) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoaderCircle className="h-10 w-10 animate-spin text-primary" />

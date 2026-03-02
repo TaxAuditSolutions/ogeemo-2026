@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where, writeBatch } from 'firebase/firestore';
@@ -94,6 +95,17 @@ export interface UserProfile {
 
 const PROFILES_COLLECTION = 'users';
 
+/**
+ * Registry of identities granted absolute Admin authority.
+ * This acts as a recovery mechanism for the core orchestration team.
+ */
+const SYSTEM_ADMIN_EMAILS = [
+    'dan@ogeemo.com',
+    'julie@ogeemo.com',
+    'nick@ogeemo.com',
+    'info@ogeemo.com'
+];
+
 const defaultPreferences: UserProfile['preferences'] = {
     showDictationButton: true,
     showDashboardFrame: true,
@@ -154,7 +166,17 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return docToUserProfile(docSnap);
+            const profile = docToUserProfile(docSnap);
+            
+            // --- Role Recovery Protocol ---
+            // If this is a core team member and their role was changed, restore it.
+            if (profile.email && SYSTEM_ADMIN_EMAILS.includes(profile.email.toLowerCase()) && profile.role !== 'admin') {
+                console.log(`Role Recovery: Restoring Admin status for ${profile.email}`);
+                await updateDoc(docRef, { role: 'admin' });
+                return { ...profile, role: 'admin' };
+            }
+            
+            return profile;
         } else {
             return null;
         }
@@ -198,6 +220,11 @@ export async function updateUserProfile(
         updatedAt: serverTimestamp(),
     };
 
+    // Ensure system admins always stay admins during update
+    if (SYSTEM_ADMIN_EMAILS.includes(email.toLowerCase())) {
+        dataWithTimestamp.role = 'admin';
+    }
+
     if (docSnap.exists()) {
         const existingData = docSnap.data();
         
@@ -231,7 +258,8 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.role = data.role || 'viewer';
+        // Default to admin for system emails, viewer for others
+        dataWithTimestamp.role = SYSTEM_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : (data.role || 'viewer');
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
         
         await setDoc(docRef, dataWithTimestamp).catch(async (error) => {
@@ -267,6 +295,23 @@ export async function deleteUserProfile(userId: string): Promise<void> {
                 path: docRef.path,
                 operation: 'delete',
                 requestResourceData: null,
+            } satisfies SecurityRuleContext));
+        }
+    });
+}
+
+export async function deleteUserProfiles(userIds: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    userIds.forEach(id => {
+        const docRef = doc(db, PROFILES_COLLECTION, id);
+        batch.delete(docRef);
+    });
+    await batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch',
+                operation: 'delete',
             } satisfies SecurityRuleContext));
         }
     });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -97,8 +96,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             getContacts(currentUser.uid),
             getFolders(currentUser.uid)
         ]);
-        // Filter out system nodes from the selection to prevent circular loops
-        setContacts(fetchedContacts.filter(c => c.setupSource !== 'system'));
+        setContacts(fetchedContacts);
         setFolders(fetchedFolders);
     } catch (error) {
         console.error("Failed to load support data:", error);
@@ -166,13 +164,11 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
         const existingProfile = await getUserProfileByEmail(values.email);
 
         if (existingProfile) {
-            // LIST B: Admin List (Update existing)
             await updateUserProfile(existingProfile.id, values.email, {
                 role: values.role,
                 employeeNumber: values.employeeNumber,
                 displayName: values.name,
                 notes: values.notes,
-                setupSource: existingProfile.setupSource === 'system' ? 'system' : 'admin',
             });
 
             const linkId = selectedContactId || (contactToPromote?.id);
@@ -181,7 +177,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     folderId: usersFolder?.id, 
                     role: values.role,
                     employeeNumber: values.employeeNumber,
-                    setupSource: existingProfile.setupSource === 'system' ? 'system' : 'admin',
                 });
             }
 
@@ -206,14 +201,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             const newUser = userCredential.user;
             await updateProfile(newUser, { displayName: values.name });
 
-            // LIST B: Admin List (New creation)
             await updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
                 notes: values.notes,
                 role: values.role, 
-                setupSource: 'admin',
             });
 
             const linkId = selectedContactId || (contactToPromote?.id);
@@ -222,7 +215,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     folderId: usersFolder?.id, 
                     role: values.role,
                     employeeNumber: values.employeeNumber,
-                    setupSource: 'admin'
                 });
             } else {
                 await addContact({
@@ -232,7 +224,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     folderId: usersFolder?.id || '',
                     role: values.role,
                     userId: currentUser.uid, 
-                    setupSource: 'admin'
                 });
             }
             
@@ -251,7 +242,6 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     await updateUserProfile(profile.id, values.email, { 
                         role: values.role, 
                         employeeNumber: values.employeeNumber,
-                        setupSource: profile.setupSource === 'system' ? 'system' : 'admin' 
                     });
                     onUserAdded();
                     onOpenChange(false);

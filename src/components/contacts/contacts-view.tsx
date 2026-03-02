@@ -30,13 +30,6 @@ import {
   Link as LinkIcon,
   Info,
   Save,
-  ShieldCheck,
-  ShieldAlert,
-  Shield,
-  Lock,
-  UserX,
-  KeyRound,
-  Bot,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -94,12 +87,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getUsers, type UserRole, type UserProfile, updateUserProfile } from '@/services/user-profile-service';
-import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
@@ -109,10 +99,6 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
       <LoaderCircle className="h-10 w-10 animate-spin text-white" />
     </div>
   ),
-});
-
-const AddUserDialog = dynamic(() => import('@/components/data/add-user-dialog').then(mod => mod.AddUserDialog), {
-    ssr: false,
 });
 
 const ItemTypes = {
@@ -251,7 +237,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -275,7 +261,6 @@ const FolderTreeItem = ({
 export function ContactsView() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -286,9 +271,7 @@ export function ContactsView() {
   const [renameInputValue, setRenameInputValue] = useState("");
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
-  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -304,11 +287,7 @@ export function ContactsView() {
   const [preselectedContactId, setPreselectedContactId] = useState<string | null>(null);
   const [workersForDialog, setWorkersForSelection] = useState<Worker[]>([]);
 
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
-
   const [initialContactData, setInitialDialogData] = useState<Partial<Contact>>({});
-  const [isSystemRegistryOpen, setIsSystemRegistryOpen] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -317,11 +296,6 @@ export function ContactsView() {
   
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const folderNameParam = searchParams ? searchParams.get('folderName') : null;
-
-  const isUsersFolderSelected = useMemo(() => {
-      const folder = folders.find(f => f.id === selectedFolderId);
-      return folder?.name === 'Users' && folder?.isSystem;
-  }, [folders, selectedFolderId]);
 
   const loadData = useCallback(async () => {
     if (!user) {
@@ -339,84 +313,22 @@ export function ContactsView() {
             getWorkers(user.uid),
         ]);
 
-        let fetchedProfiles: UserProfile[] = [];
-        try {
-            fetchedProfiles = await getUsers();
-        } catch (profileError) {
-            console.warn("Contacts Hub: Could not list user profiles.");
-        }
-        
-        const usersFolder = allFolders.find(f => f.name === 'Users' && f.isSystem);
-        
-        if (usersFolder && fetchedProfiles.length > 0) {
-            const batchUpdate = [];
-            for (const profile of fetchedProfiles) {
-                let source = profile.setupSource || 'app';
-                const emailLower = profile.email?.toLowerCase() || '';
-                
-                if (source === 'app' && (emailLower.includes('dan') || emailLower.includes('nick') || emailLower.includes('julie'))) {
-                    source = 'system';
-                }
-
-                const contactMatch = fetchedContacts.find(c => c.email?.toLowerCase() === profile.email?.toLowerCase() || c.id === profile.id);
-                if (!contactMatch) {
-                    batchUpdate.push(addContact({
-                        name: profile.displayName || profile.email || 'Ogeemo User',
-                        email: profile.email,
-                        folderId: usersFolder.id,
-                        userId: user.uid,
-                        role: profile.role,
-                        setupSource: source,
-                        notes: "Mirrored identity record from User Manager."
-                    }));
-                } else {
-                    const needsSync = contactMatch.folderId !== usersFolder.id || 
-                                      contactMatch.role !== profile.role || 
-                                      contactMatch.setupSource !== source;
-                    
-                    if (needsSync) {
-                        batchUpdate.push(updateContact(contactMatch.id, { 
-                            folderId: usersFolder.id, 
-                            role: profile.role,
-                            setupSource: source 
-                        }));
-                    }
-                }
-            }
-            if (batchUpdate.length > 0) {
-                await Promise.all(batchUpdate);
-                const refreshedContacts = await getContacts(user.uid);
-                setContacts(refreshedContacts);
-            } else {
-                setContacts(fetchedContacts);
-            }
-        } else {
-            setContacts(fetchedContacts);
-        }
-
+        setContacts(fetchedContacts);
         setFolders(allFolders);
         setCompanies(fetchedCompanies);
         setCustomIndustries(fetchedIndustries);
-        setUserProfiles(fetchedProfiles);
 
-        const myProfile = fetchedProfiles.find(p => p.id === user.uid);
-        const adminName = myProfile?.displayName || user.displayName || user.email || 'Admin';
-        const adminIdNumber = myProfile?.employeeNumber || '';
         const adminWorker: Worker = {
             id: user?.uid || '',
-            name: `${adminName} (Admin)`,
+            name: `${user.displayName || user.email || 'Admin'} (Admin)`,
             email: user?.email || '',
             workerType: 'employee', 
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
-            workerIdNumber: adminIdNumber,
         };
         setWorkersForSelection([adminWorker, ...fetchedWorkers]);
 
-        if (usersFolder) {
-            setExpandedFolders(new Set([usersFolder.id]));
-        }
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed to load data", description: error.message });
     } finally {
@@ -447,28 +359,20 @@ export function ContactsView() {
 
   const displayedContacts = useMemo(
     () => {
-        let list = contacts;
+        if (selectedFolderId === 'all') return contacts;
         
-        if (selectedFolderId !== 'all') {
-            const getDescendantFolderIds = (folderId: string): string[] => {
-                let ids = [folderId];
-                const children = folders.filter(f => f.parentId === folderId);
-                children.forEach(child => {
-                    ids = [...ids, ...getDescendantFolderIds(child.id)];
-                });
-                return ids;
-            };
-            const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
-            list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
-
-            if (isUsersFolderSelected) {
-                list = list.filter(c => c.setupSource === 'system');
-            }
-        }
-
-        return list;
+        const getDescendantFolderIds = (folderId: string): string[] => {
+            let ids = [folderId];
+            const children = folders.filter(f => f.parentId === folderId);
+            children.forEach(child => {
+                ids = [...ids, ...getDescendantFolderIds(child.id)];
+            });
+            return ids;
+        };
+        const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
+        return contacts.filter((c) => folderIdsToDisplay.includes(c.folderId));
     },
-    [contacts, folders, selectedFolderId, isUsersFolderSelected]
+    [contacts, folders, selectedFolderId]
   );
 
   const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
@@ -533,16 +437,10 @@ export function ContactsView() {
   }, [renamingFolder, renameInputValue, toast]);
 
   const handleNewActionClick = useCallback(() => {
-    if (isUsersFolderSelected) {
-        setContactToEdit(null);
-        setUserToEdit(null);
-        setIsAddUserDialogOpen(true);
-    } else {
-        setInitialDialogData({});
-        setContactToEdit(null);
-        setIsContactFormOpen(true);
-    }
-  }, [isUsersFolderSelected]);
+    setInitialDialogData({});
+    setContactToEdit(null);
+    setIsContactFormOpen(true);
+  }, []);
 
   const handleToggleSelectAll = useCallback(() => {
     setSelectedContactIds(allVisibleSelected ? [] : displayedContacts.map(c => c.id));
@@ -635,112 +533,6 @@ export function ContactsView() {
       setIsNewFolderDialogOpen(true);
   };
 
-  const handleRoleChange = async (userId: string, email: string, newRole: UserRole) => {
-    if (!user) return;
-    try {
-      await updateUserProfile(userId, email, { role: newRole });
-      const contactMatch = contacts.find(c => c.id === userId || c.email === email);
-      if (contactMatch) {
-          await updateContact(contactMatch.id, { role: newRole });
-      }
-      toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
-      loadData();
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    }
-  };
-
-  const handleEditUser = (contact: Contact) => {
-      const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
-      if (profile) {
-          setUserToEdit(profile);
-          setContactToEdit(null);
-          setIsAddUserDialogOpen(true);
-      } else {
-          setUserToEdit(null);
-          setContactToEdit(contact);
-          setIsAddUserDialogOpen(true);
-      }
-  };
-
-  const handleChangePassword = (contact: Contact) => {
-      const profile = userProfiles.find(p => p.email?.toLowerCase() === contact.email?.toLowerCase() || p.id === contact.id);
-      if (profile) {
-          setUserForPasswordChange(profile);
-          setIsChangePasswordOpen(true);
-      } else {
-          toast({ variant: 'destructive', title: 'Profile Not Found', description: "This member doesn't have a login account node yet." });
-      }
-  };
-
-  const getRoleIcon = (role?: UserRole) => {
-    switch (role) {
-      case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
-      case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
-      case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
-      case 'none': return <UserX className="h-4 w-4 text-destructive" />;
-      default: return <Shield className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getRoleLabel = (role?: UserRole) => {
-    switch (role) {
-      case 'admin': return 'Admin (Full)';
-      case 'editor': return 'Read/Edit';
-      case 'viewer': return 'Read Only';
-      case 'none': return 'No Access';
-      default: return 'Viewer';
-    }
-  };
-
-  const getSourceIcon = (source?: string) => {
-      switch (source) {
-          case 'system': return <Bot className="h-3 w-3 text-primary" />;
-          case 'admin': return <ShieldCheck className="h-3 w-3 text-blue-500" />;
-          case 'app': return <UserPlus className="h-3 w-3 text-orange-500" />;
-          default: return <Users className="h-3 w-3 text-muted-foreground" />;
-      }
-  };
-
-  const renderRegistryTable = (registryContacts: Contact[]) => (
-    <Table>
-        <TableHeader>
-            <TableRow>
-                <TableHead>Identity</TableHead>
-                <TableHead>System Authority</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            {registryContacts.length > 0 ? registryContacts.map(c => (
-                <TableRow key={c.id}>
-                    <TableCell>
-                        <div className="flex flex-col">
-                            <span className="font-bold">{c.name}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                            {getRoleIcon(c.role as UserRole)}
-                            <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                        <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-tighter", c.setupSource === 'system' ? "bg-primary/5 text-primary border-primary/20" : "bg-muted text-muted-foreground")}>
-                            {c.setupSource === 'system' ? 'Architect' : c.setupSource === 'admin' ? 'Managed' : 'Member'}
-                        </Badge>
-                    </TableCell>
-                </TableRow>
-            )) : (
-                <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">No identity nodes in this category.</TableCell>
-                </TableRow>
-            )}
-        </TableBody>
-    </Table>
-  );
-
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -810,23 +602,9 @@ export function ContactsView() {
             <ResizablePanel defaultSize={75}>
               <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b h-20">
-                      <div className="flex items-center gap-3">
-                          <div>
-                            <h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : selectedFolder?.name}</h2>
-                            <p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p>
-                          </div>
-                          {isUsersFolderSelected && (
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-10 w-10 text-primary border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 rounded-full" onClick={() => setIsSystemRegistryOpen(true)}>
-                                              <ShieldCheck className="h-6 w-6" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="bottom"><p>Unified Team Registry</p></TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                          )}
+                      <div>
+                        <h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : selectedFolder?.name}</h2>
+                        <p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedContactIds.length > 0 && (
@@ -835,8 +613,7 @@ export function ContactsView() {
                            </Button>
                         )}
                         <Button onClick={handleNewActionClick} disabled={selectedFolderId === 'all'}>
-                            {isUsersFolderSelected ? <UserPlus className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                            {isUsersFolderSelected ? 'Add App User' : 'New Contact'}
+                            <Plus className="mr-2 h-4 w-4" /> New Contact
                         </Button>
                       </div>
                   </div>
@@ -852,7 +629,7 @@ export function ContactsView() {
                                   </TableHead>
                                   <TableHead>Name</TableHead>
                                   <TableHead>Email</TableHead>
-                                  {isUsersFolderSelected ? <TableHead>Source / Authority</TableHead> : <TableHead>Phone</TableHead>}
+                                  <TableHead>Phone</TableHead>
                                   {selectedFolderId === 'all' && <TableHead>Folder</TableHead>}
                                   <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                               </TableRow>
@@ -861,7 +638,6 @@ export function ContactsView() {
                               {displayedContacts.map((contact) => {
                                 const folderName = folders.find(f => f.id === contact.folderId)?.name || 'Unassigned';
                                 const primaryPhoneNumber = contact.primaryPhoneType && contact[contact.primaryPhoneType] ? contact[contact.primaryPhoneType] : contact.cellPhone || contact.businessPhone || contact.homePhone;
-                                const isMe = contact.id === user?.uid || contact.email === user?.email;
 
                                 return (
                                   <DraggableTableRow 
@@ -871,74 +647,25 @@ export function ContactsView() {
                                   >
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={() => handleToggleSelect(contact.id)} /></TableCell>
                                       <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <button className="text-left hover:underline" onClick={() => isUsersFolderSelected ? handleEditUser(contact) : (setContactToEdit(contact), setIsContactFormOpen(true))}>
-                                            {contact.name}
-                                            </button>
-                                            {isMe && (
-                                                <Badge variant="secondary" className="text-[10px] uppercase h-4 px-1.5 bg-primary/10 text-primary border-primary/20">You</Badge>
-                                            )}
-                                        </div>
+                                        <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
+                                          {contact.name}
+                                        </button>
                                       </TableCell>
                                       <TableCell>{contact.email}</TableCell>
-                                      {isUsersFolderSelected ? (
-                                          <TableCell>
-                                              <div className="flex items-center gap-3">
-                                                  <div className="flex items-center gap-1.5">
-                                                      {getSourceIcon(contact.setupSource)}
-                                                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">{contact.setupSource || 'app'}</span>
-                                                  </div>
-                                                  <Separator orientation="vertical" className="h-4" />
-                                                  <div className="flex items-center gap-2">
-                                                      {getRoleIcon(contact.role as UserRole)}
-                                                      <span className="text-xs font-medium">{getRoleLabel(contact.role as UserRole)}</span>
-                                                  </div>
-                                              </div>
-                                          </TableCell>
-                                      ) : (
-                                          <TableCell>{primaryPhoneNumber}</TableCell>
-                                      )}
+                                      <TableCell>{primaryPhoneNumber}</TableCell>
                                       {selectedFolderId === 'all' && <TableCell>{folderName}</TableCell>}
                                       <TableCell onClick={(e) => e.stopPropagation()}>
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem onSelect={() => isUsersFolderSelected ? handleEditUser(contact) : (setContactToEdit(contact), setIsContactFormOpen(true))}>
+                                                  <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>
                                                       <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                                   </DropdownMenuItem>
-                                                  
-                                                  {isUsersFolderSelected && (
-                                                      <>
-                                                        <DropdownMenuItem onSelect={() => handleChangePassword(contact)}>
-                                                            <KeyRound className="mr-2 h-4 w-4" /> Change Password
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Manage Authority</DropdownMenuLabel>
-                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'admin')}>
-                                                            <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full)
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'editor')}>
-                                                            <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Read/Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'viewer')}>
-                                                            <Shield className="mr-2 h-4 w-4 text-muted-foreground" /> Read Only
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleRoleChange(contact.id, contact.email || '', 'none')} className="text-destructive">
-                                                            <Lock className="mr-2 h-4 w-4" /> No Access
-                                                        </DropdownMenuItem>
-                                                      </>
-                                                  )}
-
-                                                  {!isUsersFolderSelected && (
-                                                      <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Retrospective Time</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => router.push(`/master-mind?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
-                                                      </>
-                                                  )}
-                                                  
+                                                  <DropdownMenuSeparator />
+                                                  <DropdownMenuItem onSelect={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Retrospective Time</DropdownMenuItem>
+                                                  <DropdownMenuItem onClick={() => router.push(`/master-mind?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
+                                                  <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
+                                                  <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem onSelect={() => { setContactToMerge(contact); setIsMergeDialogOpen(true); }}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
@@ -974,23 +701,6 @@ export function ContactsView() {
             onCustomIndustriesChange={setCustomIndustries} 
         />
       )}
-
-      {isAddUserDialogOpen && (
-          <AddUserDialog
-            isOpen={isAddUserDialogOpen}
-            onOpenChange={setIsAddUserDialogOpen}
-            onUserAdded={loadData}
-            userToEdit={userToEdit}
-            contactToPromote={contactToEdit}
-          />
-      )}
-
-      <ChangePasswordDialog
-        isOpen={isChangePasswordOpen}
-        onOpenChange={setIsChangePasswordOpen}
-        user={userForPasswordChange}
-        onPasswordChanged={loadData}
-      />
 
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
           <DialogContent className="sm:max-w-md text-black">
@@ -1058,57 +768,6 @@ export function ContactsView() {
             preselectedContactId={preselectedContactId}
           />
       )}
-
-      <Dialog open={isSystemRegistryOpen} onOpenChange={setIsSystemRegistryOpen}>
-          <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col p-0 overflow-hidden text-black">
-              <DialogHeader className="p-6 border-b bg-muted/10 shrink-0">
-                  <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-primary">
-                          <ShieldCheck className="h-6 w-6" />
-                          <DialogTitle className="text-2xl font-headline">Team Registry</DialogTitle>
-                      </div>
-                      <Badge variant="outline" className="font-mono">
-                          {contacts.filter(c => ['system', 'admin', 'app'].includes(c.setupSource || '')).length} Identity Nodes
-                      </Badge>
-                  </div>
-                  <DialogDescription>
-                      Consolidated registry of all authenticated identities within the Ogeemo ecosystem.
-                  </DialogDescription>
-              </DialogHeader>
-              
-              <Tabs defaultValue="system" className="flex-1 flex flex-col min-h-0">
-                  <TabsList className="px-6 py-2 bg-muted/30 border-b rounded-none justify-start h-auto gap-2">
-                      <TabsTrigger value="system" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
-                          System Architects ({contacts.filter(c => c.setupSource === 'system').length})
-                      </TabsTrigger>
-                      <TabsTrigger value="admin" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
-                          Admin Assigned ({contacts.filter(c => c.setupSource === 'admin').length})
-                      </TabsTrigger>
-                      <TabsTrigger value="app" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
-                          App Signups ({contacts.filter(c => c.setupSource === 'app').length})
-                      </TabsTrigger>
-                  </TabsList>
-
-                  <ScrollArea className="flex-1 min-h-0">
-                      <div className="p-6">
-                          <TabsContent value="system" className="mt-0">
-                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'system'))}
-                          </TabsContent>
-                          <TabsContent value="admin" className="mt-0">
-                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'admin'))}
-                          </TabsContent>
-                          <TabsContent value="app" className="mt-0">
-                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'app'))}
-                          </TabsContent>
-                      </div>
-                  </ScrollArea>
-              </Tabs>
-
-              <DialogFooter className="p-4 border-t bg-muted/30 shrink-0">
-                  <Button onClick={() => setIsSystemRegistryOpen(false)}>Close Registry</Button>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -59,12 +58,11 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
-        // 1. Initialize the User Profile with Admin authority and 'app' source tag
+        // 1. Initialize the User Profile with Admin authority
         await updateUserProfile(user.uid, formData.email, {
             displayName: formData.name,
             role: 'admin', // The user who registers is the owner/admin
             companyName: formData.businessName,
-            setupSource: 'app', // LIST A: Signup Registry
         });
 
         // 2. Create internal contact record in the protected "Users" folder
@@ -75,7 +73,6 @@ export default function RegisterPage() {
             businessName: formData.businessName,
             folderId: usersFolder.id,
             role: 'admin', 
-            setupSource: 'app',
             notes: `System owner created via registration on ${new Date().toLocaleDateString()}.`,
             userId: user.uid,
         };

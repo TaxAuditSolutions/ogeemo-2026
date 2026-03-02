@@ -35,12 +35,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState, useEffect, useCallback } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AddUserDialog } from "./add-user-dialog";
 import { ChangePasswordDialog } from "./change-password-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getUsers, deleteUserProfile, type UserProfile, updateUserAuth } from '@/services/user-profile-service';
+import { getUsers, deleteUserProfile, deleteUserProfiles, type UserProfile, updateUserAuth } from '@/services/user-profile-service';
 import { format } from "date-fns";
 import Link from 'next/link';
 
@@ -56,6 +57,9 @@ export function UserListView() {
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
+  
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
 
   const loadUsers = useCallback(async () => {
@@ -105,6 +109,37 @@ export function UserListView() {
     setIsChangePasswordOpen(true);
   };
 
+  const handleToggleSelectAll = (checked: boolean) => {
+      if (checked) {
+          setSelectedUserIds(users.map(u => u.id));
+      } else {
+          setSelectedUserIds([]);
+      }
+  };
+
+  const handleToggleSelect = (id: string) => {
+      setSelectedUserIds(prev => 
+          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      );
+  };
+
+  const handleBulkDelete = async () => {
+      if (selectedUserIds.length === 0) return;
+      setIsLoading(true);
+      try {
+          await deleteUserProfiles(selectedUserIds);
+          toast({ title: "Success", description: `${selectedUserIds.length} profiles removed.` });
+          setSelectedUserIds([]);
+          await loadUsers();
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Bulk Action Failed', description: error.message });
+      } finally {
+          setIsBulkDeleteAlertOpen(false);
+          setIsLoading(false);
+      }
+  };
+
+  const allSelected = users.length > 0 && selectedUserIds.length === users.length;
 
   return (
     <>
@@ -122,93 +157,118 @@ export function UserListView() {
         </header>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Users</CardTitle>
+            <div className="space-y-1">
+              <CardTitle>Identities & Authority</CardTitle>
               <CardDescription>
-                A list of users who have registered with this application.
+                Manage authenticated account nodes across the Spider Web.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsAddUserDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add User
-            </Button>
+            <div className="flex items-center gap-2">
+                {selectedUserIds.length > 0 && (
+                    <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedUserIds.length})
+                    </Button>
+                )}
+                <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add User
+                </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Created at
-                  </TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
+            <div className="border rounded-md">
+                <Table>
+                <TableHeader className="bg-muted/50">
                     <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin" />
+                    <TableHead className="w-12">
+                        <Checkbox 
+                            checked={allSelected} 
+                            onCheckedChange={handleToggleSelectAll} 
+                            aria-label="Select all users"
+                        />
+                    </TableHead>
+                    <TableHead>User ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                        Created at
+                    </TableHead>
+                    <TableHead className="w-12">
+                        <span className="sr-only">Actions</span>
+                    </TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {isLoading ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center">
+                                <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-primary" />
+                            </TableCell>
+                        </TableRow>
+                    ) : users.length > 0 ? (
+                    users.map((userProfile) => (
+                        <TableRow key={userProfile.id}>
+                        <TableCell>
+                            <Checkbox 
+                                checked={selectedUserIds.includes(userProfile.id)}
+                                onCheckedChange={() => handleToggleSelect(userProfile.id)}
+                                aria-label={`Select ${userProfile.displayName}`}
+                            />
                         </TableCell>
-                    </TableRow>
-                ) : users.length > 0 ? (
-                  users.map((userProfile) => (
-                    <TableRow key={userProfile.id}>
-                      <TableCell className="font-mono text-xs">
-                        {userProfile.employeeNumber || 'N/A'}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {userProfile.displayName}
-                      </TableCell>
-                      <TableCell>
-                        {userProfile.email}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {userProfile.createdAt ? format(new Date(userProfile.createdAt.toDate()), 'PP') : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => handleEdit(userProfile)}>
-                                <Pencil className="mr-2 h-4 w-4"/> Edit Profile
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onSelect={() => handleChangePassword(userProfile)}>
-                                <KeyRound className="mr-2 h-4 w-4"/> Change Password
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleDelete(userProfile)} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4"/> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                    <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                            No users found.
+                        <TableCell className="font-mono text-[10px] uppercase tracking-tighter text-muted-foreground">
+                            {userProfile.employeeNumber || userProfile.id.slice(0, 8)}
                         </TableCell>
-                    </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                        <TableCell className="font-medium">
+                            {userProfile.displayName}
+                        </TableCell>
+                        <TableCell>
+                            {userProfile.email}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                            {userProfile.createdAt ? format(new Date(userProfile.createdAt.toDate()), 'PP') : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                >
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onSelect={() => handleEdit(userProfile)}>
+                                    <Pencil className="mr-2 h-4 w-4"/> Edit Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleChangePassword(userProfile)}>
+                                    <KeyRound className="mr-2 h-4 w-4"/> Change Password
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => handleDelete(userProfile)} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4"/> Delete Profile
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                        </TableRow>
+                    ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">
+                                No identity nodes found.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
+      
       <AddUserDialog 
         isOpen={isAddUserDialogOpen}
         onOpenChange={(open) => {
@@ -220,23 +280,44 @@ export function UserListView() {
         onUserAdded={loadUsers}
         userToEdit={userToEdit}
       />
+      
       <ChangePasswordDialog
         isOpen={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}
         user={userForPasswordChange}
         onPasswordChanged={loadUsers}
       />
+      
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will delete the user's profile information from the list. It will not delete their login account. This action cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>
+                    This will delete the user's profile record from the list. It will not delete their authenticated login account. This action is permanent for the profile data.
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete Profile</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      You are about to delete {selectedUserIds.length} user profile records. Authenticated accounts will be preserved, but operational metadata will be lost. This cannot be undone.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                      Delete All Selected
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
       </AlertDialog>
     </>
   );

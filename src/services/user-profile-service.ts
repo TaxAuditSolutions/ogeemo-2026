@@ -1,6 +1,6 @@
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where, writeBatch } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -51,7 +51,7 @@ export interface UserProfile {
     cellPhone?: string;
     bestPhone?: 'business' | 'cell';
     role?: 'admin' | 'editor' | 'viewer' | 'none';
-    setupSource?: 'system' | 'app';
+    setupSource?: 'system' | 'app' | 'admin';
     businessAddress?: {
         street?: string;
         city?: string;
@@ -313,6 +313,23 @@ export async function deleteUserProfile(userId: string): Promise<void> {
                 path: docRef.path,
                 operation: 'delete',
                 requestResourceData: null,
+            } satisfies SecurityRuleContext));
+        }
+    });
+}
+
+export async function deleteUserProfiles(userIds: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    userIds.forEach(id => {
+        const docRef = doc(db, PROFILES_COLLECTION, id);
+        batch.delete(docRef);
+    });
+    await batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: PROFILES_COLLECTION,
+                operation: 'delete',
             } satisfies SecurityRuleContext));
         }
     });

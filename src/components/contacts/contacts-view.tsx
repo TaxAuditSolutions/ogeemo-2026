@@ -127,11 +127,11 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [contact]);
+    }, [contact]);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -180,18 +180,18 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [folder, isRenaming, isSystem]);
+    }, [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
-    }), [folder.id, onDrop]);
+    }, [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
@@ -250,7 +250,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={allFolders} 
+                allFolders={folders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -1035,39 +1035,41 @@ export function ContactsView() {
                       The core identity nodes of the Ogeemo project architects.
                   </DialogDescription>
               </DialogHeader>
-              <ScrollArea className="flex-1 p-6">
-                  <Table>
-                      <TableHeader>
-                          <TableRow>
-                              <TableHead>Identity</TableHead>
-                              <TableHead>System Authority</TableHead>
-                              <TableHead className="text-right">Status</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {systemRegistryContacts.map(c => (
-                              <TableRow key={c.id}>
-                                  <TableCell>
-                                      <div className="flex flex-col">
-                                          <span className="font-bold">{c.name}</span>
-                                          <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell>
-                                      <div className="flex items-center gap-2">
-                                          {getRoleIcon(c.role as UserRole)}
-                                          <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">System Node</Badge>
-                                  </TableCell>
-                              </TableRow>
-                          ))}
-                      </TableBody>
-                  </Table>
+              <ScrollArea className="flex-1">
+                  <div className="p-6">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Identity</TableHead>
+                                <TableHead>System Authority</TableHead>
+                                <TableHead className="text-right">Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {systemRegistryContacts.map(c => (
+                                <TableRow key={c.id}>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold">{c.name}</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            {getRoleIcon(c.role as UserRole)}
+                                            <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">System Node</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                  </div>
               </ScrollArea>
-              <DialogFooter className="p-4 border-t bg-muted/30">
+              <DialogFooter className="p-4 border-t bg-muted/30 shrink-0">
                   <Button onClick={() => setIsSystemRegistryOpen(false)}>Close Registry</Button>
               </DialogFooter>
           </DialogContent>

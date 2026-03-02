@@ -191,7 +191,7 @@ export function TransactionDialog({
                 type: "business",
             });
         }
-    }, [isOpen, initialType, form, preferences]);
+    }, [isOpen, initialType, form]);
 
     const handleCreateCompany = async (name: string) => {
         if (!user || !name.trim()) return;
@@ -225,8 +225,8 @@ export function TransactionDialog({
         }
     };
 
-    const handleSelectTaxType = (typeName: string) => {
-        const type = taxTypes.find(t => t.name === typeName);
+    const handleSelectTaxType = (id: string) => {
+        const type = taxTypes.find(t => t.id === id);
         if (type) {
             form.setValue('taxType', type.name);
             form.setValue('taxRate', type.rate);
@@ -324,7 +324,7 @@ export function TransactionDialog({
     return (
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-5xl flex flex-col max-h-[95vh] p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-5xl flex flex-col max-h-[95vh] p-0 overflow-hidden text-black">
                 <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
                     <div className="flex flex-col items-center gap-2 text-primary">
                         <Calculator className="h-8 w-8" />
@@ -533,13 +533,16 @@ export function TransactionDialog({
                                             <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Select Tax Type</Label>
                                             <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => setIsManageTaxDialogOpen(true)}><Settings className="h-3 w-3"/></Button>
                                         </div>
-                                        <Select value={form.watch('taxType')} onValueChange={handleSelectTaxType}>
+                                        <Select 
+                                            value={taxTypes.find(t => t.name === form.watch('taxType'))?.id || "None"} 
+                                            onValueChange={handleSelectTaxType}
+                                        >
                                             <SelectTrigger className="h-11">
                                                 <SelectValue placeholder="Tax logic..." />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="None">No Tax Applied</SelectItem>
-                                                {taxTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name} ({t.rate}%)</SelectItem>)}
+                                                {taxTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.rate}%)</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>

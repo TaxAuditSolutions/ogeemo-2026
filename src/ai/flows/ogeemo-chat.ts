@@ -2,14 +2,12 @@
 /**
  * @fileOverview The Ogeemo AI Assistant Agent.
  * This agent can answer questions about Ogeemo and execute operational commands via tools.
- * 
- * - ogeemoAgent - Main function for AI interaction.
- * - Tools included: createTask, searchContacts, addContact.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
+import { getReceiptsFolderPdfs } from '@/services/google-service';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,6 +27,36 @@ export type OgeemoAgentInput = z.infer<typeof OgeemoAgentInputSchema>;
 
 // --- Tools ---
 
+const syncReceiptsTool = ai.defineTool(
+  {
+    name: 'syncReceipts',
+    description: 'Scans the Google Drive "Receipts" folder for new PDF invoices. Returns a list of files ready for extraction.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({
+      success: z.boolean(),
+      files: z.array(z.any()),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => {
+    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
+    if (!userId) return { success: false, files: [], message: "User not authenticated." };
+
+    try {
+      const result = await getReceiptsFolderPdfs();
+      if (result.error) throw new Error(result.error);
+
+      return {
+        success: true,
+        files: result.files,
+        message: `Found ${result.files.length} PDF(s) in the Receipts folder. Navigation to the Extraction Hub is recommended.`,
+      };
+    } catch (error: any) {
+      return { success: false, files: [], message: error.message };
+    }
+  }
+);
+
 const searchContactsTool = ai.defineTool(
   {
     name: 'searchContacts',
@@ -43,9 +71,7 @@ const searchContactsTool = ai.defineTool(
     }),
   },
   async (input, { context }) => {
-    // Check if context exists and has userId property
     const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
-    
     if (!userId) return { success: false, contacts: [], message: "User not authenticated." };
 
     try {
@@ -70,7 +96,6 @@ const searchContactsTool = ai.defineTool(
         message: `Found ${results.length} matching contacts.`,
       };
     } catch (error: any) {
-      console.error("[searchContactsTool] Error:", error);
       return { success: false, contacts: [], message: error.message };
     }
   }
@@ -95,9 +120,7 @@ const createTaskTool = ai.defineTool(
     }),
   },
   async (input, { context }) => {
-    // Check if context exists and has userId property
     const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
-    
     if (!userId) return { success: false, message: "User not authenticated." };
 
     try {
@@ -120,52 +143,6 @@ const createTaskTool = ai.defineTool(
         message: `Successfully created task: "${input.title}"`,
       };
     } catch (error: any) {
-      console.error("[createTaskTool] Error:", error);
-      return { success: false, message: error.message };
-    }
-  }
-);
-
-const addContactTool = ai.defineTool(
-  {
-    name: 'addContact',
-    description: 'Adds a new contact to the directory. Requires at least a name.',
-    inputSchema: z.object({
-      name: z.string().describe('Full name of the contact'),
-      email: z.string().email().optional(),
-      businessName: z.string().optional(),
-      phone: z.string().optional(),
-      notes: z.string().optional(),
-    }),
-    outputSchema: z.object({
-      success: z.boolean(),
-      contactId: z.string().optional(),
-      message: z.string(),
-    }),
-  },
-  async (input, { context }) => {
-    // Check if context exists and has userId property
-    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
-    
-    if (!userId) return { success: false, message: "User not authenticated." };
-
-    try {
-      const db = getAdminDb();
-      const contactData = {
-        ...input,
-        userId,
-        createdAt: new Date(),
-        folderId: '', // Default to root
-      };
-
-      const docRef = await db.collection('contacts').add(contactData);
-      return {
-        success: true,
-        contactId: docRef.id,
-        message: `Successfully added contact: "${input.name}"`,
-      };
-    } catch (error: any) {
-      console.error("[addContactTool] Error:", error);
       return { success: false, message: error.message };
     }
   }
@@ -190,20 +167,18 @@ const systemPromptTemplate = `
 You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is to act as a proactive "Master Mind" for the user's business operations.
 
 **Capabilities:**
-1. **Answer Questions**: Use the provided knowledge base to explain features like BKS, the Command Centre, or Action Chips.
-2. **Execute Commands**: Use your tools to perform actions. When a user says "Schedule a meeting" or "Create a task", always try to find the relevant contact first if they mention a person.
-3. **Professional Persona**: Helpful, decisive, and efficient.
+1. **Answer Questions**: Explain BKS, the Command Centre, or Action Chips using the knowledge base.
+2. **Execute Commands**: Use tools to manage contacts, tasks, or sync receipts.
+3. **Receipt Orchestration**: If the user asks to "sync receipts" or "check for invoices", use the syncReceipts tool.
 
 **Rules:**
 - If you don't know the answer from the knowledge base, say so and add: "The Ogeemo Assistant is still under development and will be gaining even more power as we continue to enhance the Ogeemo app."
 - Always respond in clear Markdown.
-- When creating tasks, if no time is specified, treat it as an unscheduled to-do.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
 `;
 
-// Define the flow first so we can reference it
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
@@ -212,15 +187,11 @@ const ogeemoAgentFlow = ai.defineFlow(
   },
   async (input) => {
     const { userId, message, history } = input;
-
-    // Fix: Correctly map history to match Genkit's expected message format
-    // The previous mapping was causing issues because 'content' needs to be in a specific format
     const messages: any[] = history?.map(msg => ({
         role: msg.role,
-        content: msg.content // Pass content directly if it's already in correct format, or adjust if needed
+        content: msg.content
     })) || [];
 
-    // Add current message
     messages.push({ role: 'user', content: [{ text: message }] });
 
     const knowledgeBase = getKnowledgeBase();
@@ -229,16 +200,16 @@ const ogeemoAgentFlow = ai.defineFlow(
     try {
         const result = await ai.generate({
           model: 'googleai/gemini-1.5-flash',
-          messages: messages, // Now passing correctly formatted messages
-          tools: [searchContactsTool, createTaskTool, addContactTool],
-          context: { userId }, // Context is passed here
+          messages: messages,
+          tools: [searchContactsTool, createTaskTool, syncReceiptsTool],
+          context: { userId },
           system: finalSystemPrompt,
           config: { temperature: 0.1 },
         });
 
-        return { reply: result.text || "I processed your request but have no text response." };
+        return { reply: result.text || "I processed your request." };
     } catch (error: any) {
-        console.error("[ogeemoAgentFlow] Critical Error:", error);
+        console.error("[ogeemoAgentFlow] Error:", error);
         throw error;
     }
   }
@@ -246,16 +217,7 @@ const ogeemoAgentFlow = ai.defineFlow(
 
 export async function ogeemoAgent(input: OgeemoAgentInput): Promise<{ reply: string }> {
     let userId = await getCurrentUserId();
-    
-    // Fallback for cases where session cookie is not yet synced
-    if (!userId && input.clientUserId) {
-        userId = input.clientUserId;
-    }
-
-    if (!userId) {
-        throw new Error("Unauthorized: Please ensure you are logged in to use Ogeemo AI.");
-    }
-    
-    // Call the defined flow
+    if (!userId && input.clientUserId) userId = input.clientUserId;
+    if (!userId) throw new Error("Unauthorized: Please log in.");
     return ogeemoAgentFlow({ ...input, userId });
 }

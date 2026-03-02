@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { type ServiceItem, type TaxType } from '@/services/accounting-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronsUpDown, Check, Settings, PlusCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -163,9 +163,15 @@ export function AddLineItemDialog({
       setDescription(value);
   };
 
-  const handleSelectTaxType = (taxType: TaxType) => {
-    setTaxType(taxType.name);
-    setTaxRate(taxType.rate);
+  const handleSelectTaxType = (id: string) => {
+    const type = taxTypes.find(t => t.id === id);
+    if (type) {
+        setTaxType(type.name);
+        setTaxRate(type.rate);
+    } else {
+        setTaxType('None');
+        setTaxRate(0);
+    }
     setIsTaxTypePopoverOpen(false);
   };
 
@@ -335,30 +341,17 @@ export function AddLineItemDialog({
             <div className="space-y-2">
                 <Label htmlFor="taxType">Tax Type Label</Label>
                 <div className="flex gap-2">
-                    <Popover open={isTaxTypePopoverOpen} onOpenChange={setIsTaxTypePopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                                {taxType || 'Select a tax type...'}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search tax types..." />
-                                <CommandList>
-                                    <CommandEmpty>No tax type found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {taxTypes.map(type => (
-                                            <CommandItem key={type.id} value={type.name} onSelect={() => handleSelectTaxType(type)}>
-                                                <Check className={cn("mr-2 h-4 w-4", taxType === type.name ? "opacity-100" : "opacity-0")}/>
-                                                {type.name} ({type.rate}%)
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <Select value={taxTypes.find(t => t.name === taxType)?.id || "None"} onValueChange={handleSelectTaxType}>
+                        <SelectTrigger id="taxType">
+                            <SelectValue placeholder="Select type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="None">None</SelectItem>
+                            {taxTypes.map(t => (
+                                <SelectItem key={t.id} value={t.id}>{t.name} ({t.rate}%)</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Button variant="outline" size="icon" onClick={() => setIsManageTaxDialogOpen(true)} title="Manage Tax Types">
                         <Settings className="h-4 w-4"/>
                     </Button>

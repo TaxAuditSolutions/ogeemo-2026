@@ -99,6 +99,7 @@ import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
@@ -460,7 +461,6 @@ export function ContactsView() {
             const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
             list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
 
-            // CRITICAL REFINEMENT: If the Users folder is selected, only show core builders (System Architects)
             if (isUsersFolderSelected) {
                 list = list.filter(c => c.setupSource === 'system');
             }
@@ -469,11 +469,6 @@ export function ContactsView() {
         return list;
     },
     [contacts, folders, selectedFolderId, isUsersFolderSelected]
-  );
-
-  const systemRegistryContacts = useMemo(
-      () => contacts.filter(c => c.setupSource === 'system'),
-      [contacts]
   );
 
   const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
@@ -707,6 +702,45 @@ export function ContactsView() {
       }
   };
 
+  const renderRegistryTable = (registryContacts: Contact[]) => (
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableHead>Identity</TableHead>
+                <TableHead>System Authority</TableHead>
+                <TableHead className="text-right">Status</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {registryContacts.length > 0 ? registryContacts.map(c => (
+                <TableRow key={c.id}>
+                    <TableCell>
+                        <div className="flex flex-col">
+                            <span className="font-bold">{c.name}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-2">
+                            {getRoleIcon(c.role as UserRole)}
+                            <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-tighter", c.setupSource === 'system' ? "bg-primary/5 text-primary border-primary/20" : "bg-muted text-muted-foreground")}>
+                            {c.setupSource === 'system' ? 'Architect' : c.setupSource === 'admin' ? 'Managed' : 'Member'}
+                        </Badge>
+                    </TableCell>
+                </TableRow>
+            )) : (
+                <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">No identity nodes in this category.</TableCell>
+                </TableRow>
+            )}
+        </TableBody>
+    </Table>
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -789,7 +823,7 @@ export function ContactsView() {
                                               <ShieldCheck className="h-6 w-6" />
                                           </Button>
                                       </TooltipTrigger>
-                                      <TooltipContent side="bottom"><p>System Team Registry</p></TooltipContent>
+                                      <TooltipContent side="bottom"><p>Unified Team Registry</p></TooltipContent>
                                   </Tooltip>
                               </TooltipProvider>
                           )}
@@ -1026,50 +1060,50 @@ export function ContactsView() {
       )}
 
       <Dialog open={isSystemRegistryOpen} onOpenChange={setIsSystemRegistryOpen}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden text-black">
+          <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col p-0 overflow-hidden text-black">
               <DialogHeader className="p-6 border-b bg-muted/10 shrink-0">
-                  <div className="flex items-center gap-2 text-primary mb-1">
-                      <ShieldCheck className="h-6 w-6" />
-                      <DialogTitle className="text-2xl font-headline">System Team Registry</DialogTitle>
+                  <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-primary">
+                          <ShieldCheck className="h-6 w-6" />
+                          <DialogTitle className="text-2xl font-headline">Team Registry</DialogTitle>
+                      </div>
+                      <Badge variant="outline" className="font-mono">
+                          {contacts.filter(c => ['system', 'admin', 'app'].includes(c.setupSource || '')).length} Identity Nodes
+                      </Badge>
                   </div>
                   <DialogDescription>
-                      The core identity nodes of the Ogeemo project architects.
+                      Consolidated registry of all authenticated identities within the Ogeemo ecosystem.
                   </DialogDescription>
               </DialogHeader>
-              <ScrollArea className="flex-1">
-                  <div className="p-6">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Identity</TableHead>
-                                <TableHead>System Authority</TableHead>
-                                <TableHead className="text-right">Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {systemRegistryContacts.map(c => (
-                                <TableRow key={c.id}>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-bold">{c.name}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase">NODE: {c.id.slice(0, 8)}...</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {getRoleIcon(c.role as UserRole)}
-                                            <span className="text-xs font-semibold">{getRoleLabel(c.role as UserRole)}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">System Node</Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                  </div>
-              </ScrollArea>
+              
+              <Tabs defaultValue="system" className="flex-1 flex flex-col min-h-0">
+                  <TabsList className="px-6 py-2 bg-muted/30 border-b rounded-none justify-start h-auto gap-2">
+                      <TabsTrigger value="system" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
+                          System Architects ({contacts.filter(c => c.setupSource === 'system').length})
+                      </TabsTrigger>
+                      <TabsTrigger value="admin" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
+                          Admin Assigned ({contacts.filter(c => c.setupSource === 'admin').length})
+                      </TabsTrigger>
+                      <TabsTrigger value="app" className="data-[state=active]:bg-primary data-[state=active]:text-white text-xs uppercase font-bold tracking-tight px-4 py-2">
+                          App Signups ({contacts.filter(c => c.setupSource === 'app').length})
+                      </TabsTrigger>
+                  </TabsList>
+
+                  <ScrollArea className="flex-1 min-h-0">
+                      <div className="p-6">
+                          <TabsContent value="system" className="mt-0">
+                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'system'))}
+                          </TabsContent>
+                          <TabsContent value="admin" className="mt-0">
+                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'admin'))}
+                          </TabsContent>
+                          <TabsContent value="app" className="mt-0">
+                              {renderRegistryTable(contacts.filter(c => c.setupSource === 'app'))}
+                          </TabsContent>
+                      </div>
+                  </ScrollArea>
+              </Tabs>
+
               <DialogFooter className="p-4 border-t bg-muted/30 shrink-0">
                   <Button onClick={() => setIsSystemRegistryOpen(false)}>Close Registry</Button>
               </DialogFooter>

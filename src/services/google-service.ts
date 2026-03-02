@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getAdminAuth } from '@/lib/firebase-admin';
@@ -5,31 +6,60 @@ import { cookies } from 'next/headers';
 
 /**
  * @fileOverview High-Fidelity Google Drive Integration for Ogeemo.
- * Target: The "Receipts" folder node for automated ingestion.
+ * Targets the specific "Receipts" folder for automated financial ingestion.
  */
 
-export async function getReceiptsFolderPdfs(): Promise<{ files: any[]; error?: string }> {
+export interface GDriveFile {
+    id: string;
+    name: string;
+    size: string;
+    modifiedTime: string;
+    mimeType: string;
+}
+
+/**
+ * Lists PDF files from the dedicated "Receipts" folder in Google Drive.
+ * In a production environment, this would utilize the google-drive-api with a service account or user token.
+ */
+export async function getReceiptsFolderPdfs(): Promise<{ files: GDriveFile[]; error?: string }> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('session')?.value;
   
-  // In a real implementation, we would use the access token fetched from the client-side
-  // or stored in the user profile to call the Google Drive API directly.
-  // For the prototype, we return a simulated list of PDFs if the session is valid.
-  
-  if (!sessionCookie) return { files: [], error: 'Unauthorized.' };
+  if (!sessionCookie) return { files: [], error: 'Unauthorized: Session missing.' };
 
   try {
     const adminAuth = getAdminAuth();
     await adminAuth.verifySessionCookie(sessionCookie);
 
-    // Simulation: Returning PDFs that would be found in the user's "Receipts" folder.
+    // Simulation: High-fidelity mock of files found in the GDrive "Receipts" node.
+    // This allows the UI to build out the full extraction workflow.
     return {
       files: [
-        { id: 'gdrive_pdf_1', name: 'Invoice_Acme_Co_2024.pdf', size: '154 KB', modifiedTime: new Date().toISOString() },
-        { id: 'gdrive_pdf_2', name: 'Receipt_OfficeDepot_July.pdf', size: '89 KB', modifiedTime: new Date().toISOString() },
+        { 
+            id: 'gdrive_receipt_001', 
+            name: 'INV_2024_02_28_Acme_Supplies.pdf', 
+            size: '1.2 MB', 
+            modifiedTime: new Date().toISOString(),
+            mimeType: 'application/pdf'
+        },
+        { 
+            id: 'gdrive_receipt_002', 
+            name: 'Shell_Gas_Station_Receipt.pdf', 
+            size: '450 KB', 
+            modifiedTime: new Date().toISOString(),
+            mimeType: 'application/pdf'
+        },
+        { 
+            id: 'gdrive_receipt_003', 
+            name: 'Office_Depot_Order_Confirm.pdf', 
+            size: '2.1 MB', 
+            modifiedTime: new Date().toISOString(),
+            mimeType: 'application/pdf'
+        },
       ]
     };
   } catch (error: any) {
+    console.error("[GDrive Service Error]", error);
     return { files: [], error: error.message };
   }
 }

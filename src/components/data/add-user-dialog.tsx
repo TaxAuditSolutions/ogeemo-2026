@@ -69,6 +69,18 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      employeeNumber: '',
+      password: '',
+      notes: '',
+      role: 'viewer',
+    },
+  });
+
   const loadContacts = useCallback(async () => {
     if (!currentUser) return;
     setIsLoadingContacts(true);

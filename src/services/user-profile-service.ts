@@ -51,7 +51,6 @@ export interface UserProfile {
     cellPhone?: string;
     bestPhone?: 'business' | 'cell';
     role?: 'admin' | 'editor' | 'viewer' | 'none';
-    setupSource?: 'system' | 'app' | 'admin';
     businessAddress?: {
         street?: string;
         city?: string;
@@ -120,50 +119,15 @@ const defaultPreferences: UserProfile['preferences'] = {
     customPresets: [],
 };
 
-/**
- * High-fidelity doc converter that applies system defaults and enforces Admin authority.
- */
 const docToUserProfile = (doc: any): UserProfile => {
     const data = doc.data();
     if (!data) return { id: doc.id, email: '', role: 'viewer' } as UserProfile;
 
-    const preferences = { 
-        ...defaultPreferences, 
-        ...(data.preferences || {}),
-        planningRituals: {
-            ...defaultPreferences.planningRituals,
-            ...(data.preferences?.planningRituals || {}),
-            daily: {
-                ...defaultPreferences.planningRituals?.daily,
-                ...(data.preferences?.planningRituals?.daily || {}),
-            },
-            weekly: {
-                ...defaultPreferences.planningRituals?.weekly,
-                ...(data.preferences?.planningRituals?.weekly || {}),
-            }
-        },
-        themeColors: {
-            ...defaultPreferences.themeColors,
-            ...(data.preferences?.themeColors || {})
-        },
-        customPresets: data.preferences?.customPresets || []
-    };
-
-    // Robust Authority check: Ensure the account owner (Dan) is always Admin.
-    let role = data.role;
-    const emailLower = data.email?.toLowerCase() || '';
-    if (!role || (emailLower.includes('dan') && role !== 'admin')) {
-        role = 'admin';
-    }
-    if (!role) role = 'viewer';
-
     return { 
         id: doc.id, 
         ...data, 
-        role, 
-        employeeNumber: data.employeeNumber || '',
-        setupSource: data.setupSource || 'app',
-        preferences 
+        role: data.role || 'viewer',
+        preferences: { ...defaultPreferences, ...(data.preferences || {}) }
     } as UserProfile;
 };
 
@@ -242,15 +206,6 @@ export async function updateUserProfile(
             dataWithTimestamp.preferences = {
                 ...existingPrefs,
                 ...data.preferences,
-                planningRituals: {
-                    ...existingPrefs.planningRituals,
-                    ...(data.preferences.planningRituals || {}),
-                },
-                themeColors: {
-                    ...existingPrefs.themeColors,
-                    ...(data.preferences.themeColors || {}),
-                },
-                customPresets: data.preferences.customPresets ?? existingPrefs.customPresets ?? []
             };
         }
         
@@ -276,9 +231,8 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.role = data.role || (email.toLowerCase().includes('dan') ? 'admin' : 'viewer');
+        dataWithTimestamp.role = data.role || 'viewer';
         dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-        dataWithTimestamp.setupSource = data.setupSource || 'app';
         
         await setDoc(docRef, dataWithTimestamp).catch(async (error) => {
             if (error.code === 'permission-denied') {
@@ -313,23 +267,6 @@ export async function deleteUserProfile(userId: string): Promise<void> {
                 path: docRef.path,
                 operation: 'delete',
                 requestResourceData: null,
-            } satisfies SecurityRuleContext));
-        }
-    });
-}
-
-export async function deleteUserProfiles(userIds: string[]): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    userIds.forEach(id => {
-        const docRef = doc(db, PROFILES_COLLECTION, id);
-        batch.delete(docRef);
-    });
-    await batch.commit().catch(async (error) => {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: PROFILES_COLLECTION,
-                operation: 'delete',
             } satisfies SecurityRuleContext));
         }
     });

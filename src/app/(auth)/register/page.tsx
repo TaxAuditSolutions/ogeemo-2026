@@ -58,14 +58,12 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
-        // 1. Initialize the User Profile with Admin authority
         await updateUserProfile(user.uid, formData.email, {
             displayName: formData.name,
-            role: 'admin', // The user who registers is the owner/admin
+            role: 'admin', 
             companyName: formData.businessName,
         });
 
-        // 2. Create internal contact record in the protected "Users" folder
         const usersFolder = await findOrCreateFolder(user.uid, "Users");
         const newContactData = {
             name: formData.name,
@@ -80,7 +78,7 @@ export default function RegisterPage() {
 
         toast({
             title: "Welcome to Ogeemo!",
-            description: "Your account has been created successfully with Admin authority.",
+            description: "Your account has been created successfully.",
         });
         
     } catch (error: any) {

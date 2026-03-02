@@ -460,8 +460,9 @@ export function ContactsView() {
             const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
             list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
 
+            // CRITICAL REFINEMENT: If the Users folder is selected, only show core builders (System Architects)
             if (isUsersFolderSelected) {
-                list = list.filter(c => c.role !== 'none');
+                list = list.filter(c => c.setupSource === 'system');
             }
         }
 

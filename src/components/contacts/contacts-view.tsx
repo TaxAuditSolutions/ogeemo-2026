@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -37,6 +38,8 @@ import {
   Lock,
   UserX,
   KeyRound,
+  Bot,
+  Zap,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -342,8 +345,18 @@ export function ContactsView() {
         
         const usersFolder = allFolders.find(f => f.name === 'Users' && f.isSystem);
         if (usersFolder) {
-            // Mirror all Authentication users into the Contacts registry
+            // Mirror all Authentication users into the Contacts registry with the 3-List Identity Protocol
             for (const profile of fetchedProfiles) {
+                // Determine source logic
+                let source = profile.setupSource || 'app';
+                const emailLower = profile.email?.toLowerCase() || '';
+                
+                // One-time protocol alignment: Tag system architects
+                if (source === 'app' && (emailLower.includes('dan') || emailLower.includes('nick') || emailLower.includes('julie'))) {
+                    source = 'system';
+                    await updateUserProfile(profile.id, profile.email, { setupSource: 'system' });
+                }
+
                 const contactMatch = fetchedContacts.find(c => c.email?.toLowerCase() === profile.email?.toLowerCase() || c.id === profile.id);
                 if (!contactMatch) {
                     await addContact({
@@ -352,19 +365,19 @@ export function ContactsView() {
                         folderId: usersFolder.id,
                         userId: user.uid,
                         role: profile.role,
-                        setupSource: 'system',
+                        setupSource: source,
                         notes: "Mirrored identity record from User Manager."
                     });
-                } else if (contactMatch.folderId !== usersFolder.id || contactMatch.role !== profile.role || contactMatch.setupSource !== 'system') {
+                } else if (contactMatch.folderId !== usersFolder.id || contactMatch.role !== profile.role || contactMatch.setupSource !== source) {
                     await updateContact(contactMatch.id, { 
                         folderId: usersFolder.id, 
                         role: profile.role,
-                        setupSource: 'system' 
+                        setupSource: source 
                     });
                 }
             }
             
-            // Re-fetch to include newly mirrored contacts
+            // Re-fetch to include newly mirrored/updated contacts
             const finalContactsList = await getContacts(user.uid);
             setContacts(finalContactsList);
         } else {
@@ -437,11 +450,16 @@ export function ContactsView() {
             };
             const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
             list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
+
+            // 3-List Protocol: Filter out "Noise" (Role: None) when in the Users folder
+            if (isUsersFolderSelected) {
+                list = list.filter(c => c.role !== 'none');
+            }
         }
 
         return list;
     },
-    [contacts, folders, selectedFolderId]
+    [contacts, folders, selectedFolderId, isUsersFolderSelected]
   );
 
   const systemRegistryContacts = useMemo(
@@ -671,6 +689,15 @@ export function ContactsView() {
     }
   };
 
+  const getSourceIcon = (source?: string) => {
+      switch (source) {
+          case 'system': return <Bot className="h-3 w-3 text-primary" />;
+          case 'admin': return <ShieldCheck className="h-3 w-3 text-blue-500" />;
+          case 'app': return <UserPlus className="h-3 w-3 text-orange-500" />;
+          default: return <Users className="h-3 w-3 text-muted-foreground" />;
+      }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -681,7 +708,7 @@ export function ContactsView() {
 
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full text-black">
         <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
           <h1 className="text-3xl font-bold font-headline text-primary">
             Contacts Hub
@@ -782,7 +809,7 @@ export function ContactsView() {
                                   </TableHead>
                                   <TableHead>Name</TableHead>
                                   <TableHead>Email</TableHead>
-                                  {isUsersFolderSelected ? <TableHead>Authority</TableHead> : <TableHead>Phone</TableHead>}
+                                  {isUsersFolderSelected ? <TableHead>Source / Authority</TableHead> : <TableHead>Phone</TableHead>}
                                   {selectedFolderId === 'all' && <TableHead>Folder</TableHead>}
                                   <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                               </TableRow>
@@ -813,9 +840,16 @@ export function ContactsView() {
                                       <TableCell>{contact.email}</TableCell>
                                       {isUsersFolderSelected ? (
                                           <TableCell>
-                                              <div className="flex items-center gap-2">
-                                                  {getRoleIcon(contact.role as UserRole)}
-                                                  <span className="text-xs font-medium">{getRoleLabel(contact.role as UserRole)}</span>
+                                              <div className="flex items-center gap-3">
+                                                  <div className="flex items-center gap-1.5">
+                                                      {getSourceIcon(contact.setupSource)}
+                                                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">{contact.setupSource || 'app'}</span>
+                                                  </div>
+                                                  <Separator orientation="vertical" className="h-4" />
+                                                  <div className="flex items-center gap-2">
+                                                      {getRoleIcon(contact.role as UserRole)}
+                                                      <span className="text-xs font-medium">{getRoleLabel(contact.role as UserRole)}</span>
+                                                  </div>
                                               </div>
                                           </TableCell>
                                       ) : (
@@ -916,7 +950,7 @@ export function ContactsView() {
       />
 
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md text-black">
             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
             <div className="py-4">
               <Label htmlFor="folder-name-new">Name</Label>
@@ -930,7 +964,7 @@ export function ContactsView() {
       </Dialog>
       
       <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-black">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders and records?</AlertDialogDescription>
@@ -943,7 +977,7 @@ export function ContactsView() {
       </AlertDialog>
       
       <AlertDialog open={!!contactToDelete} onOpenChange={() => setContactToDelete(null)}>
-          <AlertDialogContent>
+          <AlertDialogContent className="text-black">
               <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{contactToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
               <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -953,7 +987,7 @@ export function ContactsView() {
       </AlertDialog>
       
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-black">
             <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} record(s)?</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -983,14 +1017,14 @@ export function ContactsView() {
       )}
 
       <Dialog open={isSystemRegistryOpen} onOpenChange={setIsSystemRegistryOpen}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden text-black">
               <DialogHeader className="p-6 border-b bg-muted/10 shrink-0">
                   <div className="flex items-center gap-2 text-primary mb-1">
                       <ShieldCheck className="h-6 w-6" />
                       <DialogTitle className="text-2xl font-headline">System Team Registry</DialogTitle>
                   </div>
                   <DialogDescription>
-                      Nick's Nodes: Back-end seeded identities. These records are protected and cannot be edited via the UI.
+                      The core identity nodes of the Ogeemo project architects.
                   </DialogDescription>
               </DialogHeader>
               <ScrollArea className="flex-1 p-6">
@@ -1018,7 +1052,7 @@ export function ContactsView() {
                                       </div>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">Protected Node</Badge>
+                                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-tighter">System Node</Badge>
                                   </TableCell>
                               </TableRow>
                           ))}

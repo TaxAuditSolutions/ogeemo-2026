@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -161,15 +162,17 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
     setIsSaving(true);
     let secondaryApp;
     try {
-        const usersFolder = folders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+        const usersFolder = folders.find(f => f.name === 'Users' && f.isSystem);
         const existingProfile = await getUserProfileByEmail(values.email);
 
         if (existingProfile) {
+            // LIST B: Admin List (Update existing)
             await updateUserProfile(existingProfile.id, values.email, {
                 role: values.role,
                 employeeNumber: values.employeeNumber,
                 displayName: values.name,
                 notes: values.notes,
+                setupSource: existingProfile.setupSource === 'system' ? 'system' : 'admin',
             });
 
             const linkId = selectedContactId || (contactToPromote?.id);
@@ -177,7 +180,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                 await updateContact(linkId, { 
                     folderId: usersFolder?.id, 
                     role: values.role,
-                    employeeNumber: values.employeeNumber
+                    employeeNumber: values.employeeNumber,
+                    setupSource: existingProfile.setupSource === 'system' ? 'system' : 'admin',
                 });
             }
 
@@ -202,12 +206,14 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             const newUser = userCredential.user;
             await updateProfile(newUser, { displayName: values.name });
 
+            // LIST B: Admin List (New creation)
             await updateUserProfile(newUser.uid, newUser.email!, {
                 displayName: values.name,
                 email: newUser.email!,
                 employeeNumber: values.employeeNumber,
                 notes: values.notes,
                 role: values.role, 
+                setupSource: 'admin',
             });
 
             const linkId = selectedContactId || (contactToPromote?.id);
@@ -215,7 +221,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                 await updateContact(linkId, { 
                     folderId: usersFolder?.id, 
                     role: values.role,
-                    employeeNumber: values.employeeNumber
+                    employeeNumber: values.employeeNumber,
+                    setupSource: 'admin'
                 });
             } else {
                 await addContact({
@@ -225,6 +232,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
                     folderId: usersFolder?.id || '',
                     role: values.role,
                     userId: currentUser.uid, 
+                    setupSource: 'admin'
                 });
             }
             
@@ -237,24 +245,16 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
             onOpenChange(false);
         } catch (authError: any) {
             if (authError.code === 'auth/email-already-in-use') {
-                if (values.email.toLowerCase() === currentUser.email?.toLowerCase()) {
-                    await updateUserProfile(currentUser.uid, values.email, {
-                        role: values.role,
+                toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication. Synchronizing authority now..." });
+                const profile = await getUserProfileByEmail(values.email);
+                if (profile) {
+                    await updateUserProfile(profile.id, values.email, { 
+                        role: values.role, 
                         employeeNumber: values.employeeNumber,
-                        displayName: values.name,
-                        notes: values.notes,
+                        setupSource: profile.setupSource === 'system' ? 'system' : 'admin' 
                     });
-                    toast({ title: 'Profile Synchronized', description: "Your existing account has been promoted to your contact node." });
                     onUserAdded();
                     onOpenChange(false);
-                } else {
-                    toast({ variant: 'destructive', title: 'Account Conflict', description: "This email exists in Authentication. Synchronizing authority now..." });
-                    const profile = await getUserProfileByEmail(values.email);
-                    if (profile) {
-                        await updateUserProfile(profile.id, values.email, { role: values.role, employeeNumber: values.employeeNumber });
-                        onUserAdded();
-                        onOpenChange(false);
-                    }
                 }
             } else { throw authError; }
         }
@@ -268,7 +268,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, c
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 overflow-hidden text-black">
         <DialogHeader className="p-6 pb-4 border-b bg-muted/10 text-center sm:text-center shrink-0 relative">
           <DialogTitle className="text-3xl font-bold flex items-center justify-center gap-3">
             <UserPlus className="h-8 w-8 text-primary" />

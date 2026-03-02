@@ -59,22 +59,24 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
-        // 1. Initialize the User Profile with Admin authority
+        // 1. Initialize the User Profile with Admin authority and 'app' source tag
         await updateUserProfile(user.uid, formData.email, {
             displayName: formData.name,
             role: 'admin', // The user who registers is the owner/admin
             companyName: formData.businessName,
+            setupSource: 'app', // LIST A: Signup Registry
         });
 
-        // 2. Create internal contact record in the protected "Ogeemo Users" folder
-        const usersFolder = await findOrCreateFolder(user.uid, "Ogeemo Users");
+        // 2. Create internal contact record in the protected "Users" folder
+        const usersFolder = await findOrCreateFolder(user.uid, "Users");
         const newContactData = {
             name: formData.name,
             email: formData.email,
             businessName: formData.businessName,
             folderId: usersFolder.id,
-            role: 'admin', // Mirror the role on the contact record for hub visibility
-            notes: `System Administrator created via registration on ${new Date().toLocaleDateString()}.`,
+            role: 'admin', 
+            setupSource: 'app',
+            notes: `System owner created via registration on ${new Date().toLocaleDateString()}.`,
             userId: user.uid,
         };
         await addContact(newContactData);

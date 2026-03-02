@@ -75,21 +75,47 @@ async function createClientAccount(userId: string, contactId: string, contactNam
     });
 }
 
-export async function getContacts(userId: string): Promise<Contact[]> {
+/**
+ * Fetches contacts from the directory.
+ * @param userId Optional. If provided, filters by the creator's ID. Otherwise, fetches all accessible contacts.
+ */
+export async function getContacts(userId?: string): Promise<Contact[]> {
   const db = getDb();
-  const q = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
+  const collectionRef = collection(db, CONTACTS_COLLECTION);
+  const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+  
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToContact).sort((a,b) => a.name.localeCompare(b.name));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: CONTACTS_COLLECTION,
+            operation: 'list',
+        } satisfies SecurityRuleContext));
+    }
+    throw error;
+  }
 }
 
 export async function getContactById(contactId: string): Promise<Contact | null> {
     const db = getDb();
     const docRef = doc(db, CONTACTS_COLLECTION, contactId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return docToContact(docSnap);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docToContact(docSnap);
+        }
+        return null;
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'get',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
     }
-    return null;
 }
 
 export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Contact> {

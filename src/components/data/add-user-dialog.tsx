@@ -69,23 +69,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: { 
-        name: '', 
-        email: '', 
-        employeeNumber: '', 
-        password: '', 
-        notes: '', 
-        role: 'viewer' 
-    },
-  });
-
   const loadContacts = useCallback(async () => {
     if (!currentUser) return;
     setIsLoadingContacts(true);
     try {
-        const fetchedContacts = await getContacts(currentUser.uid);
+        // Access all contacts in the manager by calling getContacts without a userId filter
+        const fetchedContacts = await getContacts();
         setContacts(fetchedContacts);
     } catch (error) {
         console.error("Failed to load contacts for user creation:", error);
@@ -186,7 +175,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black">
-        <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
+        <DialogHeader className="p-6 shrink-0 border-b bg-muted/10 text-center sm:text-center">
           <div className="flex items-center gap-3 text-primary mb-1">
               <UserPlus className="h-6 w-6" />
               <DialogTitle className="text-2xl font-headline uppercase tracking-tight">
@@ -202,7 +191,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             {!userToEdit && (
                 <div className="px-6 py-4 bg-primary/5 border-b space-y-3">
                     <Label className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                        <Search className="h-3.5 w-3.5" /> 1. Select from Contact Directory (Optional)
+                        <Search className="h-3.5 w-3.5" /> 1. Select from Contact Directory (All Contacts)
                     </Label>
                     <div className="flex gap-2">
                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -88,7 +87,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     if (!currentUser) return;
     setIsLoadingContacts(true);
     try {
-        const fetchedContacts = await getContacts();
+        const fetchedContacts = await getContacts(); // Global fetch
         setContacts(fetchedContacts);
     } catch (error) {
         // Error is centrally handled by the FirebaseErrorListener

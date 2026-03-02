@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   Folder,
+  File as FileIconLucide,
   LoaderCircle,
   FolderPlus,
   ChevronRight,
@@ -13,13 +14,13 @@ import {
   Trash2,
   Users,
   Plus,
-  UserPlus,
+  GitMerge,
   Pencil,
   Files,
   Check,
   ChevronsUpDown,
   X,
-  Clock,
+  Mail,
   Calendar,
   FileDigit,
   Briefcase,
@@ -290,6 +291,15 @@ export function ContactsView() {
   }, [user, toast]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+    if (isEditing) {
+        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+    } else {
+        setContacts(prev => [...prev, savedContact]);
+    }
+    setIsContactFormOpen(false);
+  };
 
   const displayedContacts = useMemo(() => {
     if (selectedFolderId === 'all') return contacts;

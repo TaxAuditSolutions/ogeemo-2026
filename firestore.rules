@@ -8,8 +8,23 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      let data = getUserData();
+      return request.auth != null && data != null && data.role == 'admin';
+    }
+
+    function isEditor() {
+      let data = getUserData();
+      return request.auth != null && data != null && (data.role == 'editor' || data.role == 'admin');
+    }
+
+    function isViewer() {
+      let data = getUserData();
+      return request.auth != null && data != null && (data.role == 'viewer' || data.role == 'editor' || data.role == 'admin');
     }
 
     match /users/{userId} {
@@ -19,8 +34,7 @@ service cloud.firestore {
       // Allow creation of profiles during registration or by admins
       // When creating, a non-admin cannot set themselves as admin
       allow create: if request.auth != null && (
-        !request.resource.data.keys().hasAny(['role']) || 
-        request.resource.data.role == 'viewer' ||
+        request.auth.uid == userId ||
         isAdmin()
       );
 
@@ -34,221 +48,222 @@ service cloud.firestore {
     }
 
     match /contactFolders/{folderId} {
-      allow get, update, delete: if isOwner(resource.data.userId);
-      allow list: if request.auth != null;
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /contacts/{contactId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /clientAccounts/{accountId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /invoices/{invoiceId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /invoiceLineItems/{itemId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /serviceItems/{itemId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /taxTypes/{typeId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /incomeTransactions/{transactionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /expenseTransactions/{transactionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /payableBills/{billId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /payrollRuns/{runId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
 
       match /details/{detailId} {
-        allow read, create, update, delete: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
       }
     }
 
     match /payrollRemittances/{remittanceId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /assets/{assetId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /equityTransactions/{transactionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /companies/{companyId} {
-      allow get, update, delete: if isOwner(resource.data.userId);
-      allow list: if request.auth != null;
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /expenseCategories/{categoryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /incomeCategories/{categoryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /industries/{industryId} {
-      allow get, update, delete: if isOwner(resource.data.userId);
-      allow list: if request.auth != null;
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /loans/{loanId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /leads/{leadId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /projectTemplates/{templateId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /inventoryItems/{itemId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /inventoryLogs/{logId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
 
     match /suppliers/{supplierId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
     }
     
     match /projects/{projectId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
     
     match /tasks/{taskId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
     
     match /ideas/{ideaId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
     
     match /fileManagerFolders/{folderId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
 
     match /files/{fileId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
     
     match /crmActions/{actionId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
     
     match /payrollWorkers/{workerId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+        allow read: if isViewer();
+        allow create, update, delete: if isEditor();
     }
 
     match /leaveRequests/{leaveRequestId} {
-      allow create: if isOwner(request.resource.data.workerId) || isOwner(request.resource.data.userId);
-      allow read: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
-      allow update: if isOwner(resource.data.userId);
-      allow delete: if isOwner(resource.data.workerId) || isOwner(resource.data.userId);
+      allow create: if isEditor() || isOwner(request.resource.data.workerId);
+      allow read: if isViewer() || isOwner(resource.data.workerId);
+      allow update: if isEditor();
+      allow delete: if isEditor() || isOwner(resource.data.workerId);
     }
 
     match /timeLogs/{timeLogId} {
-      allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
-      allow read, update, delete: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
+      allow create: if isEditor() || isOwner(request.resource.data.workerId);
+      allow read: if isViewer() || isOwner(resource.data.workerId);
+      allow update, delete: if isEditor() || isOwner(resource.data.workerId);
       
       match /locations/{locationId} {
-        allow create: if isOwner(request.resource.data.userId) || isOwner(request.resource.data.workerId);
-        allow read: if isOwner(resource.data.userId) || isOwner(resource.data.workerId);
+        allow read: if isViewer() || isOwner(resource.data.workerId);
+        allow create: if isEditor() || isOwner(request.resource.data.workerId);
       }
     }
 
     match /userActionChips/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /availableActionChips/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /trashedActionChips/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /accountingQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /availableAccountingNavItems/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /hrQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /availableHrNavItems/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     match /dialogSettings/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     
     match /siteImages/{imageId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
     
     match /feedback/{feedbackId} {
-      allow read, write: if request.auth != null;
+      allow read: if isAdmin();
+      allow create: if isViewer();
+      allow update, delete: if isAdmin();
     }
 
     match /inquiries/{inquiryId} {
       allow create: if true;
-      allow read: if request.auth != null;
+      allow read: if isAdmin();
     }
   }
 }

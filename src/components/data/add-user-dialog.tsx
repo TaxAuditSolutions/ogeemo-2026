@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -87,11 +88,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     if (!currentUser) return;
     setIsLoadingContacts(true);
     try {
-        // Access all contacts in the manager by calling getContacts without a userId filter
         const fetchedContacts = await getContacts();
         setContacts(fetchedContacts);
     } catch (error) {
-        console.error("Failed to load contacts for user creation:", error);
+        // Error is centrally handled by the FirebaseErrorListener
     } finally {
         setIsLoadingContacts(false);
     }

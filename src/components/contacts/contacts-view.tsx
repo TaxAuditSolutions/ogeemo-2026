@@ -30,7 +30,6 @@ import {
   Link as LinkIcon,
   Info,
   Save,
-  BookOpen,
   ShieldCheck,
   ShieldAlert,
   Shield,
@@ -38,7 +37,6 @@ import {
   UserX,
   KeyRound,
   Bot,
-  Zap,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -101,6 +99,7 @@ import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -128,11 +127,11 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [contact]);
+    }), [contact]);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -181,18 +180,18 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [folder, isRenaming, isSystem]);
+    }), [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop({
+    const [{ canDrop, isOver }, drop] = useDrop(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
-    }, [folder.id, onDrop]);
+    }), [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
@@ -272,7 +271,7 @@ const FolderTreeItem = ({
     );
 };
 
-export function ContactsHub() {
+export function ContactsView() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);

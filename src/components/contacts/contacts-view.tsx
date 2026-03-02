@@ -44,7 +44,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
+import { getContacts, deleteContacts, updateContact, addContact, mergeContacts } from '@/services/contact-service';
 import { getFolders, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -96,10 +96,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
+import { getUsers, type UserRole, type UserProfile, updateUserProfile } from '@/services/user-profile-service';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -112,10 +113,6 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
 
 const AddUserDialog = dynamic(() => import('@/components/data/add-user-dialog').then(mod => mod.AddUserDialog), {
     ssr: false,
-});
-
-const MergeContactsDialog = dynamic(() => import('@/components/contacts/MergeContactsDialog'), {
-  ssr: false,
 });
 
 const ItemTypes = {
@@ -131,11 +128,11 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [contact]);
+    }, [contact]);
 
     return (
       <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
@@ -184,18 +181,18 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [folder, isRenaming, isSystem]);
+    }, [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
-    }), [folder.id, onDrop]);
+    }, [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md" ref={dragPreview}>
@@ -254,7 +251,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}
@@ -275,7 +272,7 @@ const FolderTreeItem = ({
     );
 };
 
-export function ContactsView() {
+export function ContactsHub() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
@@ -334,34 +331,36 @@ export function ContactsView() {
     setIsLoading(true);
     try {
         const allFolders = await ensureSystemFolders(user.uid);
-        const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers, fetchedProfiles] = await Promise.all([
+        
+        const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
             getContacts(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
             getWorkers(user.uid),
-            getUsers()
         ]);
+
+        let fetchedProfiles: UserProfile[] = [];
+        try {
+            fetchedProfiles = await getUsers();
+        } catch (profileError) {
+            console.warn("Contacts Hub: Could not list user profiles.");
+        }
         
         const usersFolder = allFolders.find(f => f.name === 'Users' && f.isSystem);
-        if (usersFolder) {
-            // Mirror all Authentication users into the Contacts registry with the 3-List Identity Protocol
+        
+        if (usersFolder && fetchedProfiles.length > 0) {
+            const batchUpdate = [];
             for (const profile of fetchedProfiles) {
-                // Determine source logic
                 let source = profile.setupSource || 'app';
                 const emailLower = profile.email?.toLowerCase() || '';
                 
-                // One-time protocol alignment: Tag system architects
                 if (source === 'app' && (emailLower.includes('dan') || emailLower.includes('nick') || emailLower.includes('julie'))) {
                     source = 'system';
-                    // We only update if the source isn't already 'system' to prevent redundant writes
-                    if (profile.setupSource !== 'system') {
-                        await updateUserProfile(profile.id, profile.email, { setupSource: 'system' });
-                    }
                 }
 
                 const contactMatch = fetchedContacts.find(c => c.email?.toLowerCase() === profile.email?.toLowerCase() || c.id === profile.id);
                 if (!contactMatch) {
-                    await addContact({
+                    batchUpdate.push(addContact({
                         name: profile.displayName || profile.email || 'Ogeemo User',
                         email: profile.email,
                         folderId: usersFolder.id,
@@ -369,26 +368,28 @@ export function ContactsView() {
                         role: profile.role,
                         setupSource: source,
                         notes: "Mirrored identity record from User Manager."
-                    });
+                    }));
                 } else {
-                    // Update if metadata is out of sync
-                    const needsUpdate = contactMatch.folderId !== usersFolder.id || 
-                                        contactMatch.role !== profile.role || 
-                                        contactMatch.setupSource !== source;
+                    const needsSync = contactMatch.folderId !== usersFolder.id || 
+                                      contactMatch.role !== profile.role || 
+                                      contactMatch.setupSource !== source;
                     
-                    if (needsUpdate) {
-                        await updateContact(contactMatch.id, { 
+                    if (needsSync) {
+                        batchUpdate.push(updateContact(contactMatch.id, { 
                             folderId: usersFolder.id, 
                             role: profile.role,
                             setupSource: source 
-                        });
+                        }));
                     }
                 }
             }
-            
-            // Re-fetch only if changes were likely made
-            const finalContactsList = await getContacts(user.uid);
-            setContacts(finalContactsList);
+            if (batchUpdate.length > 0) {
+                await Promise.all(batchUpdate);
+                const refreshedContacts = await getContacts(user.uid);
+                setContacts(refreshedContacts);
+            } else {
+                setContacts(fetchedContacts);
+            }
         } else {
             setContacts(fetchedContacts);
         }
@@ -460,7 +461,6 @@ export function ContactsView() {
             const folderIdsToDisplay = getDescendantFolderIds(selectedFolderId);
             list = list.filter((c) => folderIdsToDisplay.includes(c.folderId));
 
-            // 3-List Protocol: Filter out "Noise" (Role: None) when in the Users folder
             if (isUsersFolderSelected) {
                 list = list.filter(c => c.role !== 'none');
             }

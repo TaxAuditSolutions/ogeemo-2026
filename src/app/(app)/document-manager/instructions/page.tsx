@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderSync, MoreVertical, Link as LinkIcon, Plus, Info, ShieldCheck, CheckCircle2, FileDigit } from "lucide-react";
+import { ArrowLeft, FolderSync, MoreVertical, Link as LinkIcon, Plus, Info, ShieldCheck, CheckCircle2, FileDigit, X } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -32,7 +32,13 @@ export default function DocumentManagerInstructionsPage() {
                         A guide to organizing your business foundation with the Ogeemo Dual-Mirror System.
                     </p>
                 </div>
-                <div className="w-1/4" />
+                <div className="w-1/4 flex justify-end">
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href="/document-manager" aria-label="Close">
+                            <X className="h-5 w-5" />
+                        </Link>
+                    </Button>
+                </div>
             </header>
 
             <div className="max-w-4xl mx-auto space-y-6">

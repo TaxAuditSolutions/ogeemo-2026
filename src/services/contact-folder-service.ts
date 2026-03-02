@@ -86,7 +86,6 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
     
-    // Removed 'Users' folder from system config to prevent account mirroring confusion
     const systemFoldersConfig = [
         { name: 'Workers', parent: null },
         { name: 'Employees', parent: 'Workers' },
@@ -102,6 +101,33 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const currentFolders = [...existing];
     const batch = writeBatch(db);
     let hasChanges = false;
+
+    // --- DEPRECATION MIGRATION: Remove "Users" folder ---
+    const usersFolderMatch = currentFolders.find(f => f.name.toLowerCase() === 'users');
+    if (usersFolderMatch) {
+        // Find or create Miscellaneous folder as a safe haven
+        let miscFolder = currentFolders.find(f => f.name.toLowerCase() === 'miscellaneous');
+        if (!miscFolder) {
+            const miscRef = doc(collection(db, FOLDERS_COLLECTION));
+            const miscData = { name: 'Miscellaneous', userId, parentId: null, isSystem: true, createdAt: new Date() };
+            batch.set(miscRef, miscData);
+            miscFolder = { id: miscRef.id, ...miscData };
+            currentFolders.push(miscFolder);
+        }
+
+        // Reassign all contacts from Users to Miscellaneous
+        const contactsQuery = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), where("folderId", "==", usersFolderMatch.id));
+        const contactsSnapshot = await getDocs(contactsQuery);
+        contactsSnapshot.forEach(contactDoc => {
+            batch.update(contactDoc.ref, { folderId: miscFolder!.id });
+        });
+
+        // Delete the Users folder
+        batch.delete(doc(db, FOLDERS_COLLECTION, usersFolderMatch.id));
+        const index = currentFolders.findIndex(f => f.id === usersFolderMatch.id);
+        if (index > -1) currentFolders.splice(index, 1);
+        hasChanges = true;
+    }
 
     for (const config of systemFoldersConfig) {
         // 1. Check for folders with the same name (case-insensitive)

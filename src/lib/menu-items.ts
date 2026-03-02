@@ -35,6 +35,7 @@ import {
   Zap,
   BookOpen,
   Scale,
+  UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -44,6 +45,7 @@ export interface MenuItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  adminOnly?: boolean;
 }
 
 export const allMenuItems: MenuItem[] = [
@@ -66,6 +68,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/image-manager", label: "Image Manager", icon: Image },
   { href: "/backup", label: "Backups", icon: Database },
+  { href: "/user-manager", label: "User Manager", icon: UserCog, adminOnly: true },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
   { href: "/contacts", label: "Contacts Hub", icon: Contact },

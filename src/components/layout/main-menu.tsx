@@ -11,28 +11,37 @@ import { Button } from '../ui/button';
 import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getActionChips, type ActionChipData } from '@/services/project-service';
+import { getActionChips } from '@/services/project-service';
+import { type ActionChipData } from '@/types/calendar-types';
 import { ActionChipMenu } from './ActionChipMenu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
+import { getUserProfile } from '@/services/user-profile-service';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/accounting/audit-readiness'] },
     Growth: { icon: BarChart3, items: ['/reports/search', '/marketing-manager', '/idea-board'] },
-    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator'] },
+    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
 };
 
-const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
+const GroupedMenuView = memo(({ pathname, isAdmin }: { pathname: string, isAdmin: boolean }) => (
   <Accordion type="multiple" className="w-full space-y-1">
     {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
       const CategoryIcon = groupData.icon;
       const groupItems = groupData.items
         .map(href => allMenuItems.find(item => item.href === href))
         .filter(Boolean) as MenuItem[];
+      
+      const filteredItems = groupItems.filter(item => {
+          if (item.adminOnly && !isAdmin) return false;
+          return true;
+      });
+
+      if (filteredItems.length === 0) return null;
 
       return (
         <AccordionItem value={groupName} key={groupName} className="border-b-0">
@@ -44,7 +53,7 @@ const GroupedMenuView = memo(({ pathname }: { pathname: string }) => (
           </AccordionTrigger>
           <AccordionContent className="pt-1 pl-4">
               <div className="space-y-1">
-              {groupItems.map(item => (
+              {filteredItems.map(item => (
                   <DraggableMenuItem
                       key={item.href}
                       item={item}
@@ -103,6 +112,21 @@ export function MainMenu() {
   const { toast } = useToast();
   const { view, setView } = useSidebarView();
   const [isLoadingChips, setIsLoadingChips] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+        if (user) {
+            try {
+                const profile = await getUserProfile(user.uid);
+                setIsAdmin(profile?.role === 'admin');
+            } catch (error) {
+                console.error("Failed to check admin status", error);
+            }
+        }
+    }
+    checkAdminStatus();
+  }, [user]);
 
   const sortMenuItems = useCallback((order: string[]) => {
     const orderedItems = order
@@ -184,6 +208,11 @@ export function MainMenu() {
     });
   };
 
+  const displayedMenuItems = menuItems.filter(item => {
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
+
   return (
     <div className="flex flex-col h-full p-2">
       <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2">
@@ -245,12 +274,12 @@ export function MainMenu() {
 
       <div className="flex-1 space-y-1">
         {view === 'fullMenu' ? (
-            menuItems.map((item, index) => (
+            displayedMenuItems.map((item, index) => (
             <DraggableMenuItem
                 key={item.href}
                 item={item}
                 index={index}
-                isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
+                isActive={(pathname || '') === item.href || (item.href !== '/action-manager' && (pathname || '').startsWith(item.href))}
                 moveMenuItem={moveMenuItem}
                 isDraggable={false}
                 isCompact={true}
@@ -259,7 +288,7 @@ export function MainMenu() {
         ) : view === 'dashboard' ? (
             <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
         ) : (
-            <GroupedMenuView pathname={pathname} />
+            <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} />
         )}
       </div>
       

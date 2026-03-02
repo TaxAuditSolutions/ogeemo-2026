@@ -69,7 +69,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
-  const form = useForm<UserFormData>({
+  const formMethods = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       name: '',
@@ -80,6 +80,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
       role: 'viewer',
     },
   });
+
+  const { reset, handleSubmit, setValue, setError } = formMethods;
 
   const loadContacts = useCallback(async () => {
     if (!currentUser) return;
@@ -99,7 +101,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     if (isOpen) {
       loadContacts();
       if (userToEdit) {
-        form.reset({
+        reset({
           name: userToEdit.displayName || '',
           email: userToEdit.email || '',
           employeeNumber: userToEdit.employeeNumber || '',
@@ -109,26 +111,26 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         });
         setSelectedContactId(null);
       } else {
-        form.reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
+        reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', role: 'viewer' });
         setSelectedContactId(null);
       }
     }
-  }, [isOpen, userToEdit, form, loadContacts]);
+  }, [isOpen, userToEdit, reset, loadContacts]);
 
   const handleSelectContact = (contact: Contact) => {
       setSelectedContactId(contact.id);
-      form.setValue('name', contact.name);
-      form.setValue('email', contact.email || '');
-      form.setValue('employeeNumber', contact.employeeNumber || '');
+      setValue('name', contact.name);
+      setValue('email', contact.email || '');
+      setValue('employeeNumber', contact.employeeNumber || '');
       setIsContactPopoverOpen(false);
       toast({ title: "Contact Selected", description: `Pre-filled details for ${contact.name}.` });
   };
 
   const handleClearSelection = () => {
       setSelectedContactId(null);
-      form.setValue('name', '');
-      form.setValue('email', '');
-      form.setValue('employeeNumber', '');
+      setValue('name', '');
+      setValue('email', '');
+      setValue('employeeNumber', '');
   };
 
   const onSubmit = async (values: UserFormData) => {
@@ -146,7 +148,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             toast({ title: 'User Updated' });
         } else {
             if (!values.password || values.password.length < 6) {
-                form.setError('password', { message: 'Password must be at least 6 characters.' });
+                setError('password', { message: 'Password must be at least 6 characters.' });
                 setIsSaving(false);
                 return;
             }
@@ -250,20 +252,20 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 </div>
             )}
 
-            <Form {...form}>
-                <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
+            <Form {...formMethods}>
+                <form id="add-user-form" onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             {userToEdit ? "User Details" : "2. Identity Credentials"}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Legal Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity <span className="text-destructive">*</span></FormLabel><FormControl><Input type="email" placeholder="email@example.com" {...field} readOnly={!!userToEdit} className={cn(userToEdit && "bg-muted/50")} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={formMethods.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Legal Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={formMethods.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity <span className="text-destructive">*</span></FormLabel><FormControl><Input type="email" placeholder="email@example.com" {...field} readOnly={!!userToEdit} className={cn(userToEdit && "bg-muted/50")} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g. 1001" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={formMethods.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g. 1001" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             {!userToEdit && (
-                                <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormField control={formMethods.control} name="password" render={({ field }) => (
                                     <FormItem><FormLabel>Access Password <span className="text-destructive">*</span></FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} /><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormDescription className="text-[10px]">Minimum 6 characters for cloud security.</FormDescription><FormMessage /></FormItem>
                                 )} />
                             )}
@@ -274,10 +276,10 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authority & Configuration</h3>
-                        <FormField control={form.control} name="role" render={({ field }) => (
+                        <FormField control={formMethods.control} name="role" render={({ field }) => (
                             <FormItem><FormLabel>Authority Level (Role)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent><SelectItem value="admin">Admin (Full Orchestration)</SelectItem><SelectItem value="editor">Editor (Operational Access)</SelectItem><SelectItem value="viewer">Viewer (Read-Only Intelligence)</SelectItem><SelectItem value="none">No Access (Revoked Node)</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                         )} />
-                        <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={3} className="resize-none" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={formMethods.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={3} className="resize-none" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                 </form>
             </Form>

@@ -86,8 +86,8 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
     
+    // Removed 'Users' folder from system config to prevent account mirroring confusion
     const systemFoldersConfig = [
-        { name: 'Users', parent: null },
         { name: 'Workers', parent: null },
         { name: 'Employees', parent: 'Workers' },
         { name: 'Contractors', parent: 'Workers' },

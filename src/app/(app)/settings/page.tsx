@@ -148,13 +148,13 @@ export default function SettingsPage() {
                         <CardTitle>Team & Authority</CardTitle>
                     </div>
                     <CardDescription>
-                        Manage your team's digital identities and secure access levels within the centralized directory.
+                        Manage your team's digital identities and secure access levels within the specialized User Manager.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full font-bold shadow-lg">
-                        <Link href="/contacts?folderName=Ogeemo%20Users">
-                            Manage Team Directory <ArrowRight className="ml-2 h-4 w-4" />
+                        <Link href="/user-manager">
+                            Open User Manager <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </CardFooter>

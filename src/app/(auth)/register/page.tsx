@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { TermsDialog } from '@/components/auth/terms-dialog';
-import { findOrCreateFolder, addContact } from '@/services/contact-service';
 import { updateUserProfile } from '@/services/user-profile-service';
 
 const registerSchema = z.object({
@@ -64,17 +63,8 @@ export default function RegisterPage() {
             companyName: formData.businessName,
         });
 
-        const usersFolder = await findOrCreateFolder(user.uid, "Users");
-        const newContactData = {
-            name: formData.name,
-            email: formData.email,
-            businessName: formData.businessName,
-            folderId: usersFolder.id,
-            role: 'admin', 
-            notes: `System owner created via registration on ${new Date().toLocaleDateString()}.`,
-            userId: user.uid,
-        };
-        await addContact(newContactData);
+        // Contact creation logic removed to avoid auto-populating CRM with user accounts.
+        // Account identity is now strictly managed in the User Profile system.
 
         toast({
             title: "Welcome to Ogeemo!",

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -81,37 +80,14 @@ const docToWorker = (doc: any): Worker => {
 };
 
 /**
- * Fetches all workers, combining explicit payroll records and contacts from the directory.
+ * Fetches workers exclusively from the payroll registry.
+ * Reverted to strict collection fetch to separate system identities from worker records.
  */
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
-  
-  // 1. Fetch from legacy payrollWorkers collection
   const qWorkers = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
   const snapshotWorkers = await getDocs(qWorkers);
-  const workers = snapshotWorkers.docs.map(docToWorker);
-
-  // 2. Fetch from contacts (the new consolidated directory)
-  const qContacts = query(collection(db, 'contacts'), where("userId", "==", userId));
-  const snapshotContacts = await getDocs(qContacts);
-  const contactWorkers = snapshotContacts.docs.map(doc => {
-      const data = doc.data();
-      // Avoid duplicates if they exist in both collections (prefer legacy worker record)
-      if (workers.some(w => w.id === doc.id || (w.email && w.email === data.email))) return null;
-      
-      return {
-          id: doc.id,
-          name: data.name,
-          email: data.email || '',
-          workerType: 'employee', 
-          payType: 'hourly',
-          payRate: 0,
-          userId: data.userId,
-          workerIdNumber: data.employeeNumber || '',
-      } as Worker;
-  }).filter(Boolean) as Worker[];
-
-  return [...workers, ...contactWorkers].sort((a,b) => a.name.localeCompare(b.name));
+  return snapshotWorkers.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function getEmployees(userId: string): Promise<Worker[]> {

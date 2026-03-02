@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -45,7 +44,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact, mergeContacts, addContact } from '@/services/contact-service';
+import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
 import { getFolders, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -97,7 +96,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { getWorkers, type Worker } from '@/services/payroll-service';
-import { getUserProfile, updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
+import { updateUserProfile, getUsers, type UserRole, type UserProfile } from '@/services/user-profile-service';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -354,7 +353,10 @@ export function ContactsView() {
                 // One-time protocol alignment: Tag system architects
                 if (source === 'app' && (emailLower.includes('dan') || emailLower.includes('nick') || emailLower.includes('julie'))) {
                     source = 'system';
-                    await updateUserProfile(profile.id, profile.email, { setupSource: 'system' });
+                    // We only update if the source isn't already 'system' to prevent redundant writes
+                    if (profile.setupSource !== 'system') {
+                        await updateUserProfile(profile.id, profile.email, { setupSource: 'system' });
+                    }
                 }
 
                 const contactMatch = fetchedContacts.find(c => c.email?.toLowerCase() === profile.email?.toLowerCase() || c.id === profile.id);
@@ -368,16 +370,23 @@ export function ContactsView() {
                         setupSource: source,
                         notes: "Mirrored identity record from User Manager."
                     });
-                } else if (contactMatch.folderId !== usersFolder.id || contactMatch.role !== profile.role || contactMatch.setupSource !== source) {
-                    await updateContact(contactMatch.id, { 
-                        folderId: usersFolder.id, 
-                        role: profile.role,
-                        setupSource: source 
-                    });
+                } else {
+                    // Update if metadata is out of sync
+                    const needsUpdate = contactMatch.folderId !== usersFolder.id || 
+                                        contactMatch.role !== profile.role || 
+                                        contactMatch.setupSource !== source;
+                    
+                    if (needsUpdate) {
+                        await updateContact(contactMatch.id, { 
+                            folderId: usersFolder.id, 
+                            role: profile.role,
+                            setupSource: source 
+                        });
+                    }
                 }
             }
             
-            // Re-fetch to include newly mirrored/updated contacts
+            // Re-fetch only if changes were likely made
             const finalContactsList = await getContacts(user.uid);
             setContacts(finalContactsList);
         } else {

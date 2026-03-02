@@ -87,7 +87,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const existing = snapshot.docs.map(docToFolder);
     
     const systemFoldersConfig = [
-        { name: 'Ogeemo Users', parent: null },
+        { name: 'Users', parent: null },
         { name: 'Workers', parent: null },
         { name: 'Employees', parent: 'Workers' },
         { name: 'Contractors', parent: 'Workers' },

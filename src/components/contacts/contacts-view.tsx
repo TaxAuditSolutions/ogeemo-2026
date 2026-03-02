@@ -321,7 +321,7 @@ export function ContactsView() {
 
   const isUsersFolderSelected = useMemo(() => {
       const folder = folders.find(f => f.id === selectedFolderId);
-      return folder?.name === 'Ogeemo Users' && folder?.isSystem;
+      return folder?.name === 'Users' && folder?.isSystem;
   }, [folders, selectedFolderId]);
 
   const loadData = useCallback(async () => {
@@ -340,30 +340,31 @@ export function ContactsView() {
             getUsers()
         ]);
         
-        const usersFolder = allFolders.find(f => f.name === 'Ogeemo Users' && f.isSystem);
+        const usersFolder = allFolders.find(f => f.name === 'Users' && f.isSystem);
         if (usersFolder) {
-            const coreTeam = [
-                { name: "Dan White", role: 'admin' },
-                { name: "Julie White", role: 'editor' },
-                { name: "Nick Illiopoulos", role: 'editor' }
-            ];
-            
-            for (const member of coreTeam) {
-                const contactMatch = fetchedContacts.find(c => c.name === member.name && c.folderId === usersFolder.id);
+            // Mirror all Authentication users into the Contacts registry
+            for (const profile of fetchedProfiles) {
+                const contactMatch = fetchedContacts.find(c => c.email?.toLowerCase() === profile.email?.toLowerCase() || c.id === profile.id);
                 if (!contactMatch) {
                     await addContact({
-                        name: member.name,
+                        name: profile.displayName || profile.email || 'Ogeemo User',
+                        email: profile.email,
                         folderId: usersFolder.id,
                         userId: user.uid,
-                        role: member.role,
+                        role: profile.role,
                         setupSource: 'system',
-                        notes: "Core Ogeemo team member established by backend setup."
+                        notes: "Mirrored identity record from User Manager."
                     });
-                } else if (contactMatch.setupSource !== 'system') {
-                    await updateContact(contactMatch.id, { setupSource: 'system', role: member.role });
+                } else if (contactMatch.folderId !== usersFolder.id || contactMatch.role !== profile.role || contactMatch.setupSource !== 'system') {
+                    await updateContact(contactMatch.id, { 
+                        folderId: usersFolder.id, 
+                        role: profile.role,
+                        setupSource: 'system' 
+                    });
                 }
             }
             
+            // Re-fetch to include newly mirrored contacts
             const finalContactsList = await getContacts(user.uid);
             setContacts(finalContactsList);
         } else {
@@ -425,12 +426,6 @@ export function ContactsView() {
     () => {
         let list = contacts;
         
-        list = list.filter(c => {
-            const isSystem = c.setupSource === 'system' || 
-                             ['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name);
-            return !isSystem;
-        });
-
         if (selectedFolderId !== 'all') {
             const getDescendantFolderIds = (folderId: string): string[] => {
                 let ids = [folderId];
@@ -450,7 +445,7 @@ export function ContactsView() {
   );
 
   const systemRegistryContacts = useMemo(
-      () => contacts.filter(c => c.setupSource === 'system' || ['Dan White', 'Julie White', 'Nick Illiopoulos'].includes(c.name)),
+      () => contacts.filter(c => c.setupSource === 'system'),
       [contacts]
   );
 

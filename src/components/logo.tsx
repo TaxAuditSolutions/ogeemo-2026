@@ -17,7 +17,7 @@ export function Logo({ className, ...props }: LogoProps) {
       <Image src="/images/Ogeemo-Logo-BonT.png" alt="Ogeemo logo" width={32} height={32} />
       <h1 className={cn(
           fontOrbitron.variable,
-          "font-headline font-bold text-2xl tracking-wider text-black uppercase"
+          "font-headline font-bold text-2xl tracking-wider text-white uppercase"
       )}>
           OGEEMO
       </h1>

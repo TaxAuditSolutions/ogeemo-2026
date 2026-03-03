@@ -18,7 +18,7 @@ import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 
-export default function AppLayout({ children }: { children: React.Node }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <DndProviderWrapper>
@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.Node }) {
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
               <div 
-                className="flex h-16 shrink-0 items-center justify-center border-b border-white/20 px-4 lg:px-6 bg-[#3DD5C0]"
+                className="flex h-16 shrink-0 items-center justify-center border-b border-white/20 px-4 lg:px-6 bg-[#1E293B]"
               >
                 <Link href="/welcome" aria-label="Go to Welcome Page">
                   <Logo />

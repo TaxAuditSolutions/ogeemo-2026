@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -45,12 +44,11 @@ import {
     postPettyCashToGL,
     getIncomeCategories,
     getExpenseCategories,
-    getContacts,
     type PettyCashTransaction,
     type IncomeCategory,
     type ExpenseCategory
 } from '@/services/accounting-service';
-import { type Contact } from '@/services/contact-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -67,7 +65,7 @@ const formatCurrency = (amount: number) => {
 };
 
 const emptyTxForm = {
-    date: format(new Date(), 'yyyy-MM-dd'),
+    date: '',
     description: '',
     amount: '',
     contact: '',
@@ -186,7 +184,7 @@ export function CashAccountingView() {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center bg-muted/10 min-h-full">
+        <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center bg-muted/10 min-h-full text-black">
             <AccountingPageHeader pageTitle="Petty Cash" />
             
             <header className="text-center relative w-full max-w-4xl">
@@ -325,13 +323,13 @@ export function CashAccountingView() {
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-start text-left font-normal h-10">
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !formData.date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {formData.date ? format(parseISO(formData.date), 'PP') : "Pick a date"}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
-                                        <CustomCalendar mode="single" selected={parseISO(formData.date)} onSelect={(d) => { if(d) setFormData(p => ({...p, date: format(d, 'yyyy-MM-dd')})); setIsDatePickerOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={formData.date ? parseISO(formData.date) : undefined} onSelect={(d) => { if(d) setFormData(p => ({...p, date: format(d, 'yyyy-MM-dd')})); setIsDatePickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>
@@ -374,7 +372,7 @@ export function CashAccountingView() {
                             <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" role="combobox" className="w-full justify-between font-normal h-10">
-                                        {formData.category ? (activeCategories.find(c => c.categoryNumber === formData.category)?.name || formData.category) : "Select category..."}
+                                        {formData.category ? (activeCategories.find(c => (c.categoryNumber || c.id) === formData.category)?.name || formData.category) : "Select category..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -737,7 +736,14 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
     }
 
     batch.update(txRef, { isPosted: true });
-    await batch.commit();
+    batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch',
+                operation: 'write',
+            }));
+        }
+    });
 }
 
 // --- Asset Management ---

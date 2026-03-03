@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -148,7 +149,7 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
@@ -432,7 +433,7 @@ export function ContactsView() {
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6 px-4 sm:px-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
-            <ResizablePanel defaultSize={25} minSize={20}>
+            <ResizablePanel defaultSize={20} minSize={15}>
               <div className="flex h-full flex-col p-2">
                   <div className="p-2"><Button className="w-full" onClick={() => { setNewFolderParentId(null); setNewFolderName(''); setIsNewFolderDialogOpen(true); }}><FolderPlus className="mr-2 h-4 w-4" /> New Folder</Button></div>
                   <nav className="flex flex-col gap-1 py-2 px-1 overflow-y-auto">
@@ -449,7 +450,7 @@ export function ContactsView() {
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={75}>
+            <ResizablePanel defaultSize={80}>
               <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b h-20">
                       <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p></div>

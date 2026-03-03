@@ -32,7 +32,8 @@ import {
     Calendar as CalendarIcon,
     ChevronsUpDown,
     Check,
-    UserPlus
+    UserPlus,
+    Plus
 } from "lucide-react";
 import { AccountingPageHeader } from './page-header';
 import Link from 'next/link';
@@ -52,7 +53,7 @@ import {
     type Company
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';

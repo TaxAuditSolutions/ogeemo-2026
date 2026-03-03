@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -57,14 +58,13 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
+        // The default role for new sign-ups is now set to 'editor' (Read/Edit) 
+        // to prevent unauthorized administrative escalation.
         await updateUserProfile(user.uid, formData.email, {
             displayName: formData.name,
-            role: 'admin', 
+            role: 'editor', 
             companyName: formData.businessName,
         });
-
-        // Contact creation logic removed to avoid auto-populating CRM with user accounts.
-        // Account identity is now strictly managed in the User Profile system.
 
         toast({
             title: "Welcome to Ogeemo!",

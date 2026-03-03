@@ -27,13 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-screen w-full bg-muted">
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
-              <div 
-                className="flex h-16 shrink-0 items-center justify-center border-b border-white/20 px-4 lg:px-6 bg-[#1E293B]"
-              >
-                <Link href="/welcome" aria-label="Go to Welcome Page">
-                  <Logo />
-                </Link>
-              </div>
+              {/* Branding moved to main header for improved orchestration focus */}
               <div className="flex-1 overflow-y-auto pt-4">
                 <MainMenu />
               </div>
@@ -52,6 +46,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <header className="flex h-16 items-center justify-between gap-4 bg-[var(--header-bg)] px-4 md:px-6" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
                  <div className="flex items-center gap-4">
                    <SidebarTrigger className="md:hidden" />
+                   
+                   {/* Centrally Orcherstrated Branding */}
+                   <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80">
+                      <Logo className="text-black" />
+                   </Link>
+
                    <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>

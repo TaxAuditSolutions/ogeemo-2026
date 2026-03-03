@@ -6,8 +6,10 @@ import { fontOrbitron } from '@/app/layout';
 
 interface LogoProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-// The Logo is now a simple display component.
-// Navigation is handled by wrapping it in a <Link> component where it's used.
+/**
+ * @fileOverview The Ogeemo brand logo component.
+ * Configurable via className to support different thematic contexts (e.g., light header vs dark sidebar).
+ */
 export function Logo({ className, ...props }: LogoProps) {
   return (
     <div 
@@ -17,7 +19,7 @@ export function Logo({ className, ...props }: LogoProps) {
       <Image src="/images/Ogeemo-Logo-BonT.png" alt="Ogeemo logo" width={32} height={32} />
       <h1 className={cn(
           fontOrbitron.variable,
-          "font-headline font-bold text-2xl tracking-wider text-white uppercase"
+          "font-headline font-bold text-2xl tracking-wider uppercase"
       )}>
           OGEEMO
       </h1>

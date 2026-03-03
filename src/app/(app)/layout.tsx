@@ -27,7 +27,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-screen w-full bg-muted">
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
-              {/* Branding moved to main header for improved orchestration focus */}
               <div className="flex-1 overflow-y-auto pt-4">
                 <MainMenu />
               </div>
@@ -51,23 +50,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                    <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80">
                       <Logo className="text-black" />
                    </Link>
-
-                   <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
-                            <Link href="/action-manager">
-                              <LayoutDashboard className="h-5 w-5" />
-                              <span className="sr-only">Action Manager</span>
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>Action Manager: One Action to Rule them All</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                  </div>
+
                  <div className="flex justify-center">
                     <div className="flex items-center gap-2">
                         <TooltipProvider>
@@ -119,7 +103,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </TooltipProvider>
                     </div>
                 </div>
+
                 <div className="flex items-center gap-4">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
+                          <Link href="/action-manager">
+                            <LayoutDashboard className="h-5 w-5" />
+                            <span className="sr-only">Action Manager</span>
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>Action Manager: One Action to Rule them All</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <UserNav />
                 </div>
               </header>

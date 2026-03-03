@@ -59,7 +59,6 @@ import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -97,6 +96,7 @@ export function CashAccountingView() {
     const [formData, setFormData] = useState(emptyTxForm);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+    const [contactSearchValue, setContactSearchValue] = useState('');
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
@@ -143,6 +143,7 @@ export function CashAccountingView() {
     const handleOpenDialog = (type: 'in' | 'out') => {
         setDialogType(type);
         setFormData({ ...emptyTxForm, date: format(new Date(), 'yyyy-MM-dd') });
+        setContactSearchValue('');
         setIsDialogOpen(true);
     };
 
@@ -373,22 +374,49 @@ export function CashAccountingView() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command>
-                                            <CommandInput placeholder="Search contacts..." />
+                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                                            <CommandInput 
+                                                placeholder="Search contacts..." 
+                                                value={contactSearchValue}
+                                                onValueChange={setContactSearchValue}
+                                            />
                                             <CommandList>
-                                                <CommandEmpty>
-                                                    <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => { setIsContactPopoverOpen(false); setIsContactFormOpen(true); }}>
-                                                        <Plus className="mr-2 h-4 w-4" /> Add "{formData.contact}"
-                                                    </Button>
-                                                </CommandEmpty>
-                                                <CommandGroup>
-                                                    {contacts.map(c => (
-                                                        <CommandItem key={c.id} onSelect={() => { setFormData(p => ({...p, contact: c.name})); setIsContactPopoverOpen(false); }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
-                                                            {c.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
+                                                {isLoading ? (
+                                                    <div className="flex justify-center p-4">
+                                                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <CommandEmpty>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                className="w-full justify-start text-sm text-primary" 
+                                                                onClick={() => { 
+                                                                    setIsContactPopoverOpen(false); 
+                                                                    setIsContactFormOpen(true); 
+                                                                }}
+                                                            >
+                                                                <Plus className="mr-2 h-4 w-4" /> Add New Contact
+                                                            </Button>
+                                                        </CommandEmpty>
+                                                        <CommandGroup>
+                                                            {contacts.map(c => (
+                                                                <CommandItem 
+                                                                    key={c.id} 
+                                                                    value={c.name}
+                                                                    onSelect={() => { 
+                                                                        setFormData(p => ({...p, contact: c.name})); 
+                                                                        setIsContactPopoverOpen(false); 
+                                                                        setContactSearchValue('');
+                                                                    }}
+                                                                >
+                                                                    <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
+                                                                    {c.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </>
+                                                )}
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>

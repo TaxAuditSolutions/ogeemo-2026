@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -22,6 +21,7 @@ import {
     Info,
     Percent,
     Wallet,
+    X,
 } from 'lucide-react';
 
 import {

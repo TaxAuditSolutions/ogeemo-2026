@@ -458,8 +458,8 @@ export function ContactsView() {
                         <Button onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }} disabled={selectedFolderId === 'all'}><Plus className="mr-2 h-4 w-4" /> New Contact</Button>
                       </div>
                   </div>
-                   <div className="flex-1 overflow-y-auto">
-                      <Table>
+                   <div className="flex-1 overflow-auto">
+                      <Table className="min-w-[800px]">
                           <TableHeader>
                               <TableRow>
                                   <TableHead className="w-[50px]"><Checkbox onCheckedChange={(checked) => setSelectedContactIds(checked ? displayedContacts.map(c => c.id) : [])} checked={allVisibleSelected}/></TableHead>
@@ -482,7 +482,7 @@ export function ContactsView() {
                                       <TableCell>{contact.email}</TableCell>
                                       <TableCell>{contact.cellPhone || contact.businessPhone || contact.homePhone || '-'}</TableCell>
                                       {selectedFolderId === 'all' && <TableCell>{folders.find(f => f.id === contact.folderId)?.name || 'Unassigned'}</TableCell>}
-                                      <TableCell onClick={(e) => e.stopPropagation()}>
+                                      <TableCell onClick={(e) => e.stopPropagation()} className="w-[50px]">
                                           <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">

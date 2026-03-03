@@ -108,6 +108,22 @@
             "userId": { "type": "string" }
         },
         "required": ["date", "company", "totalAmount", "category", "userId"]
+    },
+    "PettyCashTransaction": {
+        "title": "Petty Cash Transaction",
+        "description": "A staging transaction for physical cash movements.",
+        "type": "object",
+        "properties": {
+            "date": { "type": "string", "format": "date" },
+            "description": { "type": "string" },
+            "amount": { "type": "number" },
+            "type": { "type": "string", "enum": ["in", "out"] },
+            "contact": { "type": "string" },
+            "category": { "type": "string" },
+            "isPosted": { "type": "boolean" },
+            "userId": { "type": "string" }
+        },
+        "required": ["date", "amount", "type", "userId"]
     }
   },
   "auth": {
@@ -137,6 +153,10 @@
     "/expenseTransactions/{transactionId}": {
         "schema": { "$ref": "#/entities/ExpenseTransaction" },
         "description": "Collection of all expense transactions."
+    },
+    "/pettyCashTransactions/{transactionId}": {
+        "schema": { "$ref": "#/entities/PettyCashTransaction" },
+        "description": "Staging ledger for physical cash."
     }
   }
 }

@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -28,9 +29,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if request.auth != null;
-      // Allow any authenticated user to create their own initial profile
       allow create: if request.auth != null && request.auth.uid == userId;
-      // Admins can create other users' profiles
       allow create: if isAdmin();
       allow update, delete: if isOwner(userId) || isAdmin();
     }
@@ -86,6 +85,11 @@ service cloud.firestore {
     }
 
     match /payableBills/{billId} {
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
+    }
+
+    match /pettyCashTransactions/{transactionId} {
       allow read: if isViewer();
       allow create, update, delete: if isEditor();
     }

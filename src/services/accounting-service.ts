@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -76,6 +77,18 @@ export interface PayableBill {
   userId: string;
 }
 
+export interface PettyCashTransaction {
+    id: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: 'in' | 'out';
+    contact: string;
+    category: string;
+    isPosted: boolean;
+    userId: string;
+}
+
 export interface TaxType {
   id: string;
   name: string;
@@ -147,6 +160,7 @@ const SERVICE_ITEMS_COLLECTION = 'serviceItems';
 const TAX_TYPES_COLLECTION = 'taxTypes';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const INTERNAL_ACCOUNT_COLLECTION = 'internalAccounts';
+const PETTY_CASH_COLLECTION = 'pettyCashTransactions';
 
 const docToInvoice = (doc: any): Invoice => {
     const data = doc.data();
@@ -634,6 +648,96 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
         }));
       }
     });
+}
+
+// --- Petty Cash ---
+const docToPettyCash = (doc: any): PettyCashTransaction => ({ id: doc.id, ...doc.data() } as PettyCashTransaction);
+
+export async function getPettyCashTransactions(userId: string): Promise<PettyCashTransaction[]> {
+    const db = getDb();
+    const q = query(collection(db, PETTY_CASH_COLLECTION), where("userId", "==", userId));
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(docToPettyCash).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: PETTY_CASH_COLLECTION,
+                operation: 'list',
+            }));
+        }
+        throw error;
+    }
+}
+
+export async function addPettyCashTransaction(data: Omit<PettyCashTransaction, 'id'>): Promise<PettyCashTransaction> {
+    const db = getDb();
+    const docRef = doc(collection(db, PETTY_CASH_COLLECTION));
+    const newTx = { id: docRef.id, ...data };
+    setDoc(docRef, data).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'create',
+                requestResourceData: data,
+            }));
+        }
+    });
+    return newTx;
+}
+
+export async function deletePettyCashTransaction(id: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, PETTY_CASH_COLLECTION, id);
+    deleteDoc(docRef).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            }));
+        }
+    });
+}
+
+export async function postPettyCashToGL(userId: string, txId: string): Promise<void> {
+    const db = getDb();
+    const txRef = doc(db, PETTY_CASH_COLLECTION, txId);
+    const txSnap = await getDoc(txRef);
+    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    
+    const txData = docToPettyCash(txSnap);
+    const batch = writeBatch(db);
+
+    if (txData.type === 'in') {
+        const incomeRef = doc(collection(db, INCOME_COLLECTION));
+        batch.set(incomeRef, {
+            userId,
+            date: txData.date,
+            company: txData.contact,
+            description: txData.description,
+            totalAmount: txData.amount,
+            incomeCategory: txData.category,
+            depositedTo: 'Petty Cash Box',
+            type: 'business',
+            paymentMethod: 'Cash'
+        });
+    } else {
+        const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
+        batch.set(expenseRef, {
+            userId,
+            date: txData.date,
+            company: txData.contact,
+            description: txData.description,
+            totalAmount: txData.amount,
+            category: txData.category,
+            paidFrom: 'Petty Cash Box',
+            type: 'business',
+            paymentMethod: 'Cash'
+        });
+    }
+
+    batch.update(txRef, { isPosted: true });
+    await batch.commit();
 }
 
 // --- Asset Management ---

@@ -215,14 +215,14 @@ export function MainMenu() {
 
   return (
     <div className="flex flex-col h-full p-2">
-      <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2">
+      <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2 text-black">
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
                         variant={view === 'fullMenu' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="flex-1 h-8 w-full"
+                        className="flex-1 h-8 w-full text-black"
                         onClick={() => setView('fullMenu')}
                     >
                         <Menu className="h-4 w-4" />
@@ -235,7 +235,7 @@ export function MainMenu() {
                      <Button
                         variant={view === 'grouped' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="flex-1 h-8 w-full"
+                        className="flex-1 h-8 w-full text-black"
                         onClick={() => setView('grouped')}
                     >
                         <Layers className="h-4 w-4" />
@@ -248,7 +248,7 @@ export function MainMenu() {
                     <Button
                         variant={view === 'dashboard' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="flex-1 h-8 w-full"
+                        className="flex-1 h-8 w-full text-black"
                         onClick={() => setView('dashboard')}
                     >
                         <LayoutDashboard className="h-4 w-4" />
@@ -261,7 +261,7 @@ export function MainMenu() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="flex-1 h-8 w-full"
+                        className="flex-1 h-8 w-full text-black"
                         onClick={handleSetDefaultView}
                     >
                         <Save className="h-4 w-4" />

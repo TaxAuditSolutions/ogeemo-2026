@@ -31,7 +31,8 @@ import {
     Info,
     Calendar as CalendarIcon,
     ChevronsUpDown,
-    Check
+    Check,
+    UserPlus
 } from "lucide-react";
 import { AccountingPageHeader } from './page-header';
 import Link from 'next/link';
@@ -44,11 +45,15 @@ import {
     postPettyCashToGL,
     getIncomeCategories,
     getExpenseCategories,
+    getCompanies,
     type PettyCashTransaction,
     type IncomeCategory,
-    type ExpenseCategory
+    type ExpenseCategory,
+    type Company
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -59,6 +64,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { CustomCalendar } from '../ui/custom-calendar';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -80,6 +86,9 @@ export function CashAccountingView() {
     const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
     
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -89,21 +98,28 @@ export function CashAccountingView() {
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
         try {
-            const [txs, inc, exp, conts] = await Promise.all([
+            const [txs, inc, exp, conts, folds, comps, inds] = await Promise.all([
                 getPettyCashTransactions(user.uid),
                 getIncomeCategories(user.uid),
                 getExpenseCategories(user.uid),
-                getContacts(user.uid)
+                getContacts(user.uid),
+                getContactFolders(user.uid),
+                getCompanies(user.uid),
+                getIndustries(user.uid)
             ]);
             setTransactions(txs);
             setIncomeCategories(inc);
             setExpenseCategories(exp);
             setContacts(conts);
+            setContactFolders(folds);
+            setCompanies(comps);
+            setCustomIndustries(inds);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Load Failed', description: error.message });
         } finally {
@@ -181,6 +197,12 @@ export function CashAccountingView() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         }
+    };
+
+    const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+        setContacts(prev => isEditing ? prev.map(c => c.id === savedContact.id ? savedContact : c) : [savedContact, ...prev]);
+        setFormData(prev => ({ ...prev, contact: savedContact.name }));
+        setIsContactFormOpen(false);
     };
 
     return (
@@ -341,30 +363,39 @@ export function CashAccountingView() {
 
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Contact / Entity</Label>
-                            <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="w-full justify-between font-normal h-10">
-                                        {formData.contact || "Select or type..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Search contacts..." onValueChange={(val) => setFormData(p => ({...p, contact: val}))} />
-                                        <CommandList>
-                                            <CommandEmpty>No contact found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {contacts.map(c => (
-                                                    <CommandItem key={c.id} onSelect={() => { setFormData(p => ({...p, contact: c.name})); setIsContactPopoverOpen(false); }}>
-                                                        <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
-                                                        {c.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <div className="flex gap-2">
+                                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal h-10">
+                                            <span className="truncate">{formData.contact || "Select or search..."}</span>
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search contacts..." />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => { setIsContactPopoverOpen(false); setIsContactFormOpen(true); }}>
+                                                        <Plus className="mr-2 h-4 w-4" /> Add "{formData.contact}"
+                                                    </Button>
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {contacts.map(c => (
+                                                        <CommandItem key={c.id} onSelect={() => { setFormData(p => ({...p, contact: c.name})); setIsContactPopoverOpen(false); }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
+                                                            {c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setIsContactFormOpen(true)}>
+                                    <UserPlus className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -412,6 +443,19 @@ export function CashAccountingView() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ContactFormDialog
+                isOpen={isContactFormOpen}
+                onOpenChange={setIsContactFormOpen}
+                contactToEdit={null}
+                folders={contactFolders}
+                onFoldersChange={setContactFolders}
+                onSave={handleContactSave}
+                companies={companies}
+                onCompaniesChange={setCompanies}
+                customIndustries={customIndustries}
+                onCustomIndustriesChange={setCustomIndustries}
+            />
         </div>
     );
 }

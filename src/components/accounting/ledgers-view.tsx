@@ -128,7 +128,7 @@ export function LedgersView() {
         const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
-            getContacts(user.uid),
+            getContacts(), // Synchronized with Master Hub
             getContactFolders(user.uid),
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),

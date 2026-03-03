@@ -115,7 +115,7 @@ export function AccountsPayablePageView() {
         getCompanies(user.uid),
         getExpenseCategories(user.uid),
         getIncomeCategories(user.uid),
-        getContacts(user.uid),
+        getContacts(), // Synchronized with Master Hub
         getContactFolders(user.uid),
         getIndustries(user.uid),
         getTaxTypes(user.uid)

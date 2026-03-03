@@ -460,7 +460,7 @@ export function TransactionDialog({
                                                         </FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                        <Command>
+                                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                                             <CommandInput placeholder="Search name or business..." value={companySearchValue} onValueChange={setCompanySearchValue} />
                                                             <CommandList>
                                                                 <CommandEmpty>
@@ -470,7 +470,7 @@ export function TransactionDialog({
                                                                 </CommandEmpty>
                                                                 <CommandGroup>
                                                                     {contactOptions.map(opt => (
-                                                                        <CommandItem key={opt.id} onSelect={() => { field.onChange(opt.label); setIsCompanyPopoverOpen(false); }}>
+                                                                        <CommandItem key={opt.id} value={opt.label} onSelect={() => { field.onChange(opt.label); setIsCompanyPopoverOpen(false); }}>
                                                                             <Check className={cn("mr-2 h-4 w-4", field.value === opt.label ? "opacity-100" : "opacity-0")} />
                                                                             {opt.label}
                                                                         </CommandItem>
@@ -503,7 +503,7 @@ export function TransactionDialog({
                                                             </FormControl>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                            <Command>
+                                                            <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                                                 <CommandInput placeholder="Search standard categories..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
                                                                 <CommandList>
                                                                     <CommandEmpty>
@@ -513,7 +513,7 @@ export function TransactionDialog({
                                                                     </CommandEmpty>
                                                                     <CommandGroup>
                                                                         {activeCategories.map(cat => (
-                                                                            <CommandItem key={cat.id} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
+                                                                            <CommandItem key={cat.id} value={`${cat.name} ${cat.categoryNumber || ''}`} onSelect={() => { field.onChange(cat.categoryNumber || cat.id); setIsCategoryPopoverOpen(false); }}>
                                                                                 <Check className={cn("mr-2 h-4 w-4", (field.value === cat.categoryNumber || field.value === cat.id) ? "opacity-100" : "opacity-0")} />
                                                                                 <div className="flex flex-col">
                                                                                     <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">CRA Line {cat.categoryNumber}</span>
@@ -625,7 +625,7 @@ export function TransactionDialog({
                                                                 </FormControl>
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                                <Command>
+                                                                <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                                                     <CommandInput placeholder="Search bank, card, or cash..." value={accountSearchValue} onValueChange={setAccountSearchValue} />
                                                                     <CommandList>
                                                                         <CommandEmpty>
@@ -635,7 +635,7 @@ export function TransactionDialog({
                                                                         </CommandEmpty>
                                                                         <CommandGroup>
                                                                             {internalAccounts.map(acc => (
-                                                                                <CommandItem key={acc.id} onSelect={() => { field.onChange(acc.name); setIsAccountPopoverOpen(false); }}>
+                                                                                <CommandItem key={acc.id} value={acc.name} onSelect={() => { field.onChange(acc.name); setIsAccountPopoverOpen(false); }}>
                                                                                     <Check className={cn("mr-2 h-4 w-4", field.value === acc.name ? "opacity-100" : "opacity-0")} />
                                                                                     <div className="flex flex-col">
                                                                                         <span className="text-sm font-semibold">{acc.name}</span>

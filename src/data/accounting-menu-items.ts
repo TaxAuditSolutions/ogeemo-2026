@@ -37,7 +37,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/ledgers?tab=income", icon: TrendingUp, label: "Manage Income" },
     { href: "/accounting/ledgers?tab=expenses", icon: TrendingDown, label: "Manage Expenses" },
     { href: "/accounting/ledgers", icon: BookOpen, label: "BKS Ledger" },
-    { href: "/accounting/cash-accounting", icon: DollarSign, label: "Cash Accounting" },
+    { href: "/accounting/petty-cash", icon: DollarSign, label: "Petty Cash" },
     { href: "/accounting/accrual-accounting", icon: BookOpen, label: "Accrual Accounting" },
     { href: "/accounting/tax/sales-tax", icon: Percent, label: "Sales Tax Calculator" },
     { href: "/accounting/accounts-payable", icon: FileInput, label: "Accounts Payable" },

@@ -36,6 +36,7 @@ import {
   BookOpen,
   Scale,
   UserCog,
+  DollarSign,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -82,6 +83,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/reports/client-time-log", label: "Client Time Log Report", icon: Clock },
   { href: "/reports/search", label: "Advanced Search", icon: Search },
   { href: "/feedback", label: "Feedback", icon: Megaphone },
+  { href: "/accounting/petty-cash", icon: DollarSign, label: "Petty Cash" },
   ...accountingMenuItems,
   ...hrMenuItems,
 ];

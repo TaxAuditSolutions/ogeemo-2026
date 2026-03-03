@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview High-Fidelity Command Processor for Ogeemo.
  * Maps natural language verbs and nouns to structured application actions.
@@ -60,6 +61,8 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'ap': { target: '/accounting/accounts-payable', label: 'Accounts Payable', category: 'Finances' },
     'snapshot': { target: '/accounting/financial-snapshot', label: 'Financial Snapshot', category: 'Finances' },
     'inventory': { target: '/inventory-manager/track', label: 'Inventory', category: 'Operations' },
+    'pettycash': { target: '/accounting/petty-cash', label: 'Petty Cash', category: 'Finances' },
+    'cashaccounting': { target: '/accounting/petty-cash', label: 'Petty Cash', category: 'Finances' },
     
     // Relationships
     'contact': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },

@@ -1,21 +1,24 @@
 
-import dynamic from 'next/dynamic';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
 
-const CashAccountingView = dynamic(
-  () => import('@/components/accounting/cash-accounting-view').then((mod) => mod.CashAccountingView),
-  {
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Cash Accounting...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+export default function CashAccountingRedirectPage() {
+  const router = useRouter();
 
-export default function CashAccountingPage() {
-  return <CashAccountingView />;
+  useEffect(() => {
+    // Permanent redirect to the new Petty Cash hub
+    router.replace('/accounting/petty-cash');
+  }, [router]);
+
+  return (
+    <div className="flex h-full w-full items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-4">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">Redirecting to Petty Cash...</p>
+      </div>
+    </div>
+  );
 }

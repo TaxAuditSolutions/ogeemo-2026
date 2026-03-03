@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -147,7 +146,7 @@ const EXPENSE_CATEGORIES_COLLECTION = 'expenseCategories';
 const SERVICE_ITEMS_COLLECTION = 'serviceItems';
 const TAX_TYPES_COLLECTION = 'taxTypes';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
-const INTERNAL_ACCOUNTS_COLLECTION = 'internalAccounts';
+const INTERNAL_ACCOUNT_COLLECTION = 'internalAccounts';
 
 const docToInvoice = (doc: any): Invoice => {
     const data = doc.data();
@@ -1307,14 +1306,14 @@ export async function deleteExpenseCategories(ids: string[]): Promise<void> {
 
 export async function getInternalAccounts(userId: string): Promise<InternalAccount[]> {
     const db = getDb();
-    const q = query(collection(db, INTERNAL_ACCOUNTS_COLLECTION), where("userId", "==", userId));
+    const q = query(collection(db, INTERNAL_ACCOUNT_COLLECTION), where("userId", "==", userId));
     try {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InternalAccount)).sort((a,b) => a.name.localeCompare(b.name));
     } catch (error: any) {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: INTERNAL_ACCOUNTS_COLLECTION,
+                path: INTERNAL_ACCOUNT_COLLECTION,
                 operation: 'list',
             }));
         }
@@ -1324,15 +1323,19 @@ export async function getInternalAccounts(userId: string): Promise<InternalAccou
 
 export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Promise<InternalAccount> {
     const db = getDb();
-    const docRef = doc(collection(db, INTERNAL_ACCOUNTS_COLLECTION));
-    await setDoc(docRef, data).catch(async (error) => {
+    const docRef = doc(collection(db, INTERNAL_ACCOUNT_COLLECTION));
+    const newAcc = { id: docRef.id, ...data };
+    
+    setDoc(docRef, data).catch(async (error) => {
         if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
+            const permissionError = new FirestorePermissionError({
                 path: docRef.path,
                 operation: 'create',
                 requestResourceData: data,
-            }));
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
         }
     });
-    return { id: docRef.id, ...data };
+    
+    return newAcc;
 }

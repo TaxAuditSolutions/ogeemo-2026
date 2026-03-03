@@ -49,6 +49,11 @@ service cloud.firestore {
       allow read: if isViewer();
       allow create, update, delete: if isEditor();
     }
+
+    match /internalAccounts/{accountId} {
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
+    }
     
     match /invoices/{invoiceId} {
       allow read: if isViewer();

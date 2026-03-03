@@ -18,7 +18,7 @@ import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children: React.Node }) {
   return (
     <SidebarProvider>
       <DndProviderWrapper>
@@ -42,69 +42,69 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             
             {/* Main Content */}
             <div className="flex flex-1 flex-col overflow-hidden">
-              <header className="flex h-16 items-center justify-between gap-4 bg-[var(--header-bg)] px-4 md:px-6" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
-                 <div className="flex items-center gap-4">
+              <header className="flex h-16 items-center bg-[var(--header-bg)] px-4 md:px-6" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
+                 {/* Left Column: Branding */}
+                 <div className="flex-1 flex items-center gap-4">
                    <SidebarTrigger className="md:hidden" />
                    
-                   {/* Centrally Orcherstrated Branding */}
                    <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80">
-                      <Logo className="text-black" />
+                      <Logo className="text-white" />
                    </Link>
                  </div>
 
-                 <div className="flex justify-center">
-                    <div className="flex items-center gap-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
-                                <Link href="/ai-dispatch">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                        <span className="font-bold uppercase text-xs">AI Dispatch</span>
-                                    </div>
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Open Ogeemo AI Dispatch</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
-                                <Link href="/reports/search">
-                                  <Search className="h-5 w-5" />
-                                  <span className="sr-only">Search</span>
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Global Search</p>
-                            </TooltipContent>
-                          </Tooltip>
+                 {/* Center Column: Intelligence Nodes */}
+                 <div className="flex items-center justify-center gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
+                            <Link href="/ai-dispatch">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                    <span className="font-bold uppercase text-xs">AI Dispatch</span>
+                                </div>
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Open Ogeemo AI Dispatch</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
+                            <Link href="/reports/search">
+                              <Search className="h-5 w-5" />
+                              <span className="sr-only">Search</span>
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Global Search</p>
+                        </TooltipContent>
+                      </Tooltip>
 
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
-                                <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">
-                                    <div className="flex items-center gap-2">
-                                        <Bot className="h-4 w-4" />
-                                        <span className="font-bold">Gemini AI</span>
-                                    </div>
-                                </a>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Open Gemini AI</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
+                            <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">
+                                <div className="flex items-center gap-2">
+                                    <Bot className="h-4 w-4" />
+                                    <span className="font-bold">Gemini AI</span>
+                                </div>
+                            </a>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Open Gemini AI</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                 </div>
 
-                <div className="flex items-center gap-4">
+                {/* Right Column: Orchestration & Identity */}
+                <div className="flex-1 flex items-center justify-end gap-4">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

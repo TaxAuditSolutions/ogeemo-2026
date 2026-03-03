@@ -8,15 +8,23 @@ interface LogoProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 /**
  * @fileOverview The Ogeemo brand logo component.
- * Configurable via className to support different thematic contexts (e.g., light header vs dark sidebar).
+ * Configurable via className. Automatically inverts the icon for white text themes.
  */
 export function Logo({ className, ...props }: LogoProps) {
+  const isWhite = className?.includes('text-white');
+
   return (
     <div 
       className={cn("flex items-center gap-2", className)} 
       {...props}
     >
-      <Image src="/images/Ogeemo-Logo-BonT.png" alt="Ogeemo logo" width={32} height={32} />
+      <Image 
+        src="/images/Ogeemo-Logo-BonT.png" 
+        alt="Ogeemo logo" 
+        width={32} 
+        height={32} 
+        className={cn(isWhite && "brightness-0 invert")}
+      />
       <h1 className={cn(
           fontOrbitron.variable,
           "font-headline font-bold text-2xl tracking-wider uppercase"

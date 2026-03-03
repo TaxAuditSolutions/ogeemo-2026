@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -50,11 +51,12 @@ export interface BaseTransaction {
 
 export interface IncomeTransaction extends BaseTransaction {
   incomeCategory: string;
-  depositedTo: string;
+  depositedTo: string; // This will store the InternalAccount ID or name
 }
 
 export interface ExpenseTransaction extends BaseTransaction {
   category: string;
+  paidFrom?: string; // This will store the InternalAccount ID or name
 }
 
 export interface PayableBill {
@@ -80,6 +82,13 @@ export interface TaxType {
   name: string;
   rate: number;
   userId: string;
+}
+
+export interface InternalAccount {
+    id: string;
+    name: string;
+    type: 'Bank' | 'Credit Card' | 'Cash' | 'Other';
+    userId: string;
 }
 
 // --- Invoice Interfaces & Functions ---
@@ -138,6 +147,7 @@ const EXPENSE_CATEGORIES_COLLECTION = 'expenseCategories';
 const SERVICE_ITEMS_COLLECTION = 'serviceItems';
 const TAX_TYPES_COLLECTION = 'taxTypes';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
+const INTERNAL_ACCOUNTS_COLLECTION = 'internalAccounts';
 
 const docToInvoice = (doc: any): Invoice => {
     const data = doc.data();
@@ -1293,4 +1303,36 @@ export async function deleteExpenseCategories(ids: string[]): Promise<void> {
     const batch = writeBatch(db);
     ids.forEach(id => batch.delete(doc(db, EXPENSE_CATEGORIES_COLLECTION, id)));
     await batch.commit();
+}
+
+export async function getInternalAccounts(userId: string): Promise<InternalAccount[]> {
+    const db = getDb();
+    const q = query(collection(db, INTERNAL_ACCOUNTS_COLLECTION), where("userId", "==", userId));
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InternalAccount)).sort((a,b) => a.name.localeCompare(b.name));
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: INTERNAL_ACCOUNTS_COLLECTION,
+                operation: 'list',
+            }));
+        }
+        throw error;
+    }
+}
+
+export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Promise<InternalAccount> {
+    const db = getDb();
+    const docRef = doc(collection(db, INTERNAL_ACCOUNTS_COLLECTION));
+    await setDoc(docRef, data).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'create',
+                requestResourceData: data,
+            }));
+        }
+    });
+    return { id: docRef.id, ...data };
 }

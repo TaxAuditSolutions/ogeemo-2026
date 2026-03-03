@@ -44,16 +44,16 @@
         },
         "required": ["name", "userId"]
     },
-    "ClientAccount": {
-        "title": "Client Account",
-        "description": "Represents a client's account within the system, linked to a contact.",
+    "InternalAccount": {
+        "title": "Internal Account",
+        "description": "Represents a bank account, credit card, or cash fund belonging to the business.",
         "type": "object",
         "properties": {
             "name": { "type": "string" },
-            "contactId": { "type": "string" },
+            "type": { "type": "string", "enum": ["Bank", "Credit Card", "Cash", "Other"] },
             "userId": { "type": "string" }
         },
-        "required": ["name", "contactId", "userId"]
+        "required": ["name", "type", "userId"]
     },
     "Invoice": {
         "title": "Invoice",
@@ -77,43 +77,6 @@
         },
         "required": ["invoiceNumber", "companyName", "contactId", "originalAmount", "amountPaid", "dueDate", "invoiceDate", "status", "userId"]
     },
-    "InvoiceLineItem": {
-        "title": "Invoice Line Item",
-        "description": "Represents a single line item on an invoice.",
-        "type": "object",
-        "properties": {
-            "invoiceId": { "type": "string" },
-            "description": { "type": "string" },
-            "quantity": { "type": "number" },
-            "price": { "type": "number" },
-            "userId": { "type": "string" }
-        },
-        "required": ["invoiceId", "description", "quantity", "price", "userId"]
-    },
-    "ServiceItem": {
-        "title": "Service Item",
-        "description": "A reusable item for invoices, such as a service or product with a predefined price.",
-        "type": "object",
-        "properties": {
-            "description": { "type": "string" },
-            "price": { "type": "number" },
-            "taxType": { "type": "string" },
-            "taxRate": { "type": "number" },
-            "userId": { "type": "string" }
-        },
-        "required": ["description", "price", "userId"]
-    },
-    "TaxType": {
-        "title": "Tax Type",
-        "description": "A user-defined tax type with a name and rate.",
-        "type": "object",
-        "properties": {
-            "name": { "type": "string" },
-            "rate": { "type": "number" },
-            "userId": { "type": "string" }
-        },
-        "required": ["name", "rate", "userId"]
-    },
     "IncomeTransaction": {
         "title": "Income Transaction",
         "description": "Records an income transaction.",
@@ -122,17 +85,10 @@
             "date": { "type": "string", "format": "date" },
             "company": { "type": "string" },
             "description": { "type": "string" },
-            "totalAmount": { "type": "number", "description": "The total amount of the transaction including tax." },
-            "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
-            "taxAmount": { "type": "number", "description": "The amount of tax collected." },
-            "taxRate": { "type": "number", "description": "The tax rate applied." },
-            "paymentMethod": { "type": "string", "enum": ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"] },
-            "incomeCategory": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
-            "depositedTo": { "type": "string" },
-            "explanation": { "type": "string" },
-            "documentNumber": { "type": "string" },
-            "documentUrl": { "type": "string", "format": "uri" },
-            "type": { "type": "string", "enum": ["business", "personal"] },
+            "totalAmount": { "type": "number" },
+            "incomeCategory": { "type": "string" },
+            "depositedTo": { "type": "string", "description": "ID of the InternalAccount where funds were received." },
+            "paymentMethod": { "type": "string" },
             "userId": { "type": "string" }
         },
         "required": ["date", "company", "totalAmount", "incomeCategory", "userId"]
@@ -145,366 +101,13 @@
             "date": { "type": "string", "format": "date" },
             "company": { "type": "string" },
             "description": { "type": "string" },
-            "totalAmount": { "type": "number", "description": "The total amount of the transaction including tax." },
-            "preTaxAmount": { "type": "number", "description": "The amount of the transaction before tax." },
-            "taxAmount": { "type": "number", "description": "The amount of tax paid." },
-            "taxRate": { "type": "number", "description": "The tax rate applied." },
-            "paymentMethod": { "type": "string", "enum": ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"] },
-            "category": { "type": "string", "description": "Stores the unique category number (e.g., CRA line number or custom ID) for this transaction." },
-            "explanation": { "type": "string" },
-            "documentNumber": { "type": "string" },
-            "documentUrl": { "type": "string", "format": "uri" },
-            "type": { "type": "string", "enum": ["business", "personal"] },
+            "totalAmount": { "type": "number" },
+            "category": { "type": "string" },
+            "paidFrom": { "type": "string", "description": "ID of the InternalAccount used for payment." },
+            "paymentMethod": { "type": "string" },
             "userId": { "type": "string" }
         },
         "required": ["date", "company", "totalAmount", "category", "userId"]
-    },
-    "PayableBill": {
-        "title": "Payable Bill",
-        "description": "Represents an outstanding bill from a vendor.",
-        "type": "object",
-        "properties": {
-            "vendor": { "type": "string" },
-            "invoiceNumber": { "type": "string" },
-            "dueDate": { "type": "string", "format": "date" },
-            "totalAmount": { "type": "number" },
-            "preTaxAmount": { "type": "number" },
-            "taxAmount": { "type": "number" },
-            "taxRate": { "type": "number" },
-            "category": { "type": "string" },
-            "description": { "type": "string" },
-            "documentUrl": { "type": "string", "format": "uri" },
-            "userId": { "type": "string" }
-        },
-        "required": ["vendor", "dueDate", "totalAmount", "category", "userId"]
-    },
-    "PayrollRun": {
-      "title": "Payroll Run",
-      "description": "Represents a single, processed payroll run.",
-      "type": "object",
-      "properties": {
-        "payPeriodStart": { "type": "string", "format": "date" },
-        "payPeriodEnd": { "type": "string", "format": "date" },
-        "payDate": { "type": "string", "format": "date" },
-        "totalGrossPay": { "type": "number" },
-        "totalDeductions": { "type": "number" },
-        "totalNetPay": { "type": "number" },
-        "employeeCount": { "type": "integer" },
-        "userId": { "type": "string" }
-      },
-      "required": ["payPeriodStart", "payPeriodEnd", "payDate", "totalGrossPay", "totalDeductions", "totalNetPay", "employeeCount", "userId"]
-    },
-    "PayrollRunDetail": {
-      "title": "Payroll Run Detail",
-      "description": "Represents the payroll details for a single employee within a payroll run.",
-      "type": "object",
-      "properties": {
-        "runId": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "employeeName": { "type": "string" },
-        "grossPay": { "type": "number" },
-        "deductions": { "type": "number" },
-        "netPay": { "type": "number" },
-        "userId": { "type": "string" }
-      },
-      "required": ["runId", "employeeId", "employeeName", "grossPay", "deductions", "netPay", "userId"]
-    },
-    "PayrollRemittance": {
-        "title": "Payroll Remittance",
-        "description": "Represents a payroll source deduction remittance to be paid to a government agency.",
-        "type": "object",
-        "properties": {
-            "payPeriodStart": { "type": "string", "format": "date" },
-            "payPeriodEnd": { "type": "string", "format": "date" },
-            "dueDate": { "type": "string", "format": "date" },
-            "amount": { "type": "number" },
-            "status": { "type": "string", "enum": ["Due", "Paid"] },
-            "paidDate": { "type": "string", "format": "date" },
-            "userId": { "type": "string" }
-        },
-        "required": ["payPeriodStart", "payPeriodEnd", "dueDate", "amount", "status", "userId"]
-    },
-    "Asset": {
-        "title": "Capital Asset",
-        "description": "Represents a capital asset owned by the business.",
-        "type": "object",
-        "properties": {
-            "name": { "type": "string" },
-            "description": { "type": "string" },
-            "assetClass": { "type": "string" },
-            "purchaseDate": { "type": "string", "format": "date" },
-            "cost": { "type": "number" },
-            "undepreciatedCapitalCost": { "type": "number" },
-            "applyHalfYearRule": { "type": "boolean" },
-            "userId": { "type": "string" }
-        },
-        "required": ["name", "purchaseDate", "cost", "undepreciatedCapitalCost", "userId"]
-    },
-    "EquityTransaction": {
-        "title": "Equity Transaction",
-        "description": "Represents an owner's contribution or draw.",
-        "type": "object",
-        "properties": {
-            "date": { "type": "string", "format": "date" },
-            "description": { "type": "string" },
-            "amount": { "type": "number" },
-            "type": { "type": "string", "enum": ["contribution", "draw"] },
-            "userId": { "type": "string" }
-        },
-        "required": ["date", "amount", "type", "userId"]
-    },
-    "Company": {
-      "title": "Company",
-      "description": "Represents a company, client, or vendor.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "userId": { "type": "string" }
-      },
-      "required": ["name", "userId"]
-    },
-    "ExpenseCategory": {
-      "title": "Expense Category",
-      "description": "Represents a user-defined expense category.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "categoryNumber": { "type": "string", "description": "The unique ID for the category, like a CRA line number." },
-        "isArchived": { "type": "boolean", "description": "Whether the category is archived and hidden from view." },
-        "userId": { "type": "string" }
-      },
-      "required": ["name", "userId"]
-    },
-    "IncomeCategory": {
-      "title": "Income Category",
-      "description": "Represents a user-defined income category.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "categoryNumber": { "type": "string", "description": "The unique ID for the category, like a CRA line number." },
-        "isArchived": { "type": "boolean", "description": "Whether the category is archived and hidden from view." },
-        "userId": { "type": "string" }
-      },
-      "required": ["name", "userId"]
-    },
-    "Industry": {
-      "title": "Industry",
-      "description": "Represents a custom NAICS industry category.",
-      "type": "object",
-      "properties": {
-        "code": { "type": "string" },
-        "description": { "type": "string" },
-        "userId": { "type": "string" }
-      },
-      "required": ["code", "description", "userId"]
-    },
-    "Loan": {
-        "title": "Loan",
-        "description": "Represents a loan, either payable to a creditor or receivable from a debtor.",
-        "type": "object",
-        "properties": {
-            "loanType": { "type": "string", "enum": ["payable", "receivable"] },
-            "counterparty": { "type": "string", "description": "The name of the lender (for payables) or borrower (for receivables)." },
-            "originalAmount": { "type": "number" },
-            "outstandingBalance": { "type": "number" },
-            "interestRate": { "type": "number", "description": "Annual interest rate in percentage." },
-            "termMonths": { "type": "number", "description": "The total term of the loan in months." },
-            "monthlyPayment": { "type": "number" },
-            "startDate": { "type": "string", "format": "date" },
-            "userId": { "type": "string" }
-        },
-        "required": ["loanType", "counterparty", "originalAmount", "outstandingBalance", "startDate", "userId"]
-    },
-    "LeaveRequest": {
-      "title": "Leave Request",
-      "description": "Represents a worker's request for time off.",
-      "type": "object",
-      "properties": {
-        "workerId": { "type": "string" },
-        "workerName": { "type": "string" },
-        "leaveType": { "type": "string", "enum": ["Vacation", "Sick", "Personal", "Unpaid"] },
-        "startDate": { "type": "string", "format": "date" },
-        "endDate": { "type": "string", "format": "date" },
-        "reason": { "type": "string" },
-        "status": { "type": "string", "enum": ["Pending", "Approved", "Denied"] },
-        "adminNotes": { "type": "string" },
-        "userId": { "type": "string" },
-        "approverId": { "type": "string" },
-        "approverName": { "type": "string" }
-      },
-      "required": ["workerId", "workerName", "leaveType", "startDate", "endDate", "status", "userId"]
-    },
-    "TimeLog": {
-        "title": "Time Log",
-        "description": "Stores individual work sessions for workers.",
-        "type": "object",
-        "properties": {
-            "workerId": { "type": "string" },
-            "workerName": { "type": "string" },
-            "startTime": { "type": "string", "format": "date-time" },
-            "endTime": { "type": "string", "format": "date-time" },
-            "durationSeconds": { "type": "number" },
-            "location": { "type": "string", "description": "The site or location of the work." },
-            "notes": { "type": "string" },
-            "status": { "type": "string", "enum": ["unprocessed", "processed", "ready-for-payroll"] },
-            "isBillable": { "type": "boolean" },
-            "billableRate": { "type": "number" },
-            "userId": { "type": "string" }
-        },
-        "required": ["workerId", "startTime", "endTime", "durationSeconds", "status", "userId"]
-    },
-    "LocationLog": {
-        "title": "Location Log",
-        "description": "Stores GPS coordinates for a specific work session.",
-        "type": "object",
-        "properties": {
-            "timeLogId": { "type": "string" },
-            "workerId": { "type": "string" },
-            "timestamp": { "type": "string", "format": "date-time" },
-            "latitude": { "type": "number" },
-            "longitude": { "type": "number" },
-            "accuracy": { "type": "number" }
-        },
-        "required": ["timeLogId", "workerId", "timestamp", "latitude", "longitude"]
-    },
-    "Lead": {
-        "title": "Lead",
-        "description": "[DEPRECATED] Use Contact entity with folderId set to Prospects.",
-        "type": "object",
-        "properties": {
-            "contactName": { "type": "string" },
-            "companyName": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
-            "phone": { "type": "string" },
-            "source": { "type": "string", "enum": ["Website", "Referral", "Trade Show", "Advertisement", "Other"] },
-            "status": { "type": "string", "enum": ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"] },
-            "notes": { "type": "string" },
-            "userId": { "type": "string" }
-        },
-        "required": ["contactName", "email", "userId"]
-    },
-    "CrmAction": {
-        "title": "CRM Action",
-        "description": "Represents a single action item within a CRM action plan.",
-        "type": "object",
-        "properties": {
-            "title": { "type": "string" },
-            "description": { "type": "string" },
-            "status": { "type": "string", "enum": ["To Do", "In Progress", "Done"] },
-            "position": { "type": "number" },
-            "leadName": { "type": "string" },
-            "userId": { "type": "string" }
-        },
-        "required": ["title", "status", "position", "leadName", "userId"]
-    },
-    "ProjectTemplate": {
-      "title": "Project Template",
-      "description": "A reusable template of steps for a project.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "steps": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "title": { "type": "string" },
-              "description": { "type": "string" }
-            },
-            "required": ["title"]
-          }
-        },
-        "userId": { "type": "string" }
-      },
-      "required": ["name", "userId"]
-    },
-    "Item": {
-      "title": "Inventory Item",
-      "description": "Represents a single item in inventory, such as a product for sale or an internal supply.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "sku": { "type": "string", "description": "Stock Keeping Unit" },
-        "type": { "type": "string", "enum": ["Product for Sale", "Internal Supply", "Raw Material"] },
-        "stockQuantity": { "type": "number" },
-        "cost": { "type": "number", "description": "The cost to acquire the item." },
-        "price": { "type": "number", "description": "The price the item is sold for." },
-        "supplierId": { "type": "string" },
-        "userId": { "type": "string" },
-        "acquisitionDate": { "type": "string", "format": "date" },
-        "dispositionDate": { "type": "string", "format": "date" },
-        "dispositionReason": { "type": "string" }
-      },
-      "required": ["name", "type", "stockQuantity", "userId"]
-    },
-    "InventoryLog": {
-        "title": "Inventory Log",
-        "description": "Records a single change to an inventory item's stock level.",
-        "type": "object",
-        "properties": {
-            "itemId": { "type": "string" },
-            "itemName": { "type": "string" },
-            "reason": { "type": "string", "enum": ["Initial Stock", "Purchase", "Sale", "Adjustment", "Shrinkage", "Consumed", "Destroyed"] },
-            "quantityChange": { "type": "number", "description": "The amount the quantity changed by (can be positive or negative)." },
-            "newQuantity": { "type": "number", "description": "The stock quantity after the change." },
-            "notes": { "type": "string" },
-            "timestamp": { "type": "string", "format": "date-time" },
-            "userId": { "type": "string" }
-        },
-        "required": ["itemId", "itemName", "reason", "quantityChange", "newQuantity", "timestamp", "userId"]
-    },
-    "Supplier": {
-      "title": "Supplier",
-      "description": "Represents a vendor or supplier of goods and materials.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "contactPerson": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "userId": { "type": "string" }
-      },
-      "required": ["name", "userId"]
-    },
-    "Feedback": {
-      "title": "Feedback",
-      "description": "Stores user feedback submissions.",
-      "type": "object",
-      "properties": {
-        "reporterName": { "type": "string" },
-        "topic": { "type": "string" },
-        "type": { "type": "string", "enum": ["bug", "feature", "general"] },
-        "feedback": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "userId": { "type": "string" }
-      },
-      "required": ["reporterName", "topic", "type", "feedback", "date"]
-    },
-    "SiteImage": {
-      "title": "Site Image",
-      "description": "Stores URLs for globally used site images like heroes and logos.",
-      "type": "object",
-      "properties": {
-        "url": { "type": "string", "format": "uri" },
-        "hint": { "type": "string" }
-      },
-      "required": ["url"]
-    },
-    "ContactInquiry": {
-      "title": "Contact Inquiry",
-      "description": "Records messages submitted via the public contact form.",
-      "type": "object",
-      "properties": {
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "subject": { "type": "string" },
-        "message": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["firstName", "lastName", "email", "subject", "message", "createdAt"]
     }
   },
   "auth": {
@@ -515,33 +118,17 @@
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores user profile data."
     },
+    "/internalAccounts/{accountId}": {
+        "schema": { "$ref": "#/entities/InternalAccount" },
+        "description": "Collection of user-defined bank and cash accounts."
+    },
     "/contacts/{contactId}": {
         "schema": { "$ref": "#/entities/Contact" },
         "description": "Collection of all contacts."
     },
-    "/contactFolders/{folderId}": {
-      "schema": { "$ref": "#/entities/ContactFolder" },
-      "description": "Collection of all contact folders."
-    },
-    "/clientAccounts/{accountId}": {
-        "schema": { "$ref": "#/entities/ClientAccount" },
-        "description": "Collection of client account records."
-    },
     "/invoices/{invoiceId}": {
         "schema": { "$ref": "#/entities/Invoice" },
         "description": "Collection of all invoices."
-    },
-    "/invoiceLineItems/{itemId}": {
-        "schema": { "$ref": "#/entities/InvoiceLineItem" },
-        "description": "Collection of all invoice line items."
-    },
-    "/serviceItems/{itemId}": {
-        "schema": { "$ref": "#/entities/ServiceItem" },
-        "description": "Collection of reusable invoice items."
-    },
-    "/taxTypes/{typeId}": {
-        "schema": { "$ref": "#/entities/TaxType" },
-        "description": "Collection of user-defined tax types."
     },
     "/incomeTransactions/{transactionId}": {
         "schema": { "$ref": "#/entities/IncomeTransaction" },
@@ -550,98 +137,6 @@
     "/expenseTransactions/{transactionId}": {
         "schema": { "$ref": "#/entities/ExpenseTransaction" },
         "description": "Collection of all expense transactions."
-    },
-    "/payableBills/{billId}": {
-        "schema": { "$ref": "#/entities/PayableBill" },
-        "description": "Collection of all payable bills."
-    },
-    "/payrollRuns/{runId}": {
-      "schema": { "$ref": "#/entities/PayrollRun" },
-      "description": "Stores historical payroll run summaries."
-    },
-    "/payrollRuns/{runId}/details/{detailId}": {
-        "schema": { "$ref": "#/entities/PayrollRunDetail" },
-        "description": "Stores individual employee details for a specific payroll run."
-    },
-    "/payrollRemittances/{remittanceId}": {
-        "schema": { "$ref": "#/entities/PayrollRemittance" },
-        "description": "Collection of all payroll remittances."
-    },
-    "/assets/{assetId}": {
-        "schema": { "$ref": "#/entities/Asset" },
-        "description": "Collection of all capital assets."
-    },
-    "/equityTransactions/{transactionId}": {
-        "schema": { "$ref": "#/entities/EquityTransaction" },
-        "description": "Collection of all equity transactions."
-    },
-    "/companies/{companyId}": {
-      "schema": { "$ref": "#/entities/Company" },
-      "description": "Stores company, client, or vendor names for use in transactions."
-    },
-    "/expenseCategories/{categoryId}": {
-      "schema": { "$ref": "#/entities/ExpenseCategory" },
-      "description": "Stores user-defined expense categories."
-    },
-    "/incomeCategories/{categoryId}": {
-      "schema": { "$ref": "#/entities/IncomeCategory" },
-      "description": "Stores user-defined income categories."
-    },
-    "/industries/{industryId}": {
-      "schema": { "$ref": "#/entities/Industry" },
-      "description": "Stores user-defined custom industries."
-    },
-    "/loans/{loanId}": {
-      "schema": { "$ref": "#/entities/Loan" },
-      "description": "Collection of all loans (payable and receivable)."
-    },
-    "/leaveRequests/{leaveRequestId}": {
-        "schema": { "$ref": "#/entities/LeaveRequest" },
-        "description": "Stores worker time off and leave requests."
-    },
-    "/timeLogs/{timeLogId}": {
-        "schema": { "$ref": "#/entities/TimeLog" },
-        "description": "A collection of individual work sessions."
-    },
-    "/timeLogs/{timeLogId}/locations/{locationId}": {
-        "schema": { "$ref": "#/entities/LocationLog" },
-        "description": "A log of all inventory transactions."
-    },
-    "/leads/{leadId}": {
-        "schema": { "$ref": "#/entities/Lead" },
-        "description": "Collection of all sales leads."
-    },
-    "/crmActions/{actionId}": {
-        "schema": { "$ref": "#/entities/CrmAction" },
-        "description": "Collection of all CRM action items."
-    },
-    "/projectTemplates/{templateId}": {
-      "schema": { "$ref": "#/entities/ProjectTemplate" },
-      "description": "Stores reusable project templates."
-    },
-    "/inventoryItems/{itemId}": {
-      "schema": { "$ref": "#/entities/Item" },
-      "description": "Collection of all inventory items."
-    },
-    "/inventoryLogs/{logId}": {
-        "schema": { "$ref": "#/entities/InventoryLog" },
-        "description": "A log of all inventory transactions."
-    },
-    "/suppliers/{supplierId}": {
-      "schema": { "$ref": "#/entities/Supplier" },
-      "description": "Collection of all suppliers and vendors."
-    },
-    "/feedback/{feedbackId}": {
-      "schema": { "$ref": "#/entities/Feedback" },
-      "description": "Stores user feedback submissions."
-    },
-    "/siteImages/{imageId}": {
-      "schema": { "$ref": "#/entities/SiteImage" },
-      "description": "Stores URLs for globally used site images like heroes and logos."
-    },
-    "/inquiries/{inquiryId}": {
-      "schema": { "$ref": "#/entities/ContactInquiry" },
-      "description": "Collection of public contact form submissions."
     }
   }
 }

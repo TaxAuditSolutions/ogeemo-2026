@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -20,6 +21,7 @@ import {
     LoaderCircle,
     Info,
     Percent,
+    Wallet,
 } from 'lucide-react';
 
 import {
@@ -63,10 +65,13 @@ import {
     addCompany,
     addIncomeCategory,
     addExpenseCategory,
+    getInternalAccounts,
+    addInternalAccount,
     type IncomeCategory,
     type ExpenseCategory,
     type Company,
-    type TaxType
+    type TaxType,
+    type InternalAccount
 } from '@/services/accounting-service';
 import { type Contact } from '@/services/contact-service';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
@@ -81,7 +86,7 @@ const transactionSchema = z.object({
     taxRate: z.coerce.number().min(0, "Tax rate cannot be negative"),
     category: z.string().min(1, "Category is required."),
     paymentMethod: z.string().optional(),
-    depositedTo: z.string().optional(),
+    account: z.string().min(1, "Account selection is required."),
     explanation: z.string().optional(),
     documentNumber: z.string().optional(),
     documentUrl: z.string().optional(),
@@ -118,13 +123,17 @@ export function TransactionDialog({
     const { preferences } = useUserPreferences();
     const [isSaving, setIsSaving] = React.useState(false);
     const [transactionType, setTransactionType] = React.useState(initialType);
+    const [internalAccounts, setInternalAccounts] = React.useState<InternalAccount[]>([]);
     
     const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
     const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
+    const [isAccountPopoverOpen, setIsAccountPopoverOpen] = React.useState(false);
     const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = React.useState(false);
+    
     const [companySearchValue, setCompanySearchValue] = React.useState("");
     const [categorySearchValue, setCategorySearchValue] = React.useState("");
+    const [accountSearchValue, setAccountSearchValue] = React.useState("");
 
     const form = useForm<TransactionFormData>({
         resolver: zodResolver(transactionSchema),
@@ -138,7 +147,7 @@ export function TransactionDialog({
             taxRate: 0,
             category: "",
             paymentMethod: "Bank Transfer",
-            depositedTo: "Bank Account #1",
+            account: "",
             explanation: "",
             documentNumber: "",
             documentUrl: "",
@@ -150,6 +159,7 @@ export function TransactionDialog({
     const watchUnitPrice = form.watch('unitPrice');
     const watchTaxRate = form.watch('taxRate');
     const watchCategory = form.watch('category');
+    const watchAccount = form.watch('account');
 
     const totals = React.useMemo(() => {
         const gross = (Number(watchQuantity) || 0) * (Number(watchUnitPrice) || 0);
@@ -158,8 +168,17 @@ export function TransactionDialog({
         return { gross, net, tax };
     }, [watchQuantity, watchUnitPrice, watchTaxRate]);
 
+    const loadInternalAccounts = React.useCallback(async () => {
+        if (!user) return;
+        try {
+            const accounts = await getInternalAccounts(user.uid);
+            setInternalAccounts(accounts);
+        } catch (e) {}
+    }, [user]);
+
     const activeCategories = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
     const selectedCategory = activeCategories.find(c => c.categoryNumber === watchCategory || c.id === watchCategory);
+    const selectedAccount = internalAccounts.find(a => a.id === watchAccount || a.name === watchAccount);
 
     const contactOptions = React.useMemo(() => {
         const standaloneCompanies = companies.map(c => ({ id: c.id, label: c.name, type: 'company' }));
@@ -173,6 +192,7 @@ export function TransactionDialog({
 
     React.useEffect(() => {
         if (isOpen) {
+            loadInternalAccounts();
             setTransactionType(initialType);
             form.reset({
                 date: format(new Date(), 'yyyy-MM-dd'),
@@ -181,17 +201,17 @@ export function TransactionDialog({
                 quantity: 1,
                 unitPrice: 0,
                 taxType: "None",
-                taxRate: 0,
+                taxRate: preferences?.defaultTaxRate || 0,
                 category: "",
                 paymentMethod: "Bank Transfer",
-                depositedTo: "Bank Account #1",
+                account: "",
                 explanation: "",
                 documentNumber: "",
                 documentUrl: "",
                 type: "business",
             });
         }
-    }, [isOpen, initialType, form]);
+    }, [isOpen, initialType, form, loadInternalAccounts, preferences]);
 
     const handleCreateCompany = async (name: string) => {
         if (!user || !name.trim()) return;
@@ -220,6 +240,24 @@ export function TransactionDialog({
             setCategorySearchValue("");
             onSuccess();
             toast({ title: "Custom Category Created", description: `"${name}" added to your tax lines.` });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+        }
+    };
+
+    const handleCreateAccount = async (name: string) => {
+        if (!user || !name.trim()) return;
+        try {
+            const newAcc = await addInternalAccount({ 
+                name: name.trim(), 
+                userId: user.uid, 
+                type: 'Bank' 
+            });
+            setInternalAccounts(prev => [...prev, newAcc]);
+            form.setValue('account', newAcc.name);
+            setIsAccountPopoverOpen(false);
+            setAccountSearchValue("");
+            toast({ title: "Account Created", description: `"${name}" added to your registry.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         }
@@ -260,7 +298,7 @@ export function TransactionDialog({
                 await addIncomeTransaction({
                     ...baseData,
                     incomeCategory: values.category,
-                    depositedTo: values.depositedTo || 'Bank Account #1',
+                    depositedTo: values.account,
                     paymentMethod: values.paymentMethod || 'Bank Transfer',
                 });
                 toast({ title: 'Income Posted' });
@@ -268,6 +306,7 @@ export function TransactionDialog({
                 await addExpenseTransaction({
                     ...baseData,
                     category: values.category,
+                    paidFrom: values.account,
                     paymentMethod: values.paymentMethod || 'Bank Transfer',
                 });
                 toast({ title: 'Expense Posted' });
@@ -324,38 +363,43 @@ export function TransactionDialog({
     return (
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-5xl flex flex-col max-h-[95vh] p-0 overflow-hidden text-black">
+            <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
                 <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
-                    <div className="flex flex-col items-center gap-2 text-primary">
-                        <Calculator className="h-8 w-8" />
+                    <div className="flex flex-col items-center gap-2 text-primary relative">
+                        <div className="absolute right-0 top-0">
+                            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                                <X className="h-6 w-6" />
+                            </Button>
+                        </div>
+                        <Calculator className="h-10 w-10" />
                         <div className="space-y-1 text-center">
-                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
-                            <DialogDescription className="text-sm">Precision BKS Financial Orchestration</DialogDescription>
+                            <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
+                            <DialogDescription className="text-base">Precision BKS Financial Orchestration Hub</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 bg-white">
                     <Form {...form}>
-                        <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-8">
+                        <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-12 max-w-6xl mx-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <FormField
                                     control={form.control}
                                     name="type"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-3 p-4 border rounded-xl bg-muted/30">
+                                        <FormItem className="space-y-3 p-6 border rounded-2xl bg-muted/30">
                                             <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
                                                 <ShieldCheck className="h-4 w-4" /> Transaction Mode
                                             </FormLabel>
                                             <FormControl>
-                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6">
+                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-8">
                                                     <div className="flex items-center space-x-2">
-                                                        <RadioGroupItem value="business" id="mode-biz"/>
-                                                        <Label htmlFor="mode-biz" className="font-semibold cursor-pointer">Business Operations</Label>
+                                                        <RadioGroupItem value="business" id="mode-biz" className="h-5 w-5" />
+                                                        <Label htmlFor="mode-biz" className="text-base font-semibold cursor-pointer">Business Operations</Label>
                                                     </div>
                                                     <div className="flex items-center space-x-2">
-                                                        <RadioGroupItem value="personal" id="mode-pers"/>
-                                                        <Label htmlFor="mode-pers" className="font-semibold cursor-pointer">Personal Account</Label>
+                                                        <RadioGroupItem value="personal" id="mode-pers" className="h-5 w-5" />
+                                                        <Label htmlFor="mode-pers" className="text-base font-semibold cursor-pointer">Personal Account</Label>
                                                     </div>
                                                 </RadioGroup>
                                             </FormControl>
@@ -365,7 +409,7 @@ export function TransactionDialog({
                                 <div className="space-y-2">
                                     <Label className="text-sm uppercase font-bold text-primary">Entry Type</Label>
                                     <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)}>
-                                        <SelectTrigger className="h-12 text-base">
+                                        <SelectTrigger className="h-14 text-lg font-medium">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -378,9 +422,7 @@ export function TransactionDialog({
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <FormField
                                     control={form.control}
                                     name="date"
@@ -392,7 +434,7 @@ export function TransactionDialog({
                                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
-                                                        <Button variant="outline" className={cn("h-11 w-full text-left font-normal px-3", !field.value && "text-muted-foreground")}>
+                                                        <Button variant="outline" className={cn("h-12 w-full text-left font-normal px-4 text-base", !field.value && "text-muted-foreground")}>
                                                             {field.value ? format(parseISO(field.value), "PPP") : "Pick a date"}
                                                         </Button>
                                                     </FormControl>
@@ -416,7 +458,7 @@ export function TransactionDialog({
                                             <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
-                                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal px-3">
+                                                        <Button variant="outline" role="combobox" className="h-12 w-full justify-between font-normal px-4 text-base">
                                                             <span className="truncate">{field.value || "Select/Add Contact"}</span>
                                                             <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                                         </Button>
@@ -459,7 +501,7 @@ export function TransactionDialog({
                                                 <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal px-3">
+                                                            <Button variant="outline" role="combobox" className="h-12 flex-1 justify-between font-normal px-4 text-base">
                                                                 <span className="truncate">{selectedCategory ? selectedCategory.name : "Select/Add tax line..."}</span>
                                                                 <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                                             </Button>
@@ -489,7 +531,7 @@ export function TransactionDialog({
                                                         </Command>
                                                     </PopoverContent>
                                                 </Popover>
-                                                <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleCreateCategory(categorySearchValue)} title="Create New Category">
+                                                <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCreateCategory(categorySearchValue)} title="Create New Category">
                                                     <Plus className="h-5 w-5" />
                                                 </Button>
                                             </div>
@@ -499,17 +541,15 @@ export function TransactionDialog({
                                 />
                             </div>
 
-                            <Separator />
-
-                            <div className="p-6 border-2 border-primary/10 rounded-2xl space-y-6 bg-primary/5">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            <div className="p-8 border-2 border-primary/10 rounded-3xl space-y-8 bg-primary/5 shadow-inner">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                                     <FormField
                                         control={form.control}
                                         name="quantity"
                                         render={({ field }) => (
                                             <FormItem className="space-y-2">
                                                 <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Quantity</FormLabel>
-                                                <FormControl><Input type="number" step="0.01" className="h-11 font-mono font-bold" {...field} /></FormControl>
+                                                <FormControl><Input type="number" step="0.01" className="h-12 text-lg font-mono font-bold" {...field} /></FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -521,8 +561,8 @@ export function TransactionDialog({
                                             <FormItem className="space-y-2">
                                                 <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Unit Price ($)</FormLabel>
                                                 <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
-                                                    <FormControl><Input type="number" step="0.01" className="h-11 pl-8 font-mono font-bold" {...field} /></FormControl>
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg">$</span>
+                                                    <FormControl><Input type="number" step="0.01" className="h-12 pl-10 text-lg font-mono font-bold" {...field} /></FormControl>
                                                 </div>
                                                 <FormMessage />
                                             </FormItem>
@@ -530,15 +570,15 @@ export function TransactionDialog({
                                     />
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Select Tax Type</Label>
-                                            <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => setIsManageTaxDialogOpen(true)}><Settings className="h-3 w-3"/></Button>
+                                            <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Sales Tax Configuration</Label>
+                                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setIsManageTaxDialogOpen(true)}><Settings className="h-4 w-4"/></Button>
                                         </div>
                                         <Select 
                                             value={taxTypes.find(t => t.name === form.watch('taxType'))?.id || "None"} 
                                             onValueChange={handleSelectTaxType}
                                         >
-                                            <SelectTrigger className="h-11">
-                                                <SelectValue placeholder="Tax logic..." />
+                                            <SelectTrigger className="h-12 text-base">
+                                                <SelectValue placeholder="Select tax type..." />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="None">No Tax Applied</SelectItem>
@@ -548,38 +588,87 @@ export function TransactionDialog({
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap justify-between items-center gap-4 px-8 py-4 rounded-xl bg-white border border-primary/20 shadow-inner">
-                                    <div className="text-center min-w-[120px]">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Gross Total</p>
-                                        <p className="font-mono text-2xl font-bold text-primary">${totals.gross.toFixed(2)}</p>
+                                <div className="flex flex-wrap justify-around items-center gap-8 px-10 py-8 rounded-2xl bg-white border-2 border-primary/20 shadow-xl">
+                                    <div className="text-center">
+                                        <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Gross Total</p>
+                                        <p className="font-mono text-4xl font-bold text-primary">${totals.gross.toFixed(2)}</p>
                                     </div>
-                                    <Separator orientation="vertical" className="h-12 hidden md:block" />
-                                    <div className="text-center min-w-[120px]">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Net (Pre-Tax)</p>
-                                        <p className="font-mono text-xl font-semibold text-foreground/70">${totals.net.toFixed(2)}</p>
+                                    <div className="hidden md:block h-16 w-px bg-muted" />
+                                    <div className="text-center">
+                                        <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Net (Pre-Tax)</p>
+                                        <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.net.toFixed(2)}</p>
                                     </div>
-                                    <Separator orientation="vertical" className="h-12 hidden md:block" />
-                                    <div className="text-center min-w-[120px]">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Tax Portion ({form.watch('taxRate')}%)</p>
-                                        <p className="font-mono text-xl font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
+                                    <div className="hidden md:block h-16 w-px bg-muted" />
+                                    <div className="text-center">
+                                        <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Tax Portion ({form.watch('taxRate')}%)</p>
+                                        <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                <div className="space-y-6">
+                                    <h3 className="text-sm uppercase font-bold text-primary flex items-center gap-2 border-b pb-2">
+                                        <Wallet className="h-4 w-4" /> Financial Routing
+                                    </h3>
+                                    <FormField
+                                        control={form.control}
+                                        name="account"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-2">
+                                                <FormLabel className="text-sm font-semibold">
+                                                    {transactionType === 'income' || transactionType === 'receivable' ? 'Deposited To' : 'Paid From'} Account *
+                                                </FormLabel>
+                                                <div className="flex gap-2">
+                                                    <Popover open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button variant="outline" role="combobox" className="h-12 flex-1 justify-between font-normal px-4 text-base">
+                                                                    <span className="truncate">{selectedAccount ? selectedAccount.name : "Search or add account..."}</span>
+                                                                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                            <Command>
+                                                                <CommandInput placeholder="Search bank, card, or cash..." value={accountSearchValue} onValueChange={setAccountSearchValue} />
+                                                                <CommandList>
+                                                                    <CommandEmpty>
+                                                                        <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateAccount(accountSearchValue)}>
+                                                                            <Plus className="mr-2 h-4 w-4" /> Create "{accountSearchValue}"
+                                                                        </Button>
+                                                                    </CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {internalAccounts.map(acc => (
+                                                                            <CommandItem key={acc.id} onSelect={() => { field.onChange(acc.name); setIsAccountPopoverOpen(false); }}>
+                                                                                <Check className={cn("mr-2 h-4 w-4", field.value === acc.name ? "opacity-100" : "opacity-0")} />
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="text-sm font-semibold">{acc.name}</span>
+                                                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{acc.type}</span>
+                                                                                </div>
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCreateAccount(accountSearchValue)} title="Add Account">
+                                                        <Plus className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                     <FormField
                                         control={form.control}
                                         name="paymentMethod"
                                         render={({ field }) => (
                                             <FormItem className="space-y-2">
-                                                <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                                    <Clock className="h-4 w-4" /> Settlement Method
-                                                </FormLabel>
+                                                <FormLabel className="text-sm font-semibold">Settlement Method</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className="h-12 text-base"><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {["Bank Transfer", "Credit Card", "Cash", "Cheque", "Email Transfer", "GL Adjustment"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                                     </SelectContent>
@@ -587,83 +676,74 @@ export function TransactionDialog({
                                             </FormItem>
                                         )}
                                     />
-                                    <FormField
-                                        control={form.control}
-                                        name="depositedTo"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-2">
-                                                <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                                    <Landmark className="h-4 w-4" /> Ledger Routing
-                                                </FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        {["Bank Account #1", "Credit Card #1", "Cash Account", "Trust Account"].map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
-                                        )}
-                                    />
                                 </div>
-                                <div className="space-y-4">
+
+                                <div className="space-y-6">
+                                    <h3 className="text-sm uppercase font-bold text-primary flex items-center gap-2 border-b pb-2">
+                                        <Landmark className="h-4 w-4" /> Audit Evidence
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="documentNumber"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-2">
+                                                    <FormLabel className="text-sm font-semibold">Doc / Invoice #</FormLabel>
+                                                    <FormControl><Input placeholder="e.g., INV-2024-001" className="h-12 text-base" {...field} /></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="documentUrl"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-2">
+                                                    <FormLabel className="text-sm font-semibold">Digital Proof Link</FormLabel>
+                                                    <FormControl><Input placeholder="https://drive.google.com/..." className="h-12 text-base" {...field} /></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                     <FormField
                                         control={form.control}
-                                        name="documentNumber"
+                                        name="description"
                                         render={({ field }) => (
                                             <FormItem className="space-y-2">
-                                                <FormLabel className="text-sm uppercase font-bold text-primary">Doc / Invoice #</FormLabel>
-                                                <FormControl><Input placeholder="e.g., INV-2024-001" className="h-11" {...field} /></FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="documentUrl"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-2">
-                                                <FormLabel className="text-sm uppercase font-bold text-primary">Digital Evidence Link</FormLabel>
-                                                <FormControl><Input placeholder="https://drive.google.com/..." className="h-11" {...field} /></FormControl>
+                                                <FormLabel className="text-sm font-semibold">Short Summary</FormLabel>
+                                                <FormControl><Input placeholder="Line item summary..." className="h-12 text-base" {...field} /></FormControl>
                                             </FormItem>
                                         )}
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <FormField
-                                    control={form.control}
-                                    name="description"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-sm uppercase font-bold text-primary">Short Description</FormLabel>
-                                            <FormControl><Input placeholder="Transaction summary..." className="h-11" {...field} /></FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="explanation"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-sm uppercase font-bold text-primary">Audit Rationale (Notes)</FormLabel>
-                                            <FormControl><Textarea placeholder="Explain the business purpose for audit records..." rows={1} className="resize-none" {...field} /></FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="explanation"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-2">
+                                        <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
+                                            <Info className="h-4 w-4" /> Audit Rationale (Internal Notes)
+                                        </FormLabel>
+                                        <FormControl><Textarea placeholder="Explain the business purpose of this transaction for audit records..." rows={4} className="text-base leading-relaxed" {...field} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
                         </form>
                     </Form>
                 </ScrollArea>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground italic font-medium max-w-md">
-                        <Info className="h-4 w-4 text-primary" />
-                        Records will be instantly synchronized with the Ogeemo BKS database.
+                <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 flex flex-col sm:flex-row sm:justify-between items-center gap-6">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground italic font-medium max-w-2xl">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                            <ShieldCheck className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>Finalizing this entry will immediately synchronize with the BKS General Ledger and update your financial snapshots.</span>
                     </div>
-                    <div className="flex gap-3 w-full sm:w-auto">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
-                        <Button type="submit" form="transaction-form" className="h-12 px-10 font-bold shadow-xl text-lg" disabled={isSaving}>
-                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                    <div className="flex gap-4 w-full sm:w-auto">
+                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
+                        <Button type="submit" form="transaction-form" size="lg" className="h-14 px-16 font-bold shadow-2xl text-xl" disabled={isSaving}>
+                            {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                             {transactionType === 'payable' || transactionType === 'receivable' ? 'Log Financial Promise' : 'Post to General Ledger'}
                         </Button>
                     </div>

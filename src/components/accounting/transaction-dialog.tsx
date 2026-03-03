@@ -142,9 +142,9 @@ export function TransactionDialog({
             company: "",
             description: "",
             quantity: 1,
-            unitPrice: 0,
+            unitPrice: "" as any,
             taxType: "None",
-            taxRate: 0,
+            taxRate: preferences?.defaultTaxRate || 0,
             category: "",
             paymentMethod: "Bank Transfer",
             account: "",
@@ -199,7 +199,7 @@ export function TransactionDialog({
                 company: "",
                 description: "",
                 quantity: 1,
-                unitPrice: 0,
+                unitPrice: "" as any,
                 taxType: "None",
                 taxRate: preferences?.defaultTaxRate || 0,
                 category: "",
@@ -394,7 +394,7 @@ export function TransactionDialog({
                                                         </div>
                                                         <div className="flex items-center space-x-2">
                                                             <RadioGroupItem value="personal" id="mode-pers" className="h-5 w-5" />
-                                                            <Label htmlFor="mode-pers" className="text-base font-semibold cursor-pointer">Personal Account</Label>
+                                                            <Label htmlFor="mode-pers" className="text-base font-semibold Hub-pointer">Personal Account</Label>
                                                         </div>
                                                     </RadioGroup>
                                                 </FormControl>

@@ -366,11 +366,6 @@ export function TransactionDialog({
                 <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
                     <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
                         <div className="flex flex-col items-center gap-2 text-primary relative">
-                            <div className="absolute right-0 top-0">
-                                <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                                    <X className="h-6 w-6" />
-                                </Button>
-                            </div>
                             <Calculator className="h-10 w-10" />
                             <div className="space-y-1 text-center">
                                 <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>

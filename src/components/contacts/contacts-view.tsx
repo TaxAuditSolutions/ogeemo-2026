@@ -274,7 +274,6 @@ export function ContactsView() {
     setIsLoading(true);
     try {
         const allFolders = await ensureSystemFolders(user.uid);
-        // Fetch all contacts without filtering by user to support shared directory access
         const [fetchedContacts, fetchedCompanies, fetchedIndustries, fetchedWorkers] = await Promise.all([
             getContacts(), 
             getCompanies(user.uid),
@@ -494,7 +493,7 @@ export function ContactsView() {
                                                   <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
                                                   <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
-                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setContactToDelete(contact)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); setContactToDelete(contact); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                               </DropdownMenuContent>
                                           </DropdownMenu>
                                       </TableCell>

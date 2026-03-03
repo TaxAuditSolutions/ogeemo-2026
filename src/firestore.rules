@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -126,6 +125,7 @@ service cloud.firestore {
       allow create, update, delete: if isEditor();
     }
     
+    // ... remaining rules match the above for brevity but are fully included in the file ...
     match /industries/{industryId} {
       allow read: if isViewer();
       allow create, update, delete: if isEditor();
@@ -200,13 +200,13 @@ service cloud.firestore {
       allow create: if isEditor() || isOwner(request.resource.data.workerId);
       allow read: if isViewer() || isOwner(resource.data.workerId);
       allow update: if isEditor();
-      allow delete: if isEditor() || isOwner(request.resource.data.workerId);
+      allow delete: if isEditor() || isOwner(resource.data.workerId);
     }
 
     match /timeLogs/{timeLogId} {
       allow create: if isEditor() || isOwner(request.resource.data.workerId);
       allow read: if isViewer() || isOwner(resource.data.workerId);
-      allow update, delete: if isEditor() || isOwner(request.resource.data.workerId);
+      allow update, delete: if isEditor() || isOwner(resource.data.workerId);
       
       match /locations/{locationId} {
         allow read: if isViewer() || isOwner(resource.data.workerId);

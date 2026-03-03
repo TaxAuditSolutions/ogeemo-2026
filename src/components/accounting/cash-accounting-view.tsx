@@ -105,11 +105,12 @@ export function CashAccountingView() {
         if (!user) return;
         setIsLoading(true);
         try {
+            // Calling getContacts() without UID to pull ALL contacts from the Hub as requested.
             const [txs, inc, exp, conts, folds, comps, inds] = await Promise.all([
                 getPettyCashTransactions(user.uid),
                 getIncomeCategories(user.uid),
                 getExpenseCategories(user.uid),
-                getContacts(user.uid),
+                getContacts(), 
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid)

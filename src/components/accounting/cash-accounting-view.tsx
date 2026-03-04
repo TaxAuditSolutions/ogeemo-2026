@@ -79,9 +79,9 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import dynamic from 'next/dynamic';
 
@@ -294,10 +294,7 @@ export function CashAccountingView() {
             <AccountingPageHeader pageTitle="Petty Cash" />
             
             <header className="text-center relative w-full max-w-4xl">
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <HandCoins className="h-12 w-12 text-primary" />
-                </div>
-                <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Petty Cash Accounting</h1>
+                <h1 className="text-4xl font-bold font-headline text-primary tracking-tight mt-4">Petty Cash Accounting</h1>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto mt-2">
                     The cash box is for small, immediate transactions outside of regular bank processing. 
                     Identify every dollar to maintain your <strong>Black Box of Evidence</strong>.

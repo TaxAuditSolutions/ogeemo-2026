@@ -85,7 +85,7 @@ const transactionSchema = z.object({
     company: z.string().min(1, "Contact selection is required."),
     description: z.string().optional(),
     quantity: z.coerce.number().min(0.01, "Quantity must be at least 0.01"),
-    unitPrice: z.coerce.string().min(0, "Price must be positive"), // Use string for form control to allow empty start
+    unitPrice: z.coerce.string().min(0, "Price must be positive"),
     taxType: z.string().optional(),
     taxRate: z.coerce.number().min(0, "Tax rate cannot be negative"),
     category: z.string().min(1, "Category is required."),
@@ -563,7 +563,7 @@ export function TransactionDialog({
                                                             <FormControl>
                                                                 <Button variant="outline" role="combobox" className="h-12 flex-1 justify-between font-normal px-4 text-base">
                                                                     <span className="truncate">{selectedCategory ? selectedCategory.name : "Select/Add tax line..."}</span>
-                                                                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                                                                 </Button>
                                                             </FormControl>
                                                         </PopoverTrigger>

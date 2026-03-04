@@ -31,7 +31,7 @@ import type { UserProfile } from '@/services/user-profile-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { TimeLogImportDialog } from './time-log-import-dialog'; 
 import { Event as TaskEvent } from '@/types/calendar-types';
-
+import { Logo } from '@/components/logo';
 
 interface LocalLineItem {
   id: string;
@@ -382,43 +382,9 @@ export function InvoiceGeneratorView() {
   };
 
   const handlePrintAction = () => {
-      const selectedContact = contacts.find(c => c.id === selectedContactId);
-      if (!selectedContact) {
-          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before proceeding.'});
-          return;
-      }
-
-      if (lineItems.length === 0) {
-          toast({ variant: 'destructive', title: 'No Line Items', description: 'Please add at least one line item to the invoice.'});
-          return;
-      }
-
-      const companyName = selectedContact.businessName || selectedContact.name;
-
-      const previewData = {
-          invoiceNumber,
-          businessNumber,
-          companyName: companyName,
-          contactAddress: {
-            street: selectedContact.streetAddress,
-            city: selectedContact.city,
-            provinceState: selectedContact.provinceState,
-            postalCode: selectedContact.postalCode,
-            country: selectedContact.country,
-          },
-          invoiceDate: invoiceDate.toISOString(),
-          dueDate: dueDate.toISOString(),
-          lineItems,
-          notes,
-          userProfile: userProfile || undefined,
-      };
-
-      try {
-          sessionStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
-          window.open('/accounting/invoices/preview?action=print', '_blank');
-      } catch (error) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not prepare print view.' });
-      }
+      // Direct call to browser print dialog. 
+      // The CSS logic in globals.css + print:hidden on form will handle the professional layout.
+      window.print();
   };
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -428,7 +394,7 @@ export function InvoiceGeneratorView() {
     <>
       <div className="p-4 sm:p-6 space-y-6">
         <InvoicePageHeader pageTitle="Create Invoice" />
-        <header className="relative text-center">
+        <header className="relative text-center print:hidden">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Select contacts from your master list to generate a professional invoice.
@@ -443,7 +409,7 @@ export function InvoiceGeneratorView() {
           </div>
         </header>
 
-        <Card>
+        <Card className="print:hidden">
             <CardHeader className="flex-row justify-between items-center">
                 <CardTitle>Invoice Header</CardTitle>
                 <div className="flex items-center gap-2">
@@ -671,6 +637,74 @@ export function InvoiceGeneratorView() {
                  </Button>
             </CardFooter>
         </Card>
+
+        {/* High-Fidelity Printable Area - Matches style of preview page but bound to local state */}
+        <div id="invoice-preview" className="hidden print:block bg-white text-black p-0">
+            <div className="p-8 md:p-12 border-none">
+                <header className="flex justify-between items-start pb-6 border-b">
+                    <Logo className="text-primary"/>
+                    <div className="text-right">
+                        <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
+                        <p className="text-gray-500">#{invoiceNumber}</p>
+                        {businessNumber && <p className="text-sm text-gray-500 mt-1">BN: {businessNumber}</p>}
+                    </div>
+                </header>
+                <section className="flex justify-between mt-6">
+                    <div>
+                        <h2 className="font-bold text-gray-500 uppercase mb-2">Bill To</h2>
+                        <p className="font-bold text-lg">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
+                        {selectedContact && (
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                                {selectedContact.streetAddress ? `${selectedContact.streetAddress}\n` : ''}
+                                {[selectedContact.city, selectedContact.provinceState, selectedContact.postalCode].filter(Boolean).join(', ')}
+                                {selectedContact.country ? `\n${selectedContact.country}` : ''}
+                            </p>
+                        )}
+                    </div>
+                    <div className="text-right">
+                        <p><span className="font-bold text-gray-500">Invoice Date:</span> {format(invoiceDate, 'PP')}</p>
+                        <p><span className="font-bold text-gray-500">Due Date:</span> {format(dueDate, 'PP')}</p>
+                    </div>
+                </section>
+                <section className="mt-8">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-b-2 border-gray-900">
+                                <TableHead className="w-1/2 text-black font-bold">Description</TableHead>
+                                <TableHead className="text-center text-black font-bold">Quantity</TableHead>
+                                <TableHead className="text-right text-black font-bold">Unit Price</TableHead>
+                                <TableHead className="text-right text-black font-bold">Total</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {lineItems.map(item => (
+                                <TableRow key={item.id} className="border-b border-gray-200">
+                                    <TableCell className="py-4">{item.description}</TableCell>
+                                    <TableCell className="text-center py-4">{item.quantity}</TableCell>
+                                    <TableCell className="text-right font-mono py-4">{formatCurrency(item.price)}</TableCell>
+                                    <TableCell className="text-right font-mono py-4">{formatCurrency(item.price * item.quantity)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </section>
+                <section className="flex justify-end mt-6">
+                    <div className="w-full max-w-sm space-y-2">
+                        <div className="flex justify-between"><span className="text-gray-500">Subtotal:</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Tax:</span><span className="font-mono">{formatCurrency(tax)}</span></div>
+                        <Separator className="bg-gray-900" />
+                        <div className="flex justify-between font-bold text-lg"><span>Total Due:</span><span>{formatCurrency(total)}</span></div>
+                    </div>
+                </section>
+                <section className="mt-8">
+                    <h4 className="font-bold text-gray-500 uppercase mb-2">Notes</h4>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{notes}</p>
+                </section>
+                <footer className="mt-12 pt-6 border-t text-center text-xs text-gray-400">
+                    <p className="font-bold text-base text-gray-600">{userProfile?.companyName || userProfile?.displayName}</p>
+                </footer>
+            </div>
+        </div>
       </div>
       <ContactFormDialog
         isOpen={isContactFormOpen}

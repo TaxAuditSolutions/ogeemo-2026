@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -376,6 +377,7 @@ export function InvoiceGeneratorView() {
             toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
         }
         localStorage.removeItem(EDIT_INVOICE_ID_KEY);
+        // Explicitly navigating to the AR hub which acts as "closing" the creator
         router.push('/accounting/accounts-receivable');
 
     } catch (error: any) {

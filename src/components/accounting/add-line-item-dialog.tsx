@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type ServiceItem, type TaxType } from '@/services/accounting-service';
+import { type ServiceItem, type TaxType, type IncomeCategory } from '@/services/accounting-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
@@ -24,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save } from 'lucide-react';
+import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save, FileSignature, Briefcase } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
@@ -52,6 +53,7 @@ interface AddLineItemDialogProps {
   itemToEdit: LineItem | null;
   onSave: (newItem: LineItem) => void;
   serviceItems: ServiceItem[];
+  incomeCategories: IncomeCategory[];
   onSaveRepeatable: (item: Omit<ServiceItem, 'id' | 'userId'>) => void;
   taxTypes: TaxType[];
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
@@ -63,6 +65,7 @@ export function AddLineItemDialog({
   itemToEdit,
   onSave,
   serviceItems,
+  incomeCategories,
   onSaveRepeatable,
   taxTypes,
   onTaxTypesChange,
@@ -75,6 +78,7 @@ export function AddLineItemDialog({
   const [saveAsRepeatable, setSaveAsRepeatable] = useState(false);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
 
   const { toast } = useToast();
@@ -112,6 +116,7 @@ export function AddLineItemDialog({
             setTaxRate(preferences?.defaultTaxRate ?? 0);
         }
         setSaveAsRepeatable(false);
+        setSearchQuery("");
     }
   }, [isOpen, itemToEdit, preferences]);
 
@@ -157,10 +162,16 @@ export function AddLineItemDialog({
   const handleSelectServiceItem = (item: ServiceItem) => {
     setDescription(item.description);
     setPrice(item.price);
-    setTaxType(item.taxType || 'None');
-    setTaxRate(item.taxRate || 0);
+    if (item.taxType) setTaxType(item.taxType);
+    if (item.taxRate !== undefined) setTaxRate(item.taxRate);
     setIsSearchOpen(false);
     toast({ title: "Item Loaded", description: `Populated details for "${item.description}"` });
+  };
+
+  const handleSelectCategory = (cat: IncomeCategory) => {
+      setDescription(cat.name);
+      setIsSearchOpen(false);
+      toast({ title: "Category Selected", description: `"${cat.name}" added to description.` });
   };
 
   const handleSetDefaultTaxRate = () => {
@@ -181,52 +192,80 @@ export function AddLineItemDialog({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black">
         <DialogHeader className="p-6 pb-2 shrink-0 bg-muted/10 border-b">
           <div className="flex items-center gap-2 text-primary mb-1">
             <PlusCircle className="h-5 w-5" />
-            <DialogTitle className="text-xl font-headline">{itemToEdit ? 'Edit Line Item' : 'Add Line Item'}</DialogTitle>
+            <DialogTitle className="text-xl font-headline">Line Item Entry</DialogTitle>
           </div>
           <DialogDescription>
-            Record a service or product for this invoice.
+            Record a service or product for this invoice. Access your GL categories and service library.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6">
             <div className="py-6 space-y-6">
-                {/* 1. Description Section */}
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="description" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">
-                            Item Description
+                            Description Node
                         </Label>
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-7 text-primary text-[10px] font-bold uppercase tracking-widest">
-                                    <Search className="mr-1.5 h-3 w-3" /> Select From Library
+                                <Button variant="outline" size="sm" className="h-8 text-primary text-[10px] font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10">
+                                    <Search className="mr-1.5 h-3 w-3" /> Select from Library
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[400px] p-0" align="end">
-                                <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
-                                    <CommandInput placeholder="Search your repeatable items..." />
+                            <PopoverContent className="w-[450px] p-0" align="end">
+                                <Command shouldFilter={false}>
+                                    <CommandInput 
+                                        placeholder="Search services or categories..." 
+                                        value={searchQuery}
+                                        onValueChange={setSearchQuery}
+                                    />
                                     <CommandList>
-                                        <CommandEmpty>No saved items found.</CommandEmpty>
-                                        <CommandGroup heading="Saved Items">
-                                            {serviceItems.map(item => (
-                                                <CommandItem
-                                                    key={item.id}
-                                                    value={item.description}
-                                                    onSelect={() => handleSelectServiceItem(item)}
-                                                    className="cursor-pointer"
-                                                >
-                                                    <Check className={cn("mr-2 h-4 w-4", description === item.description ? "opacity-100" : "opacity-0")} />
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{item.description}</span>
-                                                        <span className="text-xs text-muted-foreground">{formatCurrency(item.price)}</span>
-                                                    </div>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
+                                        <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
+                                        <ScrollArea className="h-72">
+                                            <CommandGroup heading="Saved Services & Products">
+                                                {serviceItems
+                                                    .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                    .map(item => (
+                                                    <CommandItem
+                                                        key={item.id}
+                                                        value={item.description}
+                                                        onSelect={() => handleSelectServiceItem(item)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <Briefcase className="mr-2 h-4 w-4 text-primary/60" />
+                                                        <div className="flex flex-col flex-1">
+                                                            <span className="font-medium text-sm">{item.description}</span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold">{formatCurrency(item.price)} • {item.taxType || 'No Tax'}</span>
+                                                        </div>
+                                                        {description === item.description && <Check className="h-4 w-4 text-primary ml-auto" />}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                            <Separator />
+                                            <CommandGroup heading="Income Categories (GL Library)">
+                                                {incomeCategories
+                                                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                    .map(cat => (
+                                                    <CommandItem
+                                                        key={cat.id}
+                                                        value={cat.name}
+                                                        onSelect={() => handleSelectCategory(cat)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <FileSignature className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                        <div className="flex flex-col flex-1">
+                                                            <span className="font-medium text-sm">{cat.name}</span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold">Line {cat.categoryNumber}</span>
+                                                        </div>
+                                                        {description === cat.name && <Check className="h-4 w-4 text-primary ml-auto" />}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </ScrollArea>
                                     </CommandList>
                                 </Command>
                             </PopoverContent>
@@ -234,8 +273,8 @@ export function AddLineItemDialog({
                     </div>
                     <Textarea
                         id="description"
-                        placeholder="What are you billing for?"
-                        className="min-h-[100px] text-base leading-relaxed"
+                        placeholder="Define the work performed or product provided..."
+                        className="min-h-[100px] text-base leading-relaxed font-semibold focus-visible:ring-primary"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
@@ -248,7 +287,7 @@ export function AddLineItemDialog({
                             id="quantity"
                             type="number"
                             step="0.01"
-                            className="h-11 font-mono font-bold"
+                            className="h-11 font-mono font-bold text-lg"
                             value={quantity}
                             onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                         />
@@ -261,7 +300,7 @@ export function AddLineItemDialog({
                                 id="price"
                                 type="number"
                                 step="0.01"
-                                className="pl-7 h-11 font-mono font-bold"
+                                className="pl-7 h-11 font-mono font-bold text-lg"
                                 value={price}
                                 onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
                             />
@@ -269,44 +308,40 @@ export function AddLineItemDialog({
                     </div>
                 </div>
 
-                <Separator />
-
-                {/* Calculation Vital Card */}
                 <Card className="bg-primary/5 border-primary/20 shadow-inner">
                     <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-primary/10">
-                        <CardTitle className="text-xs uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <Calculator className="h-3.5 w-3.5" /> Line Vitals
+                        <CardTitle className="text-[10px] uppercase font-bold text-primary tracking-[0.2em] flex items-center gap-2">
+                            <Calculator className="h-3.5 w-3.5" /> Operational Vitals
                         </CardTitle>
                         <Badge variant="outline" className="bg-white/50 font-mono text-[10px]">{quantity} x ${Number(price).toFixed(2)}</Badge>
                     </CardHeader>
                     <CardContent className="p-4 space-y-2">
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-muted-foreground">Pre-Tax Subtotal</span>
                             <span className="font-mono font-semibold">{formatCurrency(subtotal)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground flex items-center gap-1">
-                                Tax <span className="text-[10px] font-bold">({taxRate}%)</span>
+                                Tax Portion <span className="text-[10px] font-bold">({taxRate}%)</span>
                             </span>
                             <span className="font-mono font-semibold">+{formatCurrency(taxAmount)}</span>
                         </div>
                         <Separator className="bg-primary/10" />
                         <div className="flex justify-between items-center">
-                            <span className="font-bold text-primary uppercase text-xs tracking-wider">Line Total</span>
-                            <span className="font-mono font-bold text-xl text-primary">{formatCurrency(lineTotal)}</span>
+                            <span className="font-bold text-primary uppercase text-xs tracking-[0.1em]">Final Line Total</span>
+                            <span className="font-mono font-bold text-2xl text-primary">{formatCurrency(lineTotal)}</span>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Tax & Compliance Section */}
                 <div className="space-y-4">
-                    <h4 className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em] border-b pb-1">Compliance Node</h4>
+                    <h4 className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em] border-b pb-1">Tax Orchestration</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <Label htmlFor="taxType" className="text-xs font-semibold">Tax Configuration</Label>
+                                <Label htmlFor="taxType" className="text-xs font-semibold">Configuration</Label>
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsManageTaxDialogOpen(true)}>
-                                    <Settings className="h-3.5 w-3.5" />
+                                    <Settings className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                                 </Button>
                             </div>
                             <Select 
@@ -322,7 +357,7 @@ export function AddLineItemDialog({
                                     }
                                 }}
                             >
-                                <SelectTrigger className="h-10">
+                                <SelectTrigger className="h-10 text-sm">
                                     <SelectValue placeholder="Select type..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -335,20 +370,20 @@ export function AddLineItemDialog({
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <Label htmlFor="taxRate" className="text-xs font-semibold">Manual Tax Rate (%)</Label>
+                                <Label htmlFor="taxRate" className="text-xs font-semibold">Manual Over-ride (%)</Label>
                                 <Button 
                                     variant="link" 
                                     className="h-auto p-0 text-[10px] font-bold text-primary hover:underline"
                                     onClick={handleSetDefaultTaxRate}
                                 >
-                                    Set as default
+                                    Save as default
                                 </Button>
                             </div>
                             <div className="relative">
                                 <Input
                                     id="taxRate"
                                     type="number"
-                                    className="pr-8 h-10 font-mono"
+                                    className="pr-8 h-10 font-mono text-base"
                                     value={taxRate}
                                     onChange={(e) => setTaxRate(e.target.value === '' ? '' : Number(e.target.value))}
                                 />
@@ -359,7 +394,7 @@ export function AddLineItemDialog({
                 </div>
 
                 {!itemToEdit && (
-                    <div className="flex items-center space-x-3 p-4 rounded-xl border border-dashed hover:border-primary/50 transition-colors cursor-pointer group">
+                    <div className="flex items-center space-x-3 p-4 rounded-xl border border-dashed hover:border-primary/50 transition-all cursor-pointer group bg-muted/5">
                         <Checkbox 
                             id="save-repeatable" 
                             checked={saveAsRepeatable} 
@@ -367,9 +402,9 @@ export function AddLineItemDialog({
                         />
                         <div className="grid gap-0.5 leading-none">
                             <Label htmlFor="save-repeatable" className="text-sm font-semibold group-hover:text-primary transition-colors cursor-pointer">
-                                Add to Item Library
+                                Add to Professional Library
                             </Label>
-                            <p className="text-[10px] text-muted-foreground">This item will be saved for quick selection in future invoices.</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Save this as a reusable template item.</p>
                         </div>
                     </div>
                 )}
@@ -378,9 +413,9 @@ export function AddLineItemDialog({
 
         <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} className="h-11 px-8 font-bold shadow-lg">
+          <Button onClick={handleSave} className="h-11 px-10 font-bold shadow-xl">
             <Save className="mr-2 h-4 w-4" />
-            {itemToEdit ? 'Update Line Item' : 'Add to Invoice'}
+            {itemToEdit ? 'Save Changes' : 'Add to Invoice'}
           </Button>
         </DialogFooter>
       </DialogContent>

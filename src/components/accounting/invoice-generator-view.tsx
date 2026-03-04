@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem } from '@/services/accounting-service';
+import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -152,6 +152,7 @@ export function InvoiceGeneratorView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
   const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,6 +232,7 @@ export function InvoiceGeneratorView() {
           fetchedCompanies,
           fetchedContacts,
           fetchedServiceItems,
+          fetchedIncomeCategories,
           fetchedFolders,
           fetchedTaxTypes,
           profile,
@@ -239,6 +241,7 @@ export function InvoiceGeneratorView() {
           getCompanies(user.uid),
           getContacts(), // Synchronized Directory
           getServiceItems(user.uid),
+          getIncomeCategories(user.uid),
           getContactFolders(user.uid),
           getTaxTypes(user.uid),
           getUserProfile(user.uid),
@@ -248,6 +251,7 @@ export function InvoiceGeneratorView() {
         setCompanies(fetchedCompanies);
         setContacts(fetchedContacts);
         setServiceItems(fetchedServiceItems);
+        setIncomeCategories(fetchedIncomeCategories);
         setContactFolders(fetchedFolders);
         setTaxTypes(fetchedTaxTypes);
         setUserProfile(profile);
@@ -445,7 +449,7 @@ export function InvoiceGeneratorView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
         <InvoicePageHeader pageTitle="Create Invoice" />
         <header className="relative text-center print:hidden">
           <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
@@ -702,7 +706,7 @@ export function InvoiceGeneratorView() {
       {/* In-Page Preview Dialog */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
           <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden bg-muted/30">
-              <DialogHeader className="p-4 border-b bg-background shrink-0">
+              <DialogHeader className="p-4 border-b bg-background shrink-0 text-black">
                   <div className="flex justify-between items-center">
                       <DialogTitle>High-Fidelity Preview</DialogTitle>
                       <div className="flex gap-2 mr-8">
@@ -737,6 +741,7 @@ export function InvoiceGeneratorView() {
         itemToEdit={itemToEdit}
         onSave={handleSaveLineItem}
         serviceItems={serviceItems}
+        incomeCategories={incomeCategories}
         onSaveRepeatable={handleSaveRepeatableItem}
         taxTypes={taxTypes}
         onTaxTypesChange={setTaxTypes}

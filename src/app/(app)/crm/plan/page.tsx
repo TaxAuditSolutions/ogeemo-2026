@@ -77,7 +77,7 @@ const LeadCard = ({ lead, index, hasPlan, moveCard, onEdit, onDelete, onPlanActi
 
     return (
         <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <Card className="mb-2 group hover:bg-muted/50 cursor-grab active:cursor-grabbing">
+            <Card className="mb-2 group hover:bg-muted/50 cursor-grab active:cursor-grabbing text-black">
                 <CardContent className="p-3 flex justify-between items-start">
                     <div className="flex-1" onClick={() => onEdit(lead)}>
                         <p className="font-semibold text-sm">{lead.name}</p>
@@ -132,7 +132,7 @@ const LeadColumn = ({ status, leads, allCrmActions, moveCard, onDropCard, onEdit
     });
 
     return (
-        <Card ref={drop} className={`flex flex-col h-full min-h-[400px] ${isOver ? 'bg-primary/10' : ''}`}>
+        <Card ref={drop} className={`flex flex-col h-full min-h-[400px] text-black ${isOver ? 'bg-primary/10' : ''}`}>
             <CardHeader className="text-center">
                 <CardTitle>{status}</CardTitle>
             </CardHeader>
@@ -185,7 +185,7 @@ function CrmPlanContent() {
         }
 
         const [contactsFromDb, actionsFromDb] = await Promise.all([
-            getContacts(user.uid),
+            getContacts(), // Synchronized Directory
             getAllCrmActions(user.uid),
         ]);
 
@@ -270,7 +270,7 @@ function CrmPlanContent() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
+      <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col text-black">
         <header className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-2">
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 lg:w-1/3">
               <Button asChild variant="outline" size="sm" className="whitespace-nowrap">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -116,7 +117,7 @@ export function AccountsPayablePageView() {
         getCompanies(user.uid),
         getExpenseCategories(user.uid),
         getIncomeCategories(user.uid),
-        getContacts(), // Synchronized with Master Hub
+        getContacts(), // Synchronized Directory
         getContactFolders(user.uid),
         getIndustries(user.uid),
         getTaxTypes(user.uid)
@@ -130,7 +131,7 @@ export function AccountsPayablePageView() {
       setCustomIndustries(fetchedIndustries);
       setTaxTypes(fetchedTaxTypes);
     } catch (error: any) {
-      // Errors handled by service/emitter
+      // Errors handled by emitter
     } finally {
       setIsLoading(false);
     }
@@ -289,7 +290,6 @@ export function AccountsPayablePageView() {
             transactionToEdit={billToEdit}
         />
 
-        {/* Post Payment Dialog */}
         <Dialog open={!!billToPay} onOpenChange={() => setBillToPay(null)}>
             <DialogContent>
                 <DialogHeader>

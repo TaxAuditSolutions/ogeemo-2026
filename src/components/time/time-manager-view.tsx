@@ -366,7 +366,7 @@ export function TimeManagerView() {
         setIsLoadingData(true);
         try {
             const [proj, cont, fold, comp, ind, wrks] = await Promise.all([
-                getProjects(user.uid), getContacts(user.uid), ensureSystemFolders(user.uid), getCompanies(user.uid), getIndustries(user.uid), getWorkers(user.uid)
+                getProjects(user.uid), getContacts(), ensureSystemFolders(user.uid), getCompanies(user.uid), getIndustries(user.uid), getWorkers(user.uid)
             ]);
             setProjects(proj); setContacts(cont); setContactFolders(fold); setCompanies(comp); setCustomIndustries(ind); setWorkers(wrks);
             setSelectedWorkerId(user.uid);
@@ -466,7 +466,7 @@ export function TimeManagerView() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
+            <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full text-black">
                 <header className="w-full max-w-5xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 items-center w-full relative gap-4">
                         <div className="flex justify-center md:justify-start items-center gap-2">

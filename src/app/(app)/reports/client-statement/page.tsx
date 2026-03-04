@@ -59,7 +59,7 @@ export default function ClientStatementPage() {
             setIsLoading(true);
             try {
                 const [accounts, allInvoices, allIncome] = await Promise.all([
-                    getContacts(user.uid),
+                    getContacts(), // Synchronized Directory
                     getInvoices(user.uid),
                     getIncomeTransactions(user.uid),
                 ]);
@@ -133,7 +133,7 @@ export default function ClientStatementPage() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6 text-black">
                 <ReportsPageHeader pageTitle="Client Statement" />
                 <header className="text-center">
                   <h1 className="text-3xl font-bold font-headline text-primary">Client Statement</h1>
@@ -252,5 +252,3 @@ export default function ClientStatementPage() {
         </>
     );
 }
-
-    

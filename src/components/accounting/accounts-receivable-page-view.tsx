@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -105,7 +106,7 @@ export function AccountsReceivablePageView() {
                 getCompanies(user.uid),
                 getIncomeCategories(user.uid),
                 getExpenseCategories(user.uid),
-                getContacts(), // Synchronized with Master Hub
+                getContacts(), // Synchronized Directory
                 getContactFolders(user.uid),
                 getIndustries(user.uid),
                 getTaxTypes(user.uid)

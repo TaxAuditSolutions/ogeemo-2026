@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -59,7 +60,7 @@ export default function CreateLeadContent() {
             ensureSystemFolders(user.uid),
             getCompanies(user.uid),
             getIndustries(user.uid),
-            getContacts(user.uid),
+            getContacts(), // Synchronized Directory
         ]);
         setContactFolders(foldersData);
         setCompanies(companiesData);
@@ -205,7 +206,7 @@ export default function CreateLeadContent() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col items-center h-full">
+      <div className="p-4 sm:p-6 flex flex-col items-center h-full text-black">
         <header className="w-full max-w-2xl text-center relative mb-6">
           <div className="absolute left-0 top-1/2 -translate-y-1/2">
               <Button asChild variant="outline">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -90,7 +91,7 @@ function WorkerTimeLogReportContent() {
         try {
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
-                getContacts(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
+                getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
                 getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
                 getUserProfile(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'users' }; throw err; })
@@ -223,6 +224,7 @@ function WorkerTimeLogReportContent() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
+            setIsLoading(false);
             setEntryToDelete(null);
         }
     };
@@ -266,7 +268,7 @@ function WorkerTimeLogReportContent() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6 text-black">
                 <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
                     <div className="text-left flex-1">
@@ -307,13 +309,13 @@ function WorkerTimeLogReportContent() {
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
                                     </PopoverContent>
                                 </Popover>
                            </div>

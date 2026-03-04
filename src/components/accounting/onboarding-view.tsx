@@ -80,7 +80,7 @@ export function OnboardingView() {
         setIsLoading(true);
         try {
             const [fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
-                getContacts(user.uid),
+                getContacts(), // Synchronized Directory
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid)

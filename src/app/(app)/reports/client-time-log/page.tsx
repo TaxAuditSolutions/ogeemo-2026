@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -93,10 +94,9 @@ function ClientTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
-            // Individual catch blocks to provide granular path info for Security Rules debugging
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
-                getContacts(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
+                getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
                 getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
                 getUserProfile(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'users' }; throw err; })
@@ -240,6 +240,7 @@ function ClientTimeLogReportContent() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
+            setIsLoading(false);
             setEntryToDelete(null);
         }
     };
@@ -286,7 +287,7 @@ function ClientTimeLogReportContent() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6 text-black">
                 <ReportsPageHeader pageTitle="Client Time Log Report" />
                 <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
                     <div className="text-left flex-1">
@@ -327,7 +328,7 @@ function ClientTimeLogReportContent() {
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>

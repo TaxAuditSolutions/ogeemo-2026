@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -148,7 +149,7 @@ export function InvoiceGeneratorView() {
           fetchedIndustries
         ] = await Promise.all([
           getCompanies(user.uid),
-          getContacts(user.uid),
+          getContacts(), // Synchronized Directory
           getServiceItems(user.uid),
           getContactFolders(user.uid),
           getTaxTypes(user.uid),

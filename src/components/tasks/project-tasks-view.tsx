@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -124,6 +125,10 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
                 router.push('/projects/all');
                 return;
             }
+
+            // Synchronized Directory
+            const fetchedContacts = await getContacts();
+            setContacts(fetchedContacts);
 
             setProject(projectData);
             setSteps(projectData.steps || []);
@@ -428,12 +433,12 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
 
     return (
         <>
-            <div className="w-full max-w-7xl text-center my-4">
+            <div className="w-full max-w-7xl text-center my-4 text-black">
                 <div className="inline-block bg-white p-2 border-2 border-black rounded-md">
                     <h2 className="text-2xl font-bold">{project.name}</h2>
                 </div>
             </div>
-            <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            <div className="w-full max-w-7xl flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-black">
                 <TaskColumn 
                     status="todo" 
                     tasks={tasksByStatus.todo}

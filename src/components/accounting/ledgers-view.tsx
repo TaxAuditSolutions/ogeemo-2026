@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from "react";
@@ -129,7 +130,7 @@ export function LedgersView() {
         const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
-            getContacts(), // Synchronized with Master Hub
+            getContacts(), // Synchronized Directory
             getContactFolders(user.uid),
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),

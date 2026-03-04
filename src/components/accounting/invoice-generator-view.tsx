@@ -33,6 +33,8 @@ import { TimeLogImportDialog } from './time-log-import-dialog';
 import { Event as TaskEvent } from '@/types/calendar-types';
 import { Logo } from '@/components/logo';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LocalLineItem {
   id: string;
@@ -51,8 +53,92 @@ const formatCurrency = (amount: number) => {
 };
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
-const INVOICE_PREVIEW_KEY = 'invoicePreviewData';
 
+// High-Fidelity Shared Component for In-Page Preview and Print
+const InvoiceDocument = ({ 
+    invoiceNumber, 
+    businessNumber, 
+    selectedContact, 
+    invoiceDate, 
+    dueDate, 
+    lineItems, 
+    notes, 
+    userProfile,
+    subtotal,
+    tax,
+    total
+}: any) => (
+    <div className="p-12 bg-white text-black min-h-[11in] w-full max-w-[8.5in] mx-auto shadow-sm">
+        <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
+            <Logo className="text-primary"/>
+            <div className="text-right">
+                <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
+                <p className="text-gray-500">#{invoiceNumber}</p>
+                {businessNumber && <p className="text-sm text-gray-500 mt-1">BN: {businessNumber}</p>}
+            </div>
+        </header>
+        <section className="flex justify-between mt-8">
+            <div>
+                <h2 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Bill To</h2>
+                <p className="font-bold text-lg">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
+                {selectedContact && (
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                        {selectedContact.streetAddress ? `${selectedContact.streetAddress}\n` : ''}
+                        {[selectedContact.city, selectedContact.provinceState, selectedContact.postalCode].filter(Boolean).join(', ')}
+                        {selectedContact.country ? `\n${selectedContact.country}` : ''}
+                    </p>
+                )}
+            </div>
+            <div className="text-right space-y-1">
+                <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Invoice Date:</span> {format(invoiceDate, 'PP')}</p>
+                <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Due Date:</span> {format(dueDate, 'PP')}</p>
+            </div>
+        </section>
+        <section className="mt-12">
+            <Table className="border-t border-b border-gray-900">
+                <TableHeader>
+                    <TableRow className="border-b-2 border-gray-900 bg-gray-50">
+                        <TableHead className="text-black font-bold uppercase text-xs">Description</TableHead>
+                        <TableHead className="text-center text-black font-bold uppercase text-xs">Qty</TableHead>
+                        <TableHead className="text-right text-black font-bold uppercase text-xs">Unit Price</TableHead>
+                        <TableHead className="text-right text-black font-bold uppercase text-xs">Total</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {lineItems.length > 0 ? lineItems.map((item: any) => (
+                        <TableRow key={item.id} className="border-b border-gray-200">
+                            <TableCell className="py-4 text-sm font-medium">{item.description}</TableCell>
+                            <TableCell className="text-center py-4 text-sm">{item.quantity}</TableCell>
+                            <TableCell className="text-right font-mono py-4 text-sm">{formatCurrency(item.price)}</TableCell>
+                            <TableCell className="text-right font-mono py-4 text-sm font-bold">{formatCurrency(item.price * item.quantity)}</TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow><TableCell colSpan={4} className="h-24 text-center text-gray-400 italic">No items listed.</TableCell></TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </section>
+        <section className="flex justify-end mt-10">
+            <div className="w-full max-w-sm space-y-3">
+                <div className="flex justify-between text-sm"><span className="text-gray-500 uppercase text-xs font-bold">Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500 uppercase text-xs font-bold">Tax Total</span><span className="font-mono">{formatCurrency(tax)}</span></div>
+                <Separator className="bg-gray-900 h-0.5" />
+                <div className="flex justify-between font-bold text-xl py-2">
+                    <span className="uppercase text-xs self-center">Total Amount Due</span>
+                    <span className="font-mono">{formatCurrency(total)}</span>
+                </div>
+            </div>
+        </section>
+        <section className="mt-16 pt-8 border-t border-dashed border-gray-300">
+            <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Notes & Terms</h4>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">{notes}</p>
+        </section>
+        <footer className="mt-auto pt-12 text-center">
+            <p className="text-sm font-bold text-gray-800">{userProfile?.companyName || userProfile?.displayName || 'Ogeemo User'}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">Generated by Ogeemo Orchestration Engine</p>
+        </footer>
+    </div>
+);
 
 export function InvoiceGeneratorView() {
   const { toast } = useToast();
@@ -88,6 +174,7 @@ export function InvoiceGeneratorView() {
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
@@ -337,42 +424,22 @@ export function InvoiceGeneratorView() {
       }
   };
   
-  const handlePreview = () => {
-      const selectedContact = contacts.find(c => c.id === selectedContactId);
-      const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
-
-      const previewData = {
-          invoiceNumber,
-          businessNumber,
-          companyName: companyName,
-          contactAddress: {
-            street: selectedContact?.streetAddress,
-            city: selectedContact?.city,
-            provinceState: selectedContact?.provinceState,
-            postalCode: selectedContact?.postalCode,
-            country: selectedContact?.country,
-          },
-          invoiceDate: invoiceDate.toISOString(),
-          dueDate: dueDate.toISOString(),
-          lineItems,
-          notes,
-          userProfile: userProfile || undefined,
-      };
-
-      try {
-          localStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
-          window.open('/accounting/invoices/preview', '_blank');
-      } catch (error) {
-          toast({ variant: 'destructive', title: 'Preview Error', description: 'Could not generate the preview.' });
-      }
-  };
-
-  const handlePrintAction = () => {
-      handlePrint();
-  };
-
   const selectedContact = contacts.find(c => c.id === selectedContactId);
   const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
+
+  const documentProps = {
+      invoiceNumber,
+      businessNumber,
+      selectedContact,
+      invoiceDate,
+      dueDate,
+      lineItems,
+      notes,
+      userProfile,
+      subtotal,
+      tax,
+      total
+  };
 
   return (
     <>
@@ -401,7 +468,7 @@ export function InvoiceGeneratorView() {
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Invoice
                     </Button>
-                    <Button variant="outline" onClick={handlePreview}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                    <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -616,86 +683,40 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                 <Button onClick={handlePrintAction}>
+                 <Button onClick={() => handlePrint()}>
                     <Printer className="mr-2 h-4 w-4" /> Print Invoice
                  </Button>
             </CardFooter>
         </Card>
 
-        {/* Hidden Printable Template - Copy of professional layout structure */}
+        {/* Hidden Printable Template */}
         <div className="hidden">
-            <div ref={contentRef} className="p-12 bg-white text-black min-h-[11in] w-[8.5in] mx-auto">
-                <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
-                    <Logo className="text-primary"/>
-                    <div className="text-right">
-                        <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
-                        <p className="text-gray-500">#{invoiceNumber}</p>
-                        {businessNumber && <p className="text-sm text-gray-500 mt-1">BN: {businessNumber}</p>}
-                    </div>
-                </header>
-                <section className="flex justify-between mt-8">
-                    <div>
-                        <h2 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Bill To</h2>
-                        <p className="font-bold text-lg">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
-                        {selectedContact && (
-                            <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
-                                {selectedContact.streetAddress ? `${selectedContact.streetAddress}\n` : ''}
-                                {[selectedContact.city, selectedContact.provinceState, selectedContact.postalCode].filter(Boolean).join(', ')}
-                                {selectedContact.country ? `\n${selectedContact.country}` : ''}
-                            </p>
-                        )}
-                    </div>
-                    <div className="text-right space-y-1">
-                        <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Invoice Date:</span> {format(invoiceDate, 'PP')}</p>
-                        <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Due Date:</span> {format(dueDate, 'PP')}</p>
-                    </div>
-                </section>
-                <section className="mt-12">
-                    <Table className="border-t border-b border-gray-900">
-                        <TableHeader>
-                            <TableRow className="border-b-2 border-gray-900 bg-gray-50">
-                                <TableHead className="text-black font-bold uppercase text-xs">Description</TableHead>
-                                <TableHead className="text-center text-black font-bold uppercase text-xs">Qty</TableHead>
-                                <TableHead className="text-right text-black font-bold uppercase text-xs">Unit Price</TableHead>
-                                <TableHead className="text-right text-black font-bold uppercase text-xs">Total</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {lineItems.length > 0 ? lineItems.map(item => (
-                                <TableRow key={item.id} className="border-b border-gray-200">
-                                    <TableCell className="py-4 text-sm font-medium">{item.description}</TableCell>
-                                    <TableCell className="text-center py-4 text-sm">{item.quantity}</TableCell>
-                                    <TableCell className="text-right font-mono py-4 text-sm">{formatCurrency(item.price)}</TableCell>
-                                    <TableCell className="text-right font-mono py-4 text-sm font-bold">{formatCurrency(item.price * item.quantity)}</TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-gray-400 italic">No items listed.</TableCell></TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </section>
-                <section className="flex justify-end mt-10">
-                    <div className="w-full max-w-sm space-y-3">
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 uppercase text-xs font-bold">Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 uppercase text-xs font-bold">Tax Total</span><span className="font-mono">{formatCurrency(tax)}</span></div>
-                        <Separator className="bg-gray-900 h-0.5" />
-                        <div className="flex justify-between font-bold text-xl py-2">
-                            <span className="uppercase text-xs self-center">Total Amount Due</span>
-                            <span className="font-mono">{formatCurrency(total)}</span>
-                        </div>
-                    </div>
-                </section>
-                <section className="mt-16 pt-8 border-t border-dashed border-gray-300">
-                    <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Notes & Terms</h4>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">{notes}</p>
-                </section>
-                <footer className="mt-auto pt-12 text-center">
-                    <p className="text-sm font-bold text-gray-800">{userProfile?.companyName || userProfile?.displayName || 'Ogeemo User'}</p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">Generated by Ogeemo Orchestration Engine</p>
-                </footer>
+            <div ref={contentRef}>
+                <InvoiceDocument {...documentProps} />
             </div>
         </div>
       </div>
+
+      {/* In-Page Preview Dialog */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+          <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden bg-muted/30">
+              <DialogHeader className="p-4 border-b bg-background shrink-0">
+                  <div className="flex justify-between items-center">
+                      <DialogTitle>High-Fidelity Preview</DialogTitle>
+                      <div className="flex gap-2 mr-8">
+                          <Button variant="outline" onClick={() => handlePrint()}>
+                              <Printer className="mr-2 h-4 w-4" /> Print
+                          </Button>
+                          <Button variant="ghost" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>
+                      </div>
+                  </div>
+              </DialogHeader>
+              <ScrollArea className="flex-1 p-8">
+                  <InvoiceDocument {...documentProps} />
+              </ScrollArea>
+          </DialogContent>
+      </Dialog>
+
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}

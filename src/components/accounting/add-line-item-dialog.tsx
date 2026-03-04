@@ -24,7 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save, FileSignature, Briefcase, X, Info } from 'lucide-react';
+import { 
+  ChevronsUpDown, 
+  Check, 
+  Settings, 
+  Search, 
+  PlusCircle, 
+  Calculator, 
+  Percent, 
+  Save, 
+  FileSignature, 
+  Briefcase, 
+  X, 
+  Info 
+} from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
@@ -233,51 +246,49 @@ export function AddLineItemDialog({
                                         onValueChange={setSearchQuery}
                                         className="h-12"
                                     />
-                                    <CommandList>
+                                    <CommandList className="max-h-[500px]">
                                         <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
-                                        <ScrollArea className="h-[400px]">
-                                            <CommandGroup heading="Professional Services Library">
-                                                {serviceItems
-                                                    .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()))
-                                                    .map(item => (
-                                                    <CommandItem
-                                                        key={item.id}
-                                                        value={item.description}
-                                                        onSelect={() => handleSelectServiceItem(item)}
-                                                        className="cursor-pointer py-3"
-                                                    >
-                                                        <Briefcase className="mr-3 h-5 w-5 text-primary/60" />
-                                                        <div className="flex flex-col flex-1">
-                                                            <span className="font-bold text-sm">{item.description}</span>
-                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                                                                Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
-                                                            </span>
-                                                        </div>
-                                                        {description === item.description && <Check className="h-5 w-5 text-primary ml-auto" />}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                            <Separator />
-                                            <CommandGroup heading="Expense Categories (BKS Audit Lines)">
-                                                {expenseCategories
-                                                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                                                    .map(cat => (
-                                                    <CommandItem
-                                                        key={cat.id}
-                                                        value={cat.name}
-                                                        onSelect={() => handleSelectCategory(cat)}
-                                                        className="cursor-pointer py-3"
-                                                    >
-                                                        <FileSignature className="mr-3 h-5 w-5 text-muted-foreground" />
-                                                        <div className="flex flex-col flex-1">
-                                                            <span className="font-bold text-sm">{cat.name}</span>
-                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
-                                                        </div>
-                                                        {description === cat.name && <Check className="h-5 w-5 text-primary ml-auto" />}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </ScrollArea>
+                                        <CommandGroup heading="Professional Services Library">
+                                            {serviceItems
+                                                .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(item => (
+                                                <CommandItem
+                                                    key={item.id}
+                                                    value={item.description}
+                                                    onSelect={() => handleSelectServiceItem(item)}
+                                                    className="cursor-pointer py-3"
+                                                >
+                                                    <Briefcase className="mr-3 h-5 w-5 text-primary/60" />
+                                                    <div className="flex flex-col flex-1">
+                                                        <span className="font-bold text-sm">{item.description}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                                                            Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
+                                                        </span>
+                                                    </div>
+                                                    {description === item.description && <Check className="h-5 w-5 text-primary ml-auto" />}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                        <Separator />
+                                        <CommandGroup heading="Expense Categories (BKS Audit Lines)">
+                                            {expenseCategories
+                                                .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(cat => (
+                                                <CommandItem
+                                                    key={cat.id}
+                                                    value={cat.name}
+                                                    onSelect={() => handleSelectCategory(cat)}
+                                                    className="cursor-pointer py-3"
+                                                >
+                                                    <FileSignature className="mr-3 h-5 w-5 text-muted-foreground" />
+                                                    <div className="flex flex-col flex-1">
+                                                        <span className="font-bold text-sm">{cat.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
+                                                    </div>
+                                                    {description === cat.name && <Check className="h-5 w-5 text-primary ml-auto" />}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
                                     </CommandList>
                                 </Command>
                             </PopoverContent>

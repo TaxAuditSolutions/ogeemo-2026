@@ -685,6 +685,20 @@ export async function addPettyCashTransaction(data: Omit<PettyCashTransaction, '
     return newTx;
 }
 
+export async function updatePettyCashTransaction(id: string, data: Partial<Omit<PettyCashTransaction, 'id' | 'userId'>>): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, PETTY_CASH_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: data,
+            }));
+        }
+    });
+}
+
 export async function deletePettyCashTransaction(id: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, PETTY_CASH_COLLECTION, id);
@@ -721,7 +735,7 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
             paymentMethod: 'Cash'
         });
     } else {
-        const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
+        const expenseRef = doc(collection(db, 'expenseTransactions'));
         batch.set(expenseRef, {
             userId,
             date: txData.date,

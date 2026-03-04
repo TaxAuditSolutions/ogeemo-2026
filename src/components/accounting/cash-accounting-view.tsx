@@ -33,7 +33,10 @@ import {
     ChevronsUpDown,
     Check,
     UserPlus,
-    Plus
+    Plus,
+    MoreVertical,
+    Eye,
+    Pencil
 } from "lucide-react";
 import { AccountingPageHeader } from './page-header';
 import Link from 'next/link';
@@ -42,6 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
     getPettyCashTransactions, 
     addPettyCashTransaction, 
+    updatePettyCashTransaction,
     deletePettyCashTransaction, 
     postPettyCashToGL,
     getIncomeCategories,
@@ -65,6 +69,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { CustomCalendar } from '../ui/custom-calendar';
 import ContactFormDialog from '../contacts/contact-form-dialog';
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuSeparator, 
+    DropdownMenuTrigger 
+} from '../ui/dropdown-menu';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -93,6 +104,8 @@ export function CashAccountingView() {
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dialogType, setDialogType] = useState<'in' | 'out'>('out');
+    const [viewOnly, setViewOnly] = useState(false);
+    const [editingTx, setEditingTx] = useState<PettyCashTransaction | null>(null);
     const [formData, setFormData] = useState(emptyTxForm);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
@@ -145,8 +158,42 @@ export function CashAccountingView() {
 
     const handleOpenDialog = (type: 'in' | 'out') => {
         setDialogType(type);
+        setEditingTx(null);
+        setViewOnly(false);
         setFormData({ ...emptyTxForm, date: format(new Date(), 'yyyy-MM-dd') });
         setContactSearchValue('');
+        setIsDialogOpen(true);
+    };
+
+    const handleView = (tx: PettyCashTransaction) => {
+        setDialogType(tx.type);
+        setEditingTx(tx);
+        setViewOnly(true);
+        setFormData({
+            date: tx.date,
+            description: tx.description || '',
+            amount: String(tx.amount),
+            contact: tx.contact,
+            category: tx.category,
+        });
+        setIsDialogOpen(true);
+    };
+
+    const handleEdit = (tx: PettyCashTransaction) => {
+        if (tx.isPosted) {
+            toast({ variant: 'destructive', title: 'Action Restricted', description: 'This transaction has already been posted to the General Ledger and cannot be edited.' });
+            return;
+        }
+        setDialogType(tx.type);
+        setEditingTx(tx);
+        setViewOnly(false);
+        setFormData({
+            date: tx.date,
+            description: tx.description || '',
+            amount: String(tx.amount),
+            contact: tx.contact,
+            category: tx.category,
+        });
         setIsDialogOpen(true);
     };
 
@@ -160,19 +207,29 @@ export function CashAccountingView() {
 
         setIsSubmitting(true);
         try {
-            const newTx = await addPettyCashTransaction({
+            const txData = {
                 date: formData.date,
                 description: formData.description,
                 amount: amountNum,
                 type: dialogType,
                 contact: formData.contact,
                 category: formData.category,
-                isPosted: false,
-                userId: user.uid,
-            });
-            setTransactions(prev => [newTx, ...prev]);
+            };
+
+            if (editingTx) {
+                await updatePettyCashTransaction(editingTx.id, txData);
+                setTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, ...txData } : t));
+                toast({ title: 'Transaction Updated' });
+            } else {
+                const newTx = await addPettyCashTransaction({
+                    ...txData,
+                    isPosted: false,
+                    userId: user.uid,
+                });
+                setTransactions(prev => [newTx, ...prev]);
+                toast({ title: 'Transaction Recorded' });
+            }
             setIsDialogOpen(false);
-            toast({ title: 'Transaction Recorded' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         } finally {
@@ -313,9 +370,25 @@ export function CashAccountingView() {
                                                         <Landmark className="mr-1.5 h-3.5 w-3.5" /> Post to GL
                                                     </Button>
                                                 )}
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(tx.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onSelect={() => handleView(tx)}>
+                                                            <Eye className="mr-2 h-4 w-4" /> View Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleEdit(tx)} disabled={tx.isPosted}>
+                                                            <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => handleDelete(tx.id)} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Record
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -340,9 +413,13 @@ export function CashAccountingView() {
                     <DialogHeader>
                         <div className="flex items-center gap-2 text-primary mb-1">
                             <HandCoins className="h-5 w-5" />
-                            <DialogTitle>Add Cash {dialogType === 'in' ? 'In' : 'Out'}</DialogTitle>
+                            <DialogTitle>
+                                {viewOnly ? 'Transaction Details' : editingTx ? `Edit Cash ${dialogType === 'in' ? 'In' : 'Out'}` : `Add Cash ${dialogType === 'in' ? 'In' : 'Out'}`}
+                            </DialogTitle>
                         </div>
-                        <DialogDescription>Record a physical cash transaction for the petty cash box.</DialogDescription>
+                        <DialogDescription>
+                            {viewOnly ? 'Reviewing physical cash record.' : 'Record a physical cash transaction for the petty cash box.'}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -350,7 +427,7 @@ export function CashAccountingView() {
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !formData.date && "text-muted-foreground")}>
+                                        <Button variant="outline" disabled={viewOnly} className={cn("w-full justify-start text-left font-normal h-10", !formData.date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {formData.date ? format(parseISO(formData.date), 'PP') : "Pick a date"}
                                         </Button>
@@ -362,7 +439,7 @@ export function CashAccountingView() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Amount ($)</Label>
-                                <Input type="number" step="0.01" className="h-10 font-mono font-bold" placeholder="0.00" value={formData.amount} onChange={e => setFormData(p => ({...p, amount: e.target.value}))} />
+                                <Input type="number" step="0.01" readOnly={viewOnly} className="h-10 font-mono font-bold" placeholder="0.00" value={formData.amount} onChange={e => setFormData(p => ({...p, amount: e.target.value}))} />
                             </div>
                         </div>
 
@@ -371,7 +448,7 @@ export function CashAccountingView() {
                             <div className="flex gap-2">
                                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal h-10">
+                                        <Button variant="outline" disabled={viewOnly} role="combobox" className="w-full justify-between font-normal h-10">
                                             <span className="truncate">{formData.contact || "Select or search..."}</span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -424,9 +501,11 @@ export function CashAccountingView() {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setIsContactFormOpen(true)}>
-                                    <UserPlus className="h-4 w-4" />
-                                </Button>
+                                {!viewOnly && (
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setIsContactFormOpen(true)}>
+                                        <UserPlus className="h-4 w-4" />
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
@@ -434,7 +513,7 @@ export function CashAccountingView() {
                             <Label className="text-xs uppercase font-bold text-muted-foreground">CRA Tax Category</Label>
                             <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="w-full justify-between font-normal h-10">
+                                    <Button variant="outline" disabled={viewOnly} role="combobox" className="w-full justify-between font-normal h-10">
                                         {formData.category ? (activeCategories.find(c => (c.categoryNumber || c.id) === formData.category)?.name || formData.category) : "Select category..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -463,15 +542,19 @@ export function CashAccountingView() {
 
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Description</Label>
-                            <Input placeholder="What was this for?" value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} />
+                            <Input placeholder="What was this for?" readOnly={viewOnly} value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} />
                         </div>
                     </div>
                     <DialogFooter className="bg-muted/10 -mx-6 -mb-6 p-6 rounded-b-lg">
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>Cancel</Button>
-                        <Button onClick={handleSaveTransaction} disabled={isSubmitting} className="font-bold">
-                            {isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                            Log Cash Transaction
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                            {viewOnly ? 'Close' : 'Cancel'}
                         </Button>
+                        {!viewOnly && (
+                            <Button onClick={handleSaveTransaction} disabled={isSubmitting} className="font-bold">
+                                {isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingTx ? 'Update Entry' : 'Log Cash Transaction'}
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

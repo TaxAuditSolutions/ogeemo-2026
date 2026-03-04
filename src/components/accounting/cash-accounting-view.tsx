@@ -8,7 +8,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
 import {
   Card,
@@ -23,7 +22,6 @@ import {
     PlusCircle, 
     X, 
     HandCoins, 
-    ArrowRight, 
     Landmark, 
     CheckCircle, 
     Trash2, 
@@ -59,7 +57,7 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -68,7 +66,6 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { CustomCalendar } from '../ui/custom-calendar';
-import ContactFormDialog from '../contacts/contact-form-dialog';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -76,6 +73,22 @@ import {
     DropdownMenuSeparator, 
     DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import dynamic from 'next/dynamic';
+
+const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><LoaderCircle className="h-10 w-10 animate-spin text-white" /></div>,
+});
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -113,6 +126,7 @@ export function CashAccountingView() {
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+    const [txToDelete, setTxToDelete] = useState<PettyCashTransaction | null>(null);
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -138,11 +152,11 @@ export function CashAccountingView() {
             setCompanies(comps);
             setCustomIndustries(inds);
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Load Failed', description: error.message });
+            console.error("Petty Cash Load Error:", error);
         } finally {
             setIsLoading(false);
         }
-    }, [user, isAuthLoading, toast]);
+    }, [user, isAuthLoading]);
 
     useEffect(() => {
         loadData();
@@ -181,7 +195,7 @@ export function CashAccountingView() {
 
     const handleEdit = (tx: PettyCashTransaction) => {
         if (tx.isPosted) {
-            toast({ variant: 'destructive', title: 'Action Restricted', description: 'This transaction has already been posted to the General Ledger and cannot be edited.' });
+            toast({ variant: 'destructive', title: 'Action Restricted', description: 'This transaction has already been posted to the General Ledger.' });
             return;
         }
         setDialogType(tx.type);
@@ -251,13 +265,16 @@ export function CashAccountingView() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async () => {
+        if (!txToDelete) return;
         try {
-            await deletePettyCashTransaction(id);
-            setTransactions(prev => prev.filter(t => t.id !== id));
+            await deletePettyCashTransaction(txToDelete.id);
+            setTransactions(prev => prev.filter(t => t.id !== txToDelete.id));
             toast({ title: 'Record Removed' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        } finally {
+            setTxToDelete(null);
         }
     };
 
@@ -265,6 +282,11 @@ export function CashAccountingView() {
         setContacts(prev => isEditing ? prev.map(c => c.id === savedContact.id ? savedContact : c) : [savedContact, ...prev]);
         setFormData(prev => ({ ...prev, contact: savedContact.name }));
         setIsContactFormOpen(false);
+    };
+
+    const formatDateSafe = (dateStr: string) => {
+        const d = parseISO(dateStr);
+        return isValid(d) ? format(d, 'PP') : dateStr;
     };
 
     return (
@@ -384,7 +406,7 @@ export function CashAccountingView() {
                                                             <Pencil className="mr-2 h-4 w-4" /> Edit Record
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onSelect={() => handleDelete(tx.id)} className="text-destructive">
+                                                        <DropdownMenuItem onSelect={() => setTxToDelete(tx)} className="text-destructive">
                                                             <Trash2 className="mr-2 h-4 w-4" /> Delete Record
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -429,7 +451,7 @@ export function CashAccountingView() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" disabled={viewOnly} className={cn("w-full justify-start text-left font-normal h-10", !formData.date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {formData.date ? format(parseISO(formData.date), 'PP') : "Pick a date"}
+                                            {formData.date ? formatDateSafe(formData.date) : "Pick a date"}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
@@ -461,42 +483,34 @@ export function CashAccountingView() {
                                                 onValueChange={setContactSearchValue}
                                             />
                                             <CommandList>
-                                                {isLoading ? (
-                                                    <div className="flex justify-center p-4">
-                                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <CommandEmpty>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                className="w-full justify-start text-sm text-primary" 
-                                                                onClick={() => { 
-                                                                    setIsContactPopoverOpen(false); 
-                                                                    setIsContactFormOpen(true); 
-                                                                }}
-                                                            >
-                                                                <Plus className="mr-2 h-4 w-4" /> Add New Contact
-                                                            </Button>
-                                                        </CommandEmpty>
-                                                        <CommandGroup>
-                                                            {contacts.map(c => (
-                                                                <CommandItem 
-                                                                    key={c.id} 
-                                                                    value={c.name}
-                                                                    onSelect={() => { 
-                                                                        setFormData(p => ({...p, contact: c.name})); 
-                                                                        setIsContactPopoverOpen(false); 
-                                                                        setContactSearchValue('');
-                                                                    }}
-                                                                >
-                                                                    <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
-                                                                    {c.name}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </>
-                                                )}
+                                                <CommandEmpty>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        className="w-full justify-start text-sm text-primary" 
+                                                        onClick={() => { 
+                                                            setIsContactPopoverOpen(false); 
+                                                            setIsContactFormOpen(true); 
+                                                        }}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" /> Add New Contact
+                                                    </Button>
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {contacts.map(c => (
+                                                        <CommandItem 
+                                                            key={c.id} 
+                                                            value={c.name}
+                                                            onSelect={() => { 
+                                                                setFormData(p => ({...p, contact: c.name})); 
+                                                                setIsContactPopoverOpen(false); 
+                                                                setContactSearchValue('');
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", formData.contact === c.name ? "opacity-100" : "opacity-0")} />
+                                                            {c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
@@ -571,6 +585,21 @@ export function CashAccountingView() {
                 customIndustries={customIndustries}
                 onCustomIndustriesChange={setCustomIndustries}
             />
+
+            <AlertDialog open={!!txToDelete} onOpenChange={() => setTxToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the cash record for "{txToDelete?.contact || 'Untitled'}". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete Record</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

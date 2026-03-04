@@ -735,7 +735,7 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
             paymentMethod: 'Cash'
         });
     } else {
-        const expenseRef = doc(collection(db, 'expenseTransactions'));
+        const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
         batch.set(expenseRef, {
             userId,
             date: txData.date,

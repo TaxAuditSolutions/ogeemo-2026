@@ -70,7 +70,7 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -173,14 +173,7 @@ export function InvoiceGeneratorView() {
         const contactIdParam = searchParams.get('contactId');
         if (contactIdParam) {
           setSelectedContactId(contactIdParam);
-        } else {
-          setSelectedContactId(null);
         }
-        
-        if (!invoiceNumber) {
-            setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
-        }
-
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
       } finally {
@@ -188,7 +181,7 @@ export function InvoiceGeneratorView() {
       }
     }
     initializeView();
-  }, [user, toast, loadInvoiceForEditing, searchParams, invoiceNumber]);
+  }, [user, toast, loadInvoiceForEditing, searchParams]);
 
   useEffect(() => {
     const contact = contacts.find(c => c.id === selectedContactId);
@@ -344,28 +337,18 @@ export function InvoiceGeneratorView() {
   
   const handlePreview = () => {
       const selectedContact = contacts.find(c => c.id === selectedContactId);
-      if (!selectedContact) {
-          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before proceeding.'});
-          return;
-      }
-
-      if (lineItems.length === 0) {
-          toast({ variant: 'destructive', title: 'No Line Items', description: 'Please add at least one line item to the invoice.'});
-          return;
-      }
-
-      const companyName = selectedContact.businessName || selectedContact.name;
+      const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
 
       const previewData = {
           invoiceNumber,
           businessNumber,
           companyName: companyName,
           contactAddress: {
-            street: selectedContact.streetAddress,
-            city: selectedContact.city,
-            provinceState: selectedContact.provinceState,
-            postalCode: selectedContact.postalCode,
-            country: selectedContact.country,
+            street: selectedContact?.streetAddress,
+            city: selectedContact?.city,
+            provinceState: selectedContact?.provinceState,
+            postalCode: selectedContact?.postalCode,
+            country: selectedContact?.country,
           },
           invoiceDate: invoiceDate.toISOString(),
           dueDate: dueDate.toISOString(),
@@ -375,7 +358,6 @@ export function InvoiceGeneratorView() {
       };
 
       try {
-          // Use localStorage to ensure data persist across tabs without session issues
           localStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
           window.open('/accounting/invoices/preview', '_blank');
       } catch (error) {

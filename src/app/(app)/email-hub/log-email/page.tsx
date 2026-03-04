@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -103,7 +102,7 @@ export default function LogEmailPage() {
     }
     setIsLoading(true);
     try {
-      // Removing user.uid filter to ensure all contacts from Contact Hub are available
+      // Synchronized with Master Hub - no UID filter to pull all records
       const [fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
         getContacts(),
         getContactFolders(user.uid),
@@ -128,6 +127,16 @@ export default function LogEmailPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => {
+    const d = set(new Date(), { hours: i });
+    return { value: String(i).padStart(2, '0'), label: format(d, 'h a') };
+  }), []);
+
+  const minuteOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const minutes = i * 5;
+    return { value: String(minutes).padStart(2, '0'), label: `:${minutes.toString().padStart(2, '0')}` };
+  }), []);
   
   const resetForm = () => {
       setSelectedContactId(null);

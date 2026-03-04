@@ -382,8 +382,6 @@ export function InvoiceGeneratorView() {
   };
 
   const handlePrintAction = () => {
-      // Direct call to browser print dialog. 
-      // The CSS logic in globals.css + print:hidden on form will handle the professional layout.
       window.print();
   };
 
@@ -638,7 +636,6 @@ export function InvoiceGeneratorView() {
             </CardFooter>
         </Card>
 
-        {/* High-Fidelity Printable Area - Matches style of preview page but bound to local state */}
         <div id="invoice-preview" className="hidden print:block bg-white text-black p-0">
             <div className="p-8 md:p-12 border-none">
                 <header className="flex justify-between items-start pb-6 border-b">

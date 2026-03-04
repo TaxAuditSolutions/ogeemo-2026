@@ -170,9 +170,9 @@ const FolderTreeItem = ({
 
     const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
-      item: { ...folder, type: ItemTypes.FOLDER },
+      item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
-      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+      collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [folder, isRenaming, isSystem]);
 
     const [{ canDrop, isOver }, drop] = useDrop(() => ({
@@ -258,9 +258,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={onRenameChange}
-                onRenameConfirm={onRenameConfirm}
-                onRenameCancel={onRenameCancel}
+                onRenameChange={setRenameInputValue}
+                onRenameConfirm={handleRenameConfirm}
+                onRenameCancel={() => setRenamingFolder(null)}
                 sortDirection={sortDirection}
             />
         ))}
@@ -432,6 +432,16 @@ export function FilesView() {
       setIsNewFolderDialogOpen(true);
   };
 
+  const handleOpenNewFileDialog = () => {
+      form.reset({
+          fileName: '',
+          fileType: 'file',
+          fileUrl: '',
+          targetFolderId: selectedFolderId
+      });
+      setIsNewFileDialogOpen(true);
+  };
+
   const handleCreateFolder = async () => {
       if (!user || !newFolderName.trim()) return;
       setIsCreatingFolder(true);
@@ -526,12 +536,18 @@ export function FilesView() {
       if (!user) return;
       setIsSaving(true);
       try {
-          const folderId = values.targetFolderId === 'all' ? (folders.find(f => !f.parentId)?.id || '') : values.targetFolderId;
+          // Resolve actual folder ID for Firestore save
+          let folderId = values.targetFolderId;
+          if (folderId === 'all') {
+              const miscFolder = folders.find(f => f.name === 'Miscellaneous' && f.isSystem);
+              folderId = miscFolder ? miscFolder.id : (folders[0]?.id || '');
+          }
+
           const newFile: Omit<FileItem, 'id'> = {
               name: values.fileName,
               userId: user.uid,
               folderId: folderId,
-              type: values.fileType === 'link' ? 'url-link' : 'text/plain',
+              type: values.fileType === 'link' ? 'google-drive-link' : 'text/plain',
               size: 0,
               modifiedAt: new Date(),
               storagePath: '',
@@ -539,7 +555,7 @@ export function FilesView() {
           };
           const savedFile = await addFileRecord(newFile);
           setFiles(prev => [...prev, savedFile]);
-          toast({ title: "File Created" });
+          toast({ title: "File Created", description: `"${values.fileName}" added to registry.` });
           setIsNewFileDialogOpen(false);
           form.reset();
       } catch (e: any) {
@@ -570,7 +586,7 @@ export function FilesView() {
                     <Button className="flex-1" onClick={() => handleOpenNewFolderDialog(null)}>
                         <FolderPlus className="mr-2 h-4 w-4"/> New Folder
                     </Button>
-                    <Button className="flex-1" onClick={() => setIsNewFileDialogOpen(true)}>
+                    <Button className="flex-1" onClick={handleOpenNewFileDialog}>
                         <FilePlus className="mr-2 h-4 w-4"/> New File
                     </Button>
                 </div>
@@ -738,7 +754,8 @@ export function FilesView() {
                         </FormItem>
                     )} />
                     {form.watch('fileType') === 'link' && ( <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem><FormLabel>URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} /> )}
-                    <FormField control={form.control} name="targetFolderId" render={({ field }) => ( <FormItem><FormLabel>Destination Folder</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select folder..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="all">Unassigned (Root)</SelectItem>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="targetFolderId" render={({ field }) => ( <FormItem><FormLabel>Destination Folder</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select folder..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="all">Unassigned (Miscellaneous)</SelectItem>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     <DialogFooter className="pt-4">
                         <Button type="button" variant="ghost" onClick={() => setIsNewFileDialogOpen(false)}>Cancel</Button>
                         <Button type="submit" disabled={isSaving}>Create File</Button>

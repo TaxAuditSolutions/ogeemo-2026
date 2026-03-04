@@ -70,7 +70,7 @@ export function AddLineItemDialog({
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [price, setPrice] = useState<number | ''>('');
-  const [taxType, setTaxType] = setTaxType || useState('None');
+  const [taxType, setTaxType] = useState('None');
   const [taxRate, setTaxRate] = useState<number | ''>('');
   const [saveAsRepeatable, setSaveAsRepeatable] = useState(false);
 

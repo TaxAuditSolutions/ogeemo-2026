@@ -20,7 +20,7 @@ import { getFirebaseServices } from '@/firebase';
 export interface FolderItem {
   id: string;
   name: string;
-  type: 'folder'; // Ensure this matches the expected type
+  type: 'folder';
   parentId: string | null;
   userId: string;
   createdAt: Date;
@@ -29,6 +29,7 @@ export interface FolderItem {
 }
 
 const FOLDERS_COLLECTION = 'fileManagerFolders';
+const FILES_COLLECTION = 'files';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -82,6 +83,7 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 
 /**
  * Ensures that mandated system folders exist for the user's document manager.
+ * This function is self-healing: it merges duplicates and reassigns files to a single master record.
  */
 export async function ensureDocumentSystemFolders(userId: string): Promise<FolderItem[]> {
     const db = getDb();
@@ -110,15 +112,48 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
     const currentFolders = [...existing];
 
     for (const folderName of systemFoldersList) {
-        const match = currentFolders.find(f => f.name.toLowerCase() === folderName.toLowerCase());
+        // Find ALL folders matching this name (case-insensitive)
+        const matches = currentFolders.filter(f => f.name.toLowerCase() === folderName.toLowerCase());
         
-        if (match) {
-            if (!match.isSystem) {
-                batch.update(doc(db, FOLDERS_COLLECTION, match.id), { isSystem: true });
-                match.isSystem = true;
+        let masterFolder: FolderItem;
+
+        if (matches.length > 0) {
+            // Pick the first one as the master record
+            masterFolder = matches[0];
+            
+            // Ensure it is marked as a system folder
+            if (!masterFolder.isSystem) {
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
+                masterFolder.isSystem = true;
                 hasChanges = true;
             }
+
+            // Resolve Duplicates: if more than one exists, merge them
+            if (matches.length > 1) {
+                const duplicates = matches.slice(1);
+                for (const dupe of duplicates) {
+                    // Reassign all files in the duplicate folder to the master folder
+                    const filesQuery = query(
+                        collection(db, FILES_COLLECTION), 
+                        where("userId", "==", userId), 
+                        where("folderId", "==", dupe.id)
+                    );
+                    const filesSnapshot = await getDocs(filesQuery);
+                    filesSnapshot.forEach(fileDoc => {
+                        batch.update(fileDoc.ref, { folderId: masterFolder.id });
+                    });
+
+                    // Delete the duplicate folder record
+                    batch.delete(doc(db, FOLDERS_COLLECTION, dupe.id));
+                    
+                    // Remove from our local tracking list
+                    const index = currentFolders.findIndex(f => f.id === dupe.id);
+                    if (index > -1) currentFolders.splice(index, 1);
+                    hasChanges = true;
+                }
+            }
         } else {
+            // Create the folder if it doesn't exist at all
             const docRef = doc(collection(db, FOLDERS_COLLECTION));
             const newFolder = {
                 name: folderName,
@@ -128,7 +163,6 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
                 createdAt: new Date(),
             };
             batch.set(docRef, newFolder);
-            // Include 'type' property
             currentFolders.push({ id: docRef.id, type: 'folder', ...newFolder });
             hasChanges = true;
         }

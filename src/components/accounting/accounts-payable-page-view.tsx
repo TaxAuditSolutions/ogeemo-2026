@@ -92,12 +92,13 @@ export function AccountsPayablePageView() {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
 
-  // Payment State
+  // Bill state
+  const [billToEdit, setBillToEdit] = useState<PayableBill | null>(null);
   const [billToPay, setBillToPay] = useState<PayableBill | null>(null);
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
 
-  // Deletion State
+  // Deletion state
   const [billToDelete, setBillToDelete] = useState<PayableBill | null>(null);
 
   const { user } = useAuth();
@@ -138,6 +139,11 @@ export function AccountsPayablePageView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleEdit = (bill: PayableBill) => {
+      setBillToEdit(bill);
+      setIsTransactionDialogOpen(true);
+  };
 
   const handlePostPayment = async () => {
     if (!user || !billToPay) return;
@@ -203,7 +209,7 @@ export function AccountsPayablePageView() {
                     <CardTitle>Accounts Payable Ledger</CardTitle>
                     <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
                 </div>
-                <Button onClick={() => setIsTransactionDialogOpen(true)}>
+                <Button onClick={() => { setBillToEdit(null); setIsTransactionDialogOpen(true); }}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Log Payable Bill
                 </Button>
             </CardHeader>
@@ -242,8 +248,8 @@ export function AccountsPayablePageView() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem disabled>
-                                                        <Pencil className="mr-2 h-4 w-4" /> Edit (Disabled during reset)
+                                                    <DropdownMenuItem onSelect={() => handleEdit(bill)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onSelect={() => setBillToDelete(bill)} className="text-destructive">
@@ -267,10 +273,12 @@ export function AccountsPayablePageView() {
             </CardContent>
         </Card>
 
-        {/* Rebuild Transaction Entry Trigger */}
         <TransactionDialog
             isOpen={isTransactionDialogOpen}
-            onOpenChange={setIsTransactionDialogOpen}
+            onOpenChange={(open) => {
+                setIsTransactionDialogOpen(open);
+                if (!open) setBillToEdit(null);
+            }}
             initialType="payable"
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
@@ -278,6 +286,7 @@ export function AccountsPayablePageView() {
             contacts={contacts}
             taxTypes={taxTypes}
             onSuccess={loadData}
+            transactionToEdit={billToEdit}
         />
 
         {/* Post Payment Dialog */}

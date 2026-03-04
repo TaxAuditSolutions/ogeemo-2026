@@ -47,7 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
@@ -67,6 +67,9 @@ import {
     addExpenseCategory,
     getInternalAccounts,
     addInternalAccount,
+    updateIncomeTransaction,
+    updateExpenseTransaction,
+    updatePayableBill,
     type IncomeCategory,
     type ExpenseCategory,
     type Company,
@@ -105,6 +108,7 @@ interface TransactionDialogProps {
     contacts: Contact[];
     taxTypes: TaxType[];
     onSuccess: () => void;
+    transactionToEdit?: any | null;
 }
 
 export function TransactionDialog({
@@ -117,6 +121,7 @@ export function TransactionDialog({
     contacts,
     taxTypes,
     onSuccess,
+    transactionToEdit = null,
 }: TransactionDialogProps) {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -193,25 +198,50 @@ export function TransactionDialog({
     React.useEffect(() => {
         if (isOpen) {
             loadInternalAccounts();
-            setTransactionType(initialType);
-            form.reset({
-                date: format(new Date(), 'yyyy-MM-dd'),
-                company: "",
-                description: "",
-                quantity: 1,
-                unitPrice: "" as any,
-                taxType: "None",
-                taxRate: preferences?.defaultTaxRate || 0,
-                category: "",
-                paymentMethod: "Bank Transfer",
-                account: "",
-                explanation: "",
-                documentNumber: "",
-                documentUrl: "",
-                type: "business",
-            });
+            
+            if (transactionToEdit) {
+                const isIncome = !!transactionToEdit.incomeCategory;
+                const isPayable = !isIncome && 'vendor' in transactionToEdit;
+                const type = isIncome ? 'income' : isPayable ? 'payable' : 'expense';
+                setTransactionType(type);
+
+                form.reset({
+                    date: transactionToEdit.date,
+                    company: transactionToEdit.company || transactionToEdit.vendor,
+                    description: transactionToEdit.description || "",
+                    quantity: transactionToEdit.quantity || 1,
+                    unitPrice: transactionToEdit.unitPrice || transactionToEdit.totalAmount,
+                    taxType: transactionToEdit.taxType || "None",
+                    taxRate: transactionToEdit.taxRate || 0,
+                    category: transactionToEdit.incomeCategory || transactionToEdit.category,
+                    paymentMethod: transactionToEdit.paymentMethod || "Bank Transfer",
+                    account: transactionToEdit.depositedTo || transactionToEdit.paidFrom || "",
+                    explanation: transactionToEdit.explanation || "",
+                    documentNumber: transactionToEdit.documentNumber || transactionToEdit.invoiceNumber || "",
+                    documentUrl: transactionToEdit.documentUrl || "",
+                    type: transactionToEdit.type || "business",
+                });
+            } else {
+                setTransactionType(initialType);
+                form.reset({
+                    date: format(new Date(), 'yyyy-MM-dd'),
+                    company: "",
+                    description: "",
+                    quantity: 1,
+                    unitPrice: "" as any,
+                    taxType: "None",
+                    taxRate: preferences?.defaultTaxRate || 0,
+                    category: "",
+                    paymentMethod: "Bank Transfer",
+                    account: "",
+                    explanation: "",
+                    documentNumber: "",
+                    documentUrl: "",
+                    type: "business",
+                });
+            }
         }
-    }, [isOpen, initialType, form, loadInternalAccounts, preferences]);
+    }, [isOpen, initialType, form, loadInternalAccounts, preferences, transactionToEdit]);
 
     const handleCreateCompany = async (name: string) => {
         if (!user || !name.trim()) return;
@@ -283,6 +313,8 @@ export function TransactionDialog({
                 company: values.company,
                 description: values.description || "",
                 totalAmount: totals.gross,
+                quantity: values.quantity,
+                unitPrice: values.unitPrice,
                 preTaxAmount: totals.net,
                 taxAmount: totals.tax,
                 taxRate: values.taxRate,
@@ -294,61 +326,91 @@ export function TransactionDialog({
                 userId: user.uid,
             };
 
-            if (transactionType === 'income') {
-                await addIncomeTransaction({
-                    ...baseData,
-                    incomeCategory: values.category,
-                    depositedTo: values.account,
-                    paymentMethod: values.paymentMethod || 'Bank Transfer',
-                });
-                toast({ title: 'Income Posted' });
-            } else if (transactionType === 'expense') {
-                await addExpenseTransaction({
-                    ...baseData,
-                    category: values.category,
-                    paidFrom: values.account,
-                    paymentMethod: values.paymentMethod || 'Bank Transfer',
-                });
-                toast({ title: 'Expense Posted' });
-            } else if (transactionType === 'payable') {
-                await addPayableBill({
-                    vendor: values.company,
-                    dueDate: values.date,
-                    totalAmount: totals.gross,
-                    category: values.category,
-                    description: values.description,
-                    taxRate: values.taxRate,
-                    taxType: values.taxType,
-                    documentUrl: values.documentUrl,
-                    userId: user.uid,
-                });
-                toast({ title: 'Payable Logged' });
-            } else if (transactionType === 'receivable') {
-                const contactMatch = contacts.find(c => c.name === values.company || (c.businessName && `${c.name} - ${c.businessName}` === values.company));
-                await addInvoiceWithLineItems({
-                    invoiceNumber: values.documentNumber || `INV-${Date.now().toString().slice(-6)}`,
-                    companyName: values.company,
-                    contactId: contactMatch?.id || 'unknown',
-                    originalAmount: totals.gross,
-                    amountPaid: 0,
-                    dueDate: new Date(new Date(values.date).getTime() + 14 * 24 * 60 * 60 * 1000),
-                    invoiceDate: new Date(values.date),
-                    status: 'outstanding',
-                    notes: values.explanation || "",
-                    taxType: values.taxType || 'None',
-                    userId: user.uid,
-                }, [
-                    {
-                        invoiceId: '',
-                        description: values.description || 'Service Rendered',
-                        quantity: values.quantity,
-                        price: values.unitPrice,
+            if (transactionToEdit) {
+                if (transactionType === 'income') {
+                    await updateIncomeTransaction(transactionToEdit.id, {
+                        ...baseData,
+                        incomeCategory: values.category,
+                        depositedTo: values.account,
+                        paymentMethod: values.paymentMethod || 'Bank Transfer',
+                    });
+                } else if (transactionType === 'expense') {
+                    await updateExpenseTransaction(transactionToEdit.id, {
+                        ...baseData,
+                        category: values.category,
+                        paidFrom: values.account,
+                        paymentMethod: values.paymentMethod || 'Bank Transfer',
+                    });
+                } else if (transactionType === 'payable') {
+                    await updatePayableBill(transactionToEdit.id, {
+                        vendor: values.company,
+                        dueDate: values.date,
+                        totalAmount: totals.gross,
+                        category: values.category,
+                        description: values.description,
                         taxRate: values.taxRate,
                         taxType: values.taxType,
-                        userId: user.uid
-                    }
-                ]);
-                toast({ title: 'Receivable Logged' });
+                        documentUrl: values.documentUrl,
+                    });
+                }
+                toast({ title: 'Record Updated' });
+            } else {
+                if (transactionType === 'income') {
+                    await addIncomeTransaction({
+                        ...baseData,
+                        incomeCategory: values.category,
+                        depositedTo: values.account,
+                        paymentMethod: values.paymentMethod || 'Bank Transfer',
+                    });
+                    toast({ title: 'Income Posted' });
+                } else if (transactionType === 'expense') {
+                    await addExpenseTransaction({
+                        ...baseData,
+                        category: values.category,
+                        paidFrom: values.account,
+                        paymentMethod: values.paymentMethod || 'Bank Transfer',
+                    });
+                    toast({ title: 'Expense Posted' });
+                } else if (transactionType === 'payable') {
+                    await addPayableBill({
+                        vendor: values.company,
+                        dueDate: values.date,
+                        totalAmount: totals.gross,
+                        category: values.category,
+                        description: values.description,
+                        taxRate: values.taxRate,
+                        taxType: values.taxType,
+                        documentUrl: values.documentUrl,
+                        userId: user.uid,
+                    });
+                    toast({ title: 'Payable Logged' });
+                } else if (transactionType === 'receivable') {
+                    const contactMatch = contacts.find(c => c.name === values.company || (c.businessName && `${c.name} - ${c.businessName}` === values.company));
+                    await addInvoiceWithLineItems({
+                        invoiceNumber: values.documentNumber || `INV-${Date.now().toString().slice(-6)}`,
+                        companyName: values.company,
+                        contactId: contactMatch?.id || 'unknown',
+                        originalAmount: totals.gross,
+                        amountPaid: 0,
+                        dueDate: new Date(new Date(values.date).getTime() + 14 * 24 * 60 * 60 * 1000),
+                        invoiceDate: new Date(values.date),
+                        status: 'outstanding',
+                        notes: values.explanation || "",
+                        taxType: values.taxType || 'None',
+                        userId: user.uid,
+                    }, [
+                        {
+                            invoiceId: '',
+                            description: values.description || 'Service Rendered',
+                            quantity: values.quantity,
+                            price: values.unitPrice,
+                            taxRate: values.taxRate,
+                            taxType: values.taxType,
+                            userId: user.uid
+                        }
+                    ]);
+                    toast({ title: 'Receivable Logged' });
+                }
             }
 
             onSuccess();
@@ -368,7 +430,9 @@ export function TransactionDialog({
                         <div className="flex flex-col items-center gap-2 text-primary relative">
                             <Calculator className="h-10 w-10" />
                             <div className="space-y-1 text-center">
-                                <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Unified Transaction Entry</DialogTitle>
+                                <DialogTitle className="text-3xl font-headline uppercase tracking-tight">
+                                    {transactionToEdit ? 'Update Transaction Details' : 'Unified Transaction Entry'}
+                                </DialogTitle>
                                 <DialogDescription className="text-base">Precision BKS Financial Orchestration Hub</DialogDescription>
                             </div>
                         </div>
@@ -387,7 +451,7 @@ export function TransactionDialog({
                                                     <ShieldCheck className="h-4 w-4" /> Transaction Mode
                                                 </FormLabel>
                                                 <FormControl>
-                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-8">
+                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} value={field.value} className="flex gap-8">
                                                         <div className="flex items-center space-x-2">
                                                             <RadioGroupItem value="business" id="mode-biz" className="h-5 w-5" />
                                                             <Label htmlFor="mode-biz" className="text-base font-semibold cursor-pointer">Business Operations</Label>
@@ -403,7 +467,7 @@ export function TransactionDialog({
                                     />
                                     <div className="space-y-2">
                                         <Label className="text-sm uppercase font-bold text-primary">Entry Type</Label>
-                                        <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)}>
+                                        <Select value={transactionType} onValueChange={(v: any) => setTransactionType(v)} disabled={!!transactionToEdit}>
                                             <SelectTrigger className="h-14 text-lg font-medium">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -739,7 +803,7 @@ export function TransactionDialog({
                             <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
                             <Button type="submit" form="transaction-form" size="lg" className="h-14 px-16 font-bold shadow-2xl text-xl" disabled={isSaving}>
                                 {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
-                                {transactionType === 'payable' || transactionType === 'receivable' ? 'Log Financial Promise' : 'Post to General Ledger'}
+                                {transactionToEdit ? 'Save Changes' : (transactionType === 'payable' || transactionType === 'receivable' ? 'Log Financial Promise' : 'Post to General Ledger')}
                             </Button>
                         </div>
                     </DialogFooter>

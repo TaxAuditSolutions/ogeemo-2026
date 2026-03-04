@@ -93,6 +93,7 @@ export function LedgersView() {
   const [isLoading, setIsLoading] = React.useState(true);
   
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
+  const [transactionToEdit, setTransactionToEdit] = React.useState<GeneralTransaction | null>(null);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   
@@ -234,6 +235,11 @@ export function LedgersView() {
     setTimeout(loadData, 500);
   };
 
+  const handleEdit = (transaction: GeneralTransaction) => {
+      setTransactionToEdit(transaction);
+      setIsTransactionDialogOpen(true);
+  };
+
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
@@ -351,7 +357,7 @@ export function LedgersView() {
                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem disabled><Pencil className="mr-2 h-4 w-4"/>Edit (Disabled during reset)</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => handleEdit(item)}><Pencil className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                                         <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -405,7 +411,7 @@ export function LedgersView() {
                     <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
                         <Printer className="mr-2 h-4 w-4" /> Print Ledger
                     </Button>
-                    <Button size="sm" onClick={() => setIsTransactionDialogOpen(true)}>
+                    <Button size="sm" onClick={() => { setTransactionToEdit(null); setIsTransactionDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
                     </Button>
                 </div>
@@ -467,7 +473,10 @@ export function LedgersView() {
 
         <TransactionDialog
             isOpen={isTransactionDialogOpen}
-            onOpenChange={setIsTransactionDialogOpen}
+            onOpenChange={(open) => {
+                setIsTransactionDialogOpen(open);
+                if (!open) setTransactionToEdit(null);
+            }}
             initialType={activeTab === 'income' ? 'income' : activeTab === 'expenses' ? 'expense' : 'income'}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
@@ -475,6 +484,7 @@ export function LedgersView() {
             contacts={contacts}
             taxTypes={taxTypes}
             onSuccess={loadData}
+            transactionToEdit={transactionToEdit}
         />
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >

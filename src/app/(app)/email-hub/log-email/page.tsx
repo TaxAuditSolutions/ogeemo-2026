@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { getContacts, type Contact as ContactType } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { saveEmailForContact } from '@/services/file-service';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,7 @@ import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LogEmailPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactType[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
@@ -70,7 +70,7 @@ export default function LogEmailPage() {
 
   // Form State
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+  const [contactToEdit, setContactToEdit] = useState<ContactType | null>(null);
   const [from, setFrom] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -78,11 +78,11 @@ export default function LogEmailPage() {
   
   // Date/Time State
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [startHour, setStartHour] = useState<string>(String(new Date().getHours()));
-  const [startMinute, setStartMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+  const [startHour, setStartHour] = useState<string>(String(new Date().getHours()).padStart(2, '0'));
+  const [startMinute, setStartMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const [endHour, setEndHour] = useState<string>(String(new Date().getHours() + 1));
-  const [endMinute, setEndMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5));
+  const [endHour, setEndHour] = useState<string>(String(new Date().getHours() + 1).padStart(2, '0'));
+  const [endMinute, setEndMinute] = useState<string>(String(Math.floor(new Date().getMinutes() / 5) * 5).padStart(2, '0'));
   
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
@@ -103,8 +103,9 @@ export default function LogEmailPage() {
     }
     setIsLoading(true);
     try {
+      // Removing user.uid filter to ensure all contacts from Contact Hub are available
       const [fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
-        getContacts(user.uid),
+        getContacts(),
         getContactFolders(user.uid),
         getCompanies(user.uid),
         getIndustries(user.uid),
@@ -116,7 +117,7 @@ export default function LogEmailPage() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Failed to load contacts',
+        title: 'Failed to load directory',
         description: error.message,
       });
     } finally {
@@ -178,7 +179,7 @@ export default function LogEmailPage() {
   const handleLogTime = async () => {
     const saveResult = await saveEmailToFile();
     if (!saveResult.success) {
-        return; // Stop if saving the file fails
+        return; 
     }
     
     const query = new URLSearchParams();
@@ -203,11 +204,11 @@ export default function LogEmailPage() {
         query.append('end', finalEndDate.toISOString());
     }
     
-    toast({ title: 'Transferring to Master Mind', description: 'Redirecting to finalize the scheduling and billable rate.' });
+    toast({ title: 'Transferring to Master Mind', description: 'Redirecting to finalize orchestration.' });
     router.push(`/master-mind?${query.toString()}`);
   };
 
-  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+  const handleContactSave = (savedContact: ContactType, isEditing: boolean) => {
       if (isEditing) {
           setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
           if(selectedContactId === savedContact.id) {
@@ -232,22 +233,11 @@ export default function LogEmailPage() {
     }
   };
 
-  const hourOptions = Array.from({ length: 24 }, (_, i) => {
-    const d = set(new Date(), { hours: i });
-    return { value: String(i), label: format(d, 'h a') };
-  });
-
-  const minuteOptions = Array.from({ length: 12 }, (_, i) => {
-    const minutes = i * 5;
-    return { value: String(minutes), label: `:${minutes.toString().padStart(2, '0')}` };
-  });
-
-
   const selectedContact = contacts.find(c => c.id === selectedContactId);
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col h-full">
+      <div className="p-4 sm:p-6 flex flex-col h-full bg-muted/10">
         <header className="relative text-center mb-6 w-full">
           <Button asChild variant="outline" className="absolute left-0 top-1/2 -translate-y-1/2">
             <Link href="/email-hub">
@@ -265,17 +255,17 @@ export default function LogEmailPage() {
           </p>
         </header>
 
-        <Card className="w-full flex-1 flex flex-col">
-          <CardHeader>
+        <Card className="w-full flex-1 flex flex-col shadow-xl">
+          <CardHeader className="bg-primary/5 border-b">
             <CardTitle>Activity Details</CardTitle>
             <CardDescription>
               Link this email event to a client and worker record for payroll and invoicing sync.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 flex-1 flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-6 flex-1 flex flex-col pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Client / Contact</Label>
+                  <Label className="text-xs uppercase font-bold text-primary">Client / Contact Association</Label>
                   <div className="flex items-center gap-2">
                     <Popover
                       open={isContactPopoverOpen}
@@ -285,16 +275,16 @@ export default function LogEmailPage() {
                         <Button
                           variant="outline"
                           role="combobox"
-                          className="w-full justify-between"
+                          className="w-full justify-between h-11"
                           disabled={isLoading}
                         >
-                          <span className="truncate">{selectedContact?.name || 'Select a contact...'}</span>
+                          <span className="truncate">{selectedContact?.name || 'Select a contact from Hub...'}</span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search contacts..." />
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                          <CommandInput placeholder="Search all contacts..." />
                           <CommandList>
                             <CommandEmpty>
                               {isLoading ? (
@@ -322,7 +312,10 @@ export default function LogEmailPage() {
                                         : 'opacity-0'
                                     )}
                                   />
-                                  {c.name}
+                                  <div className="flex flex-col">
+                                      <span className="font-bold">{c.name}</span>
+                                      <span className="text-[10px] uppercase font-bold text-muted-foreground">{c.businessName}</span>
+                                  </div>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -330,44 +323,45 @@ export default function LogEmailPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                     <Button type="button" variant="outline" size="icon" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="h-4 w-4"/></Button>
-                     <Button type="button" variant="outline" size="icon" onClick={handleEditContact} disabled={!selectedContactId}><Edit className="h-4 w-4"/></Button>
+                     <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="h-4 w-4"/></Button>
+                     <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={handleEditContact} disabled={!selectedContactId}><Edit className="h-4 w-4"/></Button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject of Activity</Label>
+                  <Label htmlFor="subject" className="text-xs uppercase font-bold text-primary">Subject of Activity</Label>
                   <Input
                     id="subject"
                     placeholder="e.g., Reviewing contract terms"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    className="h-11"
                   />
                 </div>
             </div>
             <div className="space-y-2 flex-1 flex flex-col">
-              <Label htmlFor="body">Context / Notes</Label>
+              <Label htmlFor="body" className="text-xs uppercase font-bold text-primary">Operational Context / Notes</Label>
               <Textarea
                 id="body"
-                placeholder="Briefly describe the work performed or copy relevant snippets..."
+                placeholder="Briefly describe the work performed or copy relevant snippets from the email thread..."
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="flex-1"
+                className="flex-1 resize-none"
               />
             </div>
-             <Card className="mt-4 bg-muted/30">
+             <Card className="bg-muted/30 border-dashed">
               <CardHeader className="py-3">
                 <CardTitle className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
-                    Operational Timing
+                    Temporal Orchestration
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
                   <div className="space-y-2">
-                      <Label>Start Time</Label>
+                      <Label className="text-xs font-semibold">Start Time</Label>
                        <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
                           <PopoverTrigger asChild>
-                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                   {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
                               </Button>
                           </PopoverTrigger>
@@ -380,17 +374,17 @@ export default function LogEmailPage() {
                             />
                           </PopoverContent>
                       </Popover>
-                      <div className="flex-1 flex gap-2">
-                          <Select value={startHour} onValueChange={setStartHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
-                          <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                      <div className="flex gap-2">
+                          <Select value={startHour} onValueChange={setStartHour}><SelectTrigger className="h-10"><SelectValue placeholder="Hr" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={startMinute} onValueChange={setStartMinute}><SelectTrigger className="h-10"><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                       </div>
                   </div>
                    <div className="space-y-2">
-                      <Label>End Time</Label>
+                      <Label className="text-xs font-semibold">End Time</Label>
                        <Popover open={isEndPopoverOpen} onOpenChange={setIsEndPopoverOpen}>
                           <PopoverTrigger asChild>
-                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                   {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
                               </Button>
                           </PopoverTrigger>
@@ -403,18 +397,18 @@ export default function LogEmailPage() {
                             />
                           </PopoverContent>
                       </Popover>
-                      <div className="flex-1 flex gap-2">
-                          <Select value={endHour} onValueChange={setEndHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
-                          <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                      <div className="flex gap-2">
+                          <Select value={endHour} onValueChange={setEndHour}><SelectTrigger className="h-10"><SelectValue placeholder="Hr" /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={endMinute} onValueChange={setEndMinute}><SelectTrigger className="h-10"><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
                       </div>
                   </div>
               </CardContent>
             </Card>
           </CardContent>
-          <CardFooter className="justify-end bg-muted/10 border-t p-4">
-            <Button onClick={handleLogTime} disabled={isSaving} size="lg" className="font-bold shadow-md">
-              {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
-              Send to Master Mind for Billing & Follow-up
+          <CardFooter className="justify-end bg-muted/10 border-t p-6">
+            <Button onClick={handleLogTime} disabled={isSaving} size="lg" className="font-bold shadow-xl h-14 px-10 text-lg">
+              {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Clock className="mr-2 h-5 w-5" />}
+              Push to Master Mind
             </Button>
           </CardFooter>
         </Card>
@@ -436,24 +430,24 @@ export default function LogEmailPage() {
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>The Operational Bridge</DialogTitle>
+                <DialogTitle>The Email Orchestration Bridge</DialogTitle>
                 <DialogDescription>
-                    Use this tool to convert communication into operational value.
+                    Convert communication into operational and financial value.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="flex items-start gap-4">
                     <FileDigit className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Accounting Alignment</h4>
-                        <p className="text-sm text-muted-foreground">Log the exact time spent reading or drafting an email. This duration is then pushed to the client statement for invoicing.</p>
+                        <h4 className="font-semibold">BKS Accounting Sync</h4>
+                        <p className="text-sm text-muted-foreground">Logging the time spent on client emails ensures that every minute of your expertise is captured for professional invoicing.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <Briefcase className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">Action Orchestration</h4>
-                        <p className="text-sm text-muted-foreground">Clicking "Send to Master Mind" pre-fills your scheduler, allowing you to quickly book a follow-up task or set a reminder related to this email.</p>
+                        <h4 className="font-semibold">Spider Web Connectivity</h4>
+                        <p className="text-sm text-muted-foreground">"Push to Master Mind" pre-fills your scheduler node, allowing you to instantly book follow-ups or linked tasks across your project boards.</p>
                     </div>
                 </div>
             </div>

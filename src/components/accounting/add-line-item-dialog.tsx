@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -15,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type ServiceItem, type TaxType, type IncomeCategory } from '@/services/accounting-service';
+import { type ServiceItem, type TaxType, type ExpenseCategory } from '@/services/accounting-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
@@ -53,7 +52,7 @@ interface AddLineItemDialogProps {
   itemToEdit: LineItem | null;
   onSave: (newItem: LineItem) => void;
   serviceItems: ServiceItem[];
-  incomeCategories: IncomeCategory[];
+  expenseCategories: ExpenseCategory[]; // Realigned to Expense Categories
   onSaveRepeatable: (item: Omit<ServiceItem, 'id' | 'userId'>) => void;
   taxTypes: TaxType[];
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
@@ -65,7 +64,7 @@ export function AddLineItemDialog({
   itemToEdit,
   onSave,
   serviceItems,
-  incomeCategories,
+  expenseCategories,
   onSaveRepeatable,
   taxTypes,
   onTaxTypesChange,
@@ -168,7 +167,7 @@ export function AddLineItemDialog({
     toast({ title: "Item Loaded", description: `Populated details for "${item.description}"` });
   };
 
-  const handleSelectCategory = (cat: IncomeCategory) => {
+  const handleSelectCategory = (cat: ExpenseCategory) => {
       setDescription(cat.name);
       setIsSearchOpen(false);
       toast({ title: "Category Selected", description: `"${cat.name}" added to description.` });
@@ -213,7 +212,7 @@ export function AddLineItemDialog({
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-8 text-primary text-[10px] font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10">
-                                    <Search className="mr-1.5 h-3 w-3" /> Select from Library
+                                    <Search className="mr-1.5 h-3 w-3" /> Search Item Library
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[450px] p-0" align="end">
@@ -246,8 +245,8 @@ export function AddLineItemDialog({
                                                 ))}
                                             </CommandGroup>
                                             <Separator />
-                                            <CommandGroup heading="Income Categories (GL Library)">
-                                                {incomeCategories
+                                            <CommandGroup heading="Expense Categories (GL Library)">
+                                                {expenseCategories
                                                     .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
                                                     .map(cat => (
                                                     <CommandItem
@@ -295,7 +294,7 @@ export function AddLineItemDialog({
                     <div className="space-y-2">
                         <Label htmlFor="price" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Unit Price ($)</Label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg">$</span>
                             <Input
                                 id="price"
                                 type="number"

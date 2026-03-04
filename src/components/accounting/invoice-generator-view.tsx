@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -15,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/services/accounting-service';
+import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory, getExpenseCategories, type ExpenseCategory } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -152,7 +151,7 @@ export function InvoiceGeneratorView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
-  const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]); // Realigned to Expense Categories
   const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -232,7 +231,7 @@ export function InvoiceGeneratorView() {
           fetchedCompanies,
           fetchedContacts,
           fetchedServiceItems,
-          fetchedIncomeCategories,
+          fetchedExpenseCategories,
           fetchedFolders,
           fetchedTaxTypes,
           profile,
@@ -241,7 +240,7 @@ export function InvoiceGeneratorView() {
           getCompanies(user.uid),
           getContacts(), // Synchronized Directory
           getServiceItems(user.uid),
-          getIncomeCategories(user.uid),
+          getExpenseCategories(user.uid), // Realigned to Expense
           getContactFolders(user.uid),
           getTaxTypes(user.uid),
           getUserProfile(user.uid),
@@ -251,7 +250,7 @@ export function InvoiceGeneratorView() {
         setCompanies(fetchedCompanies);
         setContacts(fetchedContacts);
         setServiceItems(fetchedServiceItems);
-        setIncomeCategories(fetchedIncomeCategories);
+        setExpenseCategories(fetchedExpenseCategories);
         setContactFolders(fetchedFolders);
         setTaxTypes(fetchedTaxTypes);
         setUserProfile(profile);
@@ -741,7 +740,7 @@ export function InvoiceGeneratorView() {
         itemToEdit={itemToEdit}
         onSave={handleSaveLineItem}
         serviceItems={serviceItems}
-        incomeCategories={incomeCategories}
+        expenseCategories={expenseCategories} // Passed expense categories
         onSaveRepeatable={handleSaveRepeatableItem}
         taxTypes={taxTypes}
         onTaxTypesChange={setTaxTypes}

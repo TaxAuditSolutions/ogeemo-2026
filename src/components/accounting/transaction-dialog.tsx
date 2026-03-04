@@ -47,7 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandInput, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
@@ -423,7 +423,7 @@ export function TransactionDialog({
     }
 
     return (
-        <React.Fragment>
+        <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
                     <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
@@ -555,7 +555,7 @@ export function TransactionDialog({
                                             <FormItem className="space-y-2">
                                                 <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
                                                     <FileSignature className="h-4 w-4" /> Audit Category
-                                                </FormLabel>
+                                                </Label>
                                                 <div className="flex gap-2">
                                                     <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                         <PopoverTrigger asChild>
@@ -816,6 +816,6 @@ export function TransactionDialog({
                 taxTypes={taxTypes}
                 onTaxTypesChange={() => onSuccess()}
             />
-        </React.Fragment>
+        </>
     );
 }

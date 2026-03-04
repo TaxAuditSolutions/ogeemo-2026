@@ -152,6 +152,17 @@ export function AddLineItemDialog({
     }
   }, [isOpen, itemToEdit, preferences]);
 
+  const handleSelectTaxType = (id: string) => {
+    const type = taxTypes.find((t) => t.id === id);
+    if (type) {
+      setTaxType(type.name);
+      setTaxRate(type.rate);
+    } else {
+      setTaxType('None');
+      setTaxRate(0);
+    }
+  };
+
   const handleSave = () => {
     const numQuantity = Number(quantity);
     const numPrice = Number(price);

@@ -341,7 +341,7 @@ export function InvoiceGeneratorView() {
       }
   };
   
-  const handlePreview = (action?: string) => {
+  const handlePreview = () => {
       const selectedContact = contacts.find(c => c.id === selectedContactId);
       if (!selectedContact) {
           toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before proceeding.'});
@@ -375,10 +375,7 @@ export function InvoiceGeneratorView() {
 
       try {
           sessionStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
-          const url = action === 'print' 
-            ? '/accounting/invoices/preview?action=print' 
-            : '/accounting/invoices/preview';
-          window.open(url, '_blank');
+          window.open('/accounting/invoices/preview', '_blank');
       } catch (error) {
           toast({ variant: 'destructive', title: 'Preview Error', description: 'Could not generate the preview.' });
       }
@@ -414,7 +411,7 @@ export function InvoiceGeneratorView() {
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Invoice
                     </Button>
-                    <Button variant="outline" onClick={() => handlePreview()}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                    <Button variant="outline" onClick={handlePreview}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -629,9 +626,6 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                 <Button variant="outline" size="sm" onClick={() => handlePreview('print')}>
-                    <Printer className="mr-2 h-4 w-4" /> Print
-                 </Button>
             </CardFooter>
         </Card>
       </div>

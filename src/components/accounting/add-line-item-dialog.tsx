@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save, FileSignature, Briefcase, X } from 'lucide-react';
+import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save, FileSignature, Briefcase, X, Info } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';

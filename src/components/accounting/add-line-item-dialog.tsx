@@ -36,7 +36,8 @@ import {
   FileSignature, 
   Briefcase, 
   X, 
-  Info 
+  Info,
+  Plus
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -235,7 +236,7 @@ export function AddLineItemDialog({
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-10 text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10 border-primary/20">
-                                    <Search className="mr-2 h-4 w-4" /> Search Global Library
+                                    <Search className="mr-2 h-4 w-4" /> Select or create a line item category.
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[500px] p-0 shadow-2xl" align="end">
@@ -247,6 +248,26 @@ export function AddLineItemDialog({
                                         className="h-12"
                                     />
                                     <CommandList className="max-h-[500px]">
+                                        {searchQuery.trim().length > 0 && (
+                                            <CommandGroup heading="Create New">
+                                                <CommandItem
+                                                    value={searchQuery}
+                                                    onSelect={() => {
+                                                        setDescription(searchQuery);
+                                                        setIsSearchOpen(false);
+                                                    }}
+                                                    className="cursor-pointer py-3"
+                                                >
+                                                    <Plus className="mr-3 h-5 w-5 text-primary" />
+                                                    <div className="flex flex-col flex-1">
+                                                        <span className="font-bold text-sm">Use "{searchQuery}" as description</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                                                            Create custom line item
+                                                        </span>
+                                                    </div>
+                                                </CommandItem>
+                                            </CommandGroup>
+                                        )}
                                         <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
                                         <CommandGroup heading="Professional Services Library">
                                             {serviceItems

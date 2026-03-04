@@ -97,6 +97,28 @@ export function AddLineItemDialog({
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   
+  // --- High-Fidelity Deduplication Hub ---
+  // Ensures that search results do not contain duplicate nodes if the data source has overlaps.
+  const uniqueServiceItems = useMemo(() => {
+    const seen = new Set<string>();
+    return serviceItems.filter(item => {
+        const desc = item.description.toLowerCase().trim();
+        if (seen.has(desc)) return false;
+        seen.add(desc);
+        return true;
+    });
+  }, [serviceItems]);
+
+  const uniqueExpenseCategories = useMemo(() => {
+    const seen = new Set<string>();
+    return expenseCategories.filter(cat => {
+        const name = cat.name.toLowerCase().trim();
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+    });
+  }, [expenseCategories]);
+
   const { subtotal, taxAmount, lineTotal } = useMemo(() => {
     const qty = Number(quantity) || 0;
     const unitPrice = Number(price) || 0;
@@ -202,6 +224,9 @@ export function AddLineItemDialog({
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   };
 
+  const filteredServiceItems = uniqueServiceItems.filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCategories = uniqueExpenseCategories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -242,7 +267,7 @@ export function AddLineItemDialog({
                             <PopoverContent className="w-[500px] p-0 shadow-2xl" align="end">
                                 <Command shouldFilter={false}>
                                     <CommandInput 
-                                        placeholder="Search services or expense categories..." 
+                                        placeholder="Search unique items or categories..." 
                                         value={searchQuery}
                                         onValueChange={setSearchQuery}
                                         className="h-12"
@@ -269,47 +294,51 @@ export function AddLineItemDialog({
                                             </CommandGroup>
                                         )}
                                         <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
-                                        <CommandGroup heading="Professional Services Library">
-                                            {serviceItems
-                                                .filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()))
-                                                .map(item => (
-                                                <CommandItem
-                                                    key={item.id}
-                                                    value={item.description}
-                                                    onSelect={() => handleSelectServiceItem(item)}
-                                                    className="cursor-pointer py-3"
-                                                >
-                                                    <Briefcase className="mr-3 h-5 w-5 text-primary/60" />
-                                                    <div className="flex flex-col flex-1">
-                                                        <span className="font-bold text-sm">{item.description}</span>
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                                                            Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
-                                                        </span>
-                                                    </div>
-                                                    {description === item.description && <Check className="h-5 w-5 text-primary ml-auto" />}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                        <Separator />
-                                        <CommandGroup heading="Expense Categories (BKS Audit Lines)">
-                                            {expenseCategories
-                                                .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                                                .map(cat => (
-                                                <CommandItem
-                                                    key={cat.id}
-                                                    value={cat.name}
-                                                    onSelect={() => handleSelectCategory(cat)}
-                                                    className="cursor-pointer py-3"
-                                                >
-                                                    <FileSignature className="mr-3 h-5 w-5 text-muted-foreground" />
-                                                    <div className="flex flex-col flex-1">
-                                                        <span className="font-bold text-sm">{cat.name}</span>
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
-                                                    </div>
-                                                    {description === cat.name && <Check className="h-5 w-5 text-primary ml-auto" />}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
+                                        
+                                        {filteredServiceItems.length > 0 && (
+                                            <CommandGroup heading="Professional Services Library">
+                                                {filteredServiceItems.map(item => (
+                                                    <CommandItem
+                                                        key={item.id}
+                                                        value={item.description}
+                                                        onSelect={() => handleSelectServiceItem(item)}
+                                                        className="cursor-pointer py-3"
+                                                    >
+                                                        <Briefcase className="mr-3 h-5 w-5 text-primary/60" />
+                                                        <div className="flex flex-col flex-1">
+                                                            <span className="font-bold text-sm">{item.description}</span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                                                                Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
+                                                            </span>
+                                                        </div>
+                                                        {description === item.description && <Check className="h-5 w-5 text-primary ml-auto" />}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        )}
+
+                                        {filteredCategories.length > 0 && (
+                                            <>
+                                                <Separator />
+                                                <CommandGroup heading="Expense Categories (BKS Audit Lines)">
+                                                    {filteredCategories.map(cat => (
+                                                        <CommandItem
+                                                            key={cat.id}
+                                                            value={cat.name}
+                                                            onSelect={() => handleSelectCategory(cat)}
+                                                            className="cursor-pointer py-3"
+                                                        >
+                                                            <FileSignature className="mr-3 h-5 w-5 text-muted-foreground" />
+                                                            <div className="flex flex-col flex-1">
+                                                                <span className="font-bold text-sm">{cat.name}</span>
+                                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
+                                                            </div>
+                                                            {description === cat.name && <Check className="h-5 w-5 text-primary ml-auto" />}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </>
+                                        )}
                                     </CommandList>
                                 </Command>
                             </PopoverContent>

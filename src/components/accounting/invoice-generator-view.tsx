@@ -70,7 +70,7 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = useState('');
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -87,7 +87,6 @@ export function InvoiceGeneratorView() {
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
-  
   
   const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
       if (!user) return;
@@ -178,7 +177,9 @@ export function InvoiceGeneratorView() {
           setSelectedContactId(null);
         }
         
-        setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+        if (!invoiceNumber) {
+            setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+        }
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
@@ -187,7 +188,7 @@ export function InvoiceGeneratorView() {
       }
     }
     initializeView();
-  }, [user, toast, loadInvoiceForEditing, searchParams]);
+  }, [user, toast, loadInvoiceForEditing, searchParams, invoiceNumber]);
 
   useEffect(() => {
     const contact = contacts.find(c => c.id === selectedContactId);
@@ -374,7 +375,8 @@ export function InvoiceGeneratorView() {
       };
 
       try {
-          sessionStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
+          // Use localStorage to ensure data persist across tabs without session issues
+          localStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
           window.open('/accounting/invoices/preview', '_blank');
       } catch (error) {
           toast({ variant: 'destructive', title: 'Preview Error', description: 'Could not generate the preview.' });

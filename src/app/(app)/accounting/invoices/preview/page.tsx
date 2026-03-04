@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Logo } from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
-import { Printer, ArrowLeft, LoaderCircle, AlertTriangle, FileDown } from 'lucide-react';
+import { Printer, ArrowLeft, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { UserProfile } from '@/services/user-profile-service';
 
@@ -70,7 +70,8 @@ function PreviewContent() {
 
     useEffect(() => {
         try {
-            const dataRaw = sessionStorage.getItem(INVOICE_PREVIEW_KEY);
+            // Using localStorage for cross-tab stability
+            const dataRaw = localStorage.getItem(INVOICE_PREVIEW_KEY);
             if (dataRaw) {
                 const parsedData = JSON.parse(dataRaw);
                 setInvoiceData(parsedData);
@@ -87,7 +88,6 @@ function PreviewContent() {
     useEffect(() => {
         const action = searchParams.get('action');
         if (action === 'print' && !isLoading && invoiceData) {
-            // Small delay to ensure data is fully settled in DOM before print dialog
             const timer = setTimeout(() => {
                 handlePrint();
             }, 800);
@@ -163,8 +163,8 @@ function PreviewContent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {invoiceData.lineItems.map(item => (
-                                    <TableRow key={item.id}>
+                                {invoiceData.lineItems.map((item, idx) => (
+                                    <TableRow key={item.id || idx}>
                                         <TableCell>{item.description}</TableCell>
                                         <TableCell className="text-center">{item.quantity}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>

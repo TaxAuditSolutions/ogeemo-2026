@@ -85,7 +85,7 @@ const transactionSchema = z.object({
     company: z.string().min(1, "Contact selection is required."),
     description: z.string().optional(),
     quantity: z.coerce.number().min(0.01, "Quantity must be at least 0.01"),
-    unitPrice: z.coerce.string().min(0, "Price must be positive"),
+    unitPrice: z.coerce.string(),
     taxType: z.string().optional(),
     taxRate: z.coerce.number().min(0, "Tax rate cannot be negative"),
     category: z.string().min(1, "Category is required."),
@@ -148,7 +148,7 @@ export function TransactionDialog({
             company: "",
             description: "",
             quantity: 1,
-            unitPrice: "" as any,
+            unitPrice: "",
             taxType: "None",
             taxRate: preferences?.defaultTaxRate || 0,
             category: "",
@@ -229,7 +229,7 @@ export function TransactionDialog({
                     company: "",
                     description: "",
                     quantity: 1,
-                    unitPrice: "" as any,
+                    unitPrice: "",
                     taxType: "None",
                     taxRate: preferences?.defaultTaxRate || 0,
                     category: "",
@@ -801,7 +801,7 @@ export function TransactionDialog({
                             <span>Finalizing this entry will immediately synchronize with the BKS General Ledger and update your financial snapshots.</span>
                         </div>
                         <div className="flex gap-4 w-full sm:w-auto">
-                            <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
+                            <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-12 px-8">Cancel</Button>
                             <Button type="submit" form="transaction-form" size="lg" className="h-14 px-16 font-bold shadow-2xl text-xl" disabled={isSaving}>
                                 {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                                 {transactionToEdit ? 'Save Changes' : (transactionType === 'payable' || transactionType === 'receivable' ? 'Log Financial Promise' : 'Post to General Ledger')}

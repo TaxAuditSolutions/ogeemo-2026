@@ -116,6 +116,7 @@ export function CashAccountingView() {
     
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [dialogType, setDialogType] = useState<'in' | 'out'>('out');
     const [viewOnly, setViewOnly] = useState(false);
     const [editingTx, setEditingTx] = useState<PettyCashTransaction | null>(null);
@@ -294,7 +295,12 @@ export function CashAccountingView() {
             <AccountingPageHeader pageTitle="Petty Cash" />
             
             <header className="text-center relative w-full max-w-4xl">
-                <h1 className="text-4xl font-bold font-headline text-primary tracking-tight mt-4">Petty Cash Accounting</h1>
+                <div className="flex items-center justify-center gap-2">
+                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight mt-4">Petty Cash Accounting</h1>
+                    <Button variant="ghost" size="icon" className="mt-4" onClick={() => setIsInfoOpen(true)}>
+                        <Info className="h-6 w-6 text-muted-foreground" />
+                    </Button>
+                </div>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto mt-2">
                     The cash box is for small, immediate transactions outside of regular bank processing. 
                     Identify every dollar to maintain your <strong>Black Box of Evidence</strong>.
@@ -566,6 +572,48 @@ export function CashAccountingView() {
                                 {editingTx ? 'Update Entry' : 'Log Cash Transaction'}
                             </Button>
                         )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+                <DialogContent className="sm:max-w-xl text-black">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2 text-primary mb-1">
+                            <Info className="h-5 w-5" />
+                            <DialogTitle className="text-2xl font-headline">About Petty Cash Accounting</DialogTitle>
+                        </div>
+                        <DialogDescription>
+                            Understanding and managing your business's physical cash float.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4 text-sm leading-relaxed">
+                        <section className="space-y-2">
+                            <h4 className="font-bold text-foreground">What is Petty Cash?</h4>
+                            <p className="text-muted-foreground">
+                                Petty cash is a small amount of physical currency kept on hand for minor business expenses (e.g., office supplies, parking, or coffee) where using a cheque or credit card is impractical.
+                            </p>
+                        </section>
+                        <section className="space-y-2">
+                            <h4 className="font-bold text-foreground">The Orchestration Workflow</h4>
+                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                                <li><strong>Cash In:</strong> Use this to record adding money to the box (e.g., drawing $100 from the bank to start the "float").</li>
+                                <li><strong>Cash Out:</strong> Record every small purchase. Link these to a Contact and a CRA Tax Category.</li>
+                                <li><strong>Post to GL:</strong> This is the most critical step. Transactions here are in a "staging" area. Posting them moves them into your <strong>BKS General Ledger</strong> for formal reporting.</li>
+                            </ul>
+                        </section>
+                        <section className="space-y-2">
+                            <h4 className="font-bold text-foreground">Instructions for Audit-Readiness</h4>
+                            <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
+                                <li><strong>Keep Receipts:</strong> Always place the physical receipt in your cash box.</li>
+                                <li><strong>Record Immediately:</strong> Log the transaction in Ogeemo the moment the cash leaves the box.</li>
+                                <li><strong>Verify Float:</strong> Regularly count your physical cash. It should always match the <strong>Current Box Float</strong> shown on this dashboard.</li>
+                                <li><strong>Sync Regularly:</strong> Post transactions to the GL at least once a month to keep your financial snapshots accurate.</li>
+                            </ol>
+                        </section>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsInfoOpen(false)}>Got it!</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

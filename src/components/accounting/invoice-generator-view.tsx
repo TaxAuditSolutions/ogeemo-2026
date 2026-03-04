@@ -54,7 +54,6 @@ const formatCurrency = (amount: number) => {
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
-// High-Fidelity Shared Component for In-Page Preview and Print
 const InvoiceDocument = ({ 
     invoiceNumber, 
     businessNumber, 
@@ -151,7 +150,7 @@ export function InvoiceGeneratorView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]); // Realigned to Expense Categories
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -238,9 +237,9 @@ export function InvoiceGeneratorView() {
           fetchedIndustries
         ] = await Promise.all([
           getCompanies(user.uid),
-          getContacts(), // Synchronized Directory
+          getContacts(),
           getServiceItems(user.uid),
-          getExpenseCategories(user.uid), // Realigned to Expense
+          getExpenseCategories(user.uid),
           getContactFolders(user.uid),
           getTaxTypes(user.uid),
           getUserProfile(user.uid),
@@ -380,7 +379,6 @@ export function InvoiceGeneratorView() {
             toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
         }
         localStorage.removeItem(EDIT_INVOICE_ID_KEY);
-        // Explicitly navigating to the AR hub which acts as "closing" the creator
         router.push('/accounting/accounts-receivable');
 
     } catch (error: any) {
@@ -694,7 +692,6 @@ export function InvoiceGeneratorView() {
             </CardFooter>
         </Card>
 
-        {/* Hidden Printable Template */}
         <div className="hidden">
             <div ref={contentRef}>
                 <InvoiceDocument {...documentProps} />
@@ -702,7 +699,6 @@ export function InvoiceGeneratorView() {
         </div>
       </div>
 
-      {/* In-Page Preview Dialog */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
           <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden bg-muted/30">
               <DialogHeader className="p-4 border-b bg-background shrink-0 text-black">
@@ -740,7 +736,7 @@ export function InvoiceGeneratorView() {
         itemToEdit={itemToEdit}
         onSave={handleSaveLineItem}
         serviceItems={serviceItems}
-        expenseCategories={expenseCategories} // Passed expense categories
+        expenseCategories={expenseCategories}
         onSaveRepeatable={handleSaveRepeatableItem}
         taxTypes={taxTypes}
         onTaxTypesChange={setTaxTypes}

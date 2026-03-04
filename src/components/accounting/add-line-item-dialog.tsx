@@ -52,7 +52,7 @@ interface AddLineItemDialogProps {
   itemToEdit: LineItem | null;
   onSave: (newItem: LineItem) => void;
   serviceItems: ServiceItem[];
-  expenseCategories: ExpenseCategory[]; // Realigned to Expense Categories
+  expenseCategories: ExpenseCategory[];
   onSaveRepeatable: (item: Omit<ServiceItem, 'id' | 'userId'>) => void;
   taxTypes: TaxType[];
   onTaxTypesChange: (taxTypes: TaxType[]) => void;

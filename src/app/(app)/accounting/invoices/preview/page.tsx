@@ -99,7 +99,7 @@ function PreviewContent() {
     if (error || !invoiceData) {
          return (
             <div className="flex h-screen items-center justify-center p-4">
-                <Card className="w-full max-w-md text-center">
+                <Card className="w-full max-md text-center">
                     <CardContent className="p-6">
                         <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                         <h2 className="mt-4 text-xl font-semibold">Could not load preview</h2>
@@ -126,9 +126,6 @@ function PreviewContent() {
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4"/> Print
-                    </Button>
-                    <Button onClick={handlePrint}>
-                        <FileDown className="mr-2 h-4 w-4"/> Download PDF
                     </Button>
                 </div>
             </div>

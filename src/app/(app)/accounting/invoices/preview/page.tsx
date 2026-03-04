@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import { Logo } from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
 import { Printer, ArrowLeft, LoaderCircle, AlertTriangle, FileDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useReactToPrint } from '@/hooks/use-react-to-print';
 import type { UserProfile } from '@/services/user-profile-service';
 
 const INVOICE_PREVIEW_KEY = 'invoicePreviewData';
@@ -65,7 +64,9 @@ function PreviewContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const { handlePrint, contentRef } = useReactToPrint();
+    const handlePrint = useCallback(() => {
+        window.print();
+    }, []);
 
     useEffect(() => {
         try {
@@ -86,7 +87,11 @@ function PreviewContent() {
     useEffect(() => {
         const action = searchParams.get('action');
         if (action === 'print' && !isLoading && invoiceData) {
-            handlePrint();
+            // Small delay to ensure data is fully settled in DOM before print dialog
+            const timer = setTimeout(() => {
+                handlePrint();
+            }, 800);
+            return () => clearTimeout(timer);
         }
     }, [searchParams, isLoading, invoiceData, handlePrint]);
 
@@ -110,21 +115,25 @@ function PreviewContent() {
     const subtotal = invoiceData.lineItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
     const taxAmount = invoiceData.lineItems.reduce((acc, item) => acc + (item.quantity * item.price * ((item.taxRate || 0) / 100)), 0);
     const total = subtotal + taxAmount;
-    const user = invoiceData.userProfile;
+    const userProfile = invoiceData.userProfile;
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 bg-muted/30">
-            <div className="flex justify-between items-center max-w-4xl mx-auto">
+        <div className="p-4 sm:p-6 space-y-4 bg-muted/30 min-h-screen">
+            <div className="flex justify-between items-center max-w-4xl mx-auto print:hidden">
                  <Button variant="outline" onClick={() => router.push('/accounting/invoices/create')}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
                 </Button>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Print</Button>
-                    <Button onClick={handlePrint}><FileDown className="mr-2 h-4 w-4"/> Download PDF</Button>
+                    <Button variant="outline" onClick={handlePrint}>
+                        <Printer className="mr-2 h-4 w-4"/> Print
+                    </Button>
+                    <Button onClick={handlePrint}>
+                        <FileDown className="mr-2 h-4 w-4"/> Download PDF
+                    </Button>
                 </div>
             </div>
-             <Card id="invoice-preview" ref={contentRef} className="max-w-4xl mx-auto">
-                <CardContent className="p-8">
+             <Card id="invoice-preview" className="max-w-4xl mx-auto print:shadow-none print:border-none print:rounded-none">
+                <CardContent className="p-8 md:p-12">
                     <header className="flex justify-between items-start pb-6 border-b">
                         <Logo className="text-primary"/>
                         <div className="text-right">
@@ -181,7 +190,7 @@ function PreviewContent() {
                         <p className="text-sm text-gray-600 whitespace-pre-wrap">{invoiceData.notes}</p>
                     </section>
                     <footer className="mt-12 pt-6 border-t text-center text-xs text-gray-400">
-                        <p className="font-bold text-base text-gray-600">{user?.companyName || user?.displayName}</p>
+                        <p className="font-bold text-base text-gray-600">{userProfile?.companyName || userProfile?.displayName}</p>
                     </footer>
                 </CardContent>
              </Card>

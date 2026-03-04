@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.Node }) {
           <ThemeOrchestrator />
           <div className="flex h-screen w-full bg-muted">
             {/* Sidebar */}
-            <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
+            <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex print:hidden">
               <div className="flex-1 overflow-y-auto pt-4">
                 <MainMenu />
               </div>
@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: React.Node }) {
             
             {/* Main Content */}
             <div className="flex flex-1 flex-col overflow-hidden">
-              <header className="flex h-16 items-center bg-[var(--header-bg)] px-4 md:px-6" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
+              <header className="flex h-16 items-center bg-[var(--header-bg)] px-4 md:px-6 print:hidden" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
                  {/* Left Column: Branding */}
                  <div className="flex-1 flex items-center gap-4">
                    <SidebarTrigger className="md:hidden" />

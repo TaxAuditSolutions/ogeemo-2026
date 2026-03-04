@@ -70,11 +70,11 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
-  const [paymentTermsDays, setPaymentTermsDays] = useState('14');
+  const [paymentTermsDays, setPaymentTermsDays] = setPaymentTermsDays('14');
   const [notes, setNotes] = useState("Thank you for your business!");
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -341,10 +341,15 @@ export function InvoiceGeneratorView() {
       }
   };
   
-  const handlePreview = () => {
+  const handlePreview = (action?: string) => {
       const selectedContact = contacts.find(c => c.id === selectedContactId);
       if (!selectedContact) {
-          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before previewing.'});
+          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before proceeding.'});
+          return;
+      }
+
+      if (lineItems.length === 0) {
+          toast({ variant: 'destructive', title: 'No Line Items', description: 'Please add at least one line item to the invoice.'});
           return;
       }
 
@@ -370,7 +375,10 @@ export function InvoiceGeneratorView() {
 
       try {
           sessionStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
-          window.open('/accounting/invoices/preview?action=print', '_blank');
+          const url = action === 'print' 
+            ? '/accounting/invoices/preview?action=print' 
+            : '/accounting/invoices/preview';
+          window.open(url, '_blank');
       } catch (error) {
           toast({ variant: 'destructive', title: 'Preview Error', description: 'Could not generate the preview.' });
       }
@@ -406,7 +414,7 @@ export function InvoiceGeneratorView() {
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Invoice
                     </Button>
-                    <Button variant="outline" onClick={handlePreview}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                    <Button variant="outline" onClick={() => handlePreview()}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -621,7 +629,9 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                 <Button variant="outline" size="sm" onClick={handlePreview}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                 <Button variant="outline" size="sm" onClick={() => handlePreview('print')}>
+                    <Printer className="mr-2 h-4 w-4" /> Print
+                 </Button>
             </CardFooter>
         </Card>
       </div>

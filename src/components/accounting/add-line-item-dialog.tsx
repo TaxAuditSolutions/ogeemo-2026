@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent } from 'lucide-react';
+import { ChevronsUpDown, Check, Settings, Search, PlusCircle, Calculator, Percent, Save } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
@@ -256,7 +256,7 @@ export function AddLineItemDialog({
                     <div className="space-y-2">
                         <Label htmlFor="price" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Unit Price ($)</Label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
                             <Input
                                 id="price"
                                 type="number"

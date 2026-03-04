@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -10,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, FileDown, Clock, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -622,7 +621,7 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                 <Button variant="outline" size="sm" onClick={handlePreview}><FileDown className="mr-2 h-4 w-4" /> Download PDF</Button>
+                 <Button variant="outline" size="sm" onClick={handlePreview}><Printer className="mr-2 h-4 w-4" /> Print</Button>
             </CardFooter>
         </Card>
       </div>

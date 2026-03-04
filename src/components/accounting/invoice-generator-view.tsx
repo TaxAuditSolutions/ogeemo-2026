@@ -322,7 +322,7 @@ export function InvoiceGeneratorView() {
     if (isEditing) {
         setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
     } else {
-        setContacts(prev => [...prev, savedContact]);
+        setContacts(prev => [savedContact, ...prev]);
     }
     setSelectedContactId(savedContact.id);
     setIsContactFormOpen(false);

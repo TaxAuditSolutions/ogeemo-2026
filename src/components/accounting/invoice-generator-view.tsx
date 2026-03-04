@@ -70,11 +70,11 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
-  const [paymentTermsDays, setPaymentTermsDays] = setPaymentTermsDays('14');
+  const [paymentTermsDays, setPaymentTermsDays] = useState('14');
   const [notes, setNotes] = useState("Thank you for your business!");
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);

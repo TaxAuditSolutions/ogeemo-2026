@@ -20,7 +20,8 @@ import { getFirebaseServices } from '@/firebase';
 export interface FolderItem {
   id: string;
   name: string;
-  parentId?: string | null;
+  type: 'folder'; // Ensure this matches the expected type
+  parentId: string | null;
   userId: string;
   createdAt: Date;
   isSystem?: boolean;
@@ -36,6 +37,7 @@ function getDb() {
 
 const docToFolder = (doc: any): FolderItem => ({ 
     id: doc.id, 
+    type: 'folder',
     ...doc.data(),
     createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
 } as FolderItem);
@@ -48,7 +50,7 @@ export async function getFolders(userId: string): Promise<FolderItem[]> {
   return snapshot.docs.map(docToFolder);
 }
 
-export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>): Promise<FolderItem> {
+export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt' | 'type'>): Promise<FolderItem> {
   const db = getDb();
   const dataToSave = {
     ...folderData,
@@ -56,10 +58,10 @@ export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt'>
     createdAt: new Date(),
   };
   const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
-  return { id: docRef.id, ...dataToSave };
+  return { id: docRef.id, type: 'folder', ...dataToSave };
 }
 
-export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId'>>): Promise<void> {
+export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId' | 'type'>>): Promise<void> {
     const db = getDb();
     const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
     await updateDoc(folderRef, folderData);
@@ -126,7 +128,8 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
                 createdAt: new Date(),
             };
             batch.set(docRef, newFolder);
-            currentFolders.push({ id: docRef.id, ...newFolder });
+            // Include 'type' property
+            currentFolders.push({ id: docRef.id, type: 'folder', ...newFolder });
             hasChanges = true;
         }
     }
@@ -147,5 +150,5 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
     }
     const newFolderData = { name: folderName, userId, parentId: null, createdAt: new Date() };
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
-    return { id: docRef.id, ...newFolderData };
+    return { id: docRef.id, type: 'folder', ...newFolderData };
 }

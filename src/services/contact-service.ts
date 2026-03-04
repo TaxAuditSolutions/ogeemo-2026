@@ -18,6 +18,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { Contact } from '@/data/contacts';
 
+export type { Contact };
+
 const CONTACTS_COLLECTION = 'contacts';
 const CLIENT_ACCOUNTS_COLLECTION = 'clientAccounts';
 

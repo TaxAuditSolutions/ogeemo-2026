@@ -79,7 +79,7 @@ const emptyTxForm = {
 };
 
 export function CashAccountingView() {
-    const { user } = useAuth();
+    const { user, isLoading: isAuthLoading } = useAuth();
     const { toast } = useToast();
     
     const [transactions, setTransactions] = useState<PettyCashTransaction[]>([]);
@@ -102,10 +102,12 @@ export function CashAccountingView() {
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
     const loadData = useCallback(async () => {
-        if (!user) return;
+        if (!user) {
+            if (!isAuthLoading) setIsLoading(false);
+            return;
+        }
         setIsLoading(true);
         try {
-            // Calling getContacts() without UID to pull ALL contacts from the Hub as requested.
             const [txs, inc, exp, conts, folds, comps, inds] = await Promise.all([
                 getPettyCashTransactions(user.uid),
                 getIncomeCategories(user.uid),
@@ -127,7 +129,7 @@ export function CashAccountingView() {
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast]);
+    }, [user, isAuthLoading, toast]);
 
     useEffect(() => {
         loadData();

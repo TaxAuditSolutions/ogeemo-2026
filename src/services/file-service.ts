@@ -19,7 +19,7 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { getFirebaseServices } from '@/firebase';
-import type { FileItem, FolderItem } from '@/data/files';
+import type { FileItem as FileItemType, FolderItem } from '@/data/files';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
@@ -35,6 +35,9 @@ function getFunctionsService() {
     const { functions } = getFirebaseServices();
     return functions;
 }
+
+// Re-export FileItem type so it can be used by consumers
+export type FileItem = FileItemType;
 
 const docToFile = (doc: any): FileItem => ({ 
     id: doc.id, 

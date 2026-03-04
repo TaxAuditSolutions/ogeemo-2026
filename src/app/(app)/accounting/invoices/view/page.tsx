@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, FileDigit, BrainCircuit, CheckCircle, ArrowRight, FolderSearch, Landmark, X, RefreshCw, CloudSync, Globe } from 'lucide-react';
+import { LoaderCircle, FileDigit, BrainCircuit, CheckCircle, ArrowRight, FolderSearch, Landmark, X, RefreshCw, Cloud, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getFiles, type FileItem } from '@/services/file-service';
@@ -216,7 +216,7 @@ export default function InvoiceIntelligencePage() {
                             </div>
                         ) : (
                             <div className="text-center opacity-30 max-w-xs">
-                                <CloudSync className="h-16 w-16 mx-auto mb-4" />
+                                <Cloud className="h-16 w-16 mx-auto mb-4" />
                                 <p className="text-sm font-semibold uppercase tracking-widest">Select a document from the archive to begin neural extraction.</p>
                             </div>
                         )}

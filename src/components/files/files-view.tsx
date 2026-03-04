@@ -78,7 +78,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Link from 'next/link';
 
@@ -91,17 +90,8 @@ type DroppableItem = (FileItem & { type?: string }) | (FolderItem & { type: 'fol
 
 const newFileSchema = z.object({
     fileName: z.string().min(1, 'File name is required.'),
-    fileType: z.enum(['file', 'link']),
-    fileUrl: z.string().optional(),
+    fileUrl: z.string().min(1, 'A URL is required.').url('Please enter a valid URL.'),
     targetFolderId: z.string().min(1, 'Please select a folder.'),
-}).refine(data => {
-    if (data.fileType === 'link') {
-        return !!data.fileUrl && z.string().url().safeParse(data.fileUrl).success;
-    }
-    return true;
-}, {
-    message: 'A valid URL is required for link type.',
-    path: ['fileUrl'],
 });
 
 type NewFileFormData = z.infer<typeof newFileSchema>;
@@ -307,7 +297,7 @@ export function FilesView() {
 
   const form = useForm<NewFileFormData>({
     resolver: zodResolver(newFileSchema),
-    defaultValues: { fileName: '', fileType: 'file', fileUrl: '', targetFolderId: 'all' },
+    defaultValues: { fileName: '', fileUrl: '', targetFolderId: 'all' },
   });
 
   const loadData = useCallback(async () => {
@@ -435,7 +425,6 @@ export function FilesView() {
   const handleOpenNewFileDialog = () => {
       form.reset({
           fileName: '',
-          fileType: 'file',
           fileUrl: '',
           targetFolderId: selectedFolderId
       });
@@ -547,15 +536,15 @@ export function FilesView() {
               name: values.fileName,
               userId: user.uid,
               folderId: folderId,
-              type: values.fileType === 'link' ? 'google-drive-link' : 'text/plain',
+              type: 'google-drive-link',
               size: 0,
               modifiedAt: new Date(),
               storagePath: '',
-              driveLink: values.fileType === 'link' ? values.fileUrl : undefined,
+              driveLink: values.fileUrl,
           };
           const savedFile = await addFileRecord(newFile);
           setFiles(prev => [...prev, savedFile]);
-          toast({ title: "File Created", description: `"${values.fileName}" added to registry.` });
+          toast({ title: "File Link Created", description: `"${values.fileName}" added to registry.` });
           setIsNewFileDialogOpen(false);
           form.reset();
       } catch (e: any) {
@@ -587,7 +576,7 @@ export function FilesView() {
                         <FolderPlus className="mr-2 h-4 w-4"/> New Folder
                     </Button>
                     <Button className="flex-1" onClick={handleOpenNewFileDialog}>
-                        <FilePlus className="mr-2 h-4 w-4"/> New File
+                        <FilePlus className="mr-2 h-4 w-4"/> New File Link
                     </Button>
                 </div>
             </CardHeader>
@@ -738,27 +727,16 @@ export function FilesView() {
 
     <Dialog open={isNewFileDialogOpen} onOpenChange={setIsNewFileDialogOpen}>
         <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Create New File</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Link a New File</DialogTitle></DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onNewFileSubmit)} className="space-y-4 py-2">
-                    <FormField control={form.control} name="fileName" render={({ field }) => ( <FormItem><FormLabel>File Name</FormLabel><FormControl><Input placeholder="e.g., Marketing Strategy" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="fileType" render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel>File Creation Mode</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                    <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="file" /></FormControl><FormLabel className="font-normal">Text File (Internal)</FormLabel></FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="link" /></FormControl><FormLabel className="font-normal">Custom URL Link</FormLabel></FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                        </FormItem>
-                    )} />
-                    {form.watch('fileType') === 'link' && ( <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem><FormLabel>URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} /> )}
+                    <FormField control={form.control} name="fileName" render={({ field }) => ( <FormItem><FormLabel>File Label / Name</FormLabel><FormControl><Input placeholder="e.g., Marketing Strategy" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem><FormLabel>Google Drive Link (URL)</FormLabel><FormControl><Input placeholder="https://docs.google.com/..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="targetFolderId" render={({ field }) => ( <FormItem><FormLabel>Destination Folder</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select folder..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="all">Unassigned (Miscellaneous)</SelectItem>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     <DialogFooter className="pt-4">
                         <Button type="button" variant="ghost" onClick={() => setIsNewFileDialogOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={isSaving}>Create File</Button>
+                        <Button type="submit" disabled={isSaving}>Add File Link</Button>
                     </DialogFooter>
                 </form>
             </Form>

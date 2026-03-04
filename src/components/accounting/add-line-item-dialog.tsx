@@ -25,11 +25,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
-  ChevronsUpDown, 
+  PlusCircle, 
   Check, 
   Settings, 
   Search, 
-  PlusCircle, 
   Calculator, 
   Percent, 
   Save, 
@@ -97,8 +96,6 @@ export function AddLineItemDialog({
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   
-  // --- High-Fidelity Deduplication Hub ---
-  // Ensures that search results do not contain duplicate nodes if the data source has overlaps.
   const uniqueServiceItems = useMemo(() => {
     const seen = new Set<string>();
     return serviceItems.filter(item => {
@@ -256,7 +253,7 @@ export function AddLineItemDialog({
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="description" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <FileSignature className="h-4 w-4" /> 1. Operational Description
+                            <FileSignature className="h-4 w-4" /> 1. Subject Description
                         </Label>
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
@@ -430,16 +427,7 @@ export function AddLineItemDialog({
                             </div>
                             <Select 
                                 value={taxTypes.find(t => t.name === taxType)?.id || "None"} 
-                                onValueChange={(id) => {
-                                    const type = taxTypes.find(t => t.id === id);
-                                    if (type) {
-                                        setTaxType(type.name);
-                                        setTaxRate(type.rate);
-                                    } else {
-                                        setTaxType('None');
-                                        setTaxRate(0);
-                                    }
-                                }}
+                                onValueChange={handleSelectTaxType}
                             >
                                 <SelectTrigger className="h-12 text-lg font-medium bg-white">
                                     <SelectValue placeholder="Select type..." />

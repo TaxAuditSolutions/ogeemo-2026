@@ -22,6 +22,7 @@ import {
     Percent,
     Wallet,
     X,
+    Pencil
 } from 'lucide-react';
 
 import {
@@ -84,7 +85,7 @@ const transactionSchema = z.object({
     company: z.string().min(1, "Contact selection is required."),
     description: z.string().optional(),
     quantity: z.coerce.number().min(0.01, "Quantity must be at least 0.01"),
-    unitPrice: z.coerce.number().min(0, "Price must be positive"),
+    unitPrice: z.coerce.string().min(0, "Price must be positive"), // Use string for form control to allow empty start
     taxType: z.string().optional(),
     taxRate: z.coerce.number().min(0, "Tax rate cannot be negative"),
     category: z.string().min(1, "Category is required."),
@@ -210,7 +211,7 @@ export function TransactionDialog({
                     company: transactionToEdit.company || transactionToEdit.vendor,
                     description: transactionToEdit.description || "",
                     quantity: transactionToEdit.quantity || 1,
-                    unitPrice: transactionToEdit.unitPrice || transactionToEdit.totalAmount,
+                    unitPrice: String(transactionToEdit.unitPrice || transactionToEdit.totalAmount),
                     taxType: transactionToEdit.taxType || "None",
                     taxRate: transactionToEdit.taxRate || 0,
                     category: transactionToEdit.incomeCategory || transactionToEdit.category,
@@ -314,7 +315,7 @@ export function TransactionDialog({
                 description: values.description || "",
                 totalAmount: totals.gross,
                 quantity: values.quantity,
-                unitPrice: values.unitPrice,
+                unitPrice: Number(values.unitPrice),
                 preTaxAmount: totals.net,
                 taxAmount: totals.tax,
                 taxRate: values.taxRate,
@@ -403,7 +404,7 @@ export function TransactionDialog({
                             invoiceId: '',
                             description: values.description || 'Service Rendered',
                             quantity: values.quantity,
-                            price: values.unitPrice,
+                            price: Number(values.unitPrice),
                             taxRate: values.taxRate,
                             taxType: values.taxType,
                             userId: user.uid
@@ -423,7 +424,7 @@ export function TransactionDialog({
     }
 
     return (
-        <>
+        <React.Fragment>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
                     <DialogHeader className="p-6 shrink-0 border-b bg-muted/10">
@@ -458,7 +459,7 @@ export function TransactionDialog({
                                                         </div>
                                                         <div className="flex items-center space-x-2">
                                                             <RadioGroupItem value="personal" id="mode-pers" className="h-5 w-5" />
-                                                            <Label htmlFor="mode-pers" className="text-base font-semibold Hub-pointer">Personal Account</Label>
+                                                            <Label htmlFor="mode-pers" className="text-base font-semibold cursor-pointer">Personal Account</Label>
                                                         </div>
                                                     </RadioGroup>
                                                 </FormControl>
@@ -555,7 +556,7 @@ export function TransactionDialog({
                                             <FormItem className="space-y-2">
                                                 <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
                                                     <FileSignature className="h-4 w-4" /> Audit Category
-                                                </Label>
+                                                </FormLabel>
                                                 <div className="flex gap-2">
                                                     <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                         <PopoverTrigger asChild>
@@ -630,7 +631,7 @@ export function TransactionDialog({
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
                                                 <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Sales Tax Configuration</Label>
-                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setIsManageTaxDialogOpen(true)}><Settings className="h-4 w-4"/></Button>
+                                                <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => setIsManageTaxDialogOpen(true)}><Settings className="h-4 w-4"/></Button>
                                             </div>
                                             <Select 
                                                 value={taxTypes.find(t => t.name === form.watch('taxType'))?.id || "None"} 
@@ -800,7 +801,7 @@ export function TransactionDialog({
                             <span>Finalizing this entry will immediately synchronize with the BKS General Ledger and update your financial snapshots.</span>
                         </div>
                         <div className="flex gap-4 w-full sm:w-auto">
-                            <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
+                            <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-14 px-10 text-lg">Cancel</Button>
                             <Button type="submit" form="transaction-form" size="lg" className="h-14 px-16 font-bold shadow-2xl text-xl" disabled={isSaving}>
                                 {isSaving ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                                 {transactionToEdit ? 'Save Changes' : (transactionType === 'payable' || transactionType === 'receivable' ? 'Log Financial Promise' : 'Post to General Ledger')}
@@ -816,6 +817,6 @@ export function TransactionDialog({
                 taxTypes={taxTypes}
                 onTaxTypesChange={() => onSuccess()}
             />
-        </>
+        </React.Fragment>
     );
 }

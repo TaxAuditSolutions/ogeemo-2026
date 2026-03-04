@@ -30,6 +30,9 @@ import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { Separator } from '../ui/separator';
+import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface LineItem {
   id: string;
@@ -67,7 +70,7 @@ export function AddLineItemDialog({
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [price, setPrice] = useState<number | ''>('');
-  const [taxType, setTaxType] = useState('None');
+  const [taxType, setTaxType] = setTaxType || useState('None');
   const [taxRate, setTaxRate] = useState<number | ''>('');
   const [saveAsRepeatable, setSaveAsRepeatable] = useState(false);
 

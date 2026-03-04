@@ -381,6 +381,46 @@ export function InvoiceGeneratorView() {
       }
   };
 
+  const handlePrintAction = () => {
+      const selectedContact = contacts.find(c => c.id === selectedContactId);
+      if (!selectedContact) {
+          toast({ variant: 'destructive', title: 'Contact not selected', description: 'Please select a contact before proceeding.'});
+          return;
+      }
+
+      if (lineItems.length === 0) {
+          toast({ variant: 'destructive', title: 'No Line Items', description: 'Please add at least one line item to the invoice.'});
+          return;
+      }
+
+      const companyName = selectedContact.businessName || selectedContact.name;
+
+      const previewData = {
+          invoiceNumber,
+          businessNumber,
+          companyName: companyName,
+          contactAddress: {
+            street: selectedContact.streetAddress,
+            city: selectedContact.city,
+            provinceState: selectedContact.provinceState,
+            postalCode: selectedContact.postalCode,
+            country: selectedContact.country,
+          },
+          invoiceDate: invoiceDate.toISOString(),
+          dueDate: dueDate.toISOString(),
+          lineItems,
+          notes,
+          userProfile: userProfile || undefined,
+      };
+
+      try {
+          sessionStorage.setItem(INVOICE_PREVIEW_KEY, JSON.stringify(previewData));
+          window.open('/accounting/invoices/preview?action=print', '_blank');
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not prepare print view.' });
+      }
+  };
+
   const selectedContact = contacts.find(c => c.id === selectedContactId);
   const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
 
@@ -626,6 +666,9 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
+                 <Button onClick={handlePrintAction}>
+                    <Printer className="mr-2 h-4 w-4" /> Print Invoice
+                 </Button>
             </CardFooter>
         </Card>
       </div>

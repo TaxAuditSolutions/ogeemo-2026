@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -332,7 +331,7 @@ export function CashAccountingView() {
                 <div className="flex items-center justify-center gap-2">
                     <h1 className="text-4xl font-bold font-headline text-primary tracking-tight mt-4">Petty Cash Accounting</h1>
                     <Button variant="ghost" size="icon" className="mt-4" onClick={() => setIsInfoOpen(true)}>
-                        <Info className="h-6 w-6 text-muted-foreground" />
+                        <Info className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 </div>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto mt-2">
@@ -561,7 +560,7 @@ export function CashAccountingView() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">CRA Tax Category</Label>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Category Line Item</Label>
                             <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" disabled={viewOnly} role="combobox" className="w-full justify-between font-normal h-10">
@@ -644,7 +643,7 @@ export function CashAccountingView() {
                             <h4 className="font-bold text-foreground">The Orchestration Workflow</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                                 <li><strong>Cash In:</strong> Use this to record adding money to the box (e.g., drawing $100 from the bank to start the "float").</li>
-                                <li><strong>Cash Out:</strong> Record every small purchase. Link these to a Contact and a CRA Tax Category.</li>
+                                <li><strong>Cash Out:</strong> Record every small purchase. Link these to a Contact and a Category Line Item.</li>
                                 <li><strong>Post to GL:</strong> This is the most critical step. Transactions here are in a "staging" area. Posting them moves them into your <strong>BKS General Ledger</strong> for formal reporting.</li>
                             </ul>
                         </section>
@@ -677,7 +676,7 @@ export function CashAccountingView() {
                 onCustomIndustriesChange={setCustomIndustries}
             />
 
-            <AlertDialog open={!!txToDelete} onOpenChange={() => setTxToDelete(null)}>
+            <AlertDialog open={!!txToDelete} onOpenChange={setTxToDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>

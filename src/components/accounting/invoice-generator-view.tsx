@@ -39,6 +39,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 interface LocalLineItem {
   id: string;
   description: string;
+  internalNotes?: string;
+  categoryNumber?: string;
   quantity: number;
   price: number;
   taxType?: string;
@@ -203,6 +205,8 @@ export function InvoiceGeneratorView() {
           const mappedLineItems = lineItemsData.map(item => ({
               id: item.id || `item_${Math.random()}`,
               description: item.description,
+              internalNotes: item.internalNotes || '',
+              categoryNumber: item.categoryNumber || '',
               quantity: item.quantity,
               price: item.price,
               taxType: item.taxType,
@@ -308,6 +312,8 @@ export function InvoiceGeneratorView() {
           return {
               id: `time_${Date.now()}_${index}`,
               description: `${entry.title} - ${entry.start ? format(new Date(entry.start), 'PPP') : 'N/A'}`,
+              internalNotes: entry.description || '',
+              categoryNumber: '', // Will be assigned during orchestration
               quantity: parseFloat(hours.toFixed(2)),
               price: entry.billableRate || 0,
           };
@@ -623,7 +629,16 @@ export function InvoiceGeneratorView() {
                                 <TableBody>
                                     {lineItems.map(item => (
                                         <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.description}</TableCell>
+                                            <TableCell className="font-medium">
+                                                <div className="flex flex-col">
+                                                    <span>{item.description}</span>
+                                                    {item.categoryNumber && (
+                                                        <Badge variant="outline" className="w-fit text-[10px] h-4 mt-1">
+                                                            {expenseCategories.find(c => (c.categoryNumber || c.id) === item.categoryNumber)?.name || item.categoryNumber}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-center">{item.quantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.quantity * item.price)}</TableCell>

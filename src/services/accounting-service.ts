@@ -107,6 +107,8 @@ export interface InvoiceLineItem {
   id?: string;
   invoiceId: string;
   description: string;
+  internalNotes?: string;
+  categoryNumber?: string;
   quantity: number;
   price: number;
   totalAmount?: number;
@@ -189,6 +191,8 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
         id: doc.id,
         invoiceId: data.invoiceId,
         description: data.description,
+        internalNotes: data.internalNotes || '',
+        categoryNumber: data.categoryNumber || '',
         quantity: data.quantity,
         price: data.price,
         totalAmount: data.totalAmount,
@@ -687,7 +691,7 @@ export async function addPettyCashTransaction(data: Omit<PettyCashTransaction, '
 
 export async function updatePettyCashTransaction(id: string, data: Partial<Omit<PettyCashTransaction, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    const docRef = doc(db, PETTY_CASH_COLLECTION, id);
+    const docRef = db.collection(PETTY_CASH_COLLECTION).doc(id);
     updateDoc(docRef, data).catch(async (error) => {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({

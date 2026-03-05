@@ -36,7 +36,8 @@ import {
   Briefcase, 
   X, 
   Info,
-  Plus
+  Plus,
+  MessageSquare
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface LineItem {
   id: string;
   description: string;
+  internalNotes?: string;
+  categoryNumber?: string;
   quantity: number;
   price: number;
   taxType?: string;
@@ -83,6 +86,8 @@ export function AddLineItemDialog({
   onTaxTypesChange,
 }: AddLineItemDialogProps) {
   const [description, setDescription] = useState('');
+  const [internalNotes, setInternalNotes] = useState('');
+  const [categoryNumber, setCategoryNumber] = useState('');
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [price, setPrice] = useState<number | ''>('');
   const [taxType, setTaxType] = useState('None');
@@ -96,7 +101,6 @@ export function AddLineItemDialog({
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   
-  // Deduplicate items for search
   const uniqueServiceItems = useMemo(() => {
     const seen = new Set<string>();
     return serviceItems.filter(item => {
@@ -110,9 +114,9 @@ export function AddLineItemDialog({
   const uniqueExpenseCategories = useMemo(() => {
     const seen = new Set<string>();
     return expenseCategories.filter(cat => {
-        const name = cat.name.toLowerCase().trim();
-        if (seen.has(name)) return false;
-        seen.add(name);
+        const key = cat.categoryNumber || cat.name;
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
     });
   }, [expenseCategories]);
@@ -137,12 +141,16 @@ export function AddLineItemDialog({
     if (isOpen) {
         if (itemToEdit) {
             setDescription(itemToEdit.description);
+            setInternalNotes(itemToEdit.internalNotes || '');
+            setCategoryNumber(itemToEdit.categoryNumber || '');
             setQuantity(itemToEdit.quantity);
             setPrice(itemToEdit.price);
             setTaxType(itemToEdit.taxType || 'None');
             setTaxRate(itemToEdit.taxRate || 0);
         } else {
             setDescription('');
+            setInternalNotes('');
+            setCategoryNumber('');
             setQuantity(1);
             setPrice('');
             setTaxType('None');
@@ -180,6 +188,8 @@ export function AddLineItemDialog({
     const newItem: LineItem = {
         id: itemToEdit?.id || `item_${Date.now()}`,
         description: description.trim(),
+        internalNotes: internalNotes.trim(),
+        categoryNumber: categoryNumber,
         quantity: numQuantity,
         price: numPrice,
         taxType: taxType === 'None' ? '' : taxType,
@@ -204,7 +214,7 @@ export function AddLineItemDialog({
   };
 
   const handleSelectServiceItem = (item: ServiceItem) => {
-    setDescription(item.description);
+    if (!description) setDescription(item.description);
     setPrice(item.price);
     if (item.taxType) setTaxType(item.taxType);
     if (item.taxRate !== undefined) setTaxRate(item.taxRate);
@@ -213,9 +223,10 @@ export function AddLineItemDialog({
   };
 
   const handleSelectCategory = (cat: ExpenseCategory) => {
-      setDescription(cat.name);
+      setCategoryNumber(cat.categoryNumber || cat.id);
+      if (!description) setDescription(cat.name);
       setIsSearchOpen(false);
-      toast({ title: "Category Selected", description: `"${cat.name}" added to description.` });
+      toast({ title: "Category Selected", description: `"${cat.name}" set as accounting line.` });
   };
 
   const handleSetDefaultTaxRate = () => {
@@ -246,7 +257,7 @@ export function AddLineItemDialog({
             <div className="text-center">
                 <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Line Item Orchestration</DialogTitle>
                 <DialogDescription className="text-base">
-                    Define operational nodes for this invoice. Sync with your GL library.
+                    Define operational and accounting nodes for this invoice.
                 </DialogDescription>
             </div>
           </div>
@@ -262,15 +273,17 @@ export function AddLineItemDialog({
 
         <ScrollArea className="flex-1 bg-white">
             <div className="max-w-4xl mx-auto w-full py-12 px-6 space-y-10">
+                
+                {/* 1. Category Line Item */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <Label htmlFor="description" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <FileSignature className="h-4 w-4" /> 1. Subject Description
+                        <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                            <FileSignature className="h-4 w-4" /> 1. Category Line Item (BKS Audit)
                         </Label>
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-10 text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10 border-primary/20">
-                                    <Search className="mr-2 h-4 w-4" /> Select or create a line item category.
+                                    <Search className="mr-2 h-4 w-4" /> Select or create category
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[500px] p-0 shadow-2xl" align="end">
@@ -282,26 +295,6 @@ export function AddLineItemDialog({
                                         className="h-12"
                                     />
                                     <CommandList className="max-h-[500px]">
-                                        {searchQuery.trim().length > 0 && (
-                                            <CommandGroup heading="Create New">
-                                                <CommandItem
-                                                    value={searchQuery}
-                                                    onSelect={() => {
-                                                        setDescription(searchQuery);
-                                                        setIsSearchOpen(false);
-                                                    }}
-                                                    className="cursor-pointer py-3"
-                                                >
-                                                    <Plus className="mr-3 h-5 w-5 text-primary" />
-                                                    <div className="flex flex-col flex-1">
-                                                        <span className="font-bold text-sm">Use "{searchQuery}" as description</span>
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                                                            Create custom line item
-                                                        </span>
-                                                    </div>
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        )}
                                         <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
                                         
                                         {filteredServiceItems.length > 0 && (
@@ -320,7 +313,6 @@ export function AddLineItemDialog({
                                                                 Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
                                                             </span>
                                                         </div>
-                                                        {description === item.description && <Check className="h-5 w-5 text-primary ml-auto" />}
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>
@@ -342,7 +334,7 @@ export function AddLineItemDialog({
                                                                 <span className="font-bold text-sm">{cat.name}</span>
                                                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
                                                             </div>
-                                                            {description === cat.name && <Check className="h-5 w-5 text-primary ml-auto" />}
+                                                            {categoryNumber === (cat.categoryNumber || cat.id) && <Check className="h-5 w-5 text-primary ml-auto" />}
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>
@@ -353,19 +345,56 @@ export function AddLineItemDialog({
                             </PopoverContent>
                         </Popover>
                     </div>
+                    <div className="p-4 border-2 rounded-xl bg-muted/30 flex items-center justify-between">
+                        <span className="text-lg font-semibold">
+                            {categoryNumber ? (uniqueExpenseCategories.find(c => (c.categoryNumber || c.id) === categoryNumber)?.name || categoryNumber) : 'No category selected'}
+                        </span>
+                        {categoryNumber && (
+                            <Badge variant="outline" className="font-mono text-primary border-primary/20">
+                                Line {categoryNumber}
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+
+                {/* 2. Subject Description (Public) */}
+                <div className="space-y-4">
+                    <Label htmlFor="description" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" /> 2. Subject Description (Visible on Invoice)
+                    </Label>
                     <Textarea
                         id="description"
-                        placeholder="Clearly define the work performed or product provided for audit-ready documentation..."
-                        className="min-h-[150px] text-xl leading-relaxed font-semibold focus-visible:ring-primary border-2"
+                        placeholder="Clearly define the work performed or product provided for the client..."
+                        className="min-h-[120px] text-xl leading-relaxed font-semibold focus-visible:ring-primary border-2"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
 
+                {/* 3. Internal Notes (Private) */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <Label htmlFor="internalNotes" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                            <PlusCircle className="h-4 w-4" /> 3. Internal Operational Notes
+                        </Label>
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 uppercase text-[10px] tracking-widest">
+                            Internal Only - Hidden from Invoice
+                        </Badge>
+                    </div>
+                    <Textarea
+                        id="internalNotes"
+                        placeholder="Add administrative context, private rationale, or detailed logs for your records..."
+                        className="min-h-[100px] text-base leading-relaxed bg-muted/10 border-dashed"
+                        value={internalNotes}
+                        onChange={(e) => setInternalNotes(e.target.value)}
+                    />
+                </div>
+
+                {/* 4. Quantities & Vitals */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-6">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <Calculator className="h-4 w-4" /> 2. Quantity & Rate
+                            <Calculator className="h-4 w-4" /> 4. Quantity & Rate
                         </Label>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -427,7 +456,7 @@ export function AddLineItemDialog({
 
                 <div className="space-y-6">
                     <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                        <Percent className="h-4 w-4" /> 3. Tax Orchestration
+                        <Percent className="h-4 w-4" /> 5. Tax Orchestration
                     </Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 p-8 border rounded-3xl bg-muted/10">
                         <div className="space-y-3">

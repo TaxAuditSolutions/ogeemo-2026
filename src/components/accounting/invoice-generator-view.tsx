@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -161,7 +162,7 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -687,7 +688,7 @@ export function InvoiceGeneratorView() {
                                 <span className="text-muted-foreground">Subtotal:</span>
                                 <span className="font-mono">{formatCurrency(subtotal)}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Tax:</span>
                                 <span className="font-mono">{formatCurrency(tax)}</span>
                             </div>

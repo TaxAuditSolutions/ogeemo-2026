@@ -74,6 +74,17 @@ interface AddLineItemDialogProps {
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
 }
 
+/**
+ * Helper to format a string or number with thousands separators (commas).
+ */
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 export function AddLineItemDialog({
   isOpen,
   onOpenChange,
@@ -89,9 +100,9 @@ export function AddLineItemDialog({
   const [internalNotes, setInternalNotes] = useState('');
   const [categoryNumber, setCategoryNumber] = useState('');
   const [quantity, setQuantity] = useState<number | ''>(1);
-  const [price, setPrice] = useState<number | ''>('');
+  const [price, setPrice] = useState('');
   const [taxType, setTaxType] = useState('None');
-  const [taxRate, setTaxRate] = useState<number | ''>('');
+  const [taxRate, setTaxRate] = useState<number | ''>(0);
   const [saveAsRepeatable, setSaveAsRepeatable] = useState(false);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -123,7 +134,8 @@ export function AddLineItemDialog({
 
   const { subtotal, taxAmount, lineTotal } = useMemo(() => {
     const qty = Number(quantity) || 0;
-    const unitPrice = Number(price) || 0;
+    const cleanPrice = price.replace(/,/g, '');
+    const unitPrice = Number(cleanPrice) || 0;
     const rate = Number(taxRate) || 0;
     
     const sub = qty * unitPrice;
@@ -144,7 +156,7 @@ export function AddLineItemDialog({
             setInternalNotes(itemToEdit.internalNotes || '');
             setCategoryNumber(itemToEdit.categoryNumber || '');
             setQuantity(itemToEdit.quantity);
-            setPrice(itemToEdit.price);
+            setPrice(String(itemToEdit.price));
             setTaxType(itemToEdit.taxType || 'None');
             setTaxRate(itemToEdit.taxRate || 0);
         } else {
@@ -174,7 +186,7 @@ export function AddLineItemDialog({
 
   const handleSave = () => {
     const numQuantity = Number(quantity);
-    const numPrice = Number(price);
+    const numPrice = Number(price.replace(/,/g, ''));
     
     if (!description.trim() || isNaN(numQuantity) || numQuantity <= 0 || isNaN(numPrice) || numPrice < 0) {
         toast({
@@ -215,7 +227,7 @@ export function AddLineItemDialog({
 
   const handleSelectServiceItem = (item: ServiceItem) => {
     if (!description) setDescription(item.description);
-    setPrice(item.price);
+    setPrice(String(item.price));
     if (item.taxType) setTaxType(item.taxType);
     if (item.taxRate !== undefined) setTaxRate(item.taxRate);
     setIsSearchOpen(false);
@@ -295,7 +307,16 @@ export function AddLineItemDialog({
                                         className="h-12"
                                     />
                                     <CommandList className="max-h-[500px]">
-                                        <CommandEmpty>No results matching "{searchQuery}"</CommandEmpty>
+                                        <CommandEmpty>
+                                            <div className="p-4 space-y-2">
+                                                <p className="text-sm text-muted-foreground">No library match for "{searchQuery}"</p>
+                                                {searchQuery.trim() && (
+                                                    <Button variant="outline" className="w-full justify-start text-primary" onClick={() => { setDescription(searchQuery); setIsSearchOpen(false); }}>
+                                                        <Plus className="mr-2 h-4 w-4" /> Use "{searchQuery}" as description
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </CommandEmpty>
                                         
                                         {filteredServiceItems.length > 0 && (
                                             <CommandGroup heading="Professional Services Library">
@@ -414,11 +435,13 @@ export function AddLineItemDialog({
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-2xl">$</span>
                                     <Input
                                         id="price"
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
                                         className="pl-10 h-14 font-mono font-bold text-2xl text-center"
-                                        value={price}
-                                        onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                                        value={formatNumberWithCommas(price)}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/,/g, '');
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) setPrice(val);
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -431,7 +454,7 @@ export function AddLineItemDialog({
                                 <Calculator className="h-4 w-4" /> Line Vitals
                             </CardTitle>
                             <Badge variant="secondary" className="font-mono text-xs font-bold px-3">
-                                {quantity || 0} units @ ${Number(price || 0).toFixed(2)}
+                                {quantity || 0} units @ ${Number(price.replace(/,/g, '') || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Badge>
                         </CardHeader>
                         <CardContent className="p-6 space-y-3">

@@ -112,6 +112,17 @@ interface TransactionDialogProps {
     transactionToEdit?: any | null;
 }
 
+/**
+ * Helper to format a string or number with thousands separators (commas).
+ */
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 export function TransactionDialog({
     isOpen,
     onOpenChange,
@@ -168,7 +179,8 @@ export function TransactionDialog({
     const watchAccount = form.watch('account');
 
     const totals = React.useMemo(() => {
-        const gross = (Number(watchQuantity) || 0) * (Number(watchUnitPrice) || 0);
+        const cleanPrice = String(watchUnitPrice || "0").replace(/,/g, '');
+        const gross = (Number(watchQuantity) || 0) * (Number(cleanPrice) || 0);
         const net = gross / (1 + ((Number(watchTaxRate) || 0) / 100));
         const tax = gross - net;
         return { gross, net, tax };
@@ -325,7 +337,7 @@ export function TransactionDialog({
                 description: values.description || "",
                 totalAmount: totals.gross,
                 quantity: values.quantity,
-                unitPrice: Number(values.unitPrice),
+                unitPrice: Number(values.unitPrice.replace(/,/g, '')),
                 preTaxAmount: totals.net,
                 taxAmount: totals.tax,
                 taxRate: values.taxRate,
@@ -414,7 +426,7 @@ export function TransactionDialog({
                             invoiceId: '',
                             description: values.description || 'Service Rendered',
                             quantity: values.quantity,
-                            price: Number(values.unitPrice),
+                            price: Number(values.unitPrice.replace(/,/g, '')),
                             taxRate: values.taxRate,
                             taxType: values.taxType,
                             userId: user.uid
@@ -632,7 +644,20 @@ export function TransactionDialog({
                                                     <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Unit Price ($)</FormLabel>
                                                     <div className="relative">
                                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg">$</span>
-                                                        <FormControl><Input type="number" step="0.01" className="h-12 pl-10 text-lg font-mono font-bold" {...field} /></FormControl>
+                                                        <FormControl>
+                                                            <Input 
+                                                                type="text" 
+                                                                className="h-12 pl-10 text-lg font-mono font-bold" 
+                                                                {...field}
+                                                                value={formatNumberWithCommas(field.value)}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/,/g, '');
+                                                                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                                        field.onChange(val);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </FormControl>
                                                     </div>
                                                     <FormMessage />
                                                 </FormItem>
@@ -661,17 +686,17 @@ export function TransactionDialog({
                                     <div className="flex flex-wrap justify-around items-center gap-8 px-10 py-8 rounded-2xl bg-white border-2 border-primary/20 shadow-xl">
                                         <div className="text-center">
                                             <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Gross Total</p>
-                                            <p className="font-mono text-4xl font-bold text-primary">${totals.gross.toFixed(2)}</p>
+                                            <p className="font-mono text-4xl font-bold text-primary">${totals.gross.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                         </div>
                                         <div className="hidden md:block h-16 w-px bg-muted" />
                                         <div className="text-center">
                                             <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Net (Pre-Tax)</p>
-                                            <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.net.toFixed(2)}</p>
+                                            <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                         </div>
                                         <div className="hidden md:block h-16 w-px bg-muted" />
                                         <div className="text-center">
                                             <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-2">Tax Portion ({form.watch('taxRate')}%)</p>
-                                            <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.tax.toFixed(2)}</p>
+                                            <p className="font-mono text-3xl font-semibold text-foreground/70">${totals.tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -695,7 +720,7 @@ export function TransactionDialog({
                                                                 <FormControl>
                                                                     <Button variant="outline" role="combobox" className="h-12 flex-1 justify-between font-normal px-4 text-base">
                                                                         <span className="truncate">{selectedAccount ? selectedAccount.name : "Search or add account..."}</span>
-                                                                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                                                                     </Button>
                                                                 </FormControl>
                                                             </PopoverTrigger>
@@ -827,6 +852,6 @@ export function TransactionDialog({
                 taxTypes={taxTypes}
                 onTaxTypesChange={() => onSuccess()}
             />
-        </React.Fragment>
+            </React.Fragment>
     );
 }

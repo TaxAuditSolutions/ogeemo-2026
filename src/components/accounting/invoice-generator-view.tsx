@@ -35,6 +35,7 @@ import { Logo } from '@/components/logo';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface LocalLineItem {
   id: string;
@@ -160,7 +161,7 @@ export function InvoiceGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [invoiceNumber, setInvoiceNumber] = setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
   const [businessNumber, setBusinessNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -313,7 +314,7 @@ export function InvoiceGeneratorView() {
               id: `time_${Date.now()}_${index}`,
               description: `${entry.title} - ${entry.start ? format(new Date(entry.start), 'PPP') : 'N/A'}`,
               internalNotes: entry.description || '',
-              categoryNumber: '', // Will be assigned during orchestration
+              categoryNumber: '', 
               quantity: parseFloat(hours.toFixed(2)),
               price: entry.billableRate || 0,
           };
@@ -495,7 +496,7 @@ export function InvoiceGeneratorView() {
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command>
                                             <CommandInput placeholder="Search contacts..." />
                                             <CommandList>
@@ -536,7 +537,7 @@ export function InvoiceGeneratorView() {
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command>
                                             <CommandInput placeholder="Search contacts..." />
                                             <CommandList>

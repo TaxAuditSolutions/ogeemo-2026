@@ -42,10 +42,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { Separator } from '../ui/separator';
-import { ScrollArea } from '../ui/scroll-area';
-import { Badge } from '../ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LineItem {
   id: string;
@@ -96,6 +96,7 @@ export function AddLineItemDialog({
   const { toast } = useToast();
   const { preferences, updatePreferences } = useUserPreferences();
   
+  // Deduplicate items for search
   const uniqueServiceItems = useMemo(() => {
     const seen = new Set<string>();
     return serviceItems.filter(item => {

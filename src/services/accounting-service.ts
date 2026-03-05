@@ -393,12 +393,12 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         userId,
         date,
         company: invoiceData.companyName,
-        description: `Payment for Invoice #${invoiceData.invoiceNumber}`,
+        description: `Payment for Invoice #${invoiceData.invoiceNumber ?? ''}`,
         totalAmount: amount,
         incomeCategory: primaryIncomeLine || 'Part 3A',
         depositedTo: depositAccount,
         type: 'business',
-        documentNumber: invoiceData.invoiceNumber,
+        documentNumber: invoiceData.invoiceNumber ?? "",
         paymentMethod: 'Bank Transfer'
     };
     batch.set(incomeRef, incomeData);
@@ -588,7 +588,7 @@ export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<Pay
 
 export async function updatePayableBill(id: string, data: Partial<Omit<PayableBill, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
-  const docRef = doc(db, PAYABLES_COLLECTION, id);
+  const docRef = db.collection(PAYABLES_COLLECTION).doc(id);
   updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -628,15 +628,15 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
         userId,
         date: paymentDate,
         company: billData.vendor,
-        description: `Payment for Bill #${billData.invoiceNumber}: ${billData.description}`,
+        description: `Payment for Bill #${billData.invoiceNumber ?? ''}: ${billData.description || ''}`,
         totalAmount: billData.totalAmount,
-        preTaxAmount: billData.preTaxAmount || billData.totalAmount,
-        taxAmount: billData.taxAmount || 0,
-        taxRate: billData.taxRate || 0,
+        preTaxAmount: billData.preTaxAmount ?? billData.totalAmount,
+        taxAmount: billData.taxAmount ?? 0,
+        taxRate: billData.taxRate ?? 0,
         category: billData.category,
         type: 'business',
-        documentNumber: billData.invoiceNumber,
-        documentUrl: billData.documentUrl,
+        documentNumber: billData.invoiceNumber ?? "",
+        documentUrl: billData.documentUrl ?? "",
         paymentMethod: paymentMethod
     };
     batch.set(expenseRef, expenseData);
@@ -1215,7 +1215,7 @@ export async function addExpenseCategory(data: { name: string, userId: string, c
 }
 export async function updateExpenseCategory(id: string, data: Partial<Omit<ExpenseCategory, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    const docRef = doc(db, EXPENSE_CATEGORIES_COLLECTION, id);
+    const docRef = db.collection(EXPENSE_CATEGORIES_COLLECTION).doc(id);
     updateDoc(docRef, data).catch(async (error) => {
       if (error.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({

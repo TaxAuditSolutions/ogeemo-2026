@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -163,7 +164,16 @@ export function CashAccountingView() {
         loadData();
     }, [loadData]);
 
-    const activeCategories = dialogType === 'in' ? incomeCategories : expenseCategories;
+    const activeCategories = useMemo(() => {
+        const raw = dialogType === 'in' ? incomeCategories : expenseCategories;
+        const seen = new Set<string>();
+        return raw.filter(cat => {
+            const key = cat.categoryNumber || cat.name;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [dialogType, incomeCategories, expenseCategories]);
 
     const floatValue = useMemo(() => {
         return transactions.reduce((sum, tx) => {

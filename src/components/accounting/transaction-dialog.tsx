@@ -183,7 +183,17 @@ export function TransactionDialog({
         } catch (e) {}
     }, [user]);
 
-    const activeCategories = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
+    const activeCategories = React.useMemo(() => {
+        const raw = (transactionType === 'income' || transactionType === 'receivable') ? incomeCategories : expenseCategories;
+        const seen = new Set<string>();
+        return raw.filter(cat => {
+            const key = cat.categoryNumber || cat.name;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [transactionType, incomeCategories, expenseCategories]);
+
     const selectedCategory = activeCategories.find(c => c.categoryNumber === watchCategory || c.id === watchCategory);
     const selectedAccount = internalAccounts.find(a => a.id === watchAccount || a.name === watchAccount);
 

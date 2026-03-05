@@ -50,6 +50,8 @@ import {
     getIncomeCategories,
     getExpenseCategories,
     getCompanies,
+    addIncomeCategory,
+    addExpenseCategory,
     type PettyCashTransaction,
     type IncomeCategory,
     type ExpenseCategory,
@@ -126,6 +128,7 @@ export function CashAccountingView() {
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [contactSearchValue, setContactSearchValue] = useState('');
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
+    const [categorySearchValue, setCategorySearchValue] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [txToDelete, setTxToDelete] = useState<PettyCashTransaction | null>(null);
@@ -187,6 +190,7 @@ export function CashAccountingView() {
         setViewOnly(false);
         setFormData({ ...emptyTxForm, date: format(new Date(), 'yyyy-MM-dd') });
         setContactSearchValue('');
+        setCategorySearchValue('');
         setIsDialogOpen(true);
     };
 
@@ -220,6 +224,26 @@ export function CashAccountingView() {
             category: tx.category,
         });
         setIsDialogOpen(true);
+    };
+
+    const handleCreateCategory = async (name: string) => {
+        if (!user || !name.trim()) return;
+        try {
+            let newCat;
+            if (dialogType === 'in') {
+                newCat = await addIncomeCategory({ name: name.trim(), userId: user.uid });
+                setIncomeCategories(prev => [...prev, newCat]);
+            } else {
+                newCat = await addExpenseCategory({ name: name.trim(), userId: user.uid });
+                setExpenseCategories(prev => [...prev, newCat]);
+            }
+            setFormData(prev => ({ ...prev, category: newCat.categoryNumber || newCat.id }));
+            setIsCategoryPopoverOpen(false);
+            setCategorySearchValue('');
+            toast({ title: 'Category Created', description: `"${name}" has been added to your tax lines.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
     };
 
     const handleSaveTransaction = async () => {
@@ -546,10 +570,22 @@ export function CashAccountingView() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Search categories..." />
-                                        <CommandList>
-                                            <CommandEmpty>No category found.</CommandEmpty>
+                                    <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                                        <CommandInput 
+                                            placeholder="Search categories..." 
+                                            value={categorySearchValue}
+                                            onValueChange={setCategorySearchValue}
+                                        />
+                                        <CommandList className="max-h-[300px]">
+                                            <CommandEmpty>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="w-full justify-start text-sm text-primary" 
+                                                    onClick={() => handleCreateCategory(categorySearchValue)}
+                                                >
+                                                    <Plus className="mr-2 h-4 w-4" /> Create "{categorySearchValue}"
+                                                </Button>
+                                            </CommandEmpty>
                                             <CommandGroup>
                                                 {activeCategories.map(cat => (
                                                     <CommandItem key={cat.id} onSelect={() => { setFormData(p => ({...p, category: cat.categoryNumber || cat.id})); setIsCategoryPopoverOpen(false); }}>

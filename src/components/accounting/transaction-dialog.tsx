@@ -565,7 +565,7 @@ export function TransactionDialog({
                                         render={({ field }) => (
                                             <FormItem className="space-y-2">
                                                 <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                                    <FileSignature className="h-4 w-4" /> Line Item
+                                                    <FileSignature className="h-4 w-4" /> Category Line Item
                                                 </FormLabel>
                                                 <div className="flex gap-2">
                                                     <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>

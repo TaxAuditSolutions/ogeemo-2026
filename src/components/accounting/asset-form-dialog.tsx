@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
@@ -17,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from "date-fns";
 import type { Asset, DepreciationEntry } from "@/services/accounting-service";
-import { PlusCircle, Trash2, Info } from "lucide-react";
+import { PlusCircle, Trash2, Info, Save } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";

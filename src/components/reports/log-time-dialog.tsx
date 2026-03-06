@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -80,8 +81,9 @@ export function LogTimeDialog({
         if (!user) return;
         setIsLoadingData(true);
         try {
+            // Synchronized Directory fetch ensures access to all organization contacts
             const [fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
-                getContacts(user.uid),
+                getContacts(),
                 getContactFolders(user.uid),
                 getCompanies(user.uid),
                 getIndustries(user.uid),
@@ -239,13 +241,13 @@ export function LogTimeDialog({
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command>
+                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                             <CommandInput placeholder="Search workers..." />
                                             <CommandList>
                                                 <CommandEmpty>No worker found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {workers.map(w => (
-                                                        <CommandItem key={w.id} value={w.name} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                        <CommandItem key={w.id} value={`${w.name} ${w.workerIdNumber || ''}`} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
                                                             <div className="flex flex-col">
                                                                 <span className="font-semibold">{w.name}</span>
@@ -283,7 +285,7 @@ export function LogTimeDialog({
                                                         </Button>
                                                     </CommandEmpty>
                                                     <CommandGroup>
-                                                        <CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}>
+                                                        <CommandItem value="internal operations" onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")}/>
                                                             Internal / General Operations
                                                         </CommandItem>
@@ -411,7 +413,7 @@ export function LogTimeDialog({
                     <div className="flex gap-3 w-full sm:w-auto">
                         <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-12 px-6">Cancel</Button>
                         <Button onClick={handleSave} disabled={isSaving} className="h-12 px-10 font-bold shadow-xl text-lg">
-                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                            {isSaving ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {entryToEdit ? 'Update Entry' : 'Log Time Entry'}
                         </Button>
                     </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -89,8 +89,9 @@ function WorkerTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
+            // Synchronized registries for comprehensive reporting
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
+                getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
                 getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),

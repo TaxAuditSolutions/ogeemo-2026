@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -80,12 +81,13 @@ const docToWorker = (doc: any): Worker => {
 };
 
 /**
- * Fetches workers exclusively from the payroll registry.
- * Reverted to strict collection fetch to separate system identities from worker records.
+ * Fetches workers from the payroll registry.
+ * @param userId Optional. If provided, filters by creator. Otherwise pulls the synchronized team registry.
  */
-export async function getWorkers(userId: string): Promise<Worker[]> {
+export async function getWorkers(userId?: string): Promise<Worker[]> {
   const db = getDb();
-  const qWorkers = query(collection(db, WORKERS_COLLECTION), where("userId", "==", userId));
+  const collectionRef = collection(db, WORKERS_COLLECTION);
+  const qWorkers = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
   const snapshotWorkers = await getDocs(qWorkers);
   return snapshotWorkers.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }

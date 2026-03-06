@@ -76,8 +76,7 @@ function ClientTimeLogReportContent() {
     const searchParams = useSearchParams();
     const highlightedId = searchParams.get('highlight');
     
-    const [isLogTimeDialogOpen] = useState(false); // Fixed: Removed set unused state
-    const [setIsLogTimeDialogOpen] = useState<(v: boolean) => void>(() => {}); 
+    const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
     
@@ -95,8 +94,9 @@ function ClientTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
+            // Synchronized registries for comprehensive reporting
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
+                getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
                 getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),

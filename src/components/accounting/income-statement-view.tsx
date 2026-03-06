@@ -130,9 +130,9 @@ export function IncomeStatementView() {
       <div className="space-y-6">
         <Alert className="bg-primary/10 border-primary/20 max-w-4xl mx-auto">
             <Info className="h-4 w-4 text-primary" />
-            <AlertTitle>Beta Notice: Official T2125 Preview</AlertTitle>
+            <AlertTitle>Notice</AlertTitle>
             <AlertDescription>
-                This report is organized to match Parts 3 and 4 of the CRA Form T2125. Ensure your ledger entries are assigned to the correct CRA line numbers for maximum accuracy.
+                Ensure your ledger entries are assigned to the correct CRA line numbers for maximum accuracy.
             </AlertDescription>
         </Alert>
 
@@ -162,7 +162,7 @@ export function IncomeStatementView() {
 
             <div className="space-y-2">
                 <Label>End Date</Label>
-                <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
+                <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -175,7 +175,7 @@ export function IncomeStatementView() {
                             selected={dateRange?.to} 
                             onSelect={(date) => { 
                                 setDateRange(prev => ({ from: prev?.from, to: date })); 
-                                setIsEndPickerOpen(false); 
+                                setIsEndDatePickerOpen(false); 
                             }} 
                             disabled={(date) => dateRange?.from ? date < dateRange.from : false}
                             initialFocus 

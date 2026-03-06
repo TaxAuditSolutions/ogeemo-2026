@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -406,10 +405,10 @@ export function LedgersView() {
                     <CardTitle className="text-sm font-medium">Filter & Report Options</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleDownloadCSV} disabled={generalLedger.length === 0}>
+                    <Button variant="outline" size="sm" className="bg-white" onClick={handleDownloadCSV} disabled={generalLedger.length === 0}>
                         <FileSpreadsheet className="mr-2 h-4 w-4" /> Download CSV
                     </Button>
-                    <Button variant="outline" size="sm" onClick={handlePrint} disabled={generalLedger.length === 0}>
+                    <Button variant="outline" size="sm" className="bg-white" onClick={handlePrint} disabled={generalLedger.length === 0}>
                         <Printer className="mr-2 h-4 w-4" /> Print Ledger
                     </Button>
                     <Button size="sm" onClick={() => { setTransactionToEdit(null); setIsTransactionDialogOpen(true); }}>
@@ -418,11 +417,11 @@ export function LedgersView() {
                 </div>
             </CardHeader>
             <CardContent className="p-4 flex flex-wrap items-end justify-center gap-6">
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col items-center space-y-2">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                     <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !startDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                 {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
                             </Button>
@@ -432,11 +431,11 @@ export function LedgersView() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col items-center space-y-2">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                 {endDate ? format(endDate, "PPP") : <span>End of time</span>}
                             </Button>
@@ -446,7 +445,7 @@ export function LedgersView() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <Button variant="ghost" onClick={clearFilters} disabled={!startDate && !endDate}>
+                <Button variant="outline" className="bg-white" onClick={clearFilters} disabled={!startDate && !endDate}>
                     <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                 </Button>
             </CardContent>

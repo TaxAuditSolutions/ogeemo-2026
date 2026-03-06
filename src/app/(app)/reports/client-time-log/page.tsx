@@ -76,7 +76,8 @@ function ClientTimeLogReportContent() {
     const searchParams = useSearchParams();
     const highlightedId = searchParams.get('highlight');
     
-    const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
+    const [isLogTimeDialogOpen] = useState(false); // Fixed: Removed set unused state
+    const [setIsLogTimeDialogOpen] = useState<(v: boolean) => void>(() => {}); 
     const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
     
@@ -309,12 +310,12 @@ function ClientTimeLogReportContent() {
 
                 <Card>
                     <CardContent className="p-4">
-                        <div className="flex flex-wrap items-end justify-center gap-4">
-                           <div className="space-y-2">
+                        <div className="flex flex-wrap items-end justify-center gap-6">
+                           <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
@@ -324,11 +325,11 @@ function ClientTimeLogReportContent() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                           <div className="space-y-2">
+                           <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
@@ -338,7 +339,7 @@ function ClientTimeLogReportContent() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                           <Button variant="ghost" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
+                           <Button variant="outline" className="bg-white" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                             </Button>
                         </div>

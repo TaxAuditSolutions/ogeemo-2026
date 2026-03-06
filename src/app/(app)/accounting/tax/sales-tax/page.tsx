@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -162,31 +163,31 @@ export default function SalesTaxPage() {
                 <CardHeader>
                     <CardTitle>Reporting Period</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-wrap items-end gap-4">
-                     <div className="space-y-2">
-                        <Label>Start Date</Label>
+                <CardContent className="flex flex-wrap items-end justify-center gap-6">
+                     <div className="flex flex-col items-center space-y-2">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                         <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                     {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
+                            <PopoverContent className="w-auto p-0" align="start">
                                 <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="space-y-2">
-                        <Label>End Date</Label>
+                    <div className="flex flex-col items-center space-y-2">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                         <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                     {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
+                            <PopoverContent className="w-auto p-0" align="start">
                                 <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                             </PopoverContent>
                         </Popover>
@@ -206,12 +207,12 @@ export default function SalesTaxPage() {
                                         setCarriedForward(val);
                                     }
                                 }}
-                                className="pl-7 font-mono"
+                                className="pl-7 font-mono bg-white"
                             />
                         </div>
                      </div>
                     <Button variant="secondary" onClick={() => setDateRange(defaultDateRange)}>Current Quarter</Button>
-                    <Button variant="ghost" onClick={() => { setDateRange(undefined); setCarriedForward(''); }}>Clear Filters</Button>
+                    <Button variant="outline" className="bg-white" onClick={() => { setDateRange(undefined); setCarriedForward(''); }}>Clear Filters</Button>
                 </CardContent>
             </Card>
 

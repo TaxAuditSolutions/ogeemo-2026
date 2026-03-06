@@ -290,12 +290,12 @@ function WorkerTimeLogReportContent() {
 
                 <Card>
                     <CardHeader className="p-4 bg-muted/30">
-                        <div className="flex flex-wrap items-end justify-center gap-4">
-                           <div className="space-y-2">
+                        <div className="flex flex-wrap items-end justify-center gap-6">
+                           <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Beginning of time</span>}
                                         </Button>
@@ -305,11 +305,11 @@ function WorkerTimeLogReportContent() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                           <div className="space-y-2">
+                           <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End of time</span>}
                                         </Button>
@@ -319,8 +319,8 @@ function WorkerTimeLogReportContent() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                           <Button variant="ghost" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear
+                           <Button variant="outline" className="bg-white" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                             </Button>
                         </div>
                     </CardHeader>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -75,7 +76,7 @@ import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, type
 import { getTimeLogs } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
-import { getUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, getUsers } from '@/services/user-profile-service';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
@@ -121,6 +122,7 @@ export function RunPayrollView() {
   const [workersList, setWorkersList] = useState<Worker[]>([]);
   const [allTasks, setAllTasks] = useState<any[]>([]);
   const [allTimeLogs, setAllTimeLogs] = useState<any[]>([]);
+  const [userProfiles, setUserProfiles] = useState<any[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -143,17 +145,18 @@ export function RunPayrollView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [fetchedWorkers, fetchedTasks, fetchedLogs, profile] = await Promise.all([
+        // Fetch all data points for global organization view
+        const [fetchedWorkers, fetchedTasks, fetchedLogs, profiles] = await Promise.all([
             getWorkers(user.uid),
-            getTasksForUser(user.uid),
-            getTimeLogs(user.uid),
-            getUserProfile(user.uid)
+            getTasksForUser(), // Pull all organizational tasks
+            getTimeLogs(),     // Pull all organizational logs
+            getUsers()         // Pull all profiles for identity matching
         ]);
 
-        // Integrate Admin (Owner) as a virtual worker for payroll processing
+        const adminProfile = profiles.find(p => p.id === user.uid);
         const adminWorker: Worker = {
             id: user.uid,
-            name: `${profile?.displayName || user.displayName || 'Admin'} (Admin)`,
+            name: `${adminProfile?.displayName || user.displayName || 'Admin'} (Admin)`,
             email: user.email || '',
             workerType: 'employee',
             payType: 'salary',
@@ -161,14 +164,12 @@ export function RunPayrollView() {
             userId: user.uid,
         };
 
-        // Combine system identities with worker records
-        const combined = [adminWorker, ...fetchedWorkers];
-        // Deduplicate in case the admin is already in the workers list
-        const unique = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+        const uniqueWorkers = [adminWorker, ...fetchedWorkers].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
-        setWorkersList(unique);
+        setWorkersList(uniqueWorkers);
         setAllTasks(fetchedTasks);
         setAllTimeLogs(fetchedLogs);
+        setUserProfiles(profiles);
     } catch (e: any) { 
         console.error("RunPayrollView: Failed to load data", e);
         toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message }); 
@@ -179,6 +180,15 @@ export function RunPayrollView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Map of email to UID for precise log matching
+  const emailToUidMap = useMemo(() => {
+      const map = new Map<string, string>();
+      userProfiles.forEach(p => {
+          if (p.email) map.set(p.email.toLowerCase(), p.id);
+      });
+      return map;
+  }, [userProfiles]);
+
   const processedEmployees = useMemo((): PayrollEmployee[] => {
     return workersList.map(emp => {
         let totalSeconds = 0;
@@ -186,27 +196,34 @@ export function RunPayrollView() {
         if (startDate && endDate) {
             const start = startOfDay(startDate);
             const end = endOfDay(endDate);
+            
+            // Resolve the worker's UID if it's a registry record
+            const resolvedUid = emp.userId || (emp.email ? emailToUidMap.get(emp.email.toLowerCase()) : null);
 
             const taskSeconds = allTasks
-                .filter(t => t.workerId === emp.id && t.start && isWithinInterval(new Date(t.start), { start, end }))
+                .filter(t => {
+                    const matchId = t.workerId === emp.id || (resolvedUid && t.workerId === resolvedUid);
+                    return matchId && t.start && isWithinInterval(new Date(t.start), { start, end });
+                })
                 .reduce((sum, t) => sum + (t.duration || 0), 0);
 
             const logSeconds = allTimeLogs
-                .filter(l => l.workerId === emp.id && l.startTime && isWithinInterval(new Date(l.startTime), { start, end }))
+                .filter(l => {
+                    const matchId = l.workerId === emp.id || (resolvedUid && l.workerId === resolvedUid);
+                    return matchId && l.startTime && isWithinInterval(new Date(l.startTime), { start, end });
+                })
                 .reduce((sum, l) => sum + (l.durationSeconds || 0), 0);
 
             totalSeconds = taskSeconds + logSeconds;
         }
 
         const totalHours = totalSeconds / 3600;
-        
         let grossPay = 0;
         const rate = Number(emp.payRate) || 0;
 
         if (emp.payType === 'hourly') {
             grossPay = parseFloat((totalHours * rate).toFixed(2));
         } else {
-            // Simplified salary calc: monthly / 2 for bi-weekly prototype
             grossPay = parseFloat((rate / 2).toFixed(2));
         }
 
@@ -220,7 +237,7 @@ export function RunPayrollView() {
             netPay: isNaN(grossPay - deductions) ? 0 : (grossPay - deductions)
         };
     });
-  }, [workersList, allTasks, allTimeLogs, startDate, endDate]);
+  }, [workersList, allTasks, allTimeLogs, startDate, endDate, emailToUidMap]);
 
   const selectedEmployees = useMemo(() => processedEmployees.filter((e) => selectedEmployeeIds.includes(e.id)), [processedEmployees, selectedEmployeeIds]);
 

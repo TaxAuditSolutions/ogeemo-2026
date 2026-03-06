@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -22,6 +23,8 @@ import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
 import hrMenuItems from '@/data/hr-menu-items';
 import { allMenuItems } from '@/lib/menu-items';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export type { Project };
 
@@ -226,24 +229,33 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-export async function getTasksForProject(userId: string, projectId: string): Promise<TaskEvent[]> {
+/**
+ * Fetches tasks for a specific project.
+ * @param userId Optional. Filters by owner if provided.
+ * @param projectId The target project ID.
+ */
+export async function getTasksForProject(userId: string | undefined, projectId: string): Promise<TaskEvent[]> {
   const db = getDb();
+  const collectionRef = collection(db, TASKS_COLLECTION);
   let q;
   if (projectId === 'inbox' || !projectId) {
-      q = query(
-        collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId),
-        where("projectId", "==", null)
-      );
+      q = userId ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", null)) : query(collectionRef, where("projectId", "==", null));
   } else {
-      q = query(
-        collection(db, TASKS_COLLECTION), 
-        where("userId", "==", userId),
-        where("projectId", "==", projectId)
-      );
+      q = userId ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", projectId)) : query(collectionRef, where("projectId", "==", projectId));
   }
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToTask);
+  
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToTask);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: TASKS_COLLECTION,
+            operation: 'list',
+        } satisfies SecurityRuleContext));
+    }
+    throw error;
+  }
 }
 
 export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
@@ -256,11 +268,27 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
     return null;
 }
 
-export async function getTasksForUser(userId: string): Promise<TaskEvent[]> {
+/**
+ * Fetches all tasks for a user or organization.
+ * @param userId Optional. If provided, restricts to owner. Otherwise relies on Security Rules.
+ */
+export async function getTasksForUser(userId?: string): Promise<TaskEvent[]> {
     const db = getDb();
-    const q = query(collection(db, TASKS_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToTask);
+    const collectionRef = collection(db, TASKS_COLLECTION);
+    const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+    
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(docToTask);
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: TASKS_COLLECTION,
+                operation: 'list',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
+    }
 }
 
 export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {

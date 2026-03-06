@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -14,6 +15,8 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export interface TimeLog {
   id: string;
@@ -56,11 +59,27 @@ const docToTimeLog = (doc: any): TimeLog => {
   } as TimeLog;
 };
 
-export async function getTimeLogs(userId: string): Promise<TimeLog[]> {
+/**
+ * Fetches time logs from the registry.
+ * @param userId Optional. If provided, filters by creator. Otherwise, relies on Security Rules for access.
+ */
+export async function getTimeLogs(userId?: string): Promise<TimeLog[]> {
   const db = getDb();
-  const q = query(collection(db, TIME_LOGS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToTimeLog).sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+  const collectionRef = collection(db, TIME_LOGS_COLLECTION);
+  const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+  
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToTimeLog).sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: TIME_LOGS_COLLECTION,
+            operation: 'list',
+        } satisfies SecurityRuleContext));
+    }
+    throw error;
+  }
 }
 
 export async function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {

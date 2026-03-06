@@ -132,7 +132,7 @@ export function IncomeStatementView() {
             <Info className="h-4 w-4 text-primary" />
             <AlertTitle>Notice</AlertTitle>
             <AlertDescription>
-                Ensure your ledger entries are assigned to the correct CRA line numbers for maximum accuracy.
+                Ensure your ledger entries are assigned to the correct tax line numbers for maximum accuracy.
             </AlertDescription>
         </Alert>
 

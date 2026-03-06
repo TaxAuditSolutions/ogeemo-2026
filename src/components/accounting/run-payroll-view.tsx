@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -30,7 +31,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -143,12 +143,30 @@ export function RunPayrollView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [fetchedWorkers, fetchedTasks, fetchedLogs] = await Promise.all([
+        const [fetchedWorkers, fetchedTasks, fetchedLogs, profile] = await Promise.all([
             getWorkers(user.uid),
             getTasksForUser(user.uid),
-            getTimeLogs(user.uid)
+            getTimeLogs(user.uid),
+            getUserProfile(user.uid)
         ]);
-        setWorkersList(fetchedWorkers);
+
+        // Integrate Admin (Owner) as a virtual worker for payroll processing
+        const adminWorker: Worker = {
+            id: user.uid,
+            name: `${profile?.displayName || user.displayName || 'Admin'} (Admin)`,
+            email: user.email || '',
+            workerType: 'employee',
+            payType: 'salary',
+            payRate: 0, 
+            userId: user.uid,
+        };
+
+        // Combine system identities with worker records
+        const combined = [adminWorker, ...fetchedWorkers];
+        // Deduplicate in case the admin is already in the workers list
+        const unique = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+
+        setWorkersList(unique);
         setAllTasks(fetchedTasks);
         setAllTimeLogs(fetchedLogs);
     } catch (e: any) { 
@@ -188,7 +206,8 @@ export function RunPayrollView() {
         if (emp.payType === 'hourly') {
             grossPay = parseFloat((totalHours * rate).toFixed(2));
         } else {
-            grossPay = parseFloat((rate / 24).toFixed(2));
+            // Simplified salary calc: monthly / 2 for bi-weekly prototype
+            grossPay = parseFloat((rate / 2).toFixed(2));
         }
 
         const deductions = parseFloat((grossPay * ESTIMATED_DEDUCTION_RATE).toFixed(2));
@@ -551,7 +570,10 @@ export function RunPayrollView() {
       <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
           <AlertDialogContent>
               <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the worker record for "{workerToDelete?.name}".</AlertDialogDescription></AlertDialogHeader>
-              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteWorker} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleConfirmDeleteWorker} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
     </div>

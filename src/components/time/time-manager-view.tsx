@@ -164,7 +164,21 @@ export function TimeManagerView() {
     const minuteOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; }), []);
     
     const totalAccumulatedSeconds = useMemo(() => sessions.reduce((acc, session) => acc + session.durationSeconds, 0), [sessions]);
-    const totalTime = useMemo(() => totalAccumulatedSeconds + elapsedSeconds, [totalAccumulatedSeconds, elapsedSeconds]);
+    
+    // Fallback: If no sessions/timer exist, calculate duration from scheduled start/end
+    const calculatedDuration = useMemo(() => {
+        if (sessions.length > 0 || elapsedSeconds > 0) {
+            return totalAccumulatedSeconds + elapsedSeconds;
+        }
+        if (startDate && startHour && startMinute && endDate && endHour && endMinute && !isAllDay) {
+            const s = set(startDate, { hours: parseInt(startHour), minutes: parseInt(startMinute), seconds: 0, milliseconds: 0 });
+            const e = set(endDate, { hours: parseInt(endHour), minutes: parseInt(endMinute), seconds: 0, milliseconds: 0 });
+            if (e > s) return (e.getTime() - s.getTime()) / 1000;
+        }
+        return 0;
+    }, [totalAccumulatedSeconds, elapsedSeconds, sessions.length, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay]);
+
+    const totalTime = calculatedDuration;
 
     const createAndSaveNewEvent = useCallback(async (): Promise<TaskEvent | null> => {
         if (!user) return null;
@@ -272,7 +286,7 @@ export function TimeManagerView() {
             projectId: selectedProjectId === 'inbox' ? null : selectedProjectId,
             contactId: selectedContactId,
             workerId: selectedWorkerId || user.uid,
-            duration: totalTime,
+            duration: calculatedDuration,
             sessions: sessions,
             isBillable: isBillable,
             billableRate: isBillable ? (Number(billableRate) || 0) : 0,
@@ -290,7 +304,7 @@ export function TimeManagerView() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, totalTime]);
+    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, calculatedDuration]);
 
     const handleSaveAndNew = async () => {
         await handleSaveEvent(false);
@@ -648,7 +662,7 @@ export function TimeManagerView() {
                             <CardTitle className="text-sm">Time Logs & Sessions</CardTitle>
                             <div className="text-right">
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total Session Time</span>
-                                <span className="font-mono text-lg font-bold text-primary">{formatTime(totalTime)}</span>
+                                <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-0">
@@ -741,7 +755,10 @@ export function TimeManagerView() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Delete this entire entry?</AlertDialogTitle><AlertDialogDescription>This will remove the event and all recorded time sessions. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive hover:bg-destructive/90">Delete Permanently</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive hover:bg-destructive/90">Delete Permanently</AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>

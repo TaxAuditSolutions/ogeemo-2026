@@ -211,6 +211,7 @@ export function LoanManagerView() {
                         <TableHead className="text-right">Original Amount</TableHead>
                         <TableHead className="text-right">Outstanding Balance</TableHead>
                         <TableHead className="text-right">Interest Rate</TableHead>
+                        <TableHead className="text-right">Monthly Payment</TableHead>
                         <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -225,6 +226,7 @@ export function LoanManagerView() {
                             <TableCell className="text-right font-mono">{formatCurrency(loan.originalAmount)}</TableCell>
                             <TableCell className="text-right font-mono">{formatCurrency(loan.outstandingBalance)}</TableCell>
                             <TableCell className="text-right">{loan.interestRate || 0}%</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(loan.monthlyPayment || 0)}</TableCell>
                             <TableCell>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -238,14 +240,14 @@ export function LoanManagerView() {
                             </TableCell>
                         </TableRow>
                     )) : (
-                        <TableRow><TableCell colSpan={5} className="h-24 text-center">No loans of this type recorded.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="h-24 text-center">No loans of this type recorded.</TableCell></TableRow>
                     )}
                 </TableBody>
                 <TableFooter>
                     <TableRow>
                         <TableCell colSpan={2} className="font-bold">Total</TableCell>
                         <TableCell className="text-right font-bold font-mono">{formatCurrency(type === 'Payable' ? totalPayable : totalReceivable)}</TableCell>
-                        <TableCell colSpan={2}></TableCell>
+                        <TableCell colSpan={3}></TableCell>
                     </TableRow>
                 </TableFooter>
             </Table>
@@ -334,7 +336,7 @@ export function LoanManagerView() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!loanToDelete} onOpenChange={() => setLoanToDelete(null)}>
+      <AlertDialog open={!!loanToDelete} onOpenChange={() => setLoadToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the loan record for "{loanToDelete?.counterparty}".</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>

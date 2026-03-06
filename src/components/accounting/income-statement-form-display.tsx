@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -48,7 +47,7 @@ export function T2125FormDisplay({ data, dateRange }: T2125FormDisplayProps) {
     <Card className="print:border-none print:shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Statement of Business or Professional Activities</CardTitle>
-        <CardDescription>Based on CRA Form T2125 - Period: {renderDateRange()}</CardDescription>
+        <CardDescription>for the Period: {renderDateRange()}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <section>

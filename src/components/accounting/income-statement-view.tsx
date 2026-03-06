@@ -41,8 +41,8 @@ export function IncomeStatementView() {
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfYear(new Date()), to: endOfYear(new Date()) });
   
-  const [isStartPickerOpen, setIsStartPickerOpen] = useState(false);
-  const [isEndPickerOpen, setIsEndPickerOpen] = useState(false);
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
   const { handlePrint, contentRef } = useReactToPrint();
   const { user } = useAuth();
@@ -139,9 +139,9 @@ export function IncomeStatementView() {
         <div className="flex flex-wrap items-end justify-center gap-4 mb-4 print:hidden">
             <div className="space-y-2">
                 <Label>Start Date</Label>
-                <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
+                <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                         </Button>
@@ -152,7 +152,7 @@ export function IncomeStatementView() {
                             selected={dateRange?.from} 
                             onSelect={(date) => { 
                                 setDateRange(prev => ({ from: date, to: prev?.to })); 
-                                setIsStartPickerOpen(false); 
+                                setIsStartDatePickerOpen(false); 
                             }} 
                             initialFocus 
                         />
@@ -164,7 +164,7 @@ export function IncomeStatementView() {
                 <Label>End Date</Label>
                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                         </Button>

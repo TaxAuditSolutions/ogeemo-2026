@@ -57,6 +57,14 @@ const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 const emptyLoanForm = {
     loanType: 'payable' as 'payable' | 'receivable',
     counterparty: '',
@@ -155,12 +163,12 @@ export function LoanManagerView() {
     const dataToSave = {
         loanType,
         counterparty: counterparty.trim(),
-        originalAmount: parseFloat(originalAmount),
-        outstandingBalance: parseFloat(outstandingBalance),
+        originalAmount: parseFloat(originalAmount.replace(/,/g, '')),
+        outstandingBalance: parseFloat(outstandingBalance.replace(/,/g, '')),
         startDate,
         interestRate: parseFloat(interestRate) || 0,
         termMonths: parseInt(termMonths) || 0,
-        monthlyPayment: parseFloat(monthlyPayment) || 0,
+        monthlyPayment: parseFloat(monthlyPayment.replace(/,/g, '')) || 0,
     };
 
     try {
@@ -189,6 +197,13 @@ export function LoanManagerView() {
         toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
         setLoanToDelete(null);
+    }
+  };
+
+  const handleNumericInputChange = (field: keyof typeof formData, value: string) => {
+    const cleanVal = value.replace(/,/g, '');
+    if (cleanVal === '' || /^\d*\.?\d*$/.test(cleanVal)) {
+        setFormData(prev => ({ ...prev, [field]: cleanVal }));
     }
   };
 
@@ -281,7 +296,7 @@ export function LoanManagerView() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-xl text-black">
             <DialogHeader>
                 <DialogTitle>{loanToEdit ? 'Edit Loan' : 'Add New Loan'}</DialogTitle>
                 <DialogDescription>
@@ -303,11 +318,31 @@ export function LoanManagerView() {
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="originalAmount">Original Amount <span className="text-destructive">*</span></Label>
-                        <Input id="originalAmount" type="number" placeholder="0.00" value={formData.originalAmount} onChange={e => setFormData(p => ({...p, originalAmount: e.target.value}))} />
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                            <Input 
+                                id="originalAmount" 
+                                type="text" 
+                                placeholder="0.00" 
+                                value={formatNumberWithCommas(formData.originalAmount)} 
+                                onChange={e => handleNumericInputChange('originalAmount', e.target.value)} 
+                                className="pl-7 font-mono font-bold"
+                            />
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="outstandingBalance">Outstanding Balance <span className="text-destructive">*</span></Label>
-                        <Input id="outstandingBalance" type="number" placeholder="0.00" value={formData.outstandingBalance} onChange={e => setFormData(p => ({...p, outstandingBalance: e.target.value}))} />
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                            <Input 
+                                id="outstandingBalance" 
+                                type="text" 
+                                placeholder="0.00" 
+                                value={formatNumberWithCommas(formData.outstandingBalance)} 
+                                onChange={e => handleNumericInputChange('outstandingBalance', e.target.value)} 
+                                className="pl-7 font-mono font-bold"
+                            />
+                        </div>
                     </div>
                 </div>
                  <div className="space-y-2">
@@ -325,7 +360,17 @@ export function LoanManagerView() {
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="monthlyPayment">Monthly Payment</Label>
-                        <Input id="monthlyPayment" type="number" placeholder="0.00" value={formData.monthlyPayment} onChange={e => setFormData(p => ({...p, monthlyPayment: e.target.value}))} />
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                            <Input 
+                                id="monthlyPayment" 
+                                type="text" 
+                                placeholder="0.00" 
+                                value={formatNumberWithCommas(formData.monthlyPayment)} 
+                                onChange={e => handleNumericInputChange('monthlyPayment', e.target.value)} 
+                                className="pl-7 font-mono font-bold"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -336,7 +381,7 @@ export function LoanManagerView() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!loanToDelete} onOpenChange={() => setLoadToDelete(null)}>
+      <AlertDialog open={!!loanToDelete} onOpenChange={() => setLoanToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the loan record for "{loanToDelete?.counterparty}".</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>

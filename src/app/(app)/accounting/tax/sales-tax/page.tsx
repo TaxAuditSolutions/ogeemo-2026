@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -32,12 +31,20 @@ const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 
 export default function SalesTaxPage() {
     const [income, setIncome] = useState<IncomeTransaction[]>([]);
     const [expenses, setExpenses] = useState<ExpenseTransaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [carriedForward, setCarriedForward] = useState<number>(0);
+    const [carriedForward, setCarriedForward] = useState<string>('');
     const [showOnlyTax, setShowOnlyTax] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
@@ -96,7 +103,9 @@ export default function SalesTaxPage() {
 
         const taxCollected = allIncomeInRange.reduce((sum, tx) => sum + (tx.taxAmount || 0), 0);
         const taxPaid = allExpensesInRange.reduce((sum, tx) => sum + (tx.taxAmount || 0), 0);
-        const netTax = (taxCollected - taxPaid) + carriedForward;
+        
+        const carriedForwardNum = parseFloat(carriedForward.replace(/,/g, '')) || 0;
+        const netTax = (taxCollected - taxPaid) + carriedForwardNum;
 
         return { filteredIncome, filteredExpenses, taxCollected, taxPaid, netTax };
     }, [income, expenses, dateRange, carriedForward, showOnlyTax]);
@@ -140,7 +149,7 @@ export default function SalesTaxPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 text-black">
             <AccountingPageHeader pageTitle="Sales Tax" hubPath="/accounting/tax" hubLabel="Tax Center" />
             <header className="text-center">
                 <h1 className="text-3xl font-bold font-headline text-primary">Sales Tax Calculator</h1>
@@ -188,16 +197,21 @@ export default function SalesTaxPage() {
                             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
                             <Input
                                 id="carried-forward"
-                                type="number"
+                                type="text"
                                 placeholder="0.00"
-                                value={carriedForward}
-                                onChange={(e) => setCarriedForward(Number(e.target.value))}
-                                className="pl-7"
+                                value={formatNumberWithCommas(carriedForward)}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/,/g, '');
+                                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                        setCarriedForward(val);
+                                    }
+                                }}
+                                className="pl-7 font-mono"
                             />
                         </div>
                      </div>
                     <Button variant="secondary" onClick={() => setDateRange(defaultDateRange)}>Current Quarter</Button>
-                    <Button variant="ghost" onClick={() => setDateRange(undefined)}>Clear Dates</Button>
+                    <Button variant="ghost" onClick={() => { setDateRange(undefined); setCarriedForward(''); }}>Clear Filters</Button>
                 </CardContent>
             </Card>
 
@@ -207,72 +221,76 @@ export default function SalesTaxPage() {
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card>
-                            <CardHeader><CardTitle>Tax Collected (Income)</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tax Collected (Income)</CardTitle></CardHeader>
                             <CardContent><p className="text-2xl font-bold text-green-600">{formatCurrency(taxCollected)}</p></CardContent>
                         </Card>
                         <Card>
-                            <CardHeader><CardTitle>Tax Paid (ITCs)</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tax Paid (ITCs)</CardTitle></CardHeader>
                             <CardContent><p className="text-2xl font-bold text-red-600">{formatCurrency(taxPaid)}</p></CardContent>
                         </Card>
                         <Card>
-                            <CardHeader><CardTitle>Net Tax Due</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Net Tax Due</CardTitle></CardHeader>
                             <CardContent><p className="text-2xl font-bold text-primary">{formatCurrency(netTax)}</p></CardContent>
                             <CardFooter>
-                                <Button className="w-full" onClick={handleRecordRemittance} disabled={netTax <= 0}>
+                                <Button className="w-full font-bold shadow-lg" onClick={handleRecordRemittance} disabled={netTax <= 0}>
                                     <FileDigit className="mr-2 h-4 w-4" /> Record Remittance Payment
                                 </Button>
                             </CardFooter>
                         </Card>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 p-2 bg-muted/20 rounded-md w-fit">
                         <Checkbox id="show-tax-only" checked={showOnlyTax} onCheckedChange={(checked) => setShowOnlyTax(!!checked)} />
                         <label
                             htmlFor="show-tax-only"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
-                            Show only transactions with tax
+                            Show only transactions with tax entries
                         </label>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
-                            <CardHeader><CardTitle>Income Transactions</CardTitle></CardHeader>
-                            <CardContent>
-                                <ScrollArea className="h-72">
+                            <CardHeader><CardTitle className="text-lg">Income Ledger Nodes</CardTitle></CardHeader>
+                            <CardContent className="p-0">
+                                <ScrollArea className="h-96">
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Tax</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Tax</TableHead></TableRow></TableHeader>
                                         <TableBody>
                                             {filteredIncome.map(tx => (
-                                                <TableRow key={tx.id} onClick={() => handleRowClick(tx.id, 'income')} className="cursor-pointer">
-                                                    <TableCell>{tx.date}</TableCell>
-                                                    <TableCell>{tx.company}</TableCell>
-                                                    <TableCell>{tx.description}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(tx.totalAmount || 0)}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(tx.taxAmount || 0)}</TableCell>
+                                                <TableRow key={tx.id} onClick={() => handleRowClick(tx.id, 'income')} className="cursor-pointer hover:bg-muted/50">
+                                                    <TableCell className="text-xs">{tx.date}</TableCell>
+                                                    <TableCell className="font-medium truncate max-w-[150px]">{tx.company}</TableCell>
+                                                    <TableCell className="text-right font-mono text-xs">{formatCurrency(tx.totalAmount || 0)}</TableCell>
+                                                    <TableCell className="text-right font-mono text-xs text-green-600 font-bold">{formatCurrency(tx.taxAmount || 0)}</TableCell>
                                                 </TableRow>
                                             ))}
+                                            {filteredIncome.length === 0 && (
+                                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No income nodes found for this period.</TableCell></TableRow>
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </ScrollArea>
                             </CardContent>
                         </Card>
                          <Card>
-                            <CardHeader><CardTitle>Expense Transactions</CardTitle></CardHeader>
-                            <CardContent>
-                                <ScrollArea className="h-72">
+                            <CardHeader><CardTitle className="text-lg">Expense Ledger Nodes</CardTitle></CardHeader>
+                            <CardContent className="p-0">
+                                <ScrollArea className="h-96">
                                      <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Vendor</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Tax</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Vendor</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Tax</TableHead></TableRow></TableHeader>
                                         <TableBody>
                                              {filteredExpenses.map(tx => (
-                                                <TableRow key={tx.id} onClick={() => handleRowClick(tx.id, 'expense')} className="cursor-pointer">
-                                                    <TableCell>{tx.date}</TableCell>
-                                                    <TableCell>{tx.company}</TableCell>
-                                                    <TableCell>{tx.description}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(tx.totalAmount || 0)}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(tx.taxAmount || 0)}</TableCell>
+                                                <TableRow key={tx.id} onClick={() => handleRowClick(tx.id, 'expense')} className="cursor-pointer hover:bg-muted/50">
+                                                    <TableCell className="text-xs">{tx.date}</TableCell>
+                                                    <TableCell className="font-medium truncate max-w-[150px]">{tx.company}</TableCell>
+                                                    <TableCell className="text-right font-mono text-xs">{formatCurrency(tx.totalAmount || 0)}</TableCell>
+                                                    <TableCell className="text-right font-mono text-xs text-red-600 font-bold">{formatCurrency(tx.taxAmount || 0)}</TableCell>
                                                 </TableRow>
                                             ))}
+                                            {filteredExpenses.length === 0 && (
+                                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No expense nodes found for this period.</TableCell></TableRow>
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </ScrollArea>

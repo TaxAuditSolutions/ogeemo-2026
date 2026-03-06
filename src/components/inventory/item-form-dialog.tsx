@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -61,8 +60,8 @@ const itemSchema = z.object({
     supplierId: z.string().optional().nullable(),
     acquisitionDate: z.date().optional().nullable(),
     stockQuantity: z.coerce.number().min(0, "Stock must be non-negative.").optional(),
-    cost: z.coerce.number().min(0, "Cost must be non-negative.").optional().nullable(),
-    price: z.coerce.number().min(0, "Price must be non-negative.").optional().nullable(),
+    cost: z.string().optional().nullable(),
+    price: z.string().optional().nullable(),
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -75,6 +74,14 @@ interface ItemFormDialogProps {
   onDelete: (itemId: string) => void;
   contacts: Contact[];
 }
+
+const formatNumberWithCommas = (value: string | number | null | undefined) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
 
 export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDelete, contacts }: ItemFormDialogProps) {
   const { toast } = useToast();
@@ -98,8 +105,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
                 supplierId: itemToEdit.supplierId,
                 acquisitionDate: itemToEdit.acquisitionDate ? new Date(itemToEdit.acquisitionDate) : null,
                 stockQuantity: itemToEdit.stockQuantity,
-                cost: itemToEdit.cost,
-                price: itemToEdit.price,
+                cost: itemToEdit.cost !== null && itemToEdit.cost !== undefined ? String(itemToEdit.cost) : null,
+                price: itemToEdit.price !== null && itemToEdit.price !== undefined ? String(itemToEdit.price) : null,
             });
         } else {
             form.reset({
@@ -125,6 +132,9 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
     }
     
     try {
+      const cleanCost = values.cost ? parseFloat(values.cost.replace(/,/g, '')) : null;
+      const cleanPrice = values.price ? parseFloat(values.price.replace(/,/g, '')) : null;
+
       const dataToSave = {
         name: values.name || 'Untitled Item',
         sku: values.sku || null,
@@ -132,8 +142,8 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
         supplierId: finalSupplierId || null,
         acquisitionDate: values.acquisitionDate || null,
         stockQuantity: Number(values.stockQuantity) || 0,
-        cost: values.cost ?? null,
-        price: values.price ?? null,
+        cost: isNaN(cleanCost as any) ? null : cleanCost,
+        price: isNaN(cleanPrice as any) ? null : cleanPrice,
       };
 
       if (itemToEdit) {
@@ -170,7 +180,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl text-black">
         <DialogHeader>
           <DialogTitle>{itemToEdit ? 'Edit Item / Update Stock' : 'Add New Item'}</DialogTitle>
            <DialogDescription>
@@ -199,7 +209,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command>
                                             <CommandInput placeholder="Search contacts..." />
                                             <CommandList>
@@ -253,8 +263,54 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
                     <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="cost" render={({ field }) => ( <FormItem> <FormLabel>Unit Cost</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
-                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Selling Price</FormLabel> <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="cost" render={({ field }) => ( 
+                        <FormItem> 
+                            <FormLabel>Unit Cost ($)</FormLabel> 
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                                <FormControl>
+                                    <Input 
+                                        type="text" 
+                                        className="pl-7 font-mono font-bold" 
+                                        placeholder="0.00" 
+                                        {...field} 
+                                        value={formatNumberWithCommas(field.value)} 
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/,/g, '');
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                field.onChange(val);
+                                            }
+                                        }}
+                                    />
+                                </FormControl> 
+                            </div>
+                            <FormMessage /> 
+                        </FormItem> 
+                    )} />
+                    <FormField control={form.control} name="price" render={({ field }) => ( 
+                        <FormItem> 
+                            <FormLabel>Selling Price ($)</FormLabel> 
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                                <FormControl>
+                                    <Input 
+                                        type="text" 
+                                        className="pl-7 font-mono font-bold" 
+                                        placeholder="0.00" 
+                                        {...field} 
+                                        value={formatNumberWithCommas(field.value)} 
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/,/g, '');
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                field.onChange(val);
+                                            }
+                                        }}
+                                    />
+                                </FormControl>
+                            </div>
+                            <FormMessage /> 
+                        </FormItem> 
+                    )} />
                  </div>
             </form>
           </Form>

@@ -96,6 +96,14 @@ const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 const emptyTxForm = {
     date: '',
     description: '',
@@ -247,7 +255,7 @@ export function CashAccountingView() {
 
     const handleSaveTransaction = async () => {
         if (!user) return;
-        const amountNum = parseFloat(formData.amount);
+        const amountNum = parseFloat(formData.amount.replace(/,/g, ''));
         if (!formData.date || !formData.category || isNaN(amountNum) || amountNum <= 0) {
             toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill all required fields.' });
             return;
@@ -467,7 +475,7 @@ export function CashAccountingView() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md text-black">
                     <DialogHeader>
                         <div className="flex items-center gap-2 text-primary mb-1">
                             <HandCoins className="h-5 w-5" />
@@ -497,7 +505,22 @@ export function CashAccountingView() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Amount ($)</Label>
-                                <Input type="number" step="0.01" readOnly={viewOnly} className="h-10 font-mono font-bold" placeholder="0.00" value={formData.amount} onChange={e => setFormData(p => ({...p, amount: e.target.value}))} />
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+                                    <Input 
+                                        type="text" 
+                                        readOnly={viewOnly} 
+                                        className="h-10 pl-7 font-mono font-bold" 
+                                        placeholder="0.00" 
+                                        value={formatNumberWithCommas(formData.amount)} 
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/,/g, '');
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                setFormData(p => ({...p, amount: val}));
+                                            }
+                                        }} 
+                                    />
+                                </div>
                             </div>
                         </div>
 

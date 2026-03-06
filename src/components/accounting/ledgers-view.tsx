@@ -417,8 +417,8 @@ export function LedgersView() {
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 flex flex-wrap items-end justify-center gap-4">
-                <div className="space-y-2">
+            <CardContent className="p-4 flex flex-wrap items-end justify-center gap-6">
+                <div className="flex flex-col space-y-2">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                     <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                         <PopoverTrigger asChild>
@@ -432,7 +432,7 @@ export function LedgersView() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-col space-y-2">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                         <PopoverTrigger asChild>

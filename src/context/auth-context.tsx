@@ -5,6 +5,7 @@ import { createContext, useState, useContext, ReactNode, useEffect, useCallback 
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseServices } from '@/firebase';
+import { getUserProfile, updateUserProfile } from '@/services/user-profile-service';
 
 interface AuthContextType {
   user: User | null;
@@ -69,6 +70,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error("Auth: Failed to synchronize session cookie.", e);
         }
+
+        // --- High-Fidelity Profile Provisioning ---
+        // Ensure that a Firestore profile exists for every authenticated user.
+        // This prevents "Permission Denied" errors when Security Rules attempt to look up authority levels.
+        try {
+            const profile = await getUserProfile(currentUser.uid);
+            if (!profile) {
+                console.log(`Auth Context: Provisioning new profile for ${currentUser.email}`);
+                await updateUserProfile(currentUser.uid, currentUser.email!, {
+                    displayName: currentUser.displayName || '',
+                    role: 'editor', // Default role
+                });
+            }
+        } catch (error) {
+            console.error("Auth Context: Failed to provision user profile.", error);
+        }
+
       } else {
         // Clear everything on sign out
         setAccessToken(null);

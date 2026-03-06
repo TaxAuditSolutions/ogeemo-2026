@@ -24,12 +24,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CustomCalendar } from "../ui/custom-calendar";
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from "@/lib/utils";
-
 
 interface AssetFormDialogProps {
   isOpen: boolean;
@@ -61,6 +59,17 @@ const CRA_ASSET_CLASSES = [
     { value: "53", label: "Class 53 (50%) - Zero-emission vehicles" },
 ];
 
+/**
+ * Helper to format a string or number with thousands separators (commas).
+ */
+const formatNumberWithCommas = (value: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const sValue = String(value).replace(/,/g, "");
+  const parts = sValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: AssetFormDialogProps) {
   const [formData, setFormData] = useState(emptyAssetForm);
   const [depreciationEntries, setDepreciationEntries] = useState<DepreciationEntry[]>([]);
@@ -71,7 +80,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
   const { toast } = useToast();
 
   const currentDepreciatedValue = useMemo(() => {
-    const openingBalance = parseFloat(formData.undepreciatedCapitalCost) || 0;
+    const openingBalance = parseFloat(formData.undepreciatedCapitalCost.replace(/,/g, '')) || 0;
     const totalDepreciation = depreciationEntries.reduce((sum, entry) => sum + entry.amount, 0);
     return openingBalance - totalDepreciation;
   }, [formData.undepreciatedCapitalCost, depreciationEntries]);
@@ -107,6 +116,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
     } else if (!assetToEdit && isOpen) {
       const newAssetDefaults = {
         ...emptyAssetForm,
+        purchaseDate: format(new Date(), 'yyyy-MM-dd'),
       };
       setFormData(newAssetDefaults);
       setDepreciationEntries([]);
@@ -114,8 +124,8 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
   }, [assetToEdit, isOpen]);
 
   const handleSave = () => {
-    const costNum = parseFloat(formData.cost);
-    const uccNum = parseFloat(formData.undepreciatedCapitalCost);
+    const costNum = parseFloat(formData.cost.replace(/,/g, ''));
+    const uccNum = parseFloat(formData.undepreciatedCapitalCost.replace(/,/g, ''));
 
     if (!formData.name.trim() || !formData.purchaseDate || isNaN(uccNum) || uccNum < 0) {
       toast({
@@ -156,7 +166,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
     };
 
     if (assetToEdit) {
-      onSave({ ...assetToEdit, ...dataToSave });
+      onSave({ ...assetToEdit, ...dataToSave } as Asset);
     } else {
       onSave(dataToSave);
     }
@@ -165,17 +175,29 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
 
   const handleValueChange = (key: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => {
-        const newState = { ...prev, [key]: value };
+        let finalValue = value;
+        
+        // Strip commas for numeric fields before updating state
+        if (typeof value === 'string' && (key === 'cost' || key === 'undepreciatedCapitalCost')) {
+            const cleanVal = value.replace(/,/g, '');
+            if (cleanVal !== '' && !/^\d*\.?\d*$/.test(cleanVal)) {
+                return prev; // Ignore invalid numeric input
+            }
+            finalValue = cleanVal;
+        }
+
+        const newState = { ...prev, [key]: finalValue };
+        
         // If creating a new asset, automatically sync cost with UCC
         if (!assetToEdit && key === 'undepreciatedCapitalCost') {
-            newState.cost = String(value);
+            newState.cost = String(finalValue);
         }
         return newState;
     });
   };
   
   const handleAddDepreciation = () => {
-    const amountNum = parseFloat(newDepreciation.amount);
+    const amountNum = parseFloat(newDepreciation.amount.replace(/,/g, ''));
     if (!newDepreciation.date || isNaN(amountNum) || amountNum <= 0) {
         toast({ variant: 'destructive', title: 'Invalid Depreciation', description: 'Please enter a valid date and a positive amount.' });
         return;
@@ -258,7 +280,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <CustomCalendar mode="single" selected={parseISO(formData.purchaseDate)} onSelect={(date) => { if (date) handleValueChange('purchaseDate', format(date, 'yyyy-MM-dd')); setIsPurchaseDatePickerOpen(false); }} initialFocus />
+                                <CustomCalendar mode="single" selected={formData.purchaseDate ? parseISO(formData.purchaseDate) : undefined} onSelect={(date) => { if (date) handleValueChange('purchaseDate', format(date, 'yyyy-MM-dd')); setIsPurchaseDatePickerOpen(false); }} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -266,7 +288,14 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                         <Label htmlFor="undepreciatedCapitalCost">Current Value</Label>
                         <div className="relative">
                             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                            <Input id="undepreciatedCapitalCost" type="number" placeholder="0.00" value={formData.undepreciatedCapitalCost} onChange={(e) => handleValueChange('undepreciatedCapitalCost', e.target.value)} className="pl-7" />
+                            <Input 
+                                id="undepreciatedCapitalCost" 
+                                type="text" 
+                                placeholder="0.00" 
+                                value={formatNumberWithCommas(formData.undepreciatedCapitalCost)} 
+                                onChange={(e) => handleValueChange('undepreciatedCapitalCost', e.target.value)} 
+                                className="pl-7 font-mono font-bold" 
+                            />
                         </div>
                          <p className="text-xs text-muted-foreground">For new items, this is the purchase price. For used items, enter its current depreciated value.</p>
                     </div>
@@ -275,7 +304,14 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                     <Label htmlFor="cost">Original Purchase Price</Label>
                     <div className="relative">
                         <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                        <Input id="cost" type="number" placeholder="0.00" value={formData.cost} onChange={(e) => handleValueChange('cost', e.target.value)} className="pl-7" />
+                        <Input 
+                            id="cost" 
+                            type="text" 
+                            placeholder="0.00" 
+                            value={formatNumberWithCommas(formData.cost)} 
+                            onChange={(e) => handleValueChange('cost', e.target.value)} 
+                            className="pl-7 font-mono font-bold" 
+                        />
                     </div>
                     <p className="text-xs text-muted-foreground">For new assets, this value is the same as the Current Value. For used assets, enter the price you originally paid.</p>
                 </div>
@@ -302,16 +338,16 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
             {assetToEdit && (
                 <>
                 <Separator />
-                <div className="space-y-4 px-6">
-                    <h3 className="font-semibold text-lg">Depreciation</h3>
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Depreciation Orchestration</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Current Depreciated Value (UCC)</Label>
-                            <Input value={currentDepreciatedValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} readOnly disabled />
+                            <Input value={currentDepreciatedValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} readOnly disabled className="font-mono font-bold bg-muted/50" />
                         </div>
                     </div>
 
-                    <Card>
+                    <Card className="bg-primary/5 border-primary/20">
                         <CardHeader className="p-4">
                             <CardTitle className="text-base">Record New Depreciation</CardTitle>
                         </CardHeader>
@@ -320,55 +356,72 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                                 <Label htmlFor="dep-date">Date</Label>
                                 <Popover open={isDepDatePickerOpen} onOpenChange={setIsDepDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newDepreciation.date && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !newDepreciation.date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {newDepreciation.date ? format(parseISO(newDepreciation.date), "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
-                                        <CustomCalendar mode="single" selected={parseISO(newDepreciation.date)} onSelect={(date) => { if(date) setNewDepreciation(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDepDatePickerOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={newDepreciation.date ? parseISO(newDepreciation.date) : undefined} onSelect={(date) => { if(date) setNewDepreciation(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDepDatePickerOpen(false); }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="dep-amount">Amount</Label>
+                                <Label htmlFor="dep-amount">Amount ($)</Label>
                                 <div className="relative">
                                     <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
-                                    <Input id="dep-amount" type="number" placeholder="0.00" value={newDepreciation.amount} onChange={(e) => setNewDepreciation(p => ({ ...p, amount: e.target.value }))} className="pl-7" />
+                                    <Input 
+                                        id="dep-amount" 
+                                        type="text" 
+                                        placeholder="0.00" 
+                                        value={formatNumberWithCommas(newDepreciation.amount)} 
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/,/g, '');
+                                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                                setNewDepreciation(p => ({ ...p, amount: val }));
+                                            }
+                                        }} 
+                                        className="pl-7 font-mono font-bold" 
+                                    />
                                 </div>
                             </div>
-                            <Button onClick={handleAddDepreciation}><PlusCircle className="mr-2 h-4 w-4"/> Add</Button>
+                            <Button onClick={handleAddDepreciation} className="h-10"><PlusCircle className="mr-2 h-4 w-4"/> Add</Button>
                         </CardContent>
                     </Card>
 
                     <div className="space-y-2">
-                        <Label>Depreciation History</Label>
-                        <ScrollArea className="h-32 w-full rounded-md border">
-                            <div className="p-4">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Depreciation History</Label>
+                        <div className="rounded-md border bg-muted/30">
+                            <div className="p-4 space-y-2">
                                 {depreciationEntries.length > 0 ? (
                                     depreciationEntries.map(entry => (
-                                        <div key={entry.id} className="flex justify-between items-center text-sm mb-2">
-                                            <span>{format(parseISO(entry.date), 'PP')}</span>
-                                            <span>{entry.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteDepreciation(entry.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive"/>
-                                            </Button>
+                                        <div key={entry.id} className="flex justify-between items-center text-sm p-2 rounded bg-white border shadow-sm">
+                                            <span className="font-medium">{format(parseISO(entry.date), 'PP')}</span>
+                                            <div className="flex items-center gap-4">
+                                                <span className="font-mono font-bold text-destructive">-{entry.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepreciation(entry.id)}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">No depreciation recorded yet.</p>
+                                    <p className="text-sm text-muted-foreground text-center py-4 italic">No depreciation recorded yet.</p>
                                 )}
                             </div>
-                        </ScrollArea>
+                        </div>
                     </div>
                 </div>
                 </>
             )}
             </div>
         </ScrollArea>
-        <DialogFooter className="pt-4 border-t px-6">
+        <DialogFooter className="pt-4 border-t px-6 shrink-0 bg-muted/5">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>{assetToEdit ? 'Save Changes' : 'Add Asset'}</Button>
+          <Button onClick={handleSave} className="font-bold shadow-lg">
+            <Save className="mr-2 h-4 w-4" />
+            {assetToEdit ? 'Save Changes' : 'Add Asset to Register'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1467,3 +1467,17 @@ export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Pro
     
     return newAcc;
 }
+
+export async function deleteInternalAccount(id: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, INTERNAL_ACCOUNT_COLLECTION, id);
+    deleteDoc(docRef).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    });
+}

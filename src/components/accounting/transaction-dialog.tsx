@@ -22,7 +22,8 @@ import {
     Percent,
     Wallet,
     X,
-    Pencil
+    Pencil,
+    Trash2
 } from 'lucide-react';
 
 import {
@@ -41,6 +42,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,6 +79,7 @@ import {
     addExpenseCategory,
     getInternalAccounts,
     addInternalAccount,
+    deleteInternalAccount,
     updateIncomeTransaction,
     updateExpenseTransaction,
     updatePayableBill,
@@ -151,6 +163,7 @@ export function TransactionDialog({
     const [companySearchValue, setCompanySearchValue] = React.useState("");
     const [categorySearchValue, setCategorySearchValue] = React.useState("");
     const [accountSearchValue, setAccountSearchValue] = React.useState("");
+    const [accountToDelete, setAccountToDelete] = React.useState<InternalAccount | null>(null);
 
     const form = useForm<TransactionFormData>({
         resolver: zodResolver(transactionSchema),
@@ -313,6 +326,22 @@ export function TransactionDialog({
             toast({ title: "Account Created", description: `"${name}" added to your registry.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!accountToDelete) return;
+        try {
+            await deleteInternalAccount(accountToDelete.id);
+            setInternalAccounts(prev => prev.filter(a => a.id !== accountToDelete.id));
+            if (form.getValues('account') === accountToDelete.name) {
+                form.setValue('account', '');
+            }
+            toast({ title: 'Account Deleted' });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+            setAccountToDelete(null);
         }
     };
 
@@ -735,12 +764,30 @@ export function TransactionDialog({
                                                                         </CommandEmpty>
                                                                         <CommandGroup>
                                                                             {internalAccounts.map(acc => (
-                                                                                <CommandItem key={acc.id} value={acc.name} onSelect={() => { field.onChange(acc.name); setIsAccountPopoverOpen(false); }}>
-                                                                                    <Check className={cn("mr-2 h-4 w-4", field.value === acc.name ? "opacity-100" : "opacity-0")} />
-                                                                                    <div className="flex flex-col">
-                                                                                        <span className="text-sm font-semibold">{acc.name}</span>
-                                                                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{acc.type}</span>
+                                                                                <CommandItem 
+                                                                                    key={acc.id} 
+                                                                                    value={acc.name} 
+                                                                                    onSelect={() => { field.onChange(acc.name); setIsAccountPopoverOpen(false); }}
+                                                                                    className="flex justify-between items-center group cursor-pointer"
+                                                                                >
+                                                                                    <div className="flex items-center">
+                                                                                        <Check className={cn("mr-2 h-4 w-4", field.value === acc.name ? "opacity-100" : "opacity-0")} />
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-sm font-semibold">{acc.name}</span>
+                                                                                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{acc.type}</span>
+                                                                                        </div>
                                                                                     </div>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setAccountToDelete(acc);
+                                                                                        }}
+                                                                                    >
+                                                                                        <Trash2 className="h-3 w-3" />
+                                                                                    </Button>
                                                                                 </CommandItem>
                                                                             ))}
                                                                         </CommandGroup>
@@ -852,6 +899,24 @@ export function TransactionDialog({
                 taxTypes={taxTypes}
                 onTaxTypesChange={() => onSuccess()}
             />
-            </React.Fragment>
+
+            <AlertDialog open={!!accountToDelete} onOpenChange={() => setAccountToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the account node <strong className="font-bold">"{accountToDelete?.name}"</strong>. 
+                            Existing ledger entries will retain their text-based record of this account, but it will no longer be available for new transactions.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90">
+                            Delete Account Node
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </React.Fragment>
     );
 }

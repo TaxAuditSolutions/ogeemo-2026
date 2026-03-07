@@ -225,6 +225,10 @@ export function AddLineItemDialog({
     onOpenChange(false);
   };
 
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  };
+
   const handleSelectServiceItem = (item: ServiceItem) => {
     if (!description) setDescription(item.description);
     setPrice(String(item.price));
@@ -252,10 +256,6 @@ export function AddLineItemDialog({
       }
   };
 
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  };
-
   const filteredServiceItems = uniqueServiceItems.filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredCategories = uniqueExpenseCategories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -273,14 +273,6 @@ export function AddLineItemDialog({
                 </DialogDescription>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-6 top-6 h-10 w-10 rounded-full hover:bg-primary/10" 
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-6 w-6" />
-          </Button>
         </DialogHeader>
 
         <ScrollArea className="flex-1 bg-white">
@@ -386,7 +378,7 @@ export function AddLineItemDialog({
                     <Textarea
                         id="description"
                         placeholder="Clearly define the work performed or product provided for the client..."
-                        className="min-h-[120px] text-xl leading-relaxed font-semibold focus-visible:ring-primary border-2"
+                        className="min-h-[120px] text-xl font-semibold focus-visible:ring-primary border-2"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />

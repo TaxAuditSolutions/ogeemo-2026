@@ -1,4 +1,3 @@
-
 'use client';
 
 import { 
@@ -17,6 +16,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { getFolders as getContactFolders } from './contact-folder-service';
 
 export interface FolderItem {
   id: string;
@@ -204,4 +204,46 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
     const newFolderData = { name: folderName, userId, parentId: null, createdAt: new Date() };
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
     return { id: docRef.id, type: 'folder', ...newFolderData };
+}
+
+/**
+ * Provisions a specific folder for a worker within the Document Manager.
+ * Path: Workers -> [Employees/Contractors] -> [Worker Name]
+ */
+export async function provisionWorkerDocumentNode(userId: string, contactName: string, contactFolderId: string): Promise<void> {
+    const db = getDb();
+    
+    // 1. Get the name of the Contact Hub folder to determine the role
+    const contactFolders = await getContactFolders(userId);
+    const targetContactFolder = contactFolders.find(f => f.id === contactFolderId);
+    if (!targetContactFolder) return;
+
+    const roleName = targetContactFolder.name;
+    // We only automate for the primary worker roles
+    if (roleName !== 'Employees' && roleName !== 'Contractors') return;
+
+    // 2. Ensure Document Manager system folders are present
+    const docFolders = await ensureDocumentSystemFolders(userId);
+    const workersRoot = docFolders.find(f => f.name === 'Workers' && f.isSystem);
+    if (!workersRoot) return;
+
+    const typeFolder = docFolders.find(f => f.name === roleName && f.parentId === workersRoot.id);
+    if (!typeFolder) return;
+
+    // 3. Create or find the individual worker folder
+    const q = query(
+        collection(db, FOLDERS_COLLECTION),
+        where("userId", "==", userId),
+        where("parentId", "==", typeFolder.id),
+        where("name", "==", contactName)
+    );
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+        await addFolder({
+            name: contactName,
+            userId,
+            parentId: typeFolder.id,
+        });
+    }
 }

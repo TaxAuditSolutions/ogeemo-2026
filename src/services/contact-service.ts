@@ -1,4 +1,3 @@
-
 'use client';
 
 import { 
@@ -18,6 +17,7 @@ import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { Contact } from '@/data/contacts';
+import { provisionWorkerDocumentNode } from './file-manager-folders';
 
 export type { Contact };
 
@@ -119,6 +119,11 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
         }
     });
 
+    // Automate folder provisioning in Document Manager
+    if (dataToSave.folderId && dataToSave.userId) {
+        await provisionWorkerDocumentNode(dataToSave.userId, dataToSave.name, dataToSave.folderId);
+    }
+
     return { id: docRef.id, ...dataToSave };
 }
 
@@ -139,17 +144,26 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     if (currentDoc.exists()) {
         const currentData = currentDoc.data();
         cleanedData.keywords = generateKeywords({ ...currentData, ...cleanedData });
-    }
 
-    await updateDoc(contactRef, cleanedData).catch(async (error) => {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: contactRef.path,
-                operation: 'update',
-                requestResourceData: cleanedData,
-            } satisfies SecurityRuleContext));
+        await updateDoc(contactRef, cleanedData).catch(async (error) => {
+            if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: contactRef.path,
+                    operation: 'update',
+                    requestResourceData: cleanedData,
+                } satisfies SecurityRuleContext));
+            }
+        });
+
+        // Automate folder provisioning synchronization
+        const finalName = cleanedData.name || currentData.name;
+        const finalFolderId = cleanedData.folderId || currentData.folderId;
+        const userId = currentData.userId;
+
+        if (finalFolderId && userId) {
+            await provisionWorkerDocumentNode(userId, finalName, finalFolderId);
         }
-    });
+    }
 }
 
 export async function deleteContacts(contactIds: string[]): Promise<void> {

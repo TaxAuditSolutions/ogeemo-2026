@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -7,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   Folder,
-  File as FileIconLucide,
   LoaderCircle,
   FolderPlus,
   ChevronRight,
@@ -32,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
-import { getFolders, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/services/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { useAuth } from '@/context/auth-context';
@@ -96,14 +94,22 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [contact]);
+    }, [contact]);
 
     return (
-      <DraggableTableRowInner id={`row-${contact.id}`} ref={drag} className={cn(isDragging && "opacity-50", isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", "cursor-grab")}>
+      <DraggableTableRowInner 
+        id={`row-${contact.id}`} 
+        ref={drag} 
+        className={cn(
+            isDragging && "opacity-50", 
+            isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset", 
+            "cursor-grab"
+        )}
+      >
         {children}
       </DraggableTableRowInner>
     );
@@ -149,18 +155,18 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }), [folder, isRenaming, isSystem]);
+    }, [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
-    }), [folder.id, onDrop]);
+    }, [folder.id, onDrop]);
 
     return (
       <div style={{ marginLeft: level > 0 ? `${level * 1}rem` : '0' }} className="my-1 rounded-md">
@@ -268,7 +274,7 @@ export function ContactsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
-  const contactRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }
@@ -411,7 +417,7 @@ export function ContactsView() {
         const contact = contacts.find(c => c.id === highlightedId);
         if (contact) {
             const timeoutId = setTimeout(() => {
-                const rowElement = contactRefs.current.get(highlightedId);
+                const rowElement = document.getElementById(`row-${highlightedId}`);
                 if (rowElement) {
                     rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
@@ -476,7 +482,7 @@ export function ContactsView() {
                                   <DraggableTableRow key={contact.id} contact={contact} isHighlighted={highlightedId === contact.id}>
                                       <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={(checked) => setSelectedContactIds(prev => checked ? [...prev, contact.id] : prev.filter(id => id !== contact.id))} /></TableCell>
                                       <TableCell className="font-medium">
-                                          <div className="flex items-center" ref={(el) => contactRefs.current.set(contact.id, el)}>
+                                          <div className="flex items-center">
                                               <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>{contact.name}</button>
                                           </div>
                                       </TableCell>
@@ -510,7 +516,7 @@ export function ContactsView() {
       </div>
       
       {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
-      <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
       <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Folder?</AlertDialogTitle><AlertDialogDescription>This will remove the folder and its references. Contacts are not deleted.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Contact?</AlertDialogTitle><AlertDialogDescription>Permanently remove "{contactToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Selected?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} records?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>

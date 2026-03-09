@@ -15,6 +15,8 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 /**
  * @fileOverview Refactored Payroll Service for Ogeemo.
@@ -46,36 +48,48 @@ const docToWorker = (doc: any): Worker => {
 
 /**
  * Fetches all workers (Employees and Contractors) from the Contact Hub.
- * Uses recursive folder filtering to pull all identities under the 'Workers' branch.
+ * Uses workerType as the primary identifier to ensure organization-wide visibility.
  */
-export async function getWorkers(userId?: string): Promise<Worker[]> {
+export async function getWorkers(): Promise<Worker[]> {
   const db = getDb();
   
-  // 1. Find the 'Workers' branch folders
-  const foldersQuery = userId 
-    ? query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId))
-    : collection(db, FOLDERS_COLLECTION);
-    
-  const foldersSnapshot = await getDocs(foldersQuery);
-  const allFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
-  
-  const workerFolder = allFolders.find(f => f.name.toLowerCase() === 'workers' && f.isSystem);
-  if (!workerFolder) return [];
-
-  // Find all subfolders (Employees, Contractors)
-  const workerFolderIds = [workerFolder.id];
-  allFolders.filter(f => f.parentId === workerFolder.id).forEach(f => workerFolderIds.push(f.id));
-
-  // 2. Fetch contacts belonging to these folders
+  // The Contact Hub is the SSoT. We query for anyone explicitly marked as a worker.
   const contactsRef = collection(db, CONTACTS_COLLECTION);
-  const q = query(contactsRef, where("folderId", "in", workerFolderIds));
+  const q = query(contactsRef, where("workerType", "in", ["employee", "contractor"]));
   
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
+  try {
+    const snapshot = await getDocs(q);
+    const workers = snapshot.docs.map(docToWorker);
+
+    // Self-healing: if the list is empty, we also check the 'Workers' system folders
+    // to ensure legacy or newly moved contacts without workerType set are still picked up.
+    if (workers.length === 0) {
+        const foldersSnapshot = await getDocs(collection(db, FOLDERS_COLLECTION));
+        const allFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        const workerFolders = allFolders.filter(f => f.name.toLowerCase().match(/(workers|employees|contractors)/) && f.isSystem);
+        const folderIds = workerFolders.map(f => f.id);
+
+        if (folderIds.length > 0) {
+            const fallbackQ = query(contactsRef, where("folderId", "in", folderIds));
+            const fallbackSnap = await getDocs(fallbackQ);
+            return fallbackSnap.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
+        }
+    }
+
+    return workers.sort((a,b) => a.name.localeCompare(b.name));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: CONTACTS_COLLECTION,
+            operation: 'list',
+        } satisfies SecurityRuleContext));
+    }
+    throw error;
+  }
 }
 
 export async function getEmployees(userId: string): Promise<Worker[]> {
-  return getWorkers(userId);
+  return getWorkers();
 }
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
@@ -106,14 +120,10 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
 }
 
 /**
- * Implementation Note: Reassigning time logs and requests from source to master.
+ * Reassigns time logs and requests from source to master before deletion.
  */
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
-    const { db, auth } = getFirebaseServices();
-    const currentUserId = auth.currentUser?.uid;
-    
-    if (!currentUserId) throw new Error("Authentication required.");
-
+    const db = getDb();
     const batch = writeBatch(db);
 
     const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
@@ -128,7 +138,7 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     await batch.commit();
 }
 
-// --- Remittance & Payroll Runs (Data preserved) ---
+// --- Remittance & Payroll Runs (Organization Scoped) ---
 
 export interface PayrollRemittance {
   id: string;
@@ -143,9 +153,19 @@ export interface PayrollRemittance {
 
 export async function getRemittances(userId: string): Promise<PayrollRemittance[]> {
     const db = getDb();
-    const q = query(collection(db, REMITTANCES_COLLECTION), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+    const q = query(collection(db, REMITTANCES_COLLECTION));
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: REMITTANCES_COLLECTION,
+                operation: 'list',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
+    }
 }
 
 export async function addRemittance(data: Omit<PayrollRemittance, 'id'>): Promise<PayrollRemittance> {

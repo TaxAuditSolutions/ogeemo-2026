@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -285,7 +286,7 @@ export function ContactsView() {
             getContacts(), 
             getCompanies(user.uid),
             getIndustries(user.uid),
-            getWorkers(user.uid),
+            getWorkers(), // Organization-wide retrieval
         ]);
         setContacts(fetchedContacts);
         setFolders(allFolders);

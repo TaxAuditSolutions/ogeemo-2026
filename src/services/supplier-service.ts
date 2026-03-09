@@ -33,31 +33,30 @@ const docToSupplier = (doc: any): Supplier => ({
 } as Supplier);
 
 /**
- * Fetches all suppliers from the Contact Hub by filtering for the 'Suppliers' system folder.
+ * Fetches all suppliers from the Contact Hub by filtering for any 'Suppliers' system folder.
+ * This is organization-wide to support the Unified Directory protocol.
  */
-export async function getSuppliers(userId?: string): Promise<Supplier[]> {
+export async function getSuppliers(): Promise<Supplier[]> {
     const db = getDb();
     
-    // 1. Find the 'Suppliers' system folder
-    const foldersQuery = userId 
-        ? query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", "Suppliers"))
-        : query(collection(db, FOLDERS_COLLECTION), where("name", "==", "Suppliers"));
+    // 1. Find all 'Suppliers' folders across the organization
+    const foldersSnapshot = await getDocs(collection(db, FOLDERS_COLLECTION));
+    const supplierFolderIds = foldersSnapshot.docs
+        .filter(d => d.data().name.toLowerCase() === 'suppliers' && d.data().isSystem)
+        .map(d => d.id);
         
-    const foldersSnapshot = await getDocs(foldersQuery);
-    if (foldersSnapshot.empty) return [];
-    
-    const supplierFolderId = foldersSnapshot.docs[0].id;
+    if (supplierFolderIds.length === 0) return [];
 
-    // 2. Pull contacts from that folder
+    // 2. Pull contacts from those folders
     const contactsRef = collection(db, CONTACTS_COLLECTION);
-    const q = query(contactsRef, where("folderId", "==", supplierFolderId));
+    const q = query(contactsRef, where("folderId", "in", supplierFolderIds));
     
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 /**
- * Moves an existing contact into the 'Suppliers' system folder.
+ * Moves an existing contact into the user's 'Suppliers' system folder.
  */
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<Supplier> {
   const db = getDb();

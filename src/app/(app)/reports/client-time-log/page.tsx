@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -96,10 +95,10 @@ function ClientTimeLogReportContent() {
         try {
             // Synchronized registries for comprehensive reporting
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'payrollWorkers' }; throw err; }),
+                getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
-                getTimeLogs(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
-                getTasksForUser(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
+                getTimeLogs().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
+                getTasksForUser().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),
                 getUserProfile(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'users' }; throw err; })
             ]);
             
@@ -329,7 +328,7 @@ function ClientTimeLogReportContent() {
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>

@@ -5,7 +5,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Phone, Mic, Square, FolderPlus, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, X, WalletCards, ShieldCheck, Landmark, Users, Save } from 'lucide-react';
+import { Phone, Mic, Square, FolderPlus, ChevronsUpDown, Check, Plus, Edit, MoreVertical, Trash2, X, WalletCards, ShieldCheck, Landmark, Users, Save, Files } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
 
 const contactSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -104,6 +105,7 @@ export default function ContactFormDialog({
 }: ContactFormDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
+    const router = useRouter();
     
     const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
@@ -177,11 +179,18 @@ export default function ContactFormDialog({
         <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none flex flex-col p-0 text-black">
-                <DialogHeader className="p-6 pb-4 border-b bg-muted/10 shrink-0">
+                <DialogHeader className="p-6 pb-4 border-b bg-muted/10 shrink-0 relative">
                     <DialogTitle className="text-2xl font-bold font-headline text-primary">
                         {contactToEdit ? "Edit Unified Identity" : "New Unified Identity"}
                     </DialogTitle>
                     <DialogDescription>Registry entry for Clients, Workers, Suppliers, and Leads.</DialogDescription>
+                    {contactToEdit?.documentFolderId && (
+                        <div className="absolute top-6 left-6">
+                            <Button variant="outline" size="sm" className="h-8" onClick={() => router.push(`/document-manager?highlight=${contactToEdit.documentFolderId}`)}>
+                                <Files className="mr-2 h-4 w-4" /> View Evidence
+                            </Button>
+                        </div>
+                    )}
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">

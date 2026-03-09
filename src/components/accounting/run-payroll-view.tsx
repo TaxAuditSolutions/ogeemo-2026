@@ -65,7 +65,8 @@ import {
     RefreshCw,
     UserPlus,
     Info,
-    ExternalLink
+    ExternalLink,
+    Files
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, addDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -147,7 +148,7 @@ export function RunPayrollView() {
     try {
         // Fetch all data points for global organization view
         const [fetchedWorkers, fetchedTasks, fetchedLogs, profiles] = await Promise.all([
-            getWorkers(user.uid),
+            getWorkers(),
             getTasksForUser(), // Pull all organizational tasks
             getTimeLogs(),     // Pull all organizational logs
             getUsers()         // Pull all profiles for identity matching
@@ -162,6 +163,7 @@ export function RunPayrollView() {
             payType: 'salary',
             payRate: 0, 
             userId: user.uid,
+            folderId: 'all',
         };
 
         const uniqueWorkers = [adminWorker, ...fetchedWorkers].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
@@ -531,6 +533,12 @@ export function RunPayrollView() {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onSelect={() => handleOpenReport(emp)}>
                                                         <ExternalLink className="mr-2 h-4 w-4" /> Open Source Logs
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onSelect={() => router.push(`/document-manager?highlight=${emp.documentFolderId}`)}
+                                                        disabled={!emp.documentFolderId}
+                                                    >
+                                                        <Files className="mr-2 h-4 w-4" /> View Employee Documents
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onSelect={() => handleOpenWorkerForm(emp)}>
                                                         <Pencil className="mr-2 h-4 w-4" /> Edit Worker Profile

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { 
@@ -209,26 +210,27 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
 /**
  * Provisions a specific folder for a worker within the Document Manager.
  * Path: Workers -> [Employees/Contractors] -> [Worker Name]
+ * Returns the ID of the provisioned folder.
  */
-export async function provisionWorkerDocumentNode(userId: string, contactName: string, contactFolderId: string): Promise<void> {
+export async function provisionWorkerDocumentNode(userId: string, contactName: string, contactFolderId: string): Promise<string | null> {
     const db = getDb();
     
     // 1. Get the name of the Contact Hub folder to determine the role
     const contactFolders = await getContactFolders(userId);
     const targetContactFolder = contactFolders.find(f => f.id === contactFolderId);
-    if (!targetContactFolder) return;
+    if (!targetContactFolder) return null;
 
     const roleName = targetContactFolder.name;
     // We only automate for the primary worker roles
-    if (roleName !== 'Employees' && roleName !== 'Contractors') return;
+    if (roleName !== 'Employees' && roleName !== 'Contractors') return null;
 
     // 2. Ensure Document Manager system folders are present
     const docFolders = await ensureDocumentSystemFolders(userId);
     const workersRoot = docFolders.find(f => f.name === 'Workers' && f.isSystem);
-    if (!workersRoot) return;
+    if (!workersRoot) return null;
 
     const typeFolder = docFolders.find(f => f.name === roleName && f.parentId === workersRoot.id);
-    if (!typeFolder) return;
+    if (!typeFolder) return null;
 
     // 3. Create or find the individual worker folder
     const q = query(
@@ -240,10 +242,12 @@ export async function provisionWorkerDocumentNode(userId: string, contactName: s
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-        await addFolder({
+        const newFolder = await addFolder({
             name: contactName,
             userId,
             parentId: typeFolder.id,
         });
+        return newFolder.id;
     }
+    return snapshot.docs[0].id;
 }

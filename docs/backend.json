@@ -29,6 +29,7 @@
             "craProgramAccountNumber": { "type": "string", "description": "Business Number (BN) for tax purposes." },
             "userId": { "type": "string", "description": "The creator of the record." },
             "folderId": { "type": "string", "description": "Determines the role: Client, Supplier, Worker, etc." },
+            "documentFolderId": { "type": "string", "description": "The linked folder in the Document Manager for evidence." },
             "status": { "type": "string", "enum": ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"], "description": "CRM pipeline status for prospects." },
             "keywords": { "type": "array", "items": { "type": "string" } },
             "sin": { "type": "string", "description": "Social Insurance Number (HR Encrypted)." },

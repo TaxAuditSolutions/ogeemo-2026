@@ -29,6 +29,7 @@ export interface Contact {
   notes?: string;
   folderId: string;
   userId: string;
+  documentFolderId?: string; // The linked folder in Document Manager
   status?: string; // CRM Status
   keywords?: string[];
   

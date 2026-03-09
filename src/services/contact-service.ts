@@ -1,3 +1,4 @@
+
 'use client';
 
 import { 
@@ -109,6 +110,14 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
 
     dataToSave.keywords = generateKeywords(dataToSave);
 
+    // Automate folder provisioning in Document Manager
+    if (dataToSave.folderId && dataToSave.userId) {
+        const docFolderId = await provisionWorkerDocumentNode(dataToSave.userId, dataToSave.name, dataToSave.folderId);
+        if (docFolderId) {
+            dataToSave.documentFolderId = docFolderId;
+        }
+    }
+
     await setDoc(docRef, dataToSave).catch(async (error) => {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -118,11 +127,6 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
             } satisfies SecurityRuleContext));
         }
     });
-
-    // Automate folder provisioning in Document Manager
-    if (dataToSave.folderId && dataToSave.userId) {
-        await provisionWorkerDocumentNode(dataToSave.userId, dataToSave.name, dataToSave.folderId);
-    }
 
     return { id: docRef.id, ...dataToSave };
 }
@@ -145,6 +149,18 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
         const currentData = currentDoc.data();
         cleanedData.keywords = generateKeywords({ ...currentData, ...cleanedData });
 
+        // Automate folder provisioning synchronization
+        const finalName = cleanedData.name || currentData.name;
+        const finalFolderId = cleanedData.folderId || currentData.folderId;
+        const userId = currentData.userId;
+
+        if (finalFolderId && userId) {
+            const docFolderId = await provisionWorkerDocumentNode(userId, finalName, finalFolderId);
+            if (docFolderId) {
+                cleanedData.documentFolderId = docFolderId;
+            }
+        }
+
         await updateDoc(contactRef, cleanedData).catch(async (error) => {
             if (error.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -154,15 +170,6 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
                 } satisfies SecurityRuleContext));
             }
         });
-
-        // Automate folder provisioning synchronization
-        const finalName = cleanedData.name || currentData.name;
-        const finalFolderId = cleanedData.folderId || currentData.folderId;
-        const userId = currentData.userId;
-
-        if (finalFolderId && userId) {
-            await provisionWorkerDocumentNode(userId, finalName, finalFolderId);
-        }
     }
 }
 

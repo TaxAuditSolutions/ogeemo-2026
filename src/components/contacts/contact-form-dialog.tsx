@@ -132,19 +132,26 @@ export default function ContactFormDialog({
                 startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
             });
         } else {
-            // Use ref-like static values for initial reset to avoid loop
             form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-        // Only run when the dialog state opens or the edit target changes.
-        // We exclude unstable objects like 'folders' or 'initialData' to prevent infinite update depth.
     }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
         try {
             if (contactToEdit) {
-                const updated = { ...contactToEdit, ...values };
-                await updateContact(contactToEdit.id, updated);
+                // Pass only the changed values to the update service to avoid 'invalid data' errors
+                await updateContact(contactToEdit.id, values);
+                
+                // Clean undefined values for the local state update
+                const cleanedValues: any = {};
+                Object.keys(values).forEach(key => {
+                    if ((values as any)[key] !== undefined) {
+                        cleanedValues[key] = (values as any)[key];
+                    }
+                });
+                
+                const updated = { ...contactToEdit, ...cleanedValues };
                 onSave(updated, true);
                 toast({ title: "Contact Updated" });
             } else {

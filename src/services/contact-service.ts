@@ -22,7 +22,6 @@ import type { Contact } from '@/data/contacts';
 export type { Contact };
 
 const CONTACTS_COLLECTION = 'contacts';
-const CLIENT_ACCOUNTS_COLLECTION = 'clientAccounts';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -99,10 +98,16 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
     const db = getDb();
     const docRef = doc(collection(db, CONTACTS_COLLECTION));
     
-    const dataToSave = {
-      ...contactData,
-      keywords: generateKeywords(contactData),
-    };
+    // Data Cleaning: Remove undefined values common in form results
+    const dataToSave: any = {};
+    Object.keys(contactData).forEach(key => {
+        const val = (contactData as any)[key];
+        if (val !== undefined) {
+            dataToSave[key] = val;
+        }
+    });
+
+    dataToSave.keywords = generateKeywords(dataToSave);
 
     await setDoc(docRef, dataToSave).catch(async (error) => {
         if (error.code === 'permission-denied') {
@@ -121,20 +126,27 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     const db = getDb();
     const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
 
-    const dataToUpdate: any = { ...contactData };
+    // Data Cleaning: Strip undefined and ensure restricted identifiers aren't in the payload
+    const cleanedData: any = {};
+    Object.keys(contactData).forEach(key => {
+        const val = (contactData as any)[key];
+        if (val !== undefined && key !== 'id' && key !== 'userId') {
+            cleanedData[key] = val;
+        }
+    });
     
     const currentDoc = await getDoc(contactRef);
     if (currentDoc.exists()) {
         const currentData = currentDoc.data();
-        dataToUpdate.keywords = generateKeywords({ ...currentData, ...contactData });
+        cleanedData.keywords = generateKeywords({ ...currentData, ...cleanedData });
     }
 
-    await updateDoc(contactRef, dataToUpdate).catch(async (error) => {
+    await updateDoc(contactRef, cleanedData).catch(async (error) => {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: contactRef.path,
                 operation: 'update',
-                requestResourceData: dataToUpdate,
+                requestResourceData: cleanedData,
             } satisfies SecurityRuleContext));
         }
     });

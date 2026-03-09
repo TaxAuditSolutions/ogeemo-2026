@@ -27,6 +27,14 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -58,7 +66,7 @@ import {
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, type Worker } from '@/services/payroll-service';
+import { getWorkers, deleteWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
@@ -106,7 +114,7 @@ function WorkerTimeLogReportContent() {
         setIsLoading(true);
         try {
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
-                getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
+                getWorkers(user.uid).catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getTimeLogs().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'timeLogs' }; throw err; }),
                 getTasksForUser().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'tasks' }; throw err; }),

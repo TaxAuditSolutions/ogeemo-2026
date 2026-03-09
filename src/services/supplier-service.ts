@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -33,17 +32,18 @@ const docToSupplier = (doc: any): Supplier => ({
 } as Supplier);
 
 /**
- * Fetches all suppliers from the Contact Hub by filtering for any 'Suppliers' system folder.
- * This is organization-wide to support the Unified Directory protocol.
+ * Fetches all suppliers from the Contact Hub for the current user.
+ * Scoped to the specific user's 'Suppliers' system folder to avoid 'IN' query limits.
  */
-export async function getSuppliers(): Promise<Supplier[]> {
+export async function getSuppliers(userId: string): Promise<Supplier[]> {
     const db = getDb();
     
-    // 1. Find all 'Suppliers' folders across the organization
-    const foldersSnapshot = await getDocs(collection(db, FOLDERS_COLLECTION));
-    const supplierFolderIds = foldersSnapshot.docs
-        .filter(d => d.data().name.toLowerCase() === 'suppliers' && d.data().isSystem)
-        .map(d => d.id);
+    // 1. Find the 'Suppliers' folder for THIS user
+    const foldersRef = collection(db, FOLDERS_COLLECTION);
+    const foldersQuery = query(foldersRef, where("userId", "==", userId), where("name", "==", "Suppliers"));
+    const foldersSnapshot = await getDocs(foldersQuery);
+    
+    const supplierFolderIds = foldersSnapshot.docs.map(d => d.id);
         
     if (supplierFolderIds.length === 0) return [];
 

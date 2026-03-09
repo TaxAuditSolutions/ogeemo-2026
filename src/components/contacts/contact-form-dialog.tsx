@@ -63,9 +63,9 @@ const contactSchema = z.object({
   folderId: z.string({ required_error: "Please select a folder." }).min(1, { message: "Folder is required." }),
   
   sin: z.string().optional(),
-  workerType: z.enum(["employee", "contractor"]).optional(),
-  payType: z.enum(["hourly", "salary"]).optional(),
-  payRate: z.coerce.number().min(0).optional(),
+  workerType: z.enum(["employee", "contractor"]).optional().nullable(),
+  payType: z.enum(["hourly", "salary"]).optional().nullable(),
+  payRate: z.coerce.number().min(0).optional().nullable(),
   hireDate: z.string().optional(),
   startDate: z.string().optional(),
   emergencyContactName: z.string().optional(),
@@ -96,7 +96,7 @@ interface ContactFormDialogProps {
 const defaultFormValues: ContactFormData = {
   name: "", email: "", birthDate: "", website: "", businessName: "", employeeNumber: "", industryCode: "", craProgramAccountNumber: "",
   streetAddress: "", city: "", provinceState: "", postalCode: "", country: "", businessPhone: "", cellPhone: "", homePhone: "", faxNumber: "", primaryPhoneType: null,
-  notes: "", folderId: "", sin: "", workerType: "employee", payType: "hourly", payRate: 0, hireDate: "", startDate: "", 
+  notes: "", folderId: "", sin: "", workerType: null, payType: null, payRate: 0, hireDate: "", startDate: "", 
   emergencyContactName: "", emergencyContactPhone: "", hasContract: false, specialNeeds: "",
 };
 
@@ -141,23 +141,21 @@ export default function ContactFormDialog({
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
         try {
+            // HIGH-FIDELITY PAYLOAD SCRUBBING
+            // If the contact is not a worker, strip all HR/Payroll metadata to prevent list pollution.
+            const scrubbedValues: any = { ...values };
+            if (!showHrSection) {
+                const hrFields = ['sin', 'workerType', 'payType', 'payRate', 'hireDate', 'startDate', 'emergencyContactName', 'emergencyContactPhone', 'hasContract', 'specialNeeds'];
+                hrFields.forEach(f => delete scrubbedValues[f]);
+                scrubbedValues.workerType = null; // Explicitly nullify to bypass previous queries
+            }
+
             if (contactToEdit) {
-                // Pass only the changed values to the update service to avoid 'invalid data' errors
-                await updateContact(contactToEdit.id, values);
-                
-                // Clean undefined values for the local state update
-                const cleanedValues: any = {};
-                Object.keys(values).forEach(key => {
-                    if ((values as any)[key] !== undefined) {
-                        cleanedValues[key] = (values as any)[key];
-                    }
-                });
-                
-                const updated = { ...contactToEdit, ...cleanedValues };
-                onSave(updated, true);
+                await updateContact(contactToEdit.id, scrubbedValues);
+                onSave({ ...contactToEdit, ...scrubbedValues }, true);
                 toast({ title: "Contact Updated" });
             } else {
-                const created = await addContact({ ...values, userId: user.uid } as any);
+                const created = await addContact({ ...scrubbedValues, userId: user.uid } as any);
                 onSave(created, false);
                 toast({ title: "Contact Created" });
             }
@@ -226,9 +224,9 @@ export default function ContactFormDialog({
                                             <ShieldCheck className="h-4 w-4" /> 3. Payroll & HR Details (Confidential)
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <FormField control={form.control} name="workerType" render={({ field }) => ( <FormItem><FormLabel>Employment Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="employee">T4 Employee</SelectItem><SelectItem value="contractor">T4A Contractor</SelectItem></SelectContent></Select></FormItem> )} />
-                                            <FormField control={form.control} name="payType" render={({ field }) => ( <FormItem><FormLabel>Pay Model</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="hourly">Hourly Rate</SelectItem><SelectItem value="salary">Annual Salary</SelectItem></SelectContent></Select></FormItem> )} />
-                                            <FormField control={form.control} name="payRate" render={({ field }) => ( <FormItem><FormLabel>Rate ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" className="pl-7" {...field} /></FormControl></div></FormItem> )} />
+                                            <FormField control={form.control} name="workerType" render={({ field }) => ( <FormItem><FormLabel>Employment Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="employee">T4 Employee</SelectItem><SelectItem value="contractor">T4A Contractor</SelectItem></SelectContent></Select></FormItem> )} />
+                                            <FormField control={form.control} name="payType" render={({ field }) => ( <FormItem><FormLabel>Pay Model</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="hourly">Hourly Rate</SelectItem><SelectItem value="salary">Annual Salary</SelectItem></SelectContent></Select></FormItem> )} />
+                                            <FormField control={form.control} name="payRate" render={({ field }) => ( <FormItem><FormLabel>Rate ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" className="pl-7" {...field} value={field.value ?? 0} /></FormControl></div></FormItem> )} />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <FormField control={form.control} name="sin" render={({ field }) => ( <FormItem><FormLabel>SIN (HR Secure)</FormLabel><FormControl><Input type="password" placeholder="••• ••• •••" {...field} /></FormControl></FormItem> )} />

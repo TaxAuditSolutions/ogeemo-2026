@@ -47,36 +47,35 @@ const docToWorker = (doc: any): Worker => {
 };
 
 /**
- * Fetches all workers (Employees and Contractors) from the Contact Hub.
- * Uses workerType as the primary identifier to ensure organization-wide visibility.
+ * Fetches all workers from the Contact Hub based strictly on folder assignment.
+ * This adheres to the protocol: If they are in the Workers/Employees/Contractors folders, they are workers.
  */
 export async function getWorkers(): Promise<Worker[]> {
   const db = getDb();
   
-  // The Contact Hub is the SSoT. We query for anyone explicitly marked as a worker.
-  const contactsRef = collection(db, CONTACTS_COLLECTION);
-  const q = query(contactsRef, where("workerType", "in", ["employee", "contractor"]));
-  
   try {
+    // 1. Resolve the mandated system folder IDs
+    const foldersSnapshot = await getDocs(collection(db, FOLDERS_COLLECTION));
+    const allFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    
+    // Find the specific worker-related nodes
+    const workerFolderIds = allFolders
+        .filter(f => f.isSystem && (
+            f.name.toLowerCase() === 'employees' || 
+            f.name.toLowerCase() === 'contractors' || 
+            f.name.toLowerCase() === 'workers'
+        ))
+        .map(f => f.id);
+
+    if (workerFolderIds.length === 0) return [];
+
+    // 2. Query contacts strictly based on their folder assignment
+    const contactsRef = collection(db, CONTACTS_COLLECTION);
+    const q = query(contactsRef, where("folderId", "in", workerFolderIds));
+    
     const snapshot = await getDocs(q);
-    const workers = snapshot.docs.map(docToWorker);
+    return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 
-    // Self-healing: if the list is empty, we also check the 'Workers' system folders
-    // to ensure legacy or newly moved contacts without workerType set are still picked up.
-    if (workers.length === 0) {
-        const foldersSnapshot = await getDocs(collection(db, FOLDERS_COLLECTION));
-        const allFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
-        const workerFolders = allFolders.filter(f => f.name.toLowerCase().match(/(workers|employees|contractors)/) && f.isSystem);
-        const folderIds = workerFolders.map(f => f.id);
-
-        if (folderIds.length > 0) {
-            const fallbackQ = query(contactsRef, where("folderId", "in", folderIds));
-            const fallbackSnap = await getDocs(fallbackQ);
-            return fallbackSnap.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
-        }
-    }
-
-    return workers.sort((a,b) => a.name.localeCompare(b.name));
   } catch (error: any) {
     if (error.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({

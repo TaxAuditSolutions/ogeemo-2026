@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -106,7 +105,6 @@ function WorkerTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
-            // Synchronized registries for comprehensive reporting
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
@@ -264,7 +262,6 @@ function WorkerTimeLogReportContent() {
     };
 
     const workersForSelection = useMemo(() => {
-        // Find the admin contact record to get their full identity node (including documentFolderId)
         const adminContact = contacts.find(c => c.userId === user?.uid);
         
         const adminWorker: Worker = adminContact ? { ...adminContact, name: `${adminContact.name} (Admin)` } : {
@@ -275,6 +272,7 @@ function WorkerTimeLogReportContent() {
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
+            folderId: 'all'
         };
 
         const seen = new Set([adminWorker.id]);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -101,7 +100,7 @@ const defaultFormValues: ContactFormData = {
 };
 
 export default function ContactFormDialog({
-    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData = {}, forceFolderId,
+    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId,
 }: ContactFormDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
@@ -136,7 +135,7 @@ export default function ContactFormDialog({
         } else {
             form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form]);
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
@@ -147,7 +146,7 @@ export default function ContactFormDialog({
             if (!showHrSection) {
                 const hrFields = ['sin', 'workerType', 'payType', 'payRate', 'hireDate', 'startDate', 'emergencyContactName', 'emergencyContactPhone', 'hasContract', 'specialNeeds'];
                 hrFields.forEach(f => delete scrubbedValues[f]);
-                scrubbedValues.workerType = null; // Explicitly nullify to bypass previous queries
+                scrubbedValues.workerType = null;
             }
 
             if (contactToEdit) {

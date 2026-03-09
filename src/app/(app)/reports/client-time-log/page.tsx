@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -94,7 +93,6 @@ function ClientTimeLogReportContent() {
         }
         setIsLoading(true);
         try {
-            // Synchronized registries for comprehensive reporting
             const [fetchedWorkers, fetchedContacts, fetchedLogs, fetchedTasks, profile] = await Promise.all([
                 getWorkers().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
                 getContacts().catch(err => { if (err.code === 'permission-denied') throw { ...err, path: 'contacts' }; throw err; }),
@@ -282,6 +280,7 @@ function ClientTimeLogReportContent() {
             payType: 'salary',
             payRate: 0,
             userId: user?.uid || '',
+            folderId: 'all'
         };
         return [adminWorker, ...workers];
     }, [workers, user, adminName]);
@@ -447,12 +446,13 @@ function ClientTimeLogReportContent() {
                     setIsLogTimeDialogOpen(isOpen);
                     if (!isOpen) {
                         setEntryToEdit(null);
+                        setPreselectedWorkerId(null);
                     }
                 }}
                 workers={workersForSelection}
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
-                preselectedContactId={selectedContactId}
+                preselectedWorkerId={preselectedWorkerId}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

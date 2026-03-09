@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -20,7 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
-import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useToast } from '@/hooks/use-toast';
 import { type Contact } from '@/services/contact-service';
 import { type FolderData } from '@/services/contact-folder-service';
@@ -28,7 +28,6 @@ import { type Company } from '@/services/accounting-service';
 import { type Industry } from '@/services/industry-service';
 import { addCompany } from '@/services/accounting-service';
 import { addIndustry, updateIndustry } from '@/services/industry-service';
-import { craIndustryCodes } from '@/data/cra-industry-codes';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addContact, updateContact } from '@/services/contact-service';
 import { addFolder } from '@/services/contact-folder-service';
@@ -38,8 +37,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '../ui/checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const contactSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -47,7 +45,7 @@ const contactSchema = z.object({
   birthDate: z.string().optional(),
   website: z.string().optional(),
   businessName: z.string().optional(),
-  employeeNumber: z.string().optional(), // Used as User ID / Worker ID
+  employeeNumber: z.string().optional(),
   industryCode: z.string().optional(),
   craProgramAccountNumber: z.string().optional(),
   streetAddress: z.string().optional(),
@@ -63,7 +61,6 @@ const contactSchema = z.object({
   notes: z.string().optional(),
   folderId: z.string({ required_error: "Please select a folder." }).min(1, { message: "Folder is required." }),
   
-  // HR Fields
   sin: z.string().optional(),
   workerType: z.enum(["employee", "contractor"]).optional(),
   payType: z.enum(["hourly", "salary"]).optional(),
@@ -107,13 +104,9 @@ export default function ContactFormDialog({
 }: ContactFormDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
-    const { preferences } = useUserPreferences();
     
     const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
-    const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = useState(false);
-    const [isIndustryPopoverOpen, setIsIndustryPopoverOpen] = useState(false);
-    const [isAddIndustryDialogOpen, setIsAddIndustryDialogOpen] = useState(false);
     
     const form = useForm<ContactFormData>({ resolver: zodResolver(contactSchema), defaultValues: defaultFormValues });
     const watchFolderId = form.watch('folderId');
@@ -126,21 +119,25 @@ export default function ContactFormDialog({
     }, [watchFolderId, folders]);
 
     useEffect(() => {
-        if (isOpen) {
-            const defaultId = forceFolderId || (selectedFolderId && selectedFolderId !== 'all') ? selectedFolderId : (folders.find(f => f.name === 'Clients')?.id || folders[0]?.id || '');
-            if (contactToEdit) {
-                form.reset({
-                    ...defaultFormValues,
-                    ...contactToEdit,
-                    folderId: forceFolderId || contactToEdit.folderId || defaultId,
-                    hireDate: contactToEdit.hireDate?.toDate ? contactToEdit.hireDate.toDate().toISOString().split('T')[0] : contactToEdit.hireDate,
-                    startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
-                });
-            } else {
-                form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
-            }
+        if (!isOpen) return;
+
+        const defaultId = forceFolderId || (selectedFolderId && selectedFolderId !== 'all') ? selectedFolderId : (folders.find(f => f.name === 'Clients')?.id || folders[0]?.id || '');
+        
+        if (contactToEdit) {
+            form.reset({
+                ...defaultFormValues,
+                ...contactToEdit,
+                folderId: forceFolderId || contactToEdit.folderId || defaultId,
+                hireDate: contactToEdit.hireDate?.toDate ? contactToEdit.hireDate.toDate().toISOString().split('T')[0] : contactToEdit.hireDate,
+                startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
+            });
+        } else {
+            // Use ref-like static values for initial reset to avoid loop
+            form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-    }, [isOpen, contactToEdit, folders, forceFolderId, selectedFolderId, initialEmail, initialData, form]);
+        // Only run when the dialog state opens or the edit target changes.
+        // We exclude unstable objects like 'folders' or 'initialData' to prevent infinite update depth.
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;

@@ -39,7 +39,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, FilterX, Calendar as CalendarIcon, PlusCircle, Clock, Pencil, ArrowUpDown, ArrowUpAZ, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { 
+    LoaderCircle, 
+    MoreVertical, 
+    Edit, 
+    Trash2, 
+    FilterX, 
+    Calendar as CalendarIcon, 
+    PlusCircle, 
+    Clock, 
+    Pencil, 
+    ArrowUpDown, 
+    ArrowUpAZ, 
+    ArrowDownAZ, 
+    ArrowUpZA,
+    Files,
+    ExternalLink
+} from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -58,6 +74,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import Link from 'next/link';
 
 function WorkerTimeLogReportContent() {
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -140,6 +157,7 @@ function WorkerTimeLogReportContent() {
                 isBillable: tl.isBillable || false,
                 billableRate: tl.billableRate || 0,
                 notes: tl.notes || tl.description || tl.subject || '',
+                documentFolderId: worker?.documentFolderId,
             };
         });
 
@@ -160,6 +178,7 @@ function WorkerTimeLogReportContent() {
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
                 notes: t.description || t.title || '',
+                documentFolderId: worker?.documentFolderId,
             };
         });
 
@@ -245,7 +264,10 @@ function WorkerTimeLogReportContent() {
     };
 
     const workersForSelection = useMemo(() => {
-        const adminWorker: Worker = {
+        // Find the admin contact record to get their full identity node (including documentFolderId)
+        const adminContact = contacts.find(c => c.userId === user?.uid);
+        
+        const adminWorker: Worker = adminContact ? { ...adminContact, name: `${adminContact.name} (Admin)` } : {
             id: user?.uid || '',
             name: `${adminName} (Admin)`,
             email: user?.email || '',
@@ -254,6 +276,7 @@ function WorkerTimeLogReportContent() {
             payRate: 0,
             userId: user?.uid || '',
         };
+
         const seen = new Set([adminWorker.id]);
         const filteredWorkers = workers.filter(w => {
             if (seen.has(w.id)) return false;
@@ -261,11 +284,13 @@ function WorkerTimeLogReportContent() {
             return true;
         });
         return [adminWorker, ...filteredWorkers];
-    }, [workers, user, adminName]);
+    }, [workers, contacts, user, adminName]);
 
     const formatCurrency = (amount: number) => {
         return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     };
+
+    const selectedWorker = workersForSelection.find(w => w.id === selectedWorkerId);
 
     return (
         <>
@@ -277,13 +302,22 @@ function WorkerTimeLogReportContent() {
                         <p className="text-muted-foreground text-sm">Review and manage work sessions. Attribution shows who did the work and which client was served.</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-3">
-                        <WorkerSelector
-                            workers={workersForSelection}
-                            selectedWorkerId={selectedWorkerId}
-                            onSelect={setSelectedWorkerId}
-                            isLoading={isLoading}
-                        />
-                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
+                        <div className="flex items-center gap-2">
+                            <WorkerSelector
+                                workers={workersForSelection}
+                                selectedWorkerId={selectedWorkerId}
+                                onSelect={setSelectedWorkerId}
+                                isLoading={isLoading}
+                            />
+                            {selectedWorker?.documentFolderId && (
+                                <Button variant="outline" size="sm" asChild className="h-10">
+                                    <Link href={`/document-manager?highlight=${selectedWorker.documentFolderId}`}>
+                                        <Files className="mr-2 h-4 w-4" /> Documents
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)} className="h-10">
                             <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
                         </Button>
                     </div>
@@ -377,6 +411,12 @@ function WorkerTimeLogReportContent() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
                                                                 <Clock className="mr-2 h-4 w-4" /> Schedule an event
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem 
+                                                                onSelect={() => router.push(`/document-manager?highlight=${entry.documentFolderId}`)}
+                                                                disabled={!entry.documentFolderId}
+                                                            >
+                                                                <Files className="mr-2 h-4 w-4" /> View Worker Documents
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             {entry.source === 'log' ? (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { 
@@ -83,7 +84,7 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 
 /**
  * Ensures that mandated system folders exist for the user's document manager.
- * This function is self-healing: it merges duplicates and reassigns files to a single master record.
+ * This function is self-healing: it merges duplicates, reassigns files, and unifies the taxonomy.
  */
 export async function ensureDocumentSystemFolders(userId: string): Promise<FolderItem[]> {
     const db = getDb();
@@ -91,80 +92,98 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
     
-    const systemFoldersList = [
-        "Clients",
-        "Family",
-        "Friends",
-        "Miscellaneous",
-        "Ogeemo Users",
-        "Prospects",
-        "Suppliers",
-        "Contract Workers",
-        "Employee Workers",
-        "Images",
-        "Marketing",
-        "Ogeemo Notes",
-        "Knowledge Base"
+    // Unified High-Fidelity Taxonomy
+    const systemFoldersConfig = [
+        { name: "Workers", parent: null },
+        { name: "Employees", parent: "Workers" },
+        { name: "Contractors", parent: "Workers" },
+        { name: "Clients", parent: null },
+        { name: "Prospects", parent: null },
+        { name: "Suppliers", parent: null },
+        { name: "Family", parent: null },
+        { name: "Friends", parent: null },
+        { name: "Miscellaneous", parent: null },
+        { name: "Ogeemo Users", parent: null },
+        { name: "Images", parent: null },
+        { name: "Marketing", parent: null },
+        { name: "Ogeemo Notes", parent: null },
+        { name: "Knowledge Base", parent: null }
     ];
 
     const batch = writeBatch(db);
     let hasChanges = false;
     const currentFolders = [...existing];
 
-    for (const folderName of systemFoldersList) {
-        // Find ALL folders matching this name (case-insensitive)
-        const matches = currentFolders.filter(f => f.name.toLowerCase() === folderName.toLowerCase());
+    // Migration helper: mapping old names to new names
+    const legacyMap: Record<string, string> = {
+        "employee workers": "Employees",
+        "contract workers": "Contractors"
+    };
+
+    for (const config of systemFoldersConfig) {
+        // Find folders by current name or legacy name
+        const matches = currentFolders.filter(f => 
+            f.name.toLowerCase() === config.name.toLowerCase() ||
+            Object.keys(legacyMap).some(old => f.name.toLowerCase() === old && legacyMap[old] === config.name)
+        );
         
         let masterFolder: FolderItem;
 
         if (matches.length > 0) {
-            // Pick the first one as the master record
             masterFolder = matches[0];
             
-            // Ensure it is marked as a system folder
+            // Rename if it was a legacy name
+            if (masterFolder.name.toLowerCase() !== config.name.toLowerCase()) {
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { name: config.name });
+                masterFolder.name = config.name;
+                hasChanges = true;
+            }
+
             if (!masterFolder.isSystem) {
                 batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
                 masterFolder.isSystem = true;
                 hasChanges = true;
             }
 
-            // Resolve Duplicates: if more than one exists, merge them
+            // Resolve Duplicates
             if (matches.length > 1) {
                 const duplicates = matches.slice(1);
                 for (const dupe of duplicates) {
-                    // Reassign all files in the duplicate folder to the master folder
-                    const filesQuery = query(
-                        collection(db, FILES_COLLECTION), 
-                        where("userId", "==", userId), 
-                        where("folderId", "==", dupe.id)
-                    );
+                    const filesQuery = query(collection(db, FILES_COLLECTION), where("userId", "==", userId), where("folderId", "==", dupe.id));
                     const filesSnapshot = await getDocs(filesQuery);
                     filesSnapshot.forEach(fileDoc => {
                         batch.update(fileDoc.ref, { folderId: masterFolder.id });
                     });
-
-                    // Delete the duplicate folder record
                     batch.delete(doc(db, FOLDERS_COLLECTION, dupe.id));
-                    
-                    // Remove from our local tracking list
-                    const index = currentFolders.findIndex(f => f.id === dupe.id);
-                    if (index > -1) currentFolders.splice(index, 1);
+                    const idx = currentFolders.findIndex(f => f.id === dupe.id);
+                    if (idx > -1) currentFolders.splice(idx, 1);
                     hasChanges = true;
                 }
             }
         } else {
-            // Create the folder if it doesn't exist at all
+            // Create new
             const docRef = doc(collection(db, FOLDERS_COLLECTION));
-            const newFolder = {
-                name: folderName,
+            const newFolder: any = {
+                name: config.name,
                 userId,
                 parentId: null,
                 isSystem: true,
                 createdAt: new Date(),
             };
             batch.set(docRef, newFolder);
-            currentFolders.push({ id: docRef.id, type: 'folder', ...newFolder });
+            masterFolder = { id: docRef.id, type: 'folder', ...newFolder };
+            currentFolders.push(masterFolder);
             hasChanges = true;
+        }
+
+        // Apply Hierarchy
+        if (config.parent) {
+            const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
+            if (parentMatch && masterFolder.parentId !== parentMatch.id) {
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { parentId: parentMatch.id });
+                masterFolder.parentId = parentMatch.id;
+                hasChanges = true;
+            }
         }
     }
 

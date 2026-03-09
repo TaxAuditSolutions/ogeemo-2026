@@ -446,13 +446,11 @@ function ClientTimeLogReportContent() {
                     setIsLogTimeDialogOpen(isOpen);
                     if (!isOpen) {
                         setEntryToEdit(null);
-                        setPreselectedWorkerId(null);
                     }
                 }}
                 workers={workersForSelection}
                 onTimeLogged={loadData}
                 entryToEdit={entryToEdit}
-                preselectedWorkerId={preselectedWorkerId}
             />
             
             <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>

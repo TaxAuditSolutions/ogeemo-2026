@@ -50,6 +50,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogFooter,
@@ -284,7 +285,7 @@ export function ContactsView() {
             getContacts(), 
             getCompanies(user.uid),
             getIndustries(user.uid),
-            getWorkers(), // Organization-wide retrieval
+            getWorkers(), 
         ]);
         setContacts(fetchedContacts);
         setFolders(allFolders);

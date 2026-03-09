@@ -3,7 +3,7 @@
   "entities": {
     "UserProfile": {
       "title": "User Profile",
-      "description": "Stores user-specific information and preferences.",
+      "description": "Stores user-specific information and preferences for system authentication and authority.",
       "type": "object",
       "properties": {
         "email": { "type": "string", "format": "email" },
@@ -16,31 +16,49 @@
     },
     "Contact": {
         "title": "Contact",
-        "description": "Represents a contact, which can be a person or a business.",
+        "description": "The absolute Single Source of Truth for all identities (Clients, Workers, Suppliers, Leads).",
         "type": "object",
         "properties": {
             "name": { "type": "string" },
             "email": { "type": "string", "format": "email" },
             "birthDate": { "type": "string", "format": "date" },
             "businessName": { "type": "string" },
-            "employeeNumber": { "type": "string", "description": "Unique identifier for the contact (User ID)." },
-            "craProgramAccountNumber": { "type": "string" },
-            "userId": { "type": "string" },
-            "folderId": { "type": "string" },
+            "website": { "type": "string", "format": "uri" },
+            "employeeNumber": { "type": "string", "description": "Unique identifier for company tracking (User ID / Worker ID)." },
+            "industryCode": { "type": "string", "description": "NAICS or custom industry classification." },
+            "craProgramAccountNumber": { "type": "string", "description": "Business Number (BN) for tax purposes." },
+            "userId": { "type": "string", "description": "The creator of the record." },
+            "folderId": { "type": "string", "description": "Determines the role: Client, Supplier, Worker, etc." },
             "status": { "type": "string", "enum": ["Unscheduled Leads", "Scheduled Leads", "Completed Leads"], "description": "CRM pipeline status for prospects." },
-            "keywords": { "type": "array", "items": { "type": "string" } }
+            "keywords": { "type": "array", "items": { "type": "string" } },
+            "sin": { "type": "string", "description": "Social Insurance Number (HR Encrypted)." },
+            "workerType": { "type": "string", "enum": ["employee", "contractor"] },
+            "payType": { "type": "string", "enum": ["hourly", "salary"] },
+            "payRate": { "type": "number" },
+            "streetAddress": { "type": "string" },
+            "city": { "type": "string" },
+            "provinceState": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "country": { "type": "string" },
+            "businessPhone": { "type": "string" },
+            "cellPhone": { "type": "string" },
+            "homePhone": { "type": "string" },
+            "primaryPhoneType": { "type": "string", "enum": ["businessPhone", "cellPhone", "homePhone"] },
+            "hasContract": { "type": "boolean", "description": "HR Flag: Contract on file." },
+            "specialNeeds": { "type": "string" },
+            "notes": { "type": "string" }
         },
         "required": ["name", "userId", "folderId"]
     },
     "ContactFolder": {
         "title": "Contact Folder",
-        "description": "A folder to organize contacts.",
+        "description": "Hierarchical organization for identities.",
         "type": "object",
         "properties": {
             "name": { "type": "string" },
             "parentId": { "type": "string" },
             "userId": { "type": "string" },
-            "isSystem": { "type": "boolean", "description": "Flag for protected system folders" }
+            "isSystem": { "type": "boolean", "description": "Flag for protected structural folders (Clients, Workers, etc.)" }
         },
         "required": ["name", "userId"]
     },
@@ -64,22 +82,21 @@
             "businessNumber": { "type": "string" },
             "companyName": { "type": "string" },
             "contactId": { "type": "string" },
-            "supplierId": { "type": "string", "description": "The ID of the supplier associated with this invoice." },
+            "supplierId": { "type": "string" },
             "originalAmount": { "type": "number" },
             "amountPaid": { "type": "number" },
             "dueDate": { "type": "string", "format": "date-time" },
             "invoiceDate": { "type": "string", "format": "date-time" },
             "status": { "type": "string", "enum": ["outstanding", "paid", "partially_paid", "overdue"] },
             "notes": { "type": "string" },
-            "taxType": { "type": "number" },
-            "taxRate": { "type": "number" },
+            "taxType": { "type": "string" },
             "userId": { "type": "string" }
         },
         "required": ["invoiceNumber", "companyName", "contactId", "originalAmount", "amountPaid", "dueDate", "invoiceDate", "status", "userId"]
     },
     "IncomeTransaction": {
         "title": "Income Transaction",
-        "description": "Records an income transaction.",
+        "description": "Records an income transaction in the General Ledger.",
         "type": "object",
         "properties": {
             "date": { "type": "string", "format": "date" },
@@ -87,7 +104,7 @@
             "description": { "type": "string" },
             "totalAmount": { "type": "number" },
             "incomeCategory": { "type": "string" },
-            "depositedTo": { "type": "string", "description": "ID of the InternalAccount where funds were received." },
+            "depositedTo": { "type": "string" },
             "paymentMethod": { "type": "string" },
             "userId": { "type": "string" }
         },
@@ -95,7 +112,7 @@
     },
     "ExpenseTransaction": {
         "title": "Expense Transaction",
-        "description": "Records an expense transaction.",
+        "description": "Records an expense transaction in the General Ledger.",
         "type": "object",
         "properties": {
             "date": { "type": "string", "format": "date" },
@@ -103,27 +120,11 @@
             "description": { "type": "string" },
             "totalAmount": { "type": "number" },
             "category": { "type": "string" },
-            "paidFrom": { "type": "string", "description": "ID of the InternalAccount used for payment." },
+            "paidFrom": { "type": "string" },
             "paymentMethod": { "type": "string" },
             "userId": { "type": "string" }
         },
         "required": ["date", "company", "totalAmount", "category", "userId"]
-    },
-    "PettyCashTransaction": {
-        "title": "Petty Cash Transaction",
-        "description": "A staging transaction for physical cash movements.",
-        "type": "object",
-        "properties": {
-            "date": { "type": "string", "format": "date" },
-            "description": { "type": "string" },
-            "amount": { "type": "number" },
-            "type": { "type": "string", "enum": ["in", "out"] },
-            "contact": { "type": "string" },
-            "category": { "type": "string" },
-            "isPosted": { "type": "boolean" },
-            "userId": { "type": "string" }
-        },
-        "required": ["date", "amount", "type", "userId"]
     }
   },
   "auth": {
@@ -132,31 +133,27 @@
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Stores user profile data."
-    },
-    "/internalAccounts/{accountId}": {
-        "schema": { "$ref": "#/entities/InternalAccount" },
-        "description": "Collection of user-defined bank and cash accounts."
+      "description": "Authority registry."
     },
     "/contacts/{contactId}": {
         "schema": { "$ref": "#/entities/Contact" },
-        "description": "Collection of all contacts."
+        "description": "Unified identity registry."
+    },
+    "/contactFolders/{folderId}": {
+        "schema": { "$ref": "#/entities/ContactFolder" },
+        "description": "Identity hierarchy."
     },
     "/invoices/{invoiceId}": {
         "schema": { "$ref": "#/entities/Invoice" },
-        "description": "Collection of all invoices."
+        "description": "A/R records."
     },
     "/incomeTransactions/{transactionId}": {
         "schema": { "$ref": "#/entities/IncomeTransaction" },
-        "description": "Collection of all income transactions."
+        "description": "Income ledger."
     },
     "/expenseTransactions/{transactionId}": {
         "schema": { "$ref": "#/entities/ExpenseTransaction" },
-        "description": "Collection of all expense transactions."
-    },
-    "/pettyCashTransactions/{transactionId}": {
-        "schema": { "$ref": "#/entities/PettyCashTransaction" },
-        "description": "Staging ledger for physical cash."
+        "description": "Expense ledger."
     }
   }
 }

@@ -2,44 +2,29 @@
 'use client';
 
 import {
-  getFirestore,
   collection,
   getDocs,
-  getDoc,
   doc,
   addDoc,
   updateDoc,
   deleteDoc,
   query,
   where,
-  Timestamp,
   writeBatch,
+  Timestamp,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { type Contact } from '@/data/contacts';
 
-export interface Worker {
-    id: string;
-    name: string;
-    email: string;
-    sin?: string;
-    workerIdNumber?: string; // Unique identifier for company tracking
-    workerType: 'employee' | 'contractor';
-    payType: 'hourly' | 'salary';
-    payRate: number;
-    address?: string;
-    homePhone?: string;
-    cellPhone?: string;
-    hireDate?: Date | null;
-    startDate?: Date | null;
-    emergencyContactName?: string;
-    emergencyContactPhone?: string;
-    hasContract?: boolean;
-    specialNeeds?: string;
-    notes?: string;
-    userId: string;
-}
+/**
+ * @fileOverview Refactored Payroll Service for Ogeemo.
+ * Consolidates 'Workers' into the Contact Hub as the Single Source of Truth.
+ */
 
-const WORKERS_COLLECTION = 'payrollWorkers';
+export type Worker = Contact;
+
+const CONTACTS_COLLECTION = 'contacts';
+const FOLDERS_COLLECTION = 'contactFolders';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const PAYROLL_RUNS_COLLECTION = 'payrollRuns';
 const TIME_LOGS_COLLECTION = 'timeLogs';
@@ -50,46 +35,43 @@ function getDb() {
     return db;
 }
 
-// --- Worker Types & Functions ---
 const docToWorker = (doc: any): Worker => {
     const data = doc.data();
-
-    const toDate = (dateValue: any): Date | null => {
-        if (!dateValue) return null;
-        if (dateValue.toDate) {
-            return dateValue.toDate();
-        }
-        if (dateValue instanceof Date) {
-            return dateValue;
-        }
-        if (typeof dateValue === 'string') {
-            const parsedDate = new Date(dateValue);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate;
-            }
-        }
-        return null;
-    };
-
-    return {
-        id: doc.id,
+    return { 
+        id: doc.id, 
         ...data,
         payRate: Number(data.payRate) || 0,
-        hireDate: toDate(data.hireDate),
-        startDate: toDate(data.startDate),
     } as Worker;
 };
 
 /**
- * Fetches workers from the payroll registry.
- * @param userId Optional. If provided, filters by creator. Otherwise pulls the synchronized team registry.
+ * Fetches all workers (Employees and Contractors) from the Contact Hub.
+ * Uses recursive folder filtering to pull all identities under the 'Workers' branch.
  */
 export async function getWorkers(userId?: string): Promise<Worker[]> {
   const db = getDb();
-  const collectionRef = collection(db, WORKERS_COLLECTION);
-  const qWorkers = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
-  const snapshotWorkers = await getDocs(qWorkers);
-  return snapshotWorkers.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
+  
+  // 1. Find the 'Workers' branch folders
+  const foldersQuery = userId 
+    ? query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId))
+    : collection(db, FOLDERS_COLLECTION);
+    
+  const foldersSnapshot = await getDocs(foldersQuery);
+  const allFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+  
+  const workerFolder = allFolders.find(f => f.name.toLowerCase() === 'workers' && f.isSystem);
+  if (!workerFolder) return [];
+
+  // Find all subfolders (Employees, Contractors)
+  const workerFolderIds = [workerFolder.id];
+  allFolders.filter(f => f.parentId === workerFolder.id).forEach(f => workerFolderIds.push(f.id));
+
+  // 2. Fetch contacts belonging to these folders
+  const contactsRef = collection(db, CONTACTS_COLLECTION);
+  const q = query(contactsRef, where("folderId", "in", workerFolderIds));
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
 }
 
 export async function getEmployees(userId: string): Promise<Worker[]> {
@@ -98,18 +80,18 @@ export async function getEmployees(userId: string): Promise<Worker[]> {
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, WORKERS_COLLECTION), data);
+    const docRef = await addDoc(collection(db, CONTACTS_COLLECTION), data);
     return { id: docRef.id, ...data };
 }
 
 export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    await updateDoc(doc(db, WORKERS_COLLECTION, id), data);
+    await updateDoc(doc(db, CONTACTS_COLLECTION, id), data);
 }
 
 export async function deleteWorker(id: string): Promise<void> {
     const db = getDb();
-    await deleteDoc(doc(db, WORKERS_COLLECTION, id));
+    await deleteDoc(doc(db, CONTACTS_COLLECTION, id));
 }
 
 export async function deleteWorkers(workerIds: string[]): Promise<void> {
@@ -117,52 +99,37 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
     if (workerIds.length === 0) return;
     const batch = writeBatch(db);
     workerIds.forEach(id => {
-        const docRef = doc(db, WORKERS_COLLECTION, id);
+        const docRef = doc(db, CONTACTS_COLLECTION, id);
         batch.delete(docRef);
     });
     await batch.commit();
 }
 
+/**
+ * Implementation Note: Reassigning time logs and requests from source to master.
+ */
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
     const { db, auth } = getFirebaseServices();
     const currentUserId = auth.currentUser?.uid;
     
-    if (!currentUserId) {
-        throw new Error("Authentication required to merge workers.");
-    }
+    if (!currentUserId) throw new Error("Authentication required.");
 
     const batch = writeBatch(db);
 
-    // 1. Reassign Time Logs
-    const timeLogsQuery = query(
-        collection(db, TIME_LOGS_COLLECTION), 
-        where('userId', '==', currentUserId),
-        where('workerId', '==', sourceWorkerId)
-    );
+    const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const timeLogsSnapshot = await getDocs(timeLogsQuery);
-    timeLogsSnapshot.forEach(doc => {
-        batch.update(doc.ref, { workerId: masterWorkerId });
-    });
+    timeLogsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
     
-    // 2. Reassign Leave Requests
-    const leaveRequestsQuery = query(
-        collection(db, LEAVE_REQUESTS_COLLECTION), 
-        where('userId', '==', currentUserId),
-        where('workerId', '==', sourceWorkerId)
-    );
+    const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
-    leaveRequestsSnapshot.forEach(doc => {
-        batch.update(doc.ref, { workerId: masterWorkerId });
-    });
+    leaveRequestsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
 
-    // 3. Delete Source Worker
-    const sourceWorkerRef = doc(db, WORKERS_COLLECTION, sourceWorkerId);
-    batch.delete(sourceWorkerRef);
-    
+    batch.delete(doc(db, CONTACTS_COLLECTION, sourceWorkerId));
     await batch.commit();
 }
 
-// --- Payroll Remittance Types & Functions ---
+// --- Remittance & Payroll Runs (Data preserved) ---
+
 export interface PayrollRemittance {
   id: string;
   payPeriodStart: string;
@@ -174,13 +141,11 @@ export interface PayrollRemittance {
   userId: string;
 }
 
-const docToRemittance = (doc: any): PayrollRemittance => ({ id: doc.id, ...doc.data() } as PayrollRemittance);
-
 export async function getRemittances(userId: string): Promise<PayrollRemittance[]> {
     const db = getDb();
     const q = query(collection(db, REMITTANCES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToRemittance).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
 }
 
 export async function addRemittance(data: Omit<PayrollRemittance, 'id'>): Promise<PayrollRemittance> {
@@ -199,35 +164,11 @@ export async function deleteRemittance(id: string): Promise<void> {
     await deleteDoc(doc(db, REMITTANCES_COLLECTION, id));
 }
 
-// --- Payroll Run Types & Functions ---
-
-interface PayrollRunDetail {
-    employeeId: string;
-    employeeName: string;
-    grossPay: number;
-    deductions: number;
-    netPay: number;
-    userId: string;
-}
-
-interface SavePayrollRunData {
-    userId: string;
-    payPeriodStart: Date;
-    payPeriodEnd: Date;
-    payDate: Date;
-    totalGrossPay: number;
-    totalDeductions: number;
-    totalNetPay: number;
-    employeeCount: number;
-    details: Omit<PayrollRunDetail, 'userId'>[];
-}
-
-export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
+export async function savePayrollRun(data: any): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
-
     const runRef = doc(collection(db, PAYROLL_RUNS_COLLECTION));
-    const runData = {
+    batch.set(runRef, {
         userId: data.userId,
         payPeriodStart: data.payPeriodStart,
         payPeriodEnd: data.payPeriodEnd,
@@ -236,21 +177,18 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
         totalDeductions: data.totalDeductions,
         totalNetPay: data.totalNetPay,
         employeeCount: data.employeeCount,
-    };
-    batch.set(runRef, runData);
-
-    data.details.forEach(detail => {
-        const detailRef = doc(collection(db, PAYROLL_RUNS_COLLECTION, runRef.id, 'details'));
-        batch.set(detailRef, { ...detail, runId: runRef.id, userId: data.userId });
     });
 
-    data.details.forEach(detail => {
+    data.details.forEach((detail: any) => {
+        const detailRef = doc(collection(db, PAYROLL_RUNS_COLLECTION, runRef.id, 'details'));
+        batch.set(detailRef, { ...detail, runId: runRef.id, userId: data.userId });
+        
         const expenseRef = doc(collection(db, 'expenseTransactions'));
         batch.set(expenseRef, {
             userId: data.userId,
             date: data.payDate.toISOString().split('T')[0],
             company: detail.employeeName,
-            description: `Payroll for period ${data.payPeriodStart.toISOString().split('T')[0]} to ${data.payPeriodEnd.toISOString().split('T')[0]}`,
+            description: `Payroll for period ${data.payPeriodStart.toISOString().split('T')[0]} - ${data.payPeriodEnd.toISOString().split('T')[0]}`,
             totalAmount: detail.grossPay,
             category: '9060',
             type: 'business',
@@ -268,6 +206,5 @@ export async function savePayrollRun(data: SavePayrollRunData): Promise<void> {
             status: 'Due',
         });
     }
-
     await batch.commit();
 }

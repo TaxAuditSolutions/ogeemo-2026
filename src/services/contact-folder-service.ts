@@ -1,7 +1,7 @@
+
 'use client';
 
 import { 
-    getFirestore, 
     collection, 
     getDocs, 
     doc, 
@@ -77,8 +77,8 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
 }
 
 /**
- * Ensures that hardcoded system folders exist for the user.
- * This function is idempotent: it will claim existing folders by name or merge duplicates.
+ * Ensures that mandated system folders exist for the user.
+ * This function is self-healing: it merges duplicates and reassigns contacts to a single master record.
  */
 export async function ensureSystemFolders(userId: string): Promise<FolderData[]> {
     const db = getDb();
@@ -86,68 +86,42 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
     
+    // Mandated System Taxonomy
     const systemFoldersConfig = [
         { name: 'Admin', parent: null },
         { name: 'Workers', parent: null },
         { name: 'Employees', parent: 'Workers' },
         { name: 'Contractors', parent: 'Workers' },
+        { name: 'Suppliers', parent: null },
         { name: 'Clients', parent: null },
+        { name: 'Prospects', parent: null },
         { name: 'Family', parent: null },
         { name: 'Friends', parent: null },
-        { name: 'Suppliers', parent: null },
-        { name: 'Prospects', parent: null },
         { name: 'Miscellaneous', parent: null },
     ];
 
-    const currentFolders = [...existing];
     const batch = writeBatch(db);
     let hasChanges = false;
-
-    // --- DEPRECATION MIGRATION: Remove "Users" folder ---
-    const usersFolderMatch = currentFolders.find(f => f.name.toLowerCase() === 'users');
-    if (usersFolderMatch) {
-        // Find or create Miscellaneous folder as a safe haven
-        let miscFolder = currentFolders.find(f => f.name.toLowerCase() === 'miscellaneous');
-        if (!miscFolder) {
-            const miscRef = doc(collection(db, FOLDERS_COLLECTION));
-            const miscData = { name: 'Miscellaneous', userId, parentId: null, isSystem: true, createdAt: new Date() };
-            batch.set(miscRef, miscData);
-            miscFolder = { id: miscRef.id, ...miscData };
-            currentFolders.push(miscFolder);
-        }
-
-        // Reassign all contacts from Users to Miscellaneous
-        const contactsQuery = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), where("folderId", "==", usersFolderMatch.id));
-        const contactsSnapshot = await getDocs(contactsQuery);
-        contactsSnapshot.forEach(contactDoc => {
-            batch.update(contactDoc.ref, { folderId: miscFolder!.id });
-        });
-
-        // Delete the Users folder
-        batch.delete(doc(db, FOLDERS_COLLECTION, usersFolderMatch.id));
-        const index = currentFolders.findIndex(f => f.id === usersFolderMatch.id);
-        if (index > -1) currentFolders.splice(index, 1);
-        hasChanges = true;
-    }
+    const currentFolders = [...existing];
 
     for (const config of systemFoldersConfig) {
-        // 1. Check for folders with the same name (case-insensitive)
+        // Find ALL folders matching this name (case-insensitive)
         const matches = currentFolders.filter(f => f.name.toLowerCase() === config.name.toLowerCase());
         
         let masterFolder: FolderData;
 
         if (matches.length > 0) {
-            // Pick the first match as our master record for this structural category
+            // Pick the first one as the master record
             masterFolder = matches[0];
             
-            // Claim it as a system folder if not already marked
+            // Ensure it is marked as a system folder
             if (!masterFolder.isSystem) {
                 batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
                 masterFolder.isSystem = true;
                 hasChanges = true;
             }
 
-            // 2. Resolve duplicates: if multiple folders exist with the same name, merge them
+            // Resolve Duplicates: if more than one exists, merge them
             if (matches.length > 1) {
                 const duplicates = matches.slice(1);
                 for (const dupe of duplicates) {
@@ -158,24 +132,21 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
                         batch.update(contactDoc.ref, { folderId: masterFolder.id });
                     });
 
-                    // Delete the duplicate folder
+                    // Delete the duplicate folder record
                     batch.delete(doc(db, FOLDERS_COLLECTION, dupe.id));
                     
-                    // Remove from our local memory list so subsequent steps don't see it
+                    // Remove from our local tracking list
                     const index = currentFolders.findIndex(f => f.id === dupe.id);
                     if (index > -1) currentFolders.splice(index, 1);
                     hasChanges = true;
                 }
             }
         } else {
-            // 3. Create the folder if it doesn't exist
+            // Create the folder if it doesn't exist at all
             let parentId: string | null = null;
             if (config.parent) {
-                // Look for the master version of the parent
                 const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
-                if (parentMatch) {
-                    parentId = parentMatch.id;
-                }
+                if (parentMatch) parentId = parentMatch.id;
             }
 
             const docRef = doc(collection(db, FOLDERS_COLLECTION));
@@ -192,7 +163,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
             hasChanges = true;
         }
 
-        // 4. Ensure parent assignment is correct for subfolders
+        // Hierarchy Enforcement: Ensure subfolders point to the master parent
         if (config.parent) {
             const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
             if (parentMatch && masterFolder.parentId !== parentMatch.id) {

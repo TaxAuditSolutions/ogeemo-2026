@@ -2,31 +2,25 @@
 'use client';
 
 import {
-  getFirestore,
   collection,
   doc,
-  setDoc,
   query,
   where,
   getDocs,
-  addDoc,
   updateDoc,
-  deleteDoc,
-  getDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { getContactById } from '@/services/contact-service';
+import { type Contact } from '@/data/contacts';
 
-const SUPPLIERS_COLLECTION = 'suppliers';
+/**
+ * @fileOverview Refactored Supplier Service for Ogeemo.
+ * Consolidates 'Suppliers' into the Contact Hub as the Single Source of Truth.
+ */
 
-export interface Supplier {
-  id: string;
-  name: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  userId: string;
-}
+export type Supplier = Contact;
+
+const CONTACTS_COLLECTION = 'contacts';
+const FOLDERS_COLLECTION = 'contactFolders';
 
 function getDb() {
   const { db } = getFirebaseServices();
@@ -38,57 +32,44 @@ const docToSupplier = (doc: any): Supplier => ({
     ...doc.data(),
 } as Supplier);
 
-export async function getSuppliers(userId: string): Promise<Supplier[]> {
+/**
+ * Fetches all suppliers from the Contact Hub by filtering for the 'Suppliers' system folder.
+ */
+export async function getSuppliers(userId?: string): Promise<Supplier[]> {
     const db = getDb();
-    const q = query(collection(db, SUPPLIERS_COLLECTION), where("userId", "==", userId));
+    
+    // 1. Find the 'Suppliers' system folder
+    const foldersQuery = userId 
+        ? query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", "Suppliers"))
+        : query(collection(db, FOLDERS_COLLECTION), where("name", "==", "Suppliers"));
+        
+    const foldersSnapshot = await getDocs(foldersQuery);
+    if (foldersSnapshot.empty) return [];
+    
+    const supplierFolderId = foldersSnapshot.docs[0].id;
+
+    // 2. Pull contacts from that folder
+    const contactsRef = collection(db, CONTACTS_COLLECTION);
+    const q = query(contactsRef, where("folderId", "==", supplierFolderId));
+    
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));
 }
 
-export async function addSupplier(data: Omit<Supplier, 'id'>): Promise<Supplier> {
-  const db = getDb();
-  const docRef = await addDoc(collection(db, SUPPLIERS_COLLECTION), data);
-  return { id: docRef.id, ...data };
-}
-
-export async function updateSupplier(id: string, data: Partial<Omit<Supplier, 'id' | 'userId'>>): Promise<void> {
-    const db = getDb();
-    await updateDoc(doc(db, SUPPLIERS_COLLECTION, id), data);
-}
-
-export async function deleteSupplier(id: string): Promise<void> {
-    const db = getDb();
-    await deleteDoc(doc(db, SUPPLIERS_COLLECTION, id));
-}
-
 /**
- * Designates an existing contact as a supplier.
- * If a supplier record for this contact already exists, it does nothing.
- * If not, it creates a new supplier record using the contact's details.
- * The supplier ID will match the contact ID.
+ * Moves an existing contact into the 'Suppliers' system folder.
  */
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<Supplier> {
   const db = getDb();
-  const supplierRef = doc(db, SUPPLIERS_COLLECTION, contactId);
   
-  const supplierSnap = await getDoc(supplierRef);
-  if (supplierSnap.exists()) {
-    return docToSupplier(supplierSnap);
-  }
-
-  const contact = await getContactById(contactId);
-  if (!contact) {
-      throw new Error("Contact not found to designate as supplier.");
-  }
+  const foldersQuery = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", "Suppliers"));
+  const foldersSnapshot = await getDocs(foldersQuery);
   
-  const supplierData: Omit<Supplier, 'id'> = {
-      name: contact.businessName || contact.name,
-      contactPerson: contact.name,
-      email: contact.email,
-      phone: contact.cellPhone || contact.businessPhone || contact.homePhone,
-      userId: userId,
-  };
+  if (foldersSnapshot.empty) throw new Error("Suppliers system folder not found.");
+  const supplierFolderId = foldersSnapshot.docs[0].id;
 
-  await setDoc(supplierRef, supplierData);
-  return { id: contactId, ...supplierData };
+  const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
+  await updateDoc(contactRef, { folderId: supplierFolderId });
+  
+  return { id: contactId, folderId: supplierFolderId } as Supplier;
 }

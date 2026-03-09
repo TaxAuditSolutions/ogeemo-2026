@@ -6,7 +6,7 @@ export interface Contact {
   birthDate?: string;
   website?: string;
   businessName?: string;
-  employeeNumber?: string;
+  employeeNumber?: string; // Used as User ID / Worker ID
   industryCode?: string;
   craProgramAccountNumber?: string;
   streetAddress?: string;
@@ -29,10 +29,20 @@ export interface Contact {
   notes?: string;
   folderId: string;
   userId: string;
-  status?: string;
+  status?: string; // CRM Status
   keywords?: string[];
-  role?: string;
-  setupSource?: 'system' | 'app';
+  
+  // HR & Payroll Specialized Metadata (Integrated from deprecated collection)
+  sin?: string;
+  workerType?: 'employee' | 'contractor';
+  payType?: 'hourly' | 'salary';
+  payRate?: number;
+  hireDate?: any; // Date or Timestamp
+  startDate?: any; // Date or Timestamp
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hasContract?: boolean;
+  specialNeeds?: string;
 }
 
 export const mockFolders = [];

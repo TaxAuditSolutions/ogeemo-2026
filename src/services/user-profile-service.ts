@@ -7,6 +7,8 @@ import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { SidebarViewType } from '@/context/sidebar-view-context';
+import { ensureSystemFolders } from './contact-folder-service';
+import { addContact, updateContact, getContacts } from './contact-service';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -18,194 +20,44 @@ function getFunctionsService() {
     return functions;
 }
 
-type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
-
-export interface PlanningRitual {
-    time: string;
-    duration: number;
-    day?: DayOfWeek;
-    repeatEnabled?: boolean;
-    repeatCount?: number;
-}
-
-export interface ThemeColors {
-    primary?: string;
-    background?: string;
-    sidebar?: string;
-    header?: string;
-    border?: string;
-}
-
-export interface ThemePreset {
-    name: string;
-    colors: ThemeColors;
-}
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'none';
 
 export interface UserProfile {
     id: string;
     email: string;
     displayName?: string;
     employeeNumber?: string;
-    companyName?: string;
-    website?: string;
-    businessPhone?: string;
-    cellPhone?: string;
-    bestPhone?: 'business' | 'cell';
-    role?: 'admin' | 'editor' | 'viewer' | 'none';
-    businessAddress?: {
-        street?: string;
-        city?: string;
-        provinceState?: string;
-        country?: string;
-        postalCode?: string;
-    };
-    homeAddress?: {
-        street?: string;
-        city?: string;
-        provinceState?: string;
-        country?: string;
-        postalCode?: string;
-    };
-    alternateContact?: string;
-    alternateContactPhone?: string;
-    businessNumber?: string;
-    netEquity?: number;
+    role?: UserRole;
+    contactId?: string; // Linked ID in the Contact Hub
+    preferences?: any;
     createdAt?: any;
     updatedAt?: any;
     notes?: string;
-    preferences?: {
-        showDictationButton?: boolean;
-        showDashboardFrame?: boolean;
-        showMenuViewInstructions?: boolean;
-        showActionManagerAboutPanel?: boolean;
-        defaultSidebarView?: SidebarViewType;
-        menuOrder?: string[];
-        accountingQuickNavOrder?: string[];
-        googleAppsOrder?: string[];
-        fileFolderOrder?: string[];
-        defaultTaxRate?: number;
-        planningRituals?: {
-            daily: Omit<PlanningRitual, 'day'>;
-            weekly: Omit<PlanningRitual, 'repeatEnabled' | 'repeatCount'>;
-        };
-        themeColors?: ThemeColors;
-        customPresets?: ThemePreset[];
-    };
 }
 
 const PROFILES_COLLECTION = 'users';
+const CONTACTS_COLLECTION = 'contacts';
 
-/**
- * Registry of identities granted absolute Admin authority.
- * This acts as a recovery mechanism for the core orchestration team.
- */
-const SYSTEM_ADMIN_EMAILS = [
-    'dan@ogeemo.com',
-    'julie@ogeemo.com',
-    'nick@ogeemo.com',
-    'info@ogeemo.com'
-];
-
-const defaultPreferences: UserProfile['preferences'] = {
-    showDictationButton: true,
-    showDashboardFrame: true,
-    showMenuViewInstructions: true,
-    showActionManagerAboutPanel: true,
-    defaultSidebarView: 'grouped',
-    menuOrder: [],
-    accountingQuickNavOrder: [],
-    googleAppsOrder: [],
-    fileFolderOrder: [],
-    defaultTaxRate: 15,
-    planningRituals: {
-        daily: { time: '17:00', duration: 25, repeatEnabled: false, repeatCount: 5 },
-        weekly: { day: 'Friday', time: '15:00', duration: 90 },
-    },
-    themeColors: {
-        primary: '#1E8E86',
-        background: '#ffffff',
-        sidebar: '#1e293b',
-        header: '#3DD5C0',
-        border: '#e2e8f0',
-    },
-    customPresets: [],
-};
-
-const docToUserProfile = (doc: any): UserProfile => {
-    const data = doc.data();
-    if (!data) return { id: doc.id, email: '', role: 'viewer' } as UserProfile;
-
-    return { 
-        id: doc.id, 
-        ...data, 
-        role: data.role || 'viewer',
-        preferences: { ...defaultPreferences, ...(data.preferences || {}) }
-    } as UserProfile;
-};
+const docToUserProfile = (doc: any): UserProfile => ({ id: doc.id, ...doc.data() } as UserProfile);
 
 export async function getUsers(): Promise<UserProfile[]> {
   const db = getDb();
   const q = query(collection(db, PROFILES_COLLECTION));
-  try {
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToUserProfile);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: PROFILES_COLLECTION,
-            operation: 'list',
-        } satisfies SecurityRuleContext));
-    }
-    throw error;
-  }
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docToUserProfile);
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const profile = docToUserProfile(docSnap);
-            
-            // --- Role Recovery Protocol ---
-            // If this is a core team member and their role was changed, restore it.
-            if (profile.email && SYSTEM_ADMIN_EMAILS.includes(profile.email.toLowerCase()) && profile.role !== 'admin') {
-                console.log(`Role Recovery: Restoring Admin status for ${profile.email}`);
-                await updateDoc(docRef, { role: 'admin' });
-                return { ...profile, role: 'admin' };
-            }
-            
-            return profile;
-        } else {
-            return null;
-        }
-    } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'get',
-            } satisfies SecurityRuleContext));
-        }
-        throw error;
-    }
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? docToUserProfile(docSnap) : null;
 }
 
-export async function getUserProfileByEmail(email: string): Promise<UserProfile | null> {
-    const db = getDb();
-    const q = query(collection(db, PROFILES_COLLECTION), where("email", "==", email.toLowerCase()));
-    try {
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            return docToUserProfile(snapshot.docs[0]);
-        }
-        return null;
-    } catch (error: any) {
-        console.warn("Failed to find user by email:", error);
-        return null;
-    }
-}
-
+/**
+ * Synchronizes a User Profile with a Contact Hub record.
+ * Every user must have a searchable identity in the Contact Hub.
+ */
 export async function updateUserProfile(
     userId: string, 
     email: string,
@@ -213,106 +65,56 @@ export async function updateUserProfile(
 ): Promise<void> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
-    
     const docSnap = await getDoc(docRef);
-    const dataWithTimestamp: { [key: string]: any } = {
-        ...data,
-        updatedAt: serverTimestamp(),
-    };
+    
+    const dataWithTimestamp: { [key: string]: any } = { ...data, updatedAt: serverTimestamp() };
 
-    // Ensure system admins always stay admins during update
-    if (SYSTEM_ADMIN_EMAILS.includes(email.toLowerCase())) {
-        dataWithTimestamp.role = 'admin';
+    // 1. Ensure the user exists in the Contact Hub (SSoT)
+    const allFolders = await ensureSystemFolders(userId);
+    const adminFolder = allFolders.find(f => f.name === 'Admin' && f.isSystem);
+    const contactId = docSnap.exists() ? docSnap.data().contactId : null;
+
+    if (contactId) {
+        await updateContact(contactId, {
+            name: data.displayName,
+            email: email,
+            employeeNumber: data.employeeNumber,
+        });
+    } else {
+        const newContact = await addContact({
+            name: data.displayName || email,
+            email: email,
+            employeeNumber: data.employeeNumber,
+            folderId: adminFolder?.id || 'all',
+            userId: userId,
+        } as any);
+        dataWithTimestamp.contactId = newContact.id;
     }
 
+    // 2. Update the Profile registry
     if (docSnap.exists()) {
-        const existingData = docSnap.data();
-        
-        if (data.preferences) {
-            const existingPrefs = existingData.preferences || {};
-            dataWithTimestamp.preferences = {
-                ...existingPrefs,
-                ...data.preferences,
-            };
-        }
-        
-        if (data.businessAddress) {
-            const existingAddress = existingData.businessAddress || {};
-            dataWithTimestamp.businessAddress = { ...existingAddress, ...data.businessAddress };
-        }
-        
-        if (data.homeAddress) {
-            const existingAddress = existingData.homeAddress || {};
-            dataWithTimestamp.homeAddress = { ...existingAddress, ...data.homeAddress };
-        }
-
-        await updateDoc(docRef, dataWithTimestamp).catch(async (error) => {
-            if (error.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: dataWithTimestamp,
-                } satisfies SecurityRuleContext));
-            }
-        });
+        await updateDoc(docRef, dataWithTimestamp);
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        // Default to admin for system emails, viewer for others
-        dataWithTimestamp.role = SYSTEM_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : (data.role || 'viewer');
-        dataWithTimestamp.preferences = { ...defaultPreferences, ...(data.preferences || {}) };
-        
-        await setDoc(docRef, dataWithTimestamp).catch(async (error) => {
-            if (error.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'create',
-                    requestResourceData: dataWithTimestamp,
-                } satisfies SecurityRuleContext));
-            }
-        });
-    }
-}
-
-export async function updateUserAuth(uid: string, data: { email?: string; password?: string }): Promise<any> {
-    const functions = getFunctionsService();
-    const updateUserAuthFn = httpsCallable(functions, 'updateUserAuth');
-    try {
-        const result = await updateUserAuthFn({ uid, ...data });
-        return result.data;
-    } catch (error: any) {
-        console.error(`Error calling updateUserAuth function for UID ${uid}:`, error);
-        throw error;
+        dataWithTimestamp.role = data.role || 'viewer';
+        await setDoc(docRef, dataWithTimestamp);
     }
 }
 
 export async function deleteUserProfile(userId: string): Promise<void> {
     const db = getDb();
-    const docRef = doc(db, PROFILES_COLLECTION, userId);
-    await deleteDoc(docRef).catch(async (error) => {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-                requestResourceData: null,
-            } satisfies SecurityRuleContext));
-        }
-    });
+    const docSnap = await getDoc(doc(db, PROFILES_COLLECTION, userId));
+    if (docSnap.exists()) {
+        const contactId = docSnap.data().contactId;
+        if (contactId) await deleteDoc(doc(db, CONTACTS_COLLECTION, contactId));
+    }
+    await deleteDoc(doc(db, PROFILES_COLLECTION, userId));
 }
 
-export async function deleteUserProfiles(userIds: string[]): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    userIds.forEach(id => {
-        const docRef = doc(db, PROFILES_COLLECTION, id);
-        batch.delete(docRef);
-    });
-    await batch.commit().catch(async (error) => {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: 'batch',
-                operation: 'delete',
-            } satisfies SecurityRuleContext));
-        }
-    });
+export async function updateUserAuth(uid: string, data: any): Promise<any> {
+    const functions = getFunctionsService();
+    const updateUserAuthFn = httpsCallable(functions, 'updateUserAuth');
+    const result = await updateUserAuthFn({ uid, ...data });
+    return result.data;
 }

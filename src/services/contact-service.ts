@@ -62,7 +62,11 @@ const generateKeywords = (data: Partial<Contact>): string[] => {
 export async function getContacts(userId?: string): Promise<Contact[]> {
   const db = getDb();
   const collectionRef = collection(db, CONTACTS_COLLECTION);
-  const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+  
+  // High-Fidelity Query Scoping: Defend against 'undefined' in where clauses
+  const q = (userId && typeof userId === 'string') 
+    ? query(collectionRef, where("userId", "==", userId)) 
+    : collectionRef;
   
   try {
     const snapshot = await getDocs(q);

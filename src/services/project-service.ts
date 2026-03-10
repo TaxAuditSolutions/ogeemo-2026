@@ -160,6 +160,7 @@ export async function getChipsFromCollection(userId: string, collectionName: str
 
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
+  if (!userId) return [];
   const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToProject).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -239,9 +240,13 @@ export async function getTasksForProject(userId: string | undefined, projectId: 
   const collectionRef = collection(db, TASKS_COLLECTION);
   let q;
   if (projectId === 'inbox' || !projectId) {
-      q = userId ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", null)) : query(collectionRef, where("projectId", "==", null));
+      q = (userId && typeof userId === 'string') 
+        ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", null)) 
+        : query(collectionRef, where("projectId", "==", null));
   } else {
-      q = userId ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", projectId)) : query(collectionRef, where("projectId", "==", projectId));
+      q = (userId && typeof userId === 'string') 
+        ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", projectId)) 
+        : query(collectionRef, where("projectId", "==", projectId));
   }
   
   try {
@@ -270,12 +275,16 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
 
 /**
  * Fetches all tasks for a user or organization.
- * @param userId Optional. If provided, restricts to owner. Otherwise relies on Security Rules.
+ * @param userId Optional. If provided, restricts to owner. Otherwise relies on Security Rules for access.
  */
 export async function getTasksForUser(userId?: string): Promise<TaskEvent[]> {
     const db = getDb();
     const collectionRef = collection(db, TASKS_COLLECTION);
-    const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+    
+    // Scoping check: defend against 'undefined' in where()
+    const q = (userId && typeof userId === 'string') 
+        ? query(collectionRef, where("userId", "==", userId)) 
+        : collectionRef;
     
     try {
         const snapshot = await getDocs(q);
@@ -377,6 +386,7 @@ export async function deleteTodos(todoIds: string[]): Promise<void> {
 
 export async function getProjectTemplates(userId: string): Promise<ProjectTemplate[]> {
     const db = getDb();
+    if (!userId) return [];
     const q = query(collection(db, TEMPLATES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTemplate);
@@ -401,6 +411,7 @@ export async function deleteProjectTemplate(templateId: string): Promise<void> {
 }
 
 export async function getActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {
+    if (!userId) return [];
     const collectionNameMap: Record<string, string> = {
         dashboard: ACTION_CHIPS_COLLECTION,
         accounting: ACCOUNTING_QUICK_NAV_ITEMS_COLLECTION,
@@ -428,6 +439,7 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
 }
 
 export async function getAvailableActionChips(userId: string, type: string = 'dashboard'): Promise<ActionChipData[]> {
+    if (!userId) return [];
     const collectionNameMap: Record<string, string> = {
         dashboard: AVAILABLE_ACTION_CHIPS_COLLECTION,
         accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
@@ -549,6 +561,7 @@ export async function trashActionChips(userId: string, chips: ActionChipData[], 
 }
 
 export async function getTrashedActionChips(userId: string): Promise<ActionChipData[]> {
+    if (!userId) return [];
     return getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
 }
 
@@ -614,6 +627,7 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
 
 export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
     const db = getDb();
+    if (!userId) return;
     const q = query(
         collection(db, TASKS_COLLECTION),
         where("userId", "==", userId),

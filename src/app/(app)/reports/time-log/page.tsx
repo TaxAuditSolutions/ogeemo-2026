@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -434,7 +435,7 @@ function WorkerTimeLogReportContent() {
                                                                 <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                     </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         ))

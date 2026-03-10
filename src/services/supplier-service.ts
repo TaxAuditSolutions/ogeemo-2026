@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -33,11 +34,13 @@ const docToSupplier = (doc: any): Supplier => ({
 
 /**
  * Fetches all suppliers from the Contact Hub for the current user.
- * Scoped to the specific user's 'Suppliers' system folder to avoid 'IN' query limits.
  */
-export async function getSuppliers(userId: string): Promise<Supplier[]> {
+export async function getSuppliers(userId?: string): Promise<Supplier[]> {
     const db = getDb();
     
+    // Defensive check: handle 'undefined' before creating query
+    if (!userId || typeof userId !== 'string') return [];
+
     // 1. Find the 'Suppliers' folder for THIS user
     const foldersRef = collection(db, FOLDERS_COLLECTION);
     const foldersQuery = query(foldersRef, where("userId", "==", userId), where("name", "==", "Suppliers"));
@@ -61,6 +64,8 @@ export async function getSuppliers(userId: string): Promise<Supplier[]> {
 export async function designateContactAsSupplier(userId: string, contactId: string): Promise<Supplier> {
   const db = getDb();
   
+  if (!userId) throw new Error("Unauthorized");
+
   const foldersQuery = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", "Suppliers"));
   const foldersSnapshot = await getDocs(foldersQuery);
   

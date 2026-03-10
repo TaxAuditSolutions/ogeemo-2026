@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -48,19 +49,23 @@ const docToWorker = (doc: any): Worker => {
 /**
  * Fetches all workers from the Contact Hub based strictly on folder assignment.
  * This adheres to the protocol: If they are in the Workers/Employees/Contractors folders, they are workers.
- * Scoped to the specific user to avoid 'IN' query limits.
  */
-export async function getWorkers(userId: string): Promise<Worker[]> {
+export async function getWorkers(userId?: string): Promise<Worker[]> {
   const db = getDb();
   
   try {
-    // 1. Resolve the mandated system folder IDs for THIS user only
+    // 1. Resolve the mandated system folder IDs
     const foldersRef = collection(db, FOLDERS_COLLECTION);
-    const foldersQuery = query(foldersRef, where("userId", "==", userId));
+    
+    // High-Fidelity Scoping: defend against 'undefined' in where()
+    const foldersQuery = (userId && typeof userId === 'string')
+        ? query(foldersRef, where("userId", "==", userId))
+        : foldersRef;
+
     const foldersSnapshot = await getDocs(foldersQuery);
     const userFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
     
-    // Find the specific worker-related nodes for this user
+    // Find the specific worker-related nodes
     const workerFolderIds = userFolders
         .filter(f => f.isSystem && (
             f.name.toLowerCase() === 'employees' || 
@@ -89,7 +94,7 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
   }
 }
 
-export async function getEmployees(userId: string): Promise<Worker[]> {
+export async function getEmployees(userId?: string): Promise<Worker[]> {
   return getWorkers(userId);
 }
 
@@ -154,6 +159,7 @@ export interface PayrollRemittance {
 
 export async function getRemittances(userId: string): Promise<PayrollRemittance[]> {
     const db = getDb();
+    if (!userId) return [];
     const q = query(collection(db, REMITTANCES_COLLECTION));
     try {
         const snapshot = await getDocs(q);

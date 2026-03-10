@@ -66,7 +66,11 @@ const docToTimeLog = (doc: any): TimeLog => {
 export async function getTimeLogs(userId?: string): Promise<TimeLog[]> {
   const db = getDb();
   const collectionRef = collection(db, TIME_LOGS_COLLECTION);
-  const q = userId ? query(collectionRef, where("userId", "==", userId)) : collectionRef;
+  
+  // Defensive Query Scoping: ensure userId is truthy before using in where()
+  const q = (userId && typeof userId === 'string')
+    ? query(collectionRef, where("userId", "==", userId)) 
+    : collectionRef;
   
   try {
     const snapshot = await getDocs(q);

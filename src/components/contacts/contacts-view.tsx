@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -24,6 +25,7 @@ import {
   FileDigit,
   Briefcase,
   Clock,
+  ClipboardList,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -496,6 +498,7 @@ export function ContactsView() {
                                                   <DropdownMenuSeparator />
                                                   <DropdownMenuItem onClick={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Time</DropdownMenuItem>
                                                   <DropdownMenuItem onClick={() => router.push(`/master-mind?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
+                                                  <DropdownMenuItem onClick={() => router.push(`/reports/work-activity?contactId=${contact.id}`)}><ClipboardList className="mr-2 h-4 w-4" /> Generate Work Report</DropdownMenuItem>
                                                   <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
                                                   <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>
                                                   <DropdownMenuSeparator />
@@ -523,9 +526,42 @@ export function ContactsView() {
       
       {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
-      <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Folder?</AlertDialogTitle><AlertDialogDescription>This will remove the folder and its references. Contacts are not deleted.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-      <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Contact?</AlertDialogTitle><AlertDialogDescription>Permanently remove "{contactToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Selected?</AlertDialogTitle><AlertDialogDescription>Delete {selectedContactIds.length} records?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Folder?</AlertDialogTitle>
+                <AlertDialogDescription>This will remove the folder and its references. Contacts are not deleted.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Contact?</AlertDialogTitle>
+                <AlertDialogDescription>Permanently remove "{contactToDelete?.name}"?</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDeleteContact} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Selected?</AlertDialogTitle>
+                <AlertDialogDescription>Delete {selectedContactIds.length} records?</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Delete All</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {isLogTimeDialogOpen && <LogTimeDialog isOpen={isLogTimeDialogOpen} onOpenChange={setIsLogTimeDialogOpen} workers={workersForDialog} onTimeLogged={loadData} preselectedContactId={preselectedContactId} />}
     </>
   );

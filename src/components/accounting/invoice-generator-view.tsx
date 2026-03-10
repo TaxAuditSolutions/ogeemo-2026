@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -37,6 +37,7 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface LocalLineItem {
   id: string;
@@ -69,7 +70,8 @@ const InvoiceDocument = ({
     userProfile,
     subtotal,
     tax,
-    total
+    total,
+    attachReport
 }: any) => (
     <div className="p-12 bg-white text-black min-h-[11in] w-full max-w-[8.5in] mx-auto shadow-sm">
         <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
@@ -135,6 +137,12 @@ const InvoiceDocument = ({
         <section className="mt-16 pt-8 border-t border-dashed border-gray-300">
             <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Notes & Terms</h4>
             <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">{notes}</p>
+            {attachReport && (
+                <div className="mt-4 p-3 border rounded bg-muted/10 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">Supporting Evidence Attached</span>
+                    <ClipboardList className="h-4 w-4 text-primary" />
+                </div>
+            )}
         </section>
         <footer className="mt-auto pt-12 text-center">
             <p className="text-sm font-bold text-gray-800">{userProfile?.companyName || userProfile?.displayName || 'Ogeemo User'}</p>
@@ -168,6 +176,7 @@ export function InvoiceGeneratorView() {
   const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
   const [paymentTermsDays, setPaymentTermsDays] = useState('14');
   const [notes, setNotes] = useState("Thank you for your business!");
+  const [attachReport, setAttachReport] = useState(false);
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -409,6 +418,7 @@ export function InvoiceGeneratorView() {
     setSelectedContactId(null);
     setSelectedSupplierId(null);
     setLineItems([]);
+    setAttachReport(false);
     toast({ title: "Form Cleared" });
   };
   
@@ -449,7 +459,8 @@ export function InvoiceGeneratorView() {
       userProfile,
       subtotal,
       tax,
-      total
+      total,
+      attachReport
   };
 
   return (
@@ -471,18 +482,18 @@ export function InvoiceGeneratorView() {
           </div>
         </header>
 
-        <Card className="print:hidden">
-            <CardHeader className="flex-row justify-between items-center">
+        <Card className="print:hidden shadow-lg border-primary/10">
+            <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
                 <CardTitle>Invoice Header</CardTitle>
                 <div className="flex items-center gap-2">
-                    <Button onClick={handleSaveInvoice} disabled={isSaving}>
+                    <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
                         {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Invoice
                     </Button>
                     <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -652,6 +663,11 @@ export function InvoiceGeneratorView() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
+                                    {lineItems.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">No items added to this invoice yet.</TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </div>
@@ -664,6 +680,29 @@ export function InvoiceGeneratorView() {
                             </Button>
                         </div>
                     </div>
+
+                    <div className="p-4 border-2 border-dashed rounded-xl bg-primary/5 space-y-4">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4" /> Evidence Orchestration
+                        </h4>
+                        <div className="flex items-center gap-6">
+                            <Label className="font-semibold">Attach Work Activity Evidence Report?</Label>
+                            <RadioGroup value={attachReport ? 'yes' : 'no'} onValueChange={v => setAttachReport(v === 'yes')} className="flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="yes" id="rep-yes" />
+                                    <Label htmlFor="rep-yes">Yes</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="no" id="rep-no" />
+                                    <Label htmlFor="rep-no">No</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic">
+                            This will include a high-fidelity summary of all billable sessions and tasks linked to this client for the invoice period.
+                        </p>
+                    </div>
+
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                          <div className="space-y-2">
                              <div className="flex items-center gap-2">
@@ -703,8 +742,8 @@ export function InvoiceGeneratorView() {
             </CardContent>
             <CardFooter className="justify-between border-t p-4">
                  <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                 <Button onClick={() => handlePrint()}>
-                    <Printer className="mr-2 h-4 w-4" /> Print Invoice
+                 <Button onClick={() => handlePrint()} className="font-bold shadow-lg">
+                    <Printer className="mr-2 h-4 w-4" /> Print Invoice & Report
                  </Button>
             </CardFooter>
         </Card>

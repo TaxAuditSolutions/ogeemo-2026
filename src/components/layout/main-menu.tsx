@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
@@ -8,7 +9,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -24,7 +25,8 @@ const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/accounting/audit-readiness'] },
-    Growth: { icon: BarChart3, items: ['/reports/search', '/marketing-manager', '/idea-board'] },
+    Intelligence: { icon: ClipboardList, items: ['/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
+    Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
 };
 

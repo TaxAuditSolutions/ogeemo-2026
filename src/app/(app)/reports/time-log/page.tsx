@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -71,7 +72,7 @@ import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/services/user-profile-service';
-import { formatTime, cn } from '@/lib/utils';
+import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { WorkerSelector } from '@/components/reports/WorkerSelector';
@@ -278,7 +279,7 @@ function WorkerTimeLogReportContent() {
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
-            payRate: 0,
+            payRate: 0, 
             userId: user?.uid || '',
             folderId: 'all'
         };
@@ -291,10 +292,6 @@ function WorkerTimeLogReportContent() {
         });
         return [adminWorker, ...filteredWorkers];
     }, [workers, contacts, user, adminName]);
-
-    const formatCurrency = (amount: number) => {
-        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-    };
 
     const selectedWorker = workersForSelection.find(w => w.id === selectedWorkerId);
 

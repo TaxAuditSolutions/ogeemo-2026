@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -34,7 +33,9 @@ import {
     FileDigit,
     Info,
     LayoutList,
-    Layout
+    Layout,
+    Users,
+    User
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -356,7 +357,7 @@ export function WorkActivityView() {
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-2xl font-bold font-headline">Select a Client Node</h3>
-                            <p className="text-muted-foreground max-w-sm mx-auto">Choose a contact to assemble their work activity evidence from the Spider Web.</p>
+                            <p className="text-muted-foreground max-sm mx-auto">Choose a contact to assemble their work activity evidence from the Spider Web.</p>
                         </div>
                         <ContactSelector 
                             contacts={contacts} 

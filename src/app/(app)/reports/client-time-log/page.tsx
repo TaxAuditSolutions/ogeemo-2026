@@ -331,12 +331,10 @@ function ClientTimeLogReportContent() {
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
+                                    <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                    </Button>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>

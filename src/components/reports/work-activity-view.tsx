@@ -137,7 +137,7 @@ export function WorkActivityView() {
                 durationSeconds: t.duration || 0,
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
-                source: 'Command Centre' as const,
+                source: t.ritualType ? 'Bot' : 'Command Centre' as any,
                 type: t.ritualType ? 'Bot' : 'Human' as const
             }))
         ];
@@ -154,11 +154,10 @@ export function WorkActivityView() {
     const stats = useMemo(() => {
         const totalSeconds = activityData.reduce((sum, a) => sum + a.durationSeconds, 0);
         const billableSeconds = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + a.durationSeconds, 0);
-        const nonBillableSeconds = totalSeconds - billableSeconds;
         const botSeconds = activityData.filter(a => a.type === 'Bot').reduce((sum, a) => sum + a.durationSeconds, 0);
         const earned = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * (a.billableRate || 0), 0);
 
-        return { totalSeconds, billableSeconds, nonBillableSeconds, botSeconds, earned };
+        return { totalSeconds, billableSeconds, botSeconds, earned };
     }, [activityData]);
 
     const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -173,7 +172,6 @@ export function WorkActivityView() {
             </header>
 
             <div className="max-w-6xl mx-auto space-y-6">
-                {/* 1. Orchestration Controls */}
                 <Card className="print:hidden border-primary/20 shadow-lg">
                     <CardHeader className="bg-primary/5 border-b pb-4">
                         <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Report Configuration</CardTitle>
@@ -235,17 +233,14 @@ export function WorkActivityView() {
                     </CardFooter>
                 </Card>
 
-                {/* 2. The Report Document */}
                 {selectedContactId ? (
                     <div ref={contentRef} className="space-y-8 print:p-0">
-                        {/* Print Only Header */}
                         <div className="hidden print:block text-center border-b pb-6 space-y-2">
                             <h1 className="text-3xl font-bold uppercase tracking-widest text-gray-800">Work Activity Report</h1>
                             <p className="text-gray-600 font-medium">Prepared for: {selectedContact?.businessName || selectedContact?.name}</p>
                             <p className="text-xs text-gray-400">Period: {dateRange?.from ? `${format(dateRange.from, 'PP')} - ${dateRange.to ? format(dateRange.to, 'PP') : 'Present'}` : 'Full History'}</p>
                         </div>
 
-                        {/* Stats Vitals */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <Card className="bg-white border-primary/10">
                                 <CardContent className="p-4 text-center">
@@ -261,7 +256,7 @@ export function WorkActivityView() {
                             </Card>
                             <Card className="bg-white border-primary/10">
                                 <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Bot Support</p>
+                                    <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Bot Orchestrated</p>
                                     <p className="text-2xl font-bold font-mono text-blue-600">{formatTime(stats.botSeconds)}</p>
                                 </CardContent>
                             </Card>
@@ -273,7 +268,6 @@ export function WorkActivityView() {
                             </Card>
                         </div>
 
-                        {/* Activity Table */}
                         <Card className="shadow-2xl print:shadow-none print:border-none">
                             <CardHeader className="bg-muted/30 border-b print:hidden">
                                 <CardTitle>Activity Ledger</CardTitle>
@@ -297,14 +291,17 @@ export function WorkActivityView() {
                                                     <TableCell className="text-xs font-medium text-muted-foreground">{format(a.date, 'yyyy-MM-dd')}</TableCell>
                                                     <TableCell>
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-sm">{a.subject}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-bold text-sm">{a.subject}</span>
+                                                                {a.type === 'Bot' && <Bot className="h-3 w-3 text-blue-500" />}
+                                                            </div>
                                                             <span className="text-[10px] text-muted-foreground uppercase flex items-center gap-1 mt-0.5">
                                                                 <User className="h-2.5 w-2.5" /> {a.workerName}
                                                             </span>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-center">
-                                                        <Badge variant="outline" className="text-[9px] uppercase h-5 font-bold tracking-tighter">
+                                                        <Badge variant="outline" className={cn("text-[9px] uppercase h-5 font-bold tracking-tighter", a.type === 'Bot' ? "border-blue-200 text-blue-600 bg-blue-50" : "")}>
                                                             {a.source}
                                                         </Badge>
                                                     </TableCell>

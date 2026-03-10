@@ -32,6 +32,8 @@ import {
     Users,
     User,
     Briefcase,
+    Info,
+    HelpCircle
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -50,6 +52,7 @@ import { ContactSelector } from '@/components/contacts/contact-selector';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type CombinedActivity = {
     id: string;
@@ -249,7 +252,20 @@ export function WorkActivityView() {
                                 </CardContent>
                             </Card>
                             <Card className="bg-white border-primary/10">
-                                <CardContent className="p-4 text-center">
+                                <CardContent className="p-4 text-center relative group">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="absolute top-2 right-2 cursor-help text-primary/40 group-hover:text-primary transition-colors">
+                                                    <HelpCircle className="h-3 w-3" />
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs p-3">
+                                                <p className="text-xs font-bold mb-1">Rituals (Automated)</p>
+                                                <p className="text-[10px] leading-tight">These are system-generated sessions from your **Planning Rituals** (e.g., Daily Wind-down). They ensure your business remains focused and orchestrated.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                     <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Rituals (Automated)</p>
                                     <p className="text-2xl font-bold font-mono text-blue-600">{formatTime(stats.ritualSeconds)}</p>
                                 </CardContent>

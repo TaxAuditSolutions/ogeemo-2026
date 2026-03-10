@@ -129,9 +129,10 @@ export default function ContactFormDialog({
                 startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
             });
         } else {
+            // Stabilize the spread of initialData by only including it if not already reset
             form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders]);
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, folders]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;

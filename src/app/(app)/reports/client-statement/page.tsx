@@ -131,123 +131,121 @@ export default function ClientStatementPage() {
     const selectedContact = contacts.find(c => c.id === selectedContactId);
 
     return (
-        <>
-            <div className="p-4 sm:p-6 space-y-6 text-black">
-                <ReportsPageHeader pageTitle="Client Statement" />
-                <header className="text-center">
-                  <h1 className="text-3xl font-bold font-headline text-primary">Client Statement</h1>
-                  <p className="text-muted-foreground">Generate a statement of account for a specific client.</p>
-                </header>
+        <div className="p-4 sm:p-6 space-y-6 text-black">
+            <ReportsPageHeader pageTitle="Client Statement" />
+            <header className="text-center">
+                <h1 className="text-3xl font-bold font-headline text-primary">Client Statement</h1>
+                <p className="text-muted-foreground">Generate a statement of account for a specific client.</p>
+            </header>
 
-                <Card className="print:hidden">
-                    <CardHeader>
-                        <CardTitle>Select a Client & Date Range</CardTitle>
+            <Card className="print:hidden">
+                <CardHeader>
+                    <CardTitle>Select a Client & Date Range</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-wrap items-end gap-4">
+                    <div className="space-y-2">
+                        <Label>Client</Label>
+                        <ContactSelector
+                            contacts={contacts}
+                            selectedContactId={selectedContactId}
+                            onSelectContact={setSelectedContactId}
+                            className="w-full sm:w-64"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>End Date</Label>
+                            <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="flex items-end gap-2">
+                        <Button variant="secondary" onClick={setMonthToDate}>Month to Date</Button>
+                        <Button variant="ghost" onClick={clearDates}>Clear Dates</Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div ref={contentRef}>
+                <Card className="print:border-none print:shadow-none">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl">Statement for {selectedContact?.name || "Client"}</CardTitle>
+                        <CardDescription>
+                            {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-wrap items-end gap-4">
-                        <div className="space-y-2">
-                            <Label>Client</Label>
-                            <ContactSelector
-                                contacts={contacts}
-                                selectedContactId={selectedContactId}
-                                onSelectContact={setSelectedContactId}
-                                className="w-full sm:w-64"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Start Date</Label>
-                            <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.from && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>End Date</Label>
-                             <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full sm:w-48 justify-start text-left font-normal", !dateRange?.to && "text-muted-foreground")} disabled={!dateRange?.from}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="flex items-end gap-2">
-                            <Button variant="secondary" onClick={setMonthToDate}>Month to Date</Button>
-                            <Button variant="ghost" onClick={clearDates}>Clear Dates</Button>
-                        </div>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
+                        ) : selectedContactId ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-right">Charges</TableHead>
+                                        <TableHead className="text-right">Payments</TableHead>
+                                        <TableHead className="text-right">Balance</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="font-medium">Balance Forward</TableCell>
+                                        <TableCell className="text-right font-medium font-mono">{formatCurrency(statementData.startingBalance)}</TableCell>
+                                    </TableRow>
+                                    {statementData.entries.map((entry, index) => {
+                                        const runningBalance = statementData.entries.slice(0, index + 1).reduce((acc, curr) => acc + (curr.invoiceAmount || 0) - (curr.paymentAmount || 0), statementData.startingBalance);
+                                        return (
+                                            <TableRow key={index}>
+                                                <TableCell>{format(entry.date, 'yyyy-MM-dd')}</TableCell>
+                                                <TableCell>{entry.description}</TableCell>
+                                                <TableCell className="text-right font-mono">{entry.invoiceAmount ? formatCurrency(entry.invoiceAmount) : ''}</TableCell>
+                                                <TableCell className="text-right font-mono text-green-600">{entry.paymentAmount ? `(${formatCurrency(entry.paymentAmount)})` : ''}</TableCell>
+                                                <TableCell className="text-right font-mono">{formatCurrency(runningBalance)}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="font-bold text-lg">Total Balance Due</TableCell>
+                                        <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(statementData.endingBalance)}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        ) : (
+                            <div className="h-48 flex items-center justify-center"><p className="text-muted-foreground">Please select a client to generate a statement.</p></div>
+                        )}
                     </CardContent>
+                    <CardFooter className="print:hidden justify-end space-x-2">
+                        <Button variant="outline" onClick={handlePrint} disabled={!selectedContactId}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            Print Statement
+                        </Button>
+                    </CardFooter>
                 </Card>
-
-                <div ref={contentRef}>
-                    <Card className="print:border-none print:shadow-none">
-                        <CardHeader className="text-center">
-                            <CardTitle className="text-2xl">Statement for {selectedContact?.name || "Client"}</CardTitle>
-                            <CardDescription>
-                                {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {isLoading ? (
-                                <div className="h-48 flex items-center justify-center"><LoaderCircle className="h-8 w-8 animate-spin"/></div>
-                            ) : selectedContactId ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Description</TableHead>
-                                            <TableHead className="text-right">Charges</TableHead>
-                                            <TableHead className="text-right">Payments</TableHead>
-                                            <TableHead className="text-right">Balance</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="font-medium">Balance Forward</TableCell>
-                                            <TableCell className="text-right font-medium font-mono">{formatCurrency(statementData.startingBalance)}</TableCell>
-                                        </TableRow>
-                                        {statementData.entries.map((entry, index) => {
-                                            const runningBalance = statementData.entries.slice(0, index + 1).reduce((acc, curr) => acc + (curr.invoiceAmount || 0) - (curr.paymentAmount || 0), statementData.startingBalance);
-                                            return (
-                                                <TableRow key={index}>
-                                                    <TableCell>{format(entry.date, 'yyyy-MM-dd')}</TableCell>
-                                                    <TableCell>{entry.description}</TableCell>
-                                                    <TableCell className="text-right font-mono">{entry.invoiceAmount ? formatCurrency(entry.invoiceAmount) : ''}</TableCell>
-                                                    <TableCell className="text-right font-mono text-green-600">{entry.paymentAmount ? `(${formatCurrency(entry.paymentAmount)})` : ''}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(runningBalance)}</TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="font-bold text-lg">Total Balance Due</TableCell>
-                                            <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(statementData.endingBalance)}</TableCell>
-                                        </TableRow>
-                                    </TableFooter>
-                                </Table>
-                            ) : (
-                                <div className="h-48 flex items-center justify-center"><p className="text-muted-foreground">Please select a client to generate a statement.</p></div>
-                            )}
-                        </CardContent>
-                        <CardFooter className="print:hidden justify-end space-x-2">
-                            <Button variant="outline" onClick={handlePrint} disabled={!selectedContactId}>
-                                <Printer className="mr-2 h-4 w-4" />
-                                Print Statement
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
             </div>
-        </>
+        </div>
     );
 }

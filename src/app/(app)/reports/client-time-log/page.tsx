@@ -282,7 +282,7 @@ function ClientTimeLogReportContent() {
             email: user?.email || '',
             workerType: 'employee',
             payType: 'salary',
-            payRate: 0,
+            payRate: 0, 
             userId: user?.uid || '',
             folderId: 'all'
         } as Worker;
@@ -290,185 +290,158 @@ function ClientTimeLogReportContent() {
     }, [workers, user, adminName]);
 
     return (
-        <>
-            <div className="p-4 sm:p-6 space-y-6 text-black">
-                <ReportsPageHeader pageTitle="Client Time Log Report" />
-                <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
-                    <div className="text-left flex-1">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report</h1>
-                        <p className="text-muted-foreground text-sm">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                        <ContactSelector
-                            contacts={contacts}
-                            selectedContactId={selectedContactId}
-                            onSelectContact={setSelectedContactId}
-                            className="w-64"
-                        />
-                        <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
+        <div className="p-4 sm:p-6 space-y-6 text-black">
+            <ReportsPageHeader pageTitle="Client Time Log Report" />
+            <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
+                <div className="text-left flex-1">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Client Time Log Report</h1>
+                    <p className="text-muted-foreground text-sm">Detailed record of work performed for clients. Use this to prepare your Accounts Receivable invoices.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <ContactSelector
+                        contacts={contacts}
+                        selectedContactId={selectedContactId}
+                        onSelectContact={setSelectedContactId}
+                        className="w-64"
+                    />
+                    <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
+                    </Button>
+                </div>
+            </header>
+
+            <Card>
+                <CardContent className="p-4">
+                    <div className="flex flex-wrap items-end justify-center gap-6">
+                        <div className="flex flex-col items-center space-y-2">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
+                            <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="flex flex-col items-center space-y-2">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
+                            <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <Button variant="outline" className="bg-white" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
+                            <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                         </Button>
                     </div>
-                </header>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex flex-wrap items-end justify-center gap-6">
-                           <div className="flex flex-col items-center space-y-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
-                                <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
+                </CardContent>
+                <CardContent className="p-0 border-t">
+                    <div className="border-x-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="p-0">
+                                        <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                            Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                         </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
-                                    </PopoverContent>
-                                </Popover>
-                           </div>
-                           <div className="flex flex-col items-center space-y-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
-                                <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                    </TableHead>
+                                    <TableHead className="p-0">
+                                        <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                            Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                         </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
-                                    </PopoverContent>
-                                </Popover>
-                           </div>
-                           <Button variant="outline" className="bg-white" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId && !dateRange}>
-                                <FilterX className="mr-2 h-4 w-4" /> Clear Filters
-                            </Button>
-                        </div>
-                    </CardContent>
-                    <CardContent className="p-0 border-t">
-                        <div className="border-x-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('contactName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Client {sortConfig?.key === 'contactName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('workerName')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Worker {sortConfig?.key === 'workerName' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('startTime')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Date {sortConfig?.key === 'startTime' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead>Subject</TableHead>
-                                        <TableHead className="text-right">Duration</TableHead>
-                                        <TableHead className="p-0">
-                                            <Button variant="ghost" onClick={() => requestSort('isBillable')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
-                                                Billable {sortConfig?.key === 'isBillable' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                                    ) : clientEntries.length > 0 ? (
-                                        clientEntries.map(entry => (
-                                            <TableRow key={entry.id} id={`row-${entry.id}`} className={cn(highlightedId === entry.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
-                                                <TableCell className="font-medium">{entry.contactName}</TableCell>
-                                                <TableCell>{entry.workerName}</TableCell>
-                                                <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
-                                                <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
-                                                <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
-                                                <TableCell className="text-right font-mono">
-                                                    {entry.isBillable ? formatCurrency((entry.durationSeconds / 3600) * (entry.billableRate || 0)) : '-'}
-                                                </TableCell>
-                                                <TableCell>
-                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
-                                                                <Clock className="mr-2 h-4 w-4" /> Schedule an event
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
-                                                                <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            {entry.source === 'log' ? (
-                                                                <>
-                                                                    <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                                                </>
-                                                            ) : (
-                                                                <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                            )}
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No client-attributed entries found.</TableCell></TableRow>
-                                    )}
-                                </TableBody>
-                                {clientEntries.length > 0 && (
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-right font-bold">Billable Totals:</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalBillableDuration)}</TableCell>
-                                            <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
-                                            <TableCell />
+                                    </TableHead>
+                                    <TableHead className="p-0">
+                                        <Button variant="ghost" onClick={() => requestSort('startTime')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                            Date {sortConfig?.key === 'startTime' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>Subject</TableHead>
+                                    <TableHead className="text-right">Duration</TableHead>
+                                    <TableHead className="p-0">
+                                        <Button variant="ghost" onClick={() => requestSort('isBillable')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
+                                            Billable {sortConfig?.key === 'isBillable' ? (sortConfig.direction === 'asc' ? <ArrowUpAZ className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow><TableCell colSpan={7} className="text-center h-24"><LoaderCircle className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                ) : clientEntries.length > 0 ? (
+                                    clientEntries.map(entry => (
+                                        <TableRow key={entry.id} id={`row-${entry.id}`} className={cn(highlightedId === entry.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
+                                            <TableCell className="font-medium">{entry.contactName}</TableCell>
+                                            <TableCell>{entry.workerName}</TableCell>
+                                            <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
+                                            <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
+                                            <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
+                                            <TableCell className="text-right font-mono">
+                                                {entry.isBillable ? formatCurrency((entry.durationSeconds / 3600) * (entry.billableRate || 0)) : '-'}
+                                            </TableCell>
+                                            <TableCell>
+                                                    <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
+                                                            <Clock className="mr-2 h-4 w-4" /> Schedule an event
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => handleCreateInvoice(entry.contactId)}>
+                                                            <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        {entry.source === 'log' ? (
+                                                            <>
+                                                                <DropdownMenuItem onSelect={() => handleOpenLogTimeDialog(entry)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                                            </>
+                                                        ) : (
+                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
                                         </TableRow>
-                                    </TableFooter>
+                                    ))
+                                ) : (
+                                    <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No client-attributed entries found.</TableCell></TableRow>
                                 )}
-                            </Table>
-                        </div>
-                    </CardContent>
-                    {selectedContactId && clientEntries.length > 0 && (
-                        <CardFooter className="justify-end border-t p-4">
-                            <Button onClick={() => handleCreateInvoice(selectedContactId)}>
-                                <FileDigit className="mr-2 h-4 w-4" />
-                                Create Invoice for {contacts.find(c => c.id === selectedContactId)?.name}
-                            </Button>
-                        </CardFooter>
-                    )}
-                </Card>
-            </div>
-            
-            <LogTimeDialog 
-                isOpen={isLogTimeDialogOpen} 
-                onOpenChange={(isOpen) => {
-                    setIsLogTimeDialogOpen(isOpen);
-                    if (!isOpen) {
-                        setEntryToEdit(null);
-                    }
-                }}
-                workers={workersForSelection}
-                onTimeLogged={loadData}
-                entryToEdit={entryToEdit}
-            />
-            
-            <Suspense>
-                <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </Suspense>
-        </>
+                            </TableBody>
+                            {clientEntries.length > 0 && (
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-right font-bold">Billable Totals:</TableCell>
+                                        <TableCell className="text-right font-bold font-mono">{formatTime(totalBillableDuration)}</TableCell>
+                                        <TableCell className="text-right font-bold font-mono text-primary">{formatCurrency(totalBillableAmount)}</TableCell>
+                                        <TableCell />
+                                    </TableRow>
+                                </TableFooter>
+                            )}
+                        </Table>
+                    </div>
+                </CardContent>
+                {selectedContactId && clientEntries.length > 0 && (
+                    <CardFooter className="justify-end border-t p-4">
+                        <Button onClick={() => handleCreateInvoice(selectedContactId)}>
+                            <FileDigit className="mr-2 h-4 w-4" />
+                            Create Invoice for {contacts.find(c => c.id === selectedContactId)?.name}
+                        </Button>
+                    </CardFooter>
+                )}
+            </Card>
+        </div>
     );
 }
 

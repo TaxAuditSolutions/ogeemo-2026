@@ -35,7 +35,8 @@ import {
     LayoutList,
     Layout,
     Users,
-    User
+    User,
+    Briefcase
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';

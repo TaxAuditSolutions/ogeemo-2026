@@ -193,7 +193,7 @@ export default function ClientStatementPage() {
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl">Statement for {selectedContact?.name || "Client"}</CardTitle>
                             <CardDescription>
-                                {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `Since ${format(dateRange.from, "PPP")}` : "All Time"}
+                                {dateRange?.from ? dateRange.to ? `${format(dateRange.from, "PPP")} to ${format(dateRange.to, "PPP")}` : `On ${format(dateRange.from, "PPP")}` : "All Time"}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

@@ -94,11 +94,11 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [contact]);
+    }), [contact]);
 
     return (
       <DraggableTableRowInner 
@@ -155,12 +155,12 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag, dragPreview] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-    }, [folder, isRenaming, isSystem]);
+    }), [folder, isRenaming, isSystem]);
 
     const [{ canDrop, isOver }, drop] = useDrop({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
@@ -523,7 +523,7 @@ export function ContactsView() {
       </div>
       
       {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
-      <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create Identity Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Folder Name</Label><Input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateFolder()} /></div><DialogFooter><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
       <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
         <AlertDialogContent>
             <AlertDialogHeader>

@@ -1,9 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Landmark } from 'lucide-react';
+import { ArrowLeft, Landmark, ClipboardList } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,7 +20,7 @@ interface ReportsPageHeaderProps {
   hubLabel?: string;
 }
 
-export function ReportsPageHeader({ pageTitle, hubPath = "/action-manager", hubLabel = "Action Manager" }: ReportsPageHeaderProps) {
+export function ReportsPageHeader({ pageTitle, hubPath = "/reports", hubLabel = "Reports Hub" }: ReportsPageHeaderProps) {
   const targetHub = hubPath.includes('hr') ? '/hr-manager' : hubPath;
   const targetLabel = hubPath.includes('hr') ? 'Quick Navigation' : hubLabel;
 
@@ -38,12 +39,20 @@ export function ReportsPageHeader({ pageTitle, hubPath = "/action-manager", hubL
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <Button asChild>
-        <Link href={targetHub}>
-          <Landmark className="mr-2 h-4 w-4" />
-          {targetLabel}
-        </Link>
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button asChild variant="outline">
+            <Link href="/reports">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Reports Hub
+            </Link>
+        </Button>
+        <Button asChild>
+            <Link href={targetHub}>
+            <Landmark className="mr-2 h-4 w-4" />
+            {targetLabel}
+            </Link>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -79,6 +79,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/document-manager", label: "Document Manager", icon: Folder },
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
+  { href: "/reports", label: "Reports Hub", icon: ClipboardList },
   { href: "/reports/work-activity", label: "Work Activity Summary", icon: ClipboardList },
   { href: "/reports/client-statement", label: "Client Statement", icon: FileText },
   { href: "/reports/time-log", label: "Worker Time Log Report", icon: Clock },

@@ -36,7 +36,8 @@ import {
     Layout,
     Users,
     User,
-    Briefcase
+    Briefcase,
+    ClipboardList
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -124,7 +125,7 @@ export function WorkActivityView() {
                 durationSeconds: l.durationSeconds,
                 isBillable: l.isBillable || false,
                 billableRate: l.billableRate || 0,
-                source: l.location ? 'Field App' : 'Manual Log',
+                source: l.location ? 'Field App' : 'Manual Log' as any,
                 type: 'Human' as const
             })),
             ...filteredTasks.map(t => ({
@@ -155,7 +156,7 @@ export function WorkActivityView() {
         const billableSeconds = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + a.durationSeconds, 0);
         const nonBillableSeconds = totalSeconds - billableSeconds;
         const botSeconds = activityData.filter(a => a.type === 'Bot').reduce((sum, a) => sum + a.durationSeconds, 0);
-        const earned = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * a.billableRate, 0);
+        const earned = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * (a.billableRate || 0), 0);
 
         return { totalSeconds, billableSeconds, nonBillableSeconds, botSeconds, earned };
     }, [activityData]);

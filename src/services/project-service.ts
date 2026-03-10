@@ -160,7 +160,7 @@ export async function getChipsFromCollection(userId: string, collectionName: str
 
 export async function getProjects(userId: string): Promise<Project[]> {
   const db = getDb();
-  if (!userId) return [];
+  if (!userId || typeof userId !== 'string') return [];
   const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToProject).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -386,7 +386,7 @@ export async function deleteTodos(todoIds: string[]): Promise<void> {
 
 export async function getProjectTemplates(userId: string): Promise<ProjectTemplate[]> {
     const db = getDb();
-    if (!userId) return [];
+    if (!userId || typeof userId !== 'string') return [];
     const q = query(collection(db, TEMPLATES_COLLECTION), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTemplate);

@@ -331,10 +331,12 @@ function ClientTimeLogReportContent() {
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                                    <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                        {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
-                                    </Button>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>
@@ -455,15 +457,17 @@ function ClientTimeLogReportContent() {
                 entryToEdit={entryToEdit}
             />
             
-            <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <Suspense>
+                <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </Suspense>
         </>
     );
 }

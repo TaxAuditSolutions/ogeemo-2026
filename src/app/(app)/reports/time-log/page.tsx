@@ -330,29 +330,29 @@ function WorkerTimeLogReportContent() {
                         <div className="flex flex-wrap items-end justify-center gap-6">
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
-                                <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
+                                <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !startDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
+                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Beginning of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartFilterOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: d, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
-                                <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
+                                <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: prev?.from, to: d })); setIsEndDatePickerOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
                                     </PopoverContent>
                                 </Popover>
                            </div>
@@ -478,15 +478,17 @@ function WorkerTimeLogReportContent() {
                 preselectedWorkerId={preselectedWorkerId}
             />
             
-            <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <Suspense>
+                <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this time log entry.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </Suspense>
         </>
     );
 }

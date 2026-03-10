@@ -33,7 +33,6 @@ import {
     FileDigit,
     Info,
     LayoutList,
-    Layout,
     Users,
     User,
     Briefcase,
@@ -66,8 +65,8 @@ type CombinedActivity = {
     durationSeconds: number;
     isBillable: boolean;
     billableRate: number;
-    source: 'Manual Log' | 'Command Centre' | 'Field App' | 'Bot';
-    type: 'Human' | 'Bot';
+    source: 'Manual Log' | 'Command Centre' | 'Field App' | 'Ritual';
+    type: 'Human' | 'Ritual';
 };
 
 export function WorkActivityView() {
@@ -133,12 +132,12 @@ export function WorkActivityView() {
                 date: new Date(t.start || 0),
                 subject: t.title,
                 details: t.description || '',
-                workerName: 'System/Worker',
+                workerName: 'System Ritual',
                 durationSeconds: t.duration || 0,
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
-                source: t.ritualType ? 'Bot' : 'Command Centre' as any,
-                type: t.ritualType ? 'Bot' : 'Human' as const
+                source: t.ritualType ? 'Ritual' : 'Command Centre' as any,
+                type: t.ritualType ? 'Ritual' : 'Human' as const
             }))
         ];
 
@@ -154,10 +153,10 @@ export function WorkActivityView() {
     const stats = useMemo(() => {
         const totalSeconds = activityData.reduce((sum, a) => sum + a.durationSeconds, 0);
         const billableSeconds = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + a.durationSeconds, 0);
-        const botSeconds = activityData.filter(a => a.type === 'Bot').reduce((sum, a) => sum + a.durationSeconds, 0);
+        const ritualSeconds = activityData.filter(a => a.type === 'Ritual').reduce((sum, a) => sum + a.durationSeconds, 0);
         const earned = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * (a.billableRate || 0), 0);
 
-        return { totalSeconds, billableSeconds, botSeconds, earned };
+        return { totalSeconds, billableSeconds, ritualSeconds, earned };
     }, [activityData]);
 
     const selectedContact = contacts.find(c => c.id === selectedContactId);
@@ -168,17 +167,17 @@ export function WorkActivityView() {
             
             <header className="text-center space-y-2 print:hidden">
                 <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Work Activity Summary</h1>
-                <p className="text-muted-foreground">Define your evidence. Transparency built on high-fidelity time logs.</p>
+                <p className="text-muted-foreground text-lg">Consolidated evidence of work built on high-fidelity time logs.</p>
             </header>
 
             <div className="max-w-6xl mx-auto space-y-6">
                 <Card className="print:hidden border-primary/20 shadow-lg">
                     <CardHeader className="bg-primary/5 border-b pb-4">
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Report Configuration</CardTitle>
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Report Detail & Range</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
-                            <Label className="font-bold flex items-center gap-2"><Users className="h-4 w-4" /> Target Identity</Label>
+                            <Label className="font-bold flex items-center gap-2"><Users className="h-4 w-4" /> Select Client/Contact</Label>
                             <ContactSelector 
                                 contacts={contacts} 
                                 selectedContactId={selectedContactId} 
@@ -187,7 +186,7 @@ export function WorkActivityView() {
                             />
                         </div>
                         <div className="space-y-3">
-                            <Label className="font-bold flex items-center gap-2"><Clock className="h-4 w-4" /> Temporal Range</Label>
+                            <Label className="font-bold flex items-center gap-2"><Clock className="h-4 w-4" /> Date Range</Label>
                             <div className="flex gap-2">
                                 <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
                                     <PopoverTrigger asChild>
@@ -210,22 +209,22 @@ export function WorkActivityView() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <Label className="font-bold flex items-center gap-2"><LayoutList className="h-4 w-4" /> Fidelity Level</Label>
+                            <Label className="font-bold flex items-center gap-2"><LayoutList className="h-4 w-4" /> Detail Level</Label>
                             <RadioGroup value={showDetails ? 'deep' : 'summary'} onValueChange={v => setShowDetails(v === 'deep')} className="flex gap-4 pt-2">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="summary" id="r-summary" />
-                                    <Label htmlFor="r-summary" className="cursor-pointer">Summary</Label>
+                                    <Label htmlFor="r-summary" className="cursor-pointer">Summary Only</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="deep" id="r-deep" />
-                                    <Label htmlFor="r-deep" className="cursor-pointer">Deep Dive (Details)</Label>
+                                    <Label htmlFor="r-deep" className="cursor-pointer">Include Notes</Label>
                                 </div>
                             </RadioGroup>
                         </div>
                     </CardContent>
                     <CardFooter className="bg-muted/10 border-t justify-between items-center py-3">
                         <Button variant="ghost" size="sm" onClick={() => { setSelectedContactId(null); setDateRange(undefined); }} disabled={!selectedContactId}>
-                            <FilterX className="mr-2 h-4 w-4" /> Clear Filter
+                            <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                         </Button>
                         <Button size="sm" onClick={handlePrint} disabled={!selectedContactId}>
                             <Printer className="mr-2 h-4 w-4" /> Print Evidence PDF
@@ -250,19 +249,19 @@ export function WorkActivityView() {
                             </Card>
                             <Card className="bg-white border-primary/10">
                                 <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1">Billable</p>
+                                    <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1">Billable Time</p>
                                     <p className="text-2xl font-bold font-mono text-green-600">{formatTime(stats.billableSeconds)}</p>
                                 </CardContent>
                             </Card>
                             <Card className="bg-white border-primary/10">
                                 <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Bot Orchestrated</p>
-                                    <p className="text-2xl font-bold font-mono text-blue-600">{formatTime(stats.botSeconds)}</p>
+                                    <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Rituals (Automated)</p>
+                                    <p className="text-2xl font-bold font-mono text-blue-600">{formatTime(stats.ritualSeconds)}</p>
                                 </CardContent>
                             </Card>
                             <Card className="bg-primary/5 border-primary/20 shadow-inner">
                                 <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">Accrued Value</p>
+                                    <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">Billable Total</p>
                                     <p className="text-2xl font-bold font-mono text-primary">{formatCurrency(stats.earned)}</p>
                                 </CardContent>
                             </Card>
@@ -270,18 +269,18 @@ export function WorkActivityView() {
 
                         <Card className="shadow-2xl print:shadow-none print:border-none">
                             <CardHeader className="bg-muted/30 border-b print:hidden">
-                                <CardTitle>Activity Ledger</CardTitle>
-                                <CardDescription>Consolidated timeline of operational sessions.</CardDescription>
+                                <CardTitle>Work Activity Log</CardTitle>
+                                <CardDescription>Consolidated timeline of operational work sessions.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
                                 <Table>
                                     <TableHeader className="bg-muted/10">
                                         <TableRow>
                                             <TableHead className="w-32">Date</TableHead>
-                                            <TableHead>Activity Node (Subject)</TableHead>
+                                            <TableHead>Task / Activity</TableHead>
                                             <TableHead className="text-center">Source</TableHead>
                                             <TableHead className="text-right">Duration</TableHead>
-                                            <TableHead className="text-right">Status</TableHead>
+                                            <TableHead className="text-right">Billing</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -293,7 +292,7 @@ export function WorkActivityView() {
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-bold text-sm">{a.subject}</span>
-                                                                {a.type === 'Bot' && <Bot className="h-3 w-3 text-blue-500" />}
+                                                                {a.type === 'Ritual' && <Bot className="h-3 w-3 text-blue-500" />}
                                                             </div>
                                                             <span className="text-[10px] text-muted-foreground uppercase flex items-center gap-1 mt-0.5">
                                                                 <User className="h-2.5 w-2.5" /> {a.workerName}
@@ -301,7 +300,7 @@ export function WorkActivityView() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-center">
-                                                        <Badge variant="outline" className={cn("text-[9px] uppercase h-5 font-bold tracking-tighter", a.type === 'Bot' ? "border-blue-200 text-blue-600 bg-blue-50" : "")}>
+                                                        <Badge variant="outline" className={cn("text-[9px] uppercase h-5 font-bold tracking-tighter", a.type === 'Ritual' ? "border-blue-200 text-blue-600 bg-blue-50" : "")}>
                                                             {a.source}
                                                         </Badge>
                                                     </TableCell>
@@ -313,7 +312,7 @@ export function WorkActivityView() {
                                                                 <span className="text-[10px] font-mono font-bold mt-0.5">@{formatCurrency(a.billableRate)}/hr</span>
                                                             </div>
                                                         ) : (
-                                                            <Badge variant="secondary" className="h-5 text-[9px] opacity-50">Internal</Badge>
+                                                            <Badge variant="secondary" className="h-5 text-[9px] opacity-50">Non-Billable</Badge>
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
@@ -338,14 +337,14 @@ export function WorkActivityView() {
                                     </TableBody>
                                     <TableFooter className="bg-muted/30">
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-right font-bold uppercase text-[10px] tracking-widest">Total Billable Value</TableCell>
+                                            <TableCell colSpan={3} className="text-right font-bold uppercase text-[10px] tracking-widest">Total Billable Amount</TableCell>
                                             <TableCell className="text-right font-bold font-mono text-primary" colSpan={2}>{formatCurrency(stats.earned)}</TableCell>
                                         </TableRow>
                                     </TableFooter>
                                 </Table>
                             </CardContent>
                             <CardFooter className="bg-muted/5 p-4 border-t justify-center text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">
-                                Digital Signature Node: Ogeemo Verified
+                                Evidence Verification Protocol: Ogeemo Verified
                             </CardFooter>
                         </Card>
                     </div>
@@ -355,8 +354,8 @@ export function WorkActivityView() {
                             <Briefcase className="h-10 w-10 text-primary" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-bold font-headline">Select a Client Node</h3>
-                            <p className="text-muted-foreground max-sm mx-auto">Choose a contact to assemble their work activity evidence from the Spider Web.</p>
+                            <h3 className="text-2xl font-bold font-headline">Select a Client node</h3>
+                            <p className="text-muted-foreground max-w-sm mx-auto">Choose a contact to assemble their work activity evidence from the Spider Web.</p>
                         </div>
                         <ContactSelector 
                             contacts={contacts} 

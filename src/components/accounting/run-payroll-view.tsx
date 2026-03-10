@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -148,7 +147,7 @@ export function RunPayrollView() {
     try {
         // Fetch all data points for global organization view
         const [fetchedWorkers, fetchedTasks, fetchedLogs, profiles] = await Promise.all([
-            getWorkers(),
+            getWorkers(user.uid),
             getTasksForUser(), // Pull all organizational tasks
             getTimeLogs(),     // Pull all organizational logs
             getUsers()         // Pull all profiles for identity matching
@@ -372,7 +371,7 @@ export function RunPayrollView() {
                                 <CustomCalendar
                                     mode="single"
                                     selected={startDate}
-                                    onSelect={(d) => { setStartDate(d); setIsStartDateOpen(false); }}
+                                    onSelect={(d) => { if(d) { setStartDate(d); setIsStartDateOpen(false); } }}
                                     initialFocus
                                 />
                             </PopoverContent>
@@ -391,7 +390,7 @@ export function RunPayrollView() {
                                 <CustomCalendar
                                     mode="single"
                                     selected={endDate}
-                                    onSelect={(d) => { setEndDate(d); setIsEndDateOpen(false); }}
+                                    onSelect={(d) => { if(d) { setEndDate(d); setIsEndDateOpen(false); } }}
                                     disabled={(date) => startDate ? date < startDate : false}
                                     initialFocus
                                 />
@@ -466,7 +465,7 @@ export function RunPayrollView() {
                             <div className="p-8 text-center space-y-4">
                                 <p className="text-sm text-muted-foreground italic">No workers found in your directory.</p>
                                 <Button asChild variant="outline" size="sm">
-                                    <Link href="/accounting/payroll/manage-workers">
+                                    <Link href="/contacts">
                                         <UserPlus className="mr-2 h-4 w-4" /> Go to Worker Directory
                                     </Link>
                                 </Button>

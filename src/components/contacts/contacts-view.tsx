@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -275,7 +274,6 @@ export function ContactsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
-  const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }

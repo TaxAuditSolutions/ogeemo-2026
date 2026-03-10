@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -35,13 +34,12 @@ const docToSupplier = (doc: any): Supplier => ({
 /**
  * Fetches all suppliers from the Contact Hub for the current user.
  */
-export async function getSuppliers(userId?: string): Promise<Supplier[]> {
+export async function getSuppliers(userId: string): Promise<Supplier[]> {
     const db = getDb();
     
-    // Defensive check: handle 'undefined' before creating query
     if (!userId || typeof userId !== 'string') return [];
 
-    // 1. Find the 'Suppliers' folder for THIS user
+    // 1. Find the 'Suppliers' folders for THIS user
     const foldersRef = collection(db, FOLDERS_COLLECTION);
     const foldersQuery = query(foldersRef, where("userId", "==", userId), where("name", "==", "Suppliers"));
     const foldersSnapshot = await getDocs(foldersQuery);
@@ -50,7 +48,7 @@ export async function getSuppliers(userId?: string): Promise<Supplier[]> {
         
     if (supplierFolderIds.length === 0) return [];
 
-    // 2. Pull contacts from those folders
+    // 2. Pull contacts from those specific folders
     const contactsRef = collection(db, CONTACTS_COLLECTION);
     const q = query(contactsRef, where("folderId", "in", supplierFolderIds));
     

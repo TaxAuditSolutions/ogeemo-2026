@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -324,12 +323,12 @@ function ClientTimeLogReportContent() {
                                 <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.from && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.from ? format(dateRange.from, "PPP") : <span>Start Date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>
@@ -338,12 +337,12 @@ function ClientTimeLogReportContent() {
                                 <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 bg-white", !dateRange?.to && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {dateRange?.to ? format(dateRange.to, "PPP") : <span>End Date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>

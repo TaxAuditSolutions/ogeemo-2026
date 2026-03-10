@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -343,7 +342,7 @@ function WorkerTimeLogReportContent() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>
@@ -357,7 +356,7 @@ function WorkerTimeLogReportContent() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
                                     </PopoverContent>
                                 </Popover>
                            </div>

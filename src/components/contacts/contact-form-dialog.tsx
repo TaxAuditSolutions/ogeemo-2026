@@ -135,7 +135,7 @@ export default function ContactFormDialog({
         } else {
             form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail]);
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
@@ -253,7 +253,7 @@ export default function ContactFormDialog({
                                                 <FormField control={form.control} name="provinceState" render={({ field }) => ( <Input placeholder="Prov/State" {...field} /> )} />
                                             </div>
                                         </div>
-                                        <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background, preferences, or communication history..." rows={6} className="resize-none" {...field} /></FormControl></FormItem> )} />
+                                        <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={6} className="resize-none" {...field} /></FormControl></FormItem> )} />
                                     </div>
                                 </section>
                             </div>

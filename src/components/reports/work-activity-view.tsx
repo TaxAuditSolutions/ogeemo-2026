@@ -27,16 +27,11 @@ import {
     Calendar as CalendarIcon, 
     FilterX, 
     Clock, 
-    TrendingUp, 
-    TrendingDown, 
     Bot, 
-    FileDigit,
-    Info,
     LayoutList,
     Users,
     User,
     Briefcase,
-    ClipboardList
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -66,7 +61,7 @@ type CombinedActivity = {
     isBillable: boolean;
     billableRate: number;
     source: 'Manual Log' | 'Command Centre' | 'Field App' | 'Ritual';
-    type: 'Human' | 'Ritual';
+    type: 'Staff / Worker' | 'Ritual';
 };
 
 export function WorkActivityView() {
@@ -125,19 +120,19 @@ export function WorkActivityView() {
                 isBillable: l.isBillable || false,
                 billableRate: l.billableRate || 0,
                 source: l.location ? 'Field App' : 'Manual Log' as any,
-                type: 'Human' as const
+                type: 'Staff / Worker' as const
             })),
             ...filteredTasks.map(t => ({
                 id: t.id,
                 date: new Date(t.start || 0),
                 subject: t.title,
                 details: t.description || '',
-                workerName: 'System Ritual',
+                workerName: t.ritualType ? 'System Ritual' : 'Staff Member',
                 durationSeconds: t.duration || 0,
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
                 source: t.ritualType ? 'Ritual' : 'Command Centre' as any,
-                type: t.ritualType ? 'Ritual' : 'Human' as const
+                type: t.ritualType ? 'Ritual' : 'Staff / Worker' as const
             }))
         ];
 
@@ -195,7 +190,7 @@ export function WorkActivityView() {
                                             {dateRange?.from ? format(dateRange.from, 'PP') : 'Start'}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={dateRange?.from} onSelect={d => { setDateRange(p => ({ from: d, to: p?.to })); setIsStartOpen(false); }} initialFocus /></PopoverContent>
+                                    <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={dateRange?.from} onSelect={d => { if(d) setDateRange(p => ({ from: d, to: p?.to })); setIsStartOpen(false); }} initialFocus /></PopoverContent>
                                 </Popover>
                                 <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
                                     <PopoverTrigger asChild>
@@ -204,7 +199,7 @@ export function WorkActivityView() {
                                             {dateRange?.to ? format(dateRange.to, 'PP') : 'End'}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={dateRange?.to} onSelect={d => { setDateRange(p => ({ from: p?.from, to: d })); setIsEndOpen(false); }} disabled={d => dateRange?.from ? d < dateRange.from : false} initialFocus /></PopoverContent>
+                                    <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={dateRange?.to} onSelect={d => { if(d) setDateRange(p => ({ from: p?.from, to: d })); setIsEndOpen(false); }} disabled={d => dateRange?.from ? d < dateRange.from : false} initialFocus /></PopoverContent>
                                 </Popover>
                             </div>
                         </div>
@@ -354,7 +349,7 @@ export function WorkActivityView() {
                             <Briefcase className="h-10 w-10 text-primary" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-bold font-headline">Select a Client node</h3>
+                            <h3 className="text-2xl font-bold font-headline">Select a Client/Contact</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto">Choose a contact to assemble their work activity evidence from the Spider Web.</p>
                         </div>
                         <ContactSelector 

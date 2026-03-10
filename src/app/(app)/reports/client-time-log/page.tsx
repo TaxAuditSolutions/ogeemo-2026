@@ -285,7 +285,7 @@ function ClientTimeLogReportContent() {
             payRate: 0,
             userId: user?.uid || '',
             folderId: 'all'
-        };
+        } as Worker;
         return [adminWorker, ...workers];
     }, [workers, user, adminName]);
 

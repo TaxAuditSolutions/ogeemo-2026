@@ -281,7 +281,7 @@ function WorkerTimeLogReportContent() {
             payRate: 0, 
             userId: user?.uid || '',
             folderId: 'all'
-        };
+        } as Worker;
 
         const seen = new Set([adminWorker.id]);
         const filteredWorkers = workers.filter(w => {

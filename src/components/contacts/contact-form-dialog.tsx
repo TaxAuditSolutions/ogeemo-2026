@@ -18,21 +18,17 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { type Contact } from '@/services/contact-service';
 import { type FolderData } from '@/services/contact-folder-service';
 import { type Company } from '@/services/accounting-service';
 import { type Industry } from '@/services/industry-service';
-import { addCompany } from '@/services/accounting-service';
-import { addIndustry, updateIndustry } from '@/services/industry-service';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addContact, updateContact } from '@/services/contact-service';
 import { addFolder } from '@/services/contact-folder-service';
 import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -135,7 +131,7 @@ export default function ContactFormDialog({
         } else {
             form.reset({ ...defaultFormValues, email: initialEmail, folderId: defaultId, ...initialData });
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData]);
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;

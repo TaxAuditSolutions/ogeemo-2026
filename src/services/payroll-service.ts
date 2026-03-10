@@ -48,21 +48,22 @@ const docToWorker = (doc: any): Worker => {
 /**
  * Fetches all workers from the Contact Hub based strictly on folder assignment.
  * This adheres to the protocol: If they are in the Workers/Employees/Contractors folders, they are workers.
+ * Scoped strictly to the current user to prevent 'IN' comparison limit errors.
  */
 export async function getWorkers(userId: string): Promise<Worker[]> {
   const db = getDb();
   
-  if (!userId) return [];
+  if (!userId || typeof userId !== 'string') return [];
 
   try {
-    // 1. Resolve the mandated system folder IDs for THIS user
+    // 1. Resolve the mandated system folder IDs for THIS user only
     const foldersRef = collection(db, FOLDERS_COLLECTION);
     const foldersQuery = query(foldersRef, where("userId", "==", userId));
 
     const foldersSnapshot = await getDocs(foldersQuery);
     const userFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
     
-    // Find the specific worker-related nodes
+    // Find the specific worker-related nodes within the user's taxonomy
     const workerFolderIds = userFolders
         .filter(f => f.isSystem && (
             f.name.toLowerCase() === 'employees' || 
@@ -71,14 +72,23 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
         ))
         .map(f => f.id);
 
+    // If no folders found, return empty set to avoid invalid IN query
     if (workerFolderIds.length === 0) return [];
 
-    // 2. Query contacts strictly based on their folder assignment
+    // 2. Query contacts strictly based on their folder assignment and user ownership
     const contactsRef = collection(db, CONTACTS_COLLECTION);
-    const q = query(contactsRef, where("folderId", "in", workerFolderIds));
+    const q = query(
+        contactsRef, 
+        where("userId", "==", userId),
+        where("folderId", "in", workerFolderIds)
+    );
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToWorker).sort((a,b) => a.name.localeCompare(b.name));
+    // Explicitly filter for presence of worker metadata to be defensive
+    return snapshot.docs
+        .map(docToWorker)
+        .filter(w => w.workerType !== null && w.workerType !== undefined)
+        .sort((a,b) => a.name.localeCompare(b.name));
 
   } catch (error: any) {
     if (error.code === 'permission-denied') {
@@ -122,9 +132,6 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-/**
- * Reassigns time logs and requests from source to master before deletion.
- */
 export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
     const db = getDb();
     const batch = writeBatch(db);
@@ -140,8 +147,6 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     batch.delete(doc(db, CONTACTS_COLLECTION, sourceWorkerId));
     await batch.commit();
 }
-
-// --- Remittance & Payroll Runs (Organization Scoped) ---
 
 export interface PayrollRemittance {
   id: string;

@@ -100,6 +100,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Calendar } from '../ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ContactFormDialog from '../contacts/contact-form-dialog';
+import { CustomCalendar } from '../ui/custom-calendar';
 
 
 type BankAccount = {

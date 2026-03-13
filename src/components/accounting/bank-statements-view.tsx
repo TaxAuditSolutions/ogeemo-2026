@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import {
   Table,
   TableBody,
@@ -38,7 +39,14 @@ import {
     Calendar as CalendarIcon,
     Search,
     FileDigit,
-    X
+    X,
+    FileText,
+    TrendingUp,
+    TrendingDown,
+    Zap,
+    Scale,
+    Layers,
+    Bot
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -99,8 +107,12 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><LoaderCircle className="h-10 w-10 animate-spin text-white" /></div>,
+});
 
 type BankAccount = {
   id: string;
@@ -200,13 +212,10 @@ export function BankStatementsView() {
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
   const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense'>('income');
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
-  const [showAddCompany, setShowAddCompany] = React.useState(false);
   const [newCompanyName, setNewCompanyName] = React.useState('');
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
-  const [showAddExpenseCategory, setShowAddExpenseCategory] = React.useState(false);
   const [newExpenseCategoryName, setNewExpenseCategoryName] = React.useState('');
   const [isIncomeCategoryPopoverOpen, setIsIncomeCategoryPopoverOpen] = React.useState(false);
-  const [showAddIncomeCategory, setShowAddIncomeCategory] = React.useState(false);
   const [newIncomeCategoryName, setNewIncomeCategoryName] = React.useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   
@@ -215,6 +224,7 @@ export function BankStatementsView() {
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
   const [contacts, setContacts] = React.useState<Contact[]>([]);
+  const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -226,7 +236,7 @@ export function BankStatementsView() {
     }
     setIsLoadingData(true);
     try {
-        const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts] = await Promise.all([
+        const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid),
             getExpenseTransactions(user.uid),
             getInvoices(user.uid),
@@ -236,7 +246,8 @@ export function BankStatementsView() {
             getIncomeCategories(user.uid),
             getContactFolders(user.uid),
             getIndustries(user.uid),
-            getContacts()
+            getContacts(),
+            getTaxTypes(user.uid)
         ]);
         setIncomeLedger(income);
         setExpenseLedger(expenses);
@@ -248,6 +259,7 @@ export function BankStatementsView() {
         setContactFolders(fetchedFolders);
         setCustomIndustries(fetchedIndustries);
         setContacts(fetchedContacts);
+        setTaxTypes(fetchedTaxTypes);
     } catch (error: any) {
         console.error("Bank Hub Load Error:", error);
     } finally {
@@ -457,7 +469,6 @@ export function BankStatementsView() {
             const newCompany = await addCompany({ name: companyName.trim(), userId: user.uid });
             setCompanies(prev => [...prev, newCompany]);
             setNewTransaction(prev => ({ ...prev, company: newCompany.name }));
-            setShowAddCompany(false);
             setNewCompanyName('');
             toast({ title: 'Company Created' });
         } catch (error: any) {
@@ -471,7 +482,6 @@ export function BankStatementsView() {
             const newCategory = await addExpenseCategory({ name: newExpenseCategoryName.trim(), userId: user.uid });
             setExpenseCategories(prev => [...prev, newCategory]);
             setNewTransaction(prev => ({ ...prev, category: newCategory.categoryNumber || newCategory.id }));
-            setShowAddExpenseCategory(false);
             setNewExpenseCategoryName('');
             toast({ title: 'Category Created' });
         } catch (error: any) {
@@ -485,7 +495,6 @@ export function BankStatementsView() {
             const newCategory = await addIncomeCategory({ name: newIncomeCategoryName.trim(), userId: user.uid });
             setIncomeCategories(prev => [...prev, newCategory]);
             setNewTransaction(prev => ({ ...prev, incomeCategory: newCategory.categoryNumber || newCategory.id }));
-            setShowAddIncomeCategory(false);
             setNewIncomeCategoryName('');
             toast({ title: 'Category Created' });
         } catch (error: any) {
@@ -503,7 +512,7 @@ export function BankStatementsView() {
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
     setContacts(prev => isEditing ? prev.map(c => c.id === savedContact.id ? savedContact : c) : [savedContact, ...prev]);
-    setFormData(prev => ({ ...prev, company: savedContact.name }));
+    setNewTransaction(prev => ({ ...prev, company: savedContact.name }));
     setIsContactFormOpen(false);
   };
 
@@ -813,35 +822,139 @@ export function BankStatementsView() {
       </Dialog>
 
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="sm:max-w-xl text-black">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-primary mb-1">
-                <ShieldCheck className="h-6 w-6" />
-                <DialogTitle className="text-2xl font-headline">Reconciliation Philosophy</DialogTitle>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black bg-background">
+          <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+            <div className="flex items-center gap-3 text-primary mb-1">
+                <ShieldCheck className="h-8 w-8" />
+                <div className="space-y-0.5">
+                    <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
+                    <DialogDescription className="text-sm font-medium">Reconciliation: Bridging the Signal and the Node.</DialogDescription>
+                </div>
             </div>
-            <DialogDescription>
-              Maintaining the integrity of the Ogeemo Spider Web.
-            </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-6 text-sm leading-relaxed">
-            <section className="space-y-2">
-              <h4 className="font-bold text-foreground">The Audit Standard</h4>
-              <p className="text-muted-foreground">
-                In a defensible business, your bank record is the "External Signal" and your ledger is the "Internal Node." Reconciliation is the process of proving that they match.
-              </p>
-            </section>
-            <section className="space-y-2">
-              <h4 className="font-bold text-foreground text-primary uppercase text-xs">High-Fidelity One-Click Sync</h4>
-              <p className="text-muted-foreground">
-                If you see a bank deposit that matches an outstanding invoice, Ogeemo allows you to reconcile them instantly. This marks the invoice as paid, records the income in your BKS General Ledger, and locks the entry with a bank reference—all in one orchestration.
-              </p>
-            </section>
-            <div className="p-4 bg-primary/5 rounded-xl border border-dashed border-primary/20 italic text-xs text-muted-foreground">
-                "We don't record numbers; we record proof." - The Ogeemo Method
+          
+          <ScrollArea className="flex-1">
+            <div className="p-8 space-y-10">
+                {/* 1. What is this? */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Zap className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-bold">1. What is Reconciliation?</h3>
+                    </div>
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed">
+                        <p>
+                            In the Ogeemo World, your bank statement is an <strong>External Signal</strong>—it is proof that money moved in the physical world. Your General Ledger is an <strong>Internal Node</strong>—it is your record of why that money moved.
+                        </p>
+                        <p className="font-semibold text-foreground">
+                            Reconciliation is the professional act of proving that the Signal and the Node match exactly.
+                        </p>
+                        <p>
+                            Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
+                        </p>
+                    </div>
+                </section>
+
+                <Separator />
+
+                {/* 2. Why do it? */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Scale className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-bold">2. Why does this matter?</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="border-primary/10 bg-primary/5 shadow-none">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4 text-primary" />
+                                    The Audit Shield
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Auditors assume all deposits are income and all expenses are personal unless proven otherwise. A reconciled transaction is <strong>pre-verified</strong> with a unique bank reference ID, making it nearly impossible for an auditor to challenge.
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-primary/10 bg-primary/5 shadow-none">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm flex items-center gap-2">
+                                    <Bot className="h-4 w-4 text-primary" />
+                                    Financial Intelligence
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate. You'll know exactly how much cash you have, who owes you money (AR), and what you owe others (AP), without any "administrative gaps."
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </section>
+
+                <Separator />
+
+                {/* 3. How to use it? */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Layers className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-bold">3. How to Orchestrate a Reconciliation</h3>
+                    </div>
+                    
+                    <div className="space-y-8">
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">1</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Connect the Signal</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">Click <strong>"Link Bank"</strong> to securely connect your accounts via Plaid, or use the <strong>"+"</strong> button to manually register an account. This brings your real-world transactions into Ogeemo.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">2</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Identify & Reconcile</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">Click <strong>"Reconcile Signal"</strong> on any unreconciled transaction. Ogeemo's Smart Match engine will search your entire spider web for a matching node.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                    <div className="p-2 border rounded-lg bg-slate-50 text-[10px]">
+                                        <p className="font-bold text-primary mb-1">Found a match?</p>
+                                        <p>Select the suggested ledger entry, invoice, or bill. Ogeemo will link them and add the "Audit Shield" badge.</p>
+                                    </div>
+                                    <div className="p-2 border rounded-lg bg-slate-50 text-[10px]">
+                                        <p className="font-bold text-primary mb-1">No match exists?</p>
+                                        <p>Click "Create New Verified Entry" to build a new node. This creates the GL record and reconciles it in one step.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">3</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">One-Click Sync (Invoices & Bills)</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">If a bank deposit matches an outstanding <strong>Invoice</strong>, matching it here will automatically "Post Payment," update your Income Ledger, and link the bank record. Zero double-entry.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="bg-muted p-6 rounded-2xl border-2 border-dashed text-center space-y-2">
+                    <p className="text-sm font-bold text-primary uppercase tracking-widest">Master Tip</p>
+                    <p className="text-xs text-muted-foreground italic">
+                        "Reconcile your primary checking account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
+                    </p>
+                </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsInfoDialogOpen(false)}>Return to Hub</Button>
+          </ScrollArea>
+
+          <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
+            <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-12 px-10 font-bold shadow-lg">Return to Reconciliation Hub</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

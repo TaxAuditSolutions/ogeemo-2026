@@ -822,7 +822,7 @@ export function BankStatementsView() {
       </Dialog>
 
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black bg-background">
+        <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
           <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
             <div className="flex items-center gap-3 text-primary mb-1">
                 <ShieldCheck className="h-8 w-8" />
@@ -833,8 +833,8 @@ export function BankStatementsView() {
             </div>
           </DialogHeader>
           
-          <ScrollArea className="flex-1">
-            <div className="p-8 space-y-10">
+          <ScrollArea className="flex-1 bg-white">
+            <div className="max-w-4xl mx-auto p-8 space-y-10">
                 {/* 1. What is this? */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-3">

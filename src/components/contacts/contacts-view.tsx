@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useDrag, useDrop } from 'react-dnd';
+import { useDrag, useDrop } from 'react-get-dnd'; // Note: Ensure react-dnd is correctly installed
+import { useDrag as useDragDnd, useDrop as useDropDnd } from 'react-dnd';
 import {
   Folder,
   LoaderCircle,
@@ -44,8 +45,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +55,6 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from '@/components/ui/resizable';
 import {
@@ -95,7 +95,7 @@ const DraggableTableRowInner = React.forwardRef<HTMLTableRowElement, React.Compo
 DraggableTableRowInner.displayName = "DraggableTableRowInner";
 
 const DraggableTableRow = ({ contact, isHighlighted, children }: { contact: Contact, isHighlighted?: boolean, children: React.ReactNode }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDragDnd(() => ({
         type: ItemTypes.CONTACT,
         item: contact,
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
@@ -156,14 +156,14 @@ const FolderTreeItem = ({
     const isRenaming = renamingFolderId === folder.id;
     const isSystem = !!folder.isSystem;
 
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDragDnd(() => ({
       type: ItemTypes.FOLDER,
       item: { ...folder, type: 'folder' },
       canDrag: !isRenaming && !isSystem,
       collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     }), [folder, isRenaming, isSystem]);
 
-    const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    const [{ canDrop, isOver }, drop] = useDropDnd(() => ({
       accept: [ItemTypes.CONTACT, ItemTypes.FOLDER],
       drop: (item: DroppableItem) => onDrop(item, folder.id),
       collect: (monitor) => ({ isOver: !!monitor.isOver(), canDrop: !!monitor.canDrop() }),
@@ -226,7 +226,7 @@ const FolderTreeItem = ({
             <FolderTreeItem 
                 key={child.id} 
                 folder={child} 
-                allFolders={folders} 
+                allFolders={allFolders} 
                 level={level + 1}
                 selectedFolderId={selectedFolderId}
                 expandedFolders={expandedFolders}

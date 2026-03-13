@@ -50,7 +50,11 @@ export async function getSuppliers(userId: string): Promise<Supplier[]> {
 
     // 2. Pull contacts from those specific folders
     const contactsRef = collection(db, CONTACTS_COLLECTION);
-    const q = query(contactsRef, where("folderId", "in", supplierFolderIds));
+    const q = query(
+        contactsRef, 
+        where("userId", "==", userId),
+        where("folderId", "in", supplierFolderIds.slice(0, 30))
+    );
     
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToSupplier).sort((a,b) => a.name.localeCompare(b.name));

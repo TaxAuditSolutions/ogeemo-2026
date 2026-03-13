@@ -77,10 +77,11 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
 
     // 2. Query contacts strictly based on their folder assignment and user ownership
     const contactsRef = collection(db, CONTACTS_COLLECTION);
+    // Note: 'in' queries are limited to 30 items. We are scoping strictly to worker folders.
     const q = query(
         contactsRef, 
         where("userId", "==", userId),
-        where("folderId", "in", workerFolderIds)
+        where("folderId", "in", workerFolderIds.slice(0, 30))
     );
     
     const snapshot = await getDocs(q);

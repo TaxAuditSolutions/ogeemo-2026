@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -214,10 +214,10 @@ export function BankStatementsView() {
 
   const loadData = React.useCallback(async () => {
     if (!user) {
-        setIsLoadingData(false);
+        setIsLoading(false);
         return;
     }
-    setIsLoadingData(true);
+    setIsLoading(true);
     try {
         const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
             getIncomeTransactions(user.uid),
@@ -238,7 +238,7 @@ export function BankStatementsView() {
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
     } finally {
-        setIsLoadingData(false);
+        setIsLoading(false);
     }
   }, [user, toast]);
 
@@ -497,7 +497,7 @@ export function BankStatementsView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6 text-black">
         <AccountingPageHeader pageTitle="Bank Statements" />
         <header className="text-center">
             <div className="flex items-center justify-center gap-2">
@@ -530,7 +530,7 @@ export function BankStatementsView() {
                           <span className="font-bold text-sm">{account.name}</span>
                           <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] h-5 uppercase tracking-tighter">{account.type}</Badge>
                       </div>
-                      <div className="flex justify-between items-end text-xs"><span className="text-muted-foreground">{account.bank} • ...{account.accountNumber.slice(-4)}</span><span className="font-mono font-bold">{account.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span></div>
+                      <div className="flex justify-between items-end text-xs"><span className="text-muted-foreground">{account.bank} • ...{account.accountNumber.slice(-4)}</span><span className="font-mono font-bold">{formatCurrency(account.balance)}</span></div>
                     </div>
                   ))}
                 </div>
@@ -594,7 +594,7 @@ export function BankStatementsView() {
                             </div>
                           </TableCell>
                           <TableCell className={cn("text-right font-mono font-bold", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
-                              {txn.amount > 0 ? '+' : ''}{txn.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                              {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
                           <TableCell className="text-center">{getStatusBadge(txn.status)}</TableCell>
                           <TableCell className="text-right">
@@ -734,7 +734,15 @@ export function BankStatementsView() {
                         <Label htmlFor="tx-company-gl" className="text-xs uppercase font-bold text-muted-foreground">Contact</Label>
                         <div className="col-span-3 space-y-2">
                             <div className="flex gap-2">
-                                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">{newTransaction.company || "Select/Add Contact"}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4"/> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">{newTransaction.company || "Select/Add Contact"}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                                            <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4"/> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             </div>
                         </div>
                     </div>

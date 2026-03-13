@@ -869,6 +869,16 @@ export function BankStatementsView() {
                     
                     <div className="space-y-8">
                         <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">0</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 0: Retrieve Your Data</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Before Ogeemo can analyze your finances, you need to provide the signals. Log in to your bank portal and download your monthly statement as a <strong>CSV</strong> or <strong>OFX</strong> file. This file contains the "Physical Truth" of your transactions.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">1</div>
                             <div className="space-y-1">
                                 <h4 className="font-bold">Step 1: The Connection (Plaid or Manual)</h4>

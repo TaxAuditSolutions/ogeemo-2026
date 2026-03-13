@@ -68,6 +68,15 @@ type CombinedActivity = {
     type: 'Staff / Worker' | 'Ritual';
 };
 
+const MetricCard = ({ title, value, icon: Icon, colorClass }: { title: string; value: string; icon: React.ElementType; colorClass: string }) => (
+    <Card className="bg-white border-primary/10">
+        <CardContent className="p-4 text-center">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">{title}</p>
+            <p className={cn("text-2xl font-bold font-mono", colorClass)}>{value}</p>
+        </CardContent>
+    </Card>
+);
+
 export function WorkActivityView() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -240,18 +249,8 @@ export function WorkActivityView() {
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <Card className="bg-white border-primary/10">
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Total Time</p>
-                                    <p className="text-2xl font-bold font-mono">{formatTime(stats.totalSeconds)}</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-white border-primary/10">
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1">Billable Time</p>
-                                    <p className="text-2xl font-bold font-mono text-green-600">{formatTime(stats.billableSeconds)}</p>
-                                </CardContent>
-                            </Card>
+                            <MetricCard title="Total Time" value={formatTime(stats.totalSeconds)} icon={Clock} colorClass="text-slate-900" />
+                            <MetricCard title="Billable Time" value={formatTime(stats.billableSeconds)} icon={CheckCircle2} colorClass="text-green-600" />
                             <Card className="bg-white border-primary/10">
                                 <CardContent className="p-4 text-center relative group">
                                     <TooltipProvider>
@@ -271,12 +270,7 @@ export function WorkActivityView() {
                                     <p className="text-2xl font-bold font-mono text-blue-600">{formatTime(stats.ritualSeconds)}</p>
                                 </CardContent>
                             </Card>
-                            <Card className="bg-primary/5 border-primary/20 shadow-inner">
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">Billable Total</p>
-                                    <p className="text-2xl font-bold font-mono text-primary">{formatCurrency(stats.earned)}</p>
-                                </CardContent>
-                            </Card>
+                            <MetricCard title="Billable Total" value={formatCurrency(stats.earned)} icon={ArrowRight} colorClass="text-primary" />
                         </div>
 
                         <Card className="shadow-2xl print:shadow-none print:border-none">

@@ -37,7 +37,8 @@ import {
     Landmark,
     Calendar as CalendarIcon,
     Search,
-    FileDigit
+    FileDigit,
+    X
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -56,14 +57,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from '../ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, 
-    deleteIncomeTransaction, 
     getExpenseTransactions, 
-    deleteExpenseTransaction, 
     getInvoices,
     getPayableBills,
     reconcileLedgerEntry,
@@ -90,16 +90,16 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, parseISO } from 'date-fns';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { ScrollArea } from '../ui/scroll-area';
-import { CustomCalendar } from '../ui/custom-calendar';
-import ContactFormDialog from '../contacts/contact-form-dialog';
+import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
+import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 
 type BankAccount = {
   id: string;
@@ -248,7 +248,7 @@ export function BankStatementsView() {
         setCustomIndustries(fetchedIndustries);
         setContacts(fetchedContacts);
     } catch (error: any) {
-        // Errors handled centrally
+        console.error("Bank Hub Load Error:", error);
     } finally {
         setIsLoadingData(false);
     }
@@ -388,7 +388,7 @@ export function BankStatementsView() {
         setMockAccounts(prev => [...prev, newMockAccount]);
         setSelectedAccountId(newMockAccount.id);
         setIsNewAccountOpen(false);
-        toast({ title: 'Account Added', description: 'New mock account has been created.' });
+        toast({ title: 'Account Added', description: 'New account node has been registered.' });
     };
 
 
@@ -404,9 +404,9 @@ export function BankStatementsView() {
         
         let categoryNumber: string | undefined;
         if (newTransactionType === 'income') {
-            categoryNumber = incomeCategories.find(c => c.name === newTransaction.incomeCategory)?.categoryNumber;
+            categoryNumber = incomeCategories.find(c => c.name === newTransaction.incomeCategory || c.id === newTransaction.incomeCategory)?.categoryNumber || newTransaction.incomeCategory;
         } else {
-            categoryNumber = expenseCategories.find(c => c.name === newTransaction.category)?.categoryNumber;
+            categoryNumber = expenseCategories.find(c => c.name === newTransaction.category || c.id === newTransaction.category)?.categoryNumber || newTransaction.category;
         }
 
         if (!newTransaction.date || !newTransaction.company || !categoryNumber || !newTransaction.totalAmount || isNaN(totalAmountNum) || totalAmountNum <= 0) {
@@ -594,7 +594,7 @@ export function BankStatementsView() {
                             <TableHead>Bank Record Description</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                             <TableHead className="text-center">Audit Status</TableHead>
-                            <TableHead className="w-12 text-right">Actions</TableHead>
+                            <TableHead className="w-12 text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -740,7 +740,7 @@ export function BankStatementsView() {
                         <Label htmlFor="tx-date-gl" className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
                         <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("col-span-3 h-11 justify-start text-left font-normal bg-white", !newTransaction.date && "text-muted-foreground")}>
+                                <Button variant="outline" className={cn("col-span-3 h-11 justify-start text-left font-normal px-4 bg-white", !newTransaction.date && "text-muted-foreground")}>
                                     <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                     {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
                                 </Button>
@@ -756,7 +756,7 @@ export function BankStatementsView() {
                                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">
-                                            {newTransaction.company || "Select/Add Contact"}
+                                            <span className="truncate">{newTransaction.company || "Select/Add Contact"}</span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -846,6 +846,99 @@ export function BankStatementsView() {
           <DialogFooter>
             <Button onClick={() => setIsInfoDialogOpen(false)}>Return to Hub</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Bank Dialog (Plaid Simulation) */}
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <div className="flex items-center gap-2 text-primary mb-1">
+                    <Link2 className="h-6 w-6" />
+                    <DialogTitle>Connect Financial Institution</DialogTitle>
+                </div>
+                <DialogDescription>
+                    Securely synchronize your bank signals with Ogeemo using Plaid.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+                <div className="flex items-start gap-4 p-4 border rounded-xl bg-primary/5">
+                    <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+                    <div className="space-y-1">
+                        <h4 className="font-bold text-sm">Military-Grade Encryption</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Ogeemo never sees or stores your login credentials. Connections are encrypted end-to-end via Plaid's secure portal.
+                        </p>
+                    </div>
+                </div>
+                <p className="text-xs text-center text-muted-foreground">
+                    By continuing, you agree to connect your account for read-only access to transaction data.
+                </p>
+            </div>
+            <DialogFooter className="sm:justify-center">
+                <Button onClick={handlePlaidContinue} className="w-full h-12 text-lg font-bold shadow-lg">
+                    Continue to Plaid Secure Link
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Account Dialog */}
+      <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
+        <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0">
+            <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+                <DialogTitle>Register Account Node</DialogTitle>
+                <DialogDescription>Add a new financial account to your reconciliation registry.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="flex-1 max-h-[60vh]">
+                <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-name">Account Name</Label>
+                            <Input id="acc-name" value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Savings" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-bank">Bank Name</Label>
+                            <Input id="acc-bank" value={newAccount.bank} onChange={e => setNewAccount(p => ({...p, bank: e.target.value}))} placeholder="e.g., TD Canada Trust" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Account Type</Label>
+                            <Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Business">Business</SelectItem>
+                                    <SelectItem value="Personal">Personal</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-bal">Initial Balance ($)</Label>
+                            <Input id="acc-bal" type="number" step="0.01" value={newAccount.balance} onChange={e => setNewAccount(p => ({...p, balance: e.target.value === '' ? '' : Number(e.target.value)}))} placeholder="0.00" />
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-inst">Inst. #</Label>
+                            <Input id="acc-inst" value={newAccount.institutionNumber} onChange={e => setNewAccount(p => ({...p, institutionNumber: e.target.value}))} placeholder="001" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-tran">Transit #</Label>
+                            <Input id="acc-tran" value={newAccount.transitNumber} onChange={e => setNewAccount(p => ({...p, transitNumber: e.target.value}))} placeholder="12345" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="acc-num">Account #</Label>
+                            <Input id="acc-num" value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} placeholder="111222333" />
+                        </div>
+                    </div>
+                </div>
+            </ScrollArea>
+            <DialogFooter className="p-6 border-t bg-muted/10">
+                <Button variant="ghost" onClick={() => setIsNewAccountOpen(false)}>Cancel</Button>
+                <Button onClick={handleSaveNewAccount}>Register Node</Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
 

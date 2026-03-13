@@ -35,7 +35,8 @@ import {
     View, 
     Info,
     ArrowRight,
-    Landmark
+    Landmark,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,9 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, 
+    deleteIncomeTransaction, 
     getExpenseTransactions, 
+    deleteExpenseTransaction, 
     getInvoices,
     getPayableBills,
     reconcileLedgerEntry,
@@ -95,8 +98,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { ScrollArea } from '../ui/scroll-area';
 import { Calendar } from '../ui/calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ContactFormDialog from '../contacts/contact-form-dialog';
 
 
 type BankAccount = {
@@ -209,6 +212,10 @@ export function BankStatementsView() {
   
   const [accountToView, setAccountToView] = React.useState<BankAccount | null>(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);
+  const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
+  const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
+  const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
+  const [contacts, setContacts] = React.useState<Contact[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -220,7 +227,7 @@ export function BankStatementsView() {
     }
     setIsLoadingData(true);
     try {
-        const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
+        const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts] = await Promise.all([
             getIncomeTransactions(user.uid),
             getExpenseTransactions(user.uid),
             getInvoices(user.uid),
@@ -228,6 +235,9 @@ export function BankStatementsView() {
             getCompanies(user.uid),
             getExpenseCategories(user.uid),
             getIncomeCategories(user.uid),
+            getContactFolders(user.uid),
+            getIndustries(user.uid),
+            getContacts()
         ]);
         setIncomeLedger(income);
         setExpenseLedger(expenses);
@@ -236,6 +246,9 @@ export function BankStatementsView() {
         setCompanies(fetchedCompanies);
         setExpenseCategories(fetchedExpenseCategories);
         setIncomeCategories(fetchedIncomeCategories);
+        setContactFolders(fetchedFolders);
+        setCustomIndustries(fetchedIndustries);
+        setContacts(fetchedContacts);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
     } finally {
@@ -301,13 +314,11 @@ export function BankStatementsView() {
     }
   };
 
-  // High-Fidelity Smart Matching Logic
   const suggestedMatches = React.useMemo(() => {
     if (!transactionToReconcile) return [];
     const results: any[] = [];
     const amount = Math.abs(transactionToReconcile.amount);
     
-    // 1. Check existing Ledger Entries
     const allLedger = [...incomeLedger, ...expenseLedger];
     allLedger.forEach(entry => {
         if (Math.abs(entry.totalAmount - amount) < 0.01) {
@@ -315,7 +326,6 @@ export function BankStatementsView() {
         }
     });
 
-    // 2. Check Outstanding Invoices (for deposits)
     if (transactionToReconcile.amount > 0) {
         invoices.forEach(inv => {
             const balance = inv.originalAmount - inv.amountPaid;
@@ -325,7 +335,6 @@ export function BankStatementsView() {
         });
     }
 
-    // 3. Check Outstanding Bills (for withdrawals)
     if (transactionToReconcile.amount < 0) {
         payableBills.forEach(bill => {
             if (Math.abs(bill.totalAmount - amount) < 0.01) {
@@ -491,6 +500,16 @@ export function BankStatementsView() {
       }
       setTransactionToReconcile(null);
       setIsNewTransactionDialogOpen(false);
+  };
+
+  const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
+    if (isEditing) {
+        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+    } else {
+        setContacts(prev => [savedContact, ...prev]);
+    }
+    setNewTransaction(prev => ({ ...prev, company: savedContact.name }));
+    setIsContactFormOpen(false);
   };
 
   const selectedAccount = mockAccounts.find(acc => acc.id === selectedAccountId);
@@ -768,7 +787,7 @@ export function BankStatementsView() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">{newTransaction.category ? (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select category...") : "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search..." value={newExpenseCategoryName} onValueChange={setNewExpenseCategoryName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateExpenseCategory()}><Plus className="mr-2 h-4 w-4"/> Create "{newExpenseCategoryName}"</Button></CommandEmpty><CommandGroup>{expenseCategories.map((c) => (<CommandItem key={cat.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id })); setIsCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.category === c.categoryNumber || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search..." value={newExpenseCategoryName} onValueChange={setNewExpenseCategoryName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateExpenseCategory()}><Plus className="mr-2 h-4 w-4"/> Create "{newExpenseCategoryName}"</Button></CommandEmpty><CommandGroup>{expenseCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id })); setIsCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.category === c.categoryNumber || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
                                 </Popover>
                             </div>
                         </div>

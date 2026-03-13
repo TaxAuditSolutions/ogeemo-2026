@@ -32,11 +32,12 @@ import {
     MoreVertical, 
     Pencil, 
     Trash2, 
-    View, 
     Info,
     ArrowRight,
     Landmark,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    Search,
+    FileDigit
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -97,11 +98,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { ScrollArea } from '../ui/scroll-area';
-import { Calendar } from '../ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ContactFormDialog from '../contacts/contact-form-dialog';
 import { CustomCalendar } from '../ui/custom-calendar';
-
+import ContactFormDialog from '../contacts/contact-form-dialog';
 
 type BankAccount = {
   id: string;
@@ -211,7 +209,6 @@ export function BankStatementsView() {
   const [newIncomeCategoryName, setNewIncomeCategoryName] = React.useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   
-  const [accountToView, setAccountToView] = React.useState<BankAccount | null>(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
@@ -251,11 +248,11 @@ export function BankStatementsView() {
         setCustomIndustries(fetchedIndustries);
         setContacts(fetchedContacts);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
+        // Errors handled centrally
     } finally {
         setIsLoadingData(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   React.useEffect(() => {
     loadData();

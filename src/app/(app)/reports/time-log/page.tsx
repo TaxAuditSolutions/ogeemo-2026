@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -331,7 +330,7 @@ function WorkerTimeLogReportContent() {
                         <div className="flex flex-wrap items-end justify-center gap-6">
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
-                                <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                                <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
@@ -339,13 +338,13 @@ function WorkerTimeLogReportContent() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: d, to: prev?.to })); setIsStartDatePickerOpen(false); } }} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: d, to: prev?.to })); setIsStartFilterOpen(false); } }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>
                            <div className="flex flex-col items-center space-y-2">
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
-                                <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                                <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />

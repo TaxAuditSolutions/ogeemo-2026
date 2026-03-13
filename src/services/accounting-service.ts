@@ -46,6 +46,8 @@ export interface BaseTransaction {
   type: 'business' | 'personal';
   paymentMethod?: string;
   userId: string;
+  isReconciled?: boolean;
+  bankReferenceId?: string;
 }
 
 export interface IncomeTransaction extends BaseTransaction {
@@ -412,6 +414,99 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         }));
       }
     });
+}
+
+// --- Reconciliation Orchestration ---
+
+/**
+ * Permanently links a ledger entry to a bank transaction.
+ */
+export async function reconcileLedgerEntry(entryId: string, type: 'income' | 'expense', bankReferenceId: string): Promise<void> {
+    const db = getDb();
+    const collectionName = type === 'income' ? INCOME_COLLECTION : EXPENSE_COLLECTION;
+    const docRef = doc(db, collectionName, entryId);
+    
+    await updateDoc(docRef, {
+        isReconciled: true,
+        bankReferenceId: bankReferenceId,
+    }).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: { isReconciled: true, bankReferenceId },
+            }));
+        }
+    });
+}
+
+/**
+ * High-fidelity sync: Posts a payment for an invoice AND reconciles it in one step.
+ */
+export async function reconcileInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, bankReferenceId: string, account: string): Promise<void> {
+    const db = getDb();
+    const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
+    const invoiceSnap = await getDoc(invoiceRef);
+    if (!invoiceSnap.exists()) return;
+
+    const data = invoiceSnap.data();
+    const newPaid = (data.amountPaid || 0) + amount;
+    const isPaid = newPaid >= data.originalAmount - 0.01;
+
+    const batch = writeBatch(db);
+    batch.update(invoiceRef, { 
+        amountPaid: newPaid, 
+        status: isPaid ? 'paid' : 'partially_paid' 
+    });
+
+    const incomeRef = doc(collection(db, INCOME_COLLECTION));
+    const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+    batch.set(incomeRef, {
+        userId,
+        date,
+        company: data.companyName,
+        description: `Reconciled payment for Invoice #${data.invoiceNumber}`,
+        totalAmount: amount,
+        incomeCategory: primaryIncomeLine || 'Part 3A',
+        depositedTo: account,
+        type: 'business',
+        isReconciled: true,
+        bankReferenceId: bankReferenceId,
+        paymentMethod: 'Bank Transfer'
+    });
+
+    await batch.commit();
+}
+
+/**
+ * High-fidelity sync: Posts a payment for a bill AND reconciles it in one step.
+ */
+export async function reconcileBillPayment(userId: string, billId: string, date: string, bankReferenceId: string, account: string): Promise<void> {
+    const db = getDb();
+    const billRef = doc(db, PAYABLES_COLLECTION, billId);
+    const billSnap = await getDoc(billRef);
+    if (!billSnap.exists()) return;
+
+    const data = billSnap.data();
+    const batch = writeBatch(db);
+
+    const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
+    batch.set(expenseRef, {
+        userId,
+        date,
+        company: data.vendor,
+        description: `Reconciled payment for Bill #${data.invoiceNumber || 'N/A'}`,
+        totalAmount: data.totalAmount,
+        category: data.category,
+        paidFrom: account,
+        type: 'business',
+        isReconciled: true,
+        bankReferenceId: bankReferenceId,
+        paymentMethod: 'Bank Transfer'
+    });
+
+    batch.delete(billRef);
+    await batch.commit();
 }
 
 // --- Income ---

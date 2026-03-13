@@ -53,7 +53,8 @@ import {
     FilterX,
     Link as LinkIcon,
     PlusCircle,
-    FileSpreadsheet
+    FileSpreadsheet,
+    ShieldCheck
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -265,7 +266,7 @@ export function LedgersView() {
     }
 
     // CSV Headers
-    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Notes", "Document Link"];
+    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Notes", "Document Link", "Reconciled"];
     
     // Rows
     const csvRows = dataToExport.map(item => {
@@ -283,7 +284,8 @@ export function LedgersView() {
         item.transactionType.toUpperCase(),
         item.totalAmount.toFixed(2),
         `"${combinedNotes.replace(/"/g, '""')}"`,
-        item.documentUrl || ""
+        item.documentUrl || "",
+        item.isReconciled ? "YES" : "NO"
       ];
     });
 
@@ -327,7 +329,7 @@ export function LedgersView() {
                     </TableHead>
                     {type === 'all' && <TableHead className="text-center">Type</TableHead>}
                     <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-center print:hidden">Doc</TableHead>
+                    <TableHead className="text-center print:hidden">Audit</TableHead>
                     <TableHead className="w-12 print:hidden"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
             </TableHeader>
@@ -344,11 +346,25 @@ export function LedgersView() {
                             {formatCurrency(item.totalAmount)}
                         </TableCell>
                         <TableCell className="text-center print:hidden">
-                            {item.documentUrl ? (
-                                <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                                    <LinkIcon className="h-4 w-4 mx-auto" />
-                                </a>
-                            ) : '-'}
+                            <div className="flex items-center justify-center gap-2">
+                                {item.isReconciled && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <ShieldCheck className="h-4 w-4 text-green-600" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p className="text-xs">Reconciled against bank record.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )}
+                                {item.documentUrl ? (
+                                    <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                        <LinkIcon className="h-4 w-4" />
+                                    </a>
+                                ) : '-'}
+                            </div>
                         </TableCell>
                         <TableCell className="print:hidden">
                             <div className="flex justify-end">

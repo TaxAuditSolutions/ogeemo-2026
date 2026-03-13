@@ -858,13 +858,79 @@ export function BankStatementsView() {
 
                 <Separator />
 
-                {/* 2. Why do it? */}
+                {/* 2. Step-by-Step Orchestration */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Layers className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-bold">2. Step-by-Step Instructions</h3>
+                    </div>
+                    
+                    <div className="space-y-8">
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">1</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 1: The Connection (Plaid or Manual)</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Click <strong>"Link Bank"</strong> to use Ogeemo's secure Plaid integration. This automates the retrieval of your bank signals. Alternatively, use the <strong>"+"</strong> button to manually register an account node and enter its details.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">2</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 2: Review Unreconciled Signals</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Look at your transaction list. Any item marked with a red <strong>"Unreconciled"</strong> badge is a "Business Mystery" that needs to be solved. These are facts that require a business reason for the CRA.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">3</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 3: Trigger the Matching Engine</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Click <strong>"Reconcile Signal"</strong> on any unreconciled transaction. Ogeemo will scan your entire "Spider Web" (invoices, bills, and previous ledger entries) to find a match.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">4</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 4: Verify Match or Create Node</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    <strong>If a match is found:</strong> Select the suggested invoice or bill. Ogeemo will automatically "Post Payment," update your Ledger, and link the bank proof in one click.
+                                    <br/><br/>
+                                    <strong>If no match exists:</strong> Click <strong>"Create New Verified Entry."</strong> This allows you to categorize the transaction (e.g., "Advertising") and post it directly to the GL while verifying it against the bank signal simultaneously.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">5</div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold">Step 5: Achieve the Audit Shield</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Once reconciled, the transaction receives the <strong>"Shield Check"</strong> badge. This record is now a verified node in your audit trail, locked and ready for professional reporting.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <Separator />
+
+                {/* 3. Why does this matter? */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
                             <Scale className="h-5 w-5 text-primary" />
                         </div>
-                        <h3 className="text-xl font-bold">2. Why does this matter?</h3>
+                        <h3 className="text-xl font-bold">3. Why does this matter?</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card className="border-primary/10 bg-primary/5 shadow-none">
@@ -893,54 +959,6 @@ export function BankStatementsView() {
                                 </p>
                             </CardContent>
                         </Card>
-                    </div>
-                </section>
-
-                <Separator />
-
-                {/* 3. How to use it? */}
-                <section className="space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Layers className="h-5 w-5 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold">3. How to Orchestrate a Reconciliation</h3>
-                    </div>
-                    
-                    <div className="space-y-8">
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">1</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Connect the Signal</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">Click <strong>"Link Bank"</strong> to securely connect your accounts via Plaid, or use the <strong>"+"</strong> button to manually register an account. This brings your real-world transactions into Ogeemo.</p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">2</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Identify & Reconcile</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">Click <strong>"Reconcile Signal"</strong> on any unreconciled transaction. Ogeemo's Smart Match engine will search your entire spider web for a matching node.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                    <div className="p-2 border rounded-lg bg-slate-50 text-[10px]">
-                                        <p className="font-bold text-primary mb-1">Found a match?</p>
-                                        <p>Select the suggested ledger entry, invoice, or bill. Ogeemo will link them and add the "Audit Shield" badge.</p>
-                                    </div>
-                                    <div className="p-2 border rounded-lg bg-slate-50 text-[10px]">
-                                        <p className="font-bold text-primary mb-1">No match exists?</p>
-                                        <p>Click "Create New Verified Entry" to build a new node. This creates the GL record and reconciles it in one step.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">3</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">One-Click Sync (Invoices & Bills)</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">If a bank deposit matches an outstanding <strong>Invoice</strong>, matching it here will automatically "Post Payment," update your Income Ledger, and link the bank record. Zero double-entry.</p>
-                            </div>
-                        </div>
                     </div>
                 </section>
 

@@ -225,8 +225,8 @@ function WorkerTimeLogReportContent() {
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
-    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (entry.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
-    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (entry.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -330,13 +330,13 @@ function WorkerTimeLogReportContent() {
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                                 <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !startDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.from && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
+                                            {dateRange?.from ? format(dateRange.from, "PPP") : <span>Beginning of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { if(d) { setStartDate(d); setIsStartFilterOpen(false); } }} initialFocus />
+                                        <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: d, to: prev?.to })); setIsStartFilterOpen(false); } }} initialFocus />
                                     </PopoverContent>
                                 </Popover>
                            </div>
@@ -344,13 +344,13 @@ function WorkerTimeLogReportContent() {
                                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                                 <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !dateRange?.to && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                            {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                                            {dateRange?.to ? format(dateRange.to, "PPP") : <span>End of time</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { if(d) { setEndDate(d); setIsEndFilterOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: prev?.from, to: d })); setIsEndFilterOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
                                     </PopoverContent>
                                 </Popover>
                            </div>

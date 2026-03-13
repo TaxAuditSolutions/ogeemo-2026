@@ -214,10 +214,10 @@ export function BankStatementsView() {
 
   const loadData = React.useCallback(async () => {
     if (!user) {
-        setIsLoading(false);
+        setIsLoadingData(false);
         return;
     }
-    setIsLoading(true);
+    setIsLoadingData(true);
     try {
         const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories] = await Promise.all([
             getIncomeTransactions(user.uid),
@@ -238,7 +238,7 @@ export function BankStatementsView() {
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
     } finally {
-        setIsLoading(false);
+        setIsLoadingData(false);
     }
   }, [user, toast]);
 
@@ -736,9 +736,10 @@ export function BankStatementsView() {
                             <div className="flex gap-2">
                                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">{newTransaction.company || "Select/Add Contact"}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
-                                        </FormControl>
+                                        <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">
+                                            {newTransaction.company || "Select/Add Contact"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>

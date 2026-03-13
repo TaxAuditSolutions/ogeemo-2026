@@ -162,7 +162,7 @@ export default function ClientStatementPage() {
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
+                                <CustomCalendar mode="single" selected={dateRange?.from} onSelect={(date) => { if(date) setDateRange(prev => ({ from: date, to: prev?.to })); setIsStartDatePickerOpen(false); }} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -176,7 +176,7 @@ export default function ClientStatementPage() {
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
+                                <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(date) => { if(date) setDateRange(prev => ({ from: prev?.from, to: date })); setIsEndDatePickerOpen(false); }} disabled={(date) => dateRange?.from ? date < dateRange.from : false} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>

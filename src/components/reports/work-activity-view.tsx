@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -34,7 +33,8 @@ import {
     User,
     Briefcase,
     Info,
-    HelpCircle
+    HelpCircle,
+    ArrowRight
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { type DateRange } from 'react-day-picker';

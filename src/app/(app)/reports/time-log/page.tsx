@@ -101,8 +101,8 @@ function WorkerTimeLogReportContent() {
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+    const [isStartFilterOpen, setIsStartFilterOpen] = useState(false);
+    const [isEndFilterOpen, setIsEndFilterOpen] = useState(false);
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
 
@@ -292,8 +292,6 @@ function WorkerTimeLogReportContent() {
         return [adminWorker, ...filteredWorkers];
     }, [workers, contacts, user, adminName]);
 
-    const selectedWorker = workersForSelection.find(w => w.id === selectedWorkerId);
-
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6 text-black">
@@ -311,9 +309,9 @@ function WorkerTimeLogReportContent() {
                                 onSelect={setSelectedWorkerId}
                                 isLoading={isLoading}
                             />
-                            {selectedWorker?.documentFolderId && (
+                            {workersForSelection.find(w => w.id === selectedWorkerId)?.documentFolderId && (
                                 <Button variant="outline" size="sm" asChild className="h-10">
-                                    <Link href={`/document-manager?highlight=${selectedWorker.documentFolderId}`}>
+                                    <Link href={`/document-manager?highlight=${workersForSelection.find(w => w.id === selectedWorkerId)?.documentFolderId}`}>
                                         <Files className="mr-2 h-4 w-4" /> Documents
                                     </Link>
                                 </Button>
@@ -352,7 +350,7 @@ function WorkerTimeLogReportContent() {
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: prev?.from, to: d })); setIsEndDatePickerOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
+                                        <CustomCalendar mode="single" selected={dateRange?.to} onSelect={(d) => { if(d) { setDateRange(prev => ({ from: prev?.from, to: d })); setIsEndFilterOpen(false); } }} initialFocus disabled={(date) => dateRange?.from ? date < dateRange.from : false} />
                                     </PopoverContent>
                                 </Popover>
                            </div>

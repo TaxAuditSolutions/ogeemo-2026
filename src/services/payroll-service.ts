@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -100,10 +99,6 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     }
     throw error;
   }
-}
-
-export async function getEmployees(userId: string): Promise<Worker[]> {
-  return getWorkers(userId);
 }
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {

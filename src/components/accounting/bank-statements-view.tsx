@@ -34,7 +34,8 @@ import {
     Trash2, 
     View, 
     Info,
-    ArrowRight
+    ArrowRight,
+    Landmark
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -78,9 +79,14 @@ import {
     type ExpenseCategory, 
     type IncomeCategory,
     type TaxType,
-    getTaxTypes
+    getTaxTypes,
+    addIncomeTransaction,
+    addExpenseTransaction
 } from '@/services/accounting-service';
-import { format } from 'date-fns';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import { format, parseISO } from 'date-fns';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -135,8 +141,6 @@ const mockBankTransactions: BankTransaction[] = [
   { id: 'txn_p_2', accountId: 'acc_3', date: '2024-07-22', description: 'Restaurant - The Cafe', amount: -125.60, status: 'personal' },
   { id: 'txn_p_3', accountId: 'acc_3', date: '2024-07-23', description: 'Salary Deposit', amount: 4500, status: 'personal' },
 ];
-
-const paymentMethodOptions = ["Cash", "Cheque", "Credit Card", "Email Transfer", "Bank Transfer", "In Kind", "Miscellaneous", "GL Adjustment"];
 
 const emptyTransactionForm = { 
     date: '', 
@@ -670,7 +674,7 @@ export function BankStatementsView() {
                                         </div>
                                         <div className="text-right flex items-center gap-4">
                                             <div className="flex flex-col items-end">
-                                                <p className="font-mono font-bold text-sm">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
+                                                <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
                                                 <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
                                             </div>
                                             <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -816,6 +820,19 @@ export function BankStatementsView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ContactFormDialog
+        isOpen={isContactFormOpen}
+        onOpenChange={setIsContactFormOpen}
+        contactToEdit={null}
+        folders={contactFolders}
+        onFoldersChange={setContactFolders}
+        onSave={handleContactSave}
+        companies={companies}
+        onCompaniesChange={setCompanies}
+        customIndustries={customIndustries}
+        onCustomIndustriesChange={setCustomIndustries}
+      />
     </>
   );
 }

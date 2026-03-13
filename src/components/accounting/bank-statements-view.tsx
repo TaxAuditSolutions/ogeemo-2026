@@ -100,6 +100,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type BankAccount = {
   id: string;
@@ -501,12 +502,8 @@ export function BankStatementsView() {
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-    if (isEditing) {
-        setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-    } else {
-        setContacts(prev => [savedContact, ...prev]);
-    }
-    setNewTransaction(prev => ({ ...prev, company: savedContact.name }));
+    setContacts(prev => isEditing ? prev.map(c => c.id === savedContact.id ? savedContact : c) : [savedContact, ...prev]);
+    setFormData(prev => ({ ...prev, company: savedContact.name }));
     setIsContactFormOpen(false);
   };
 
@@ -885,7 +882,7 @@ export function BankStatementsView() {
 
       {/* New Account Dialog */}
       <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
-        <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0">
+        <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
             <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
                 <DialogTitle>Register Account Node</DialogTitle>
                 <DialogDescription>Add a new financial account to your reconciliation registry.</DialogDescription>

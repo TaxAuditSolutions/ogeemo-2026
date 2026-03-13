@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -46,7 +47,9 @@ import {
     Zap,
     Scale,
     Layers,
-    Bot
+    Bot,
+    Upload,
+    Link as LinkIcon
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -228,6 +231,7 @@ export function BankStatementsView() {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const loadData = React.useCallback(async () => {
     if (!user) {
@@ -516,6 +520,40 @@ export function BankStatementsView() {
     setIsContactFormOpen(false);
   };
 
+  const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedAccountId) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target?.result as string;
+        const lines = text.split('\n');
+        // Simple CSV parsing: assume Date, Description, Amount
+        const newTxns: BankTransaction[] = lines.slice(1).filter(line => line.trim()).map((line, index) => {
+            const parts = line.split(',');
+            // Defend against different quote styles
+            const dateStr = parts[0]?.trim().replace(/^"|"$/g, '') || format(new Date(), 'yyyy-MM-dd');
+            const descStr = parts[1]?.trim().replace(/^"|"$/g, '') || 'Imported Transaction';
+            const amountStr = parts[2]?.trim().replace(/^"|"$/g, '') || '0';
+            
+            return {
+                id: `up_${Date.now()}_${index}`,
+                accountId: selectedAccountId,
+                date: dateStr,
+                description: descStr,
+                amount: parseFloat(amountStr),
+                status: 'unreconciled'
+            };
+        });
+        
+        setBankTransactions(prev => [...newTxns, ...prev]);
+        toast({ title: 'Statement Ingested', description: `Added ${newTxns.length} transactions to the registry.` });
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be uploaded again if needed
+    if (event.target) event.target.value = '';
+  };
+
   const selectedAccount = mockAccounts.find(acc => acc.id === selectedAccountId);
   const transactions = bankTransactions.filter(txn => txn.accountId === selectedAccountId);
 
@@ -587,9 +625,21 @@ export function BankStatementsView() {
                         <CardTitle>Transactions: {selectedAccount?.name}</CardTitle>
                         <CardDescription>Verify bank records against your operational web.</CardDescription>
                     </div>
-                    {selectedAccount?.type === 'Personal' && (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Mixed Use Alert</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8">
+                            <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
+                        </Button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".csv" 
+                            onChange={handleCsvUpload} 
+                        />
+                        {selectedAccount?.type === 'Personal' && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Mixed Use Alert</Badge>
+                        )}
+                    </div>
                   </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -835,7 +885,6 @@ export function BankStatementsView() {
           
           <ScrollArea className="flex-1 bg-white">
             <div className="max-w-4xl mx-auto p-8 space-y-10">
-                {/* 1. What is this? */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -858,7 +907,6 @@ export function BankStatementsView() {
 
                 <Separator />
 
-                {/* 2. Step-by-Step Orchestration */}
                 <section className="space-y-6">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -871,9 +919,9 @@ export function BankStatementsView() {
                         <div className="flex gap-4">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">0</div>
                             <div className="space-y-1">
-                                <h4 className="font-bold">Step 0: Retrieve Your Data</h4>
+                                <h4 className="font-bold">Step 0: Retrieve & Upload Your Data</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Before Ogeemo can analyze your finances, you need to provide the signals. Log in to your bank portal and download your monthly statement as a <strong>CSV</strong> or <strong>OFX</strong> file. This file contains the "Physical Truth" of your transactions.
+                                    Log in to your bank portal and download your monthly statement as a <strong>CSV</strong> file. In Ogeemo, click <strong>"Upload CSV Statement"</strong> to ingest these raw facts.
                                 </p>
                             </div>
                         </div>
@@ -883,7 +931,7 @@ export function BankStatementsView() {
                             <div className="space-y-1">
                                 <h4 className="font-bold">Step 1: The Connection (Plaid or Manual)</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Click <strong>"Link Bank"</strong> to use Ogeemo's secure Plaid integration. This automates the retrieval of your bank signals. Alternatively, use the <strong>"+"</strong> button to manually register an account node and enter its details.
+                                    Alternatively, click <strong>"Link Bank"</strong> to use Ogeemo's secure Plaid integration for automated sync.
                                 </p>
                             </div>
                         </div>
@@ -891,9 +939,9 @@ export function BankStatementsView() {
                         <div className="flex gap-4">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">2</div>
                             <div className="space-y-1">
-                                <h4 className="font-bold">Step 2: Review Unreconciled Signals</h4>
+                                <h4 className="font-bold">Step 2: Identify Unreconciled Signals</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Look at your transaction list. Any item marked with a red <strong>"Unreconciled"</strong> badge is a "Business Mystery" that needs to be solved. These are facts that require a business reason for the CRA.
+                                    Review the list. Items marked with a red <strong>"Unreconciled"</strong> badge are mysteries that need a business reason for the CRA.
                                 </p>
                             </div>
                         </div>
@@ -903,7 +951,7 @@ export function BankStatementsView() {
                             <div className="space-y-1">
                                 <h4 className="font-bold">Step 3: Trigger the Matching Engine</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Click <strong>"Reconcile Signal"</strong> on any unreconciled transaction. Ogeemo will scan your entire "Spider Web" (invoices, bills, and previous ledger entries) to find a match.
+                                    Click <strong>"Reconcile Signal"</strong>. Ogeemo scans your invoices, bills, and previous entries to find a matching value and date.
                                 </p>
                             </div>
                         </div>
@@ -913,9 +961,7 @@ export function BankStatementsView() {
                             <div className="space-y-1">
                                 <h4 className="font-bold">Step 4: Verify Match or Create Node</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    <strong>If a match is found:</strong> Select the suggested invoice or bill. Ogeemo will automatically "Post Payment," update your Ledger, and link the bank proof in one click.
-                                    <br/><br/>
-                                    <strong>If no match exists:</strong> Click <strong>"Create New Verified Entry."</strong> This allows you to categorize the transaction (e.g., "Advertising") and post it directly to the GL while verifying it against the bank signal simultaneously.
+                                    Select a suggestion to link it instantly, or click <strong>"Create New Verified Entry"</strong> to build a new node directly from the signal.
                                 </p>
                             </div>
                         </div>
@@ -925,7 +971,7 @@ export function BankStatementsView() {
                             <div className="space-y-1">
                                 <h4 className="font-bold">Step 5: Achieve the Audit Shield</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Once reconciled, the transaction receives the <strong>"Shield Check"</strong> badge. This record is now a verified node in your audit trail, locked and ready for professional reporting.
+                                    Once reconciled, the node is locked. It now contains a bank reference ID, making it a verified fact in your audit trail.
                                 </p>
                             </div>
                         </div>
@@ -934,7 +980,6 @@ export function BankStatementsView() {
 
                 <Separator />
 
-                {/* 3. Why does this matter? */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -952,7 +997,7 @@ export function BankStatementsView() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Auditors assume all deposits are income and all expenses are personal unless proven otherwise. A reconciled transaction is <strong>pre-verified</strong> with a unique bank reference ID, making it nearly impossible for an auditor to challenge.
+                                    A reconciled transaction is <strong>pre-verified</strong> with a unique bank ID, protecting you from the auditor's assumption that expenses are personal.
                                 </p>
                             </CardContent>
                         </Card>
@@ -960,12 +1005,12 @@ export function BankStatementsView() {
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm flex items-center gap-2">
                                     <Bot className="h-4 w-4 text-primary" />
-                                    Financial Intelligence
+                                    Intelligence
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate. You'll know exactly how much cash you have, who owes you money (AR), and what you owe others (AP), without any "administrative gaps."
+                                    Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate, with zero administrative gaps in your cash position.
                                 </p>
                             </CardContent>
                         </Card>
@@ -987,7 +1032,6 @@ export function BankStatementsView() {
         </DialogContent>
       </Dialog>
 
-      {/* Link Bank Dialog (Plaid Simulation) */}
       <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -1021,7 +1065,6 @@ export function BankStatementsView() {
         </DialogContent>
       </Dialog>
 
-      {/* New Account Dialog */}
       <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
         <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
             <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">

@@ -135,7 +135,9 @@ type BankTransaction = {
   id: string;
   accountId: string;
   date: string;
-  description: string;
+  transactionType: string; // The "Transaction" column (e.g. ACH, Debit)
+  name: string;            // The "Name" column (Who)
+  memo: string;            // The "Memo" column (Details)
   amount: number;
   status: "reconciled" | "unreconciled" | "personal";
 };
@@ -147,18 +149,12 @@ const initialMockAccounts: BankAccount[] = [
 ];
 
 const mockBankTransactions: BankTransaction[] = [
-  { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', description: 'ACH from Client Alpha', amount: 5000, status: 'reconciled' },
-  { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', description: 'Cloud Hosting Inc.', amount: -150, status: 'reconciled' },
-  { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', description: 'Stripe Payout', amount: 850.75, status: 'reconciled' },
-  { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', description: 'SaaS Tools Co.', amount: -75.99, status: 'unreconciled' },
-  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', description: 'TRANSFER TO ACC_2', amount: -10000, status: 'reconciled' },
-  { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', description: 'Gas Station - Shell', amount: -55.45, status: 'unreconciled' },
-  { id: 'txn_b_7', accountId: 'acc_1', date: '2024-07-20', description: 'Office Depot', amount: -45.30, status: 'unreconciled' },
-  { id: 'txn_s_1', accountId: 'acc_2', date: '2024-07-22', description: 'TRANSFER FROM ACC_1', amount: 10000, status: 'reconciled' },
-  { id: 'txn_s_2', accountId: 'acc_2', date: '2024-07-31', description: 'Interest Payment', amount: 35.42, status: 'unreconciled' },
-  { id: 'txn_p_1', accountId: 'acc_3', date: '2024-07-21', description: 'Freelance Designer', amount: -800, status: 'unreconciled' },
-  { id: 'txn_p_2', accountId: 'acc_3', date: '2024-07-22', description: 'Restaurant - The Cafe', amount: -125.60, status: 'personal' },
-  { id: 'txn_p_3', accountId: 'acc_3', date: '2024-07-23', description: 'Salary Deposit', amount: 4500, status: 'personal' },
+  { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', transactionType: 'ACH', name: 'Client Alpha', memo: 'Invoice #1001 payment', amount: 5000, status: 'reconciled' },
+  { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', transactionType: 'DEBIT', name: 'Cloud Hosting Inc.', memo: 'Monthly server fee', amount: -150, status: 'reconciled' },
+  { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', transactionType: 'TRANSFER', name: 'Stripe Payout', memo: 'Merchant settle', amount: 850.75, status: 'reconciled' },
+  { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', transactionType: 'DEBIT', name: 'SaaS Tools Co.', memo: 'Subscription', amount: -75.99, status: 'unreconciled' },
+  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To acc_2', amount: -10000, status: 'reconciled' },
+  { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45, status: 'unreconciled' },
 ];
 
 const emptyTransactionForm = { 
@@ -285,8 +281,8 @@ export function BankStatementsView() {
         setNewTransaction({
             ...emptyTransactionForm,
             date: formDate,
-            company: transactionToReconcile.description,
-            description: `Reconciled from bank transaction`,
+            company: transactionToReconcile.name,
+            description: `Reconciled from bank signal: ${transactionToReconcile.memo}`,
             totalAmount: String(Math.abs(transactionToReconcile.amount)),
             paymentMethod: 'Bank Transfer',
         });
@@ -528,19 +524,22 @@ export function BankStatementsView() {
     reader.onload = (e) => {
         const text = e.target?.result as string;
         const lines = text.split('\n');
-        // Simple CSV parsing: assume Date, Description, Amount
+        // Expected columns: Date, Transaction, Name, Memo, Amount
         const newTxns: BankTransaction[] = lines.slice(1).filter(line => line.trim()).map((line, index) => {
             const parts = line.split(',');
-            // Defend against different quote styles
             const dateStr = parts[0]?.trim().replace(/^"|"$/g, '') || format(new Date(), 'yyyy-MM-dd');
-            const descStr = parts[1]?.trim().replace(/^"|"$/g, '') || 'Imported Transaction';
-            const amountStr = parts[2]?.trim().replace(/^"|"$/g, '') || '0';
+            const typeStr = parts[1]?.trim().replace(/^"|"$/g, '') || 'N/A';
+            const nameStr = parts[2]?.trim().replace(/^"|"$/g, '') || 'Unknown';
+            const memoStr = parts[3]?.trim().replace(/^"|"$/g, '') || '';
+            const amountStr = parts[4]?.trim().replace(/^"|"$/g, '') || '0';
             
             return {
                 id: `up_${Date.now()}_${index}`,
                 accountId: selectedAccountId,
                 date: dateStr,
-                description: descStr,
+                transactionType: typeStr,
+                name: nameStr,
+                memo: memoStr,
                 amount: parseFloat(amountStr),
                 status: 'unreconciled'
             };
@@ -550,7 +549,6 @@ export function BankStatementsView() {
         toast({ title: 'Statement Ingested', description: `Added ${newTxns.length} transactions to the registry.` });
     };
     reader.readAsText(file);
-    // Reset input so the same file can be uploaded again if needed
     if (event.target) event.target.value = '';
   };
 
@@ -580,7 +578,7 @@ export function BankStatementsView() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div><CardTitle className="text-lg">Bank Accounts</CardTitle><CardDescription>Connected cloud nodes.</CardDescription></div>
                 <div className="flex items-center gap-2">
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={handleOpenNewAccountDialog}><Plus className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={handleOpenNewAccountDialog} title="Add New Account Registry"><Plus className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline" className="h-8" onClick={() => setIsLinkDialogOpen(true)}><Link2 className="mr-2 h-4 w-4" /> Link Bank</Button>
                 </div>
               </CardHeader>
@@ -646,10 +644,12 @@ export function BankStatementsView() {
                 <Table>
                     <TableHeader className="bg-muted/5">
                         <TableRow>
-                            <TableHead className="w-32">Date</TableHead>
-                            <TableHead>Bank Record Description</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead className="text-center">Audit Status</TableHead>
+                            <TableHead className="w-24">Date</TableHead>
+                            <TableHead className="w-24">Transaction</TableHead>
+                            <TableHead className="w-48">Name</TableHead>
+                            <TableHead>Memo</TableHead>
+                            <TableHead className="text-right w-32">Amount</TableHead>
+                            <TableHead className="text-center w-32">Status</TableHead>
                             <TableHead className="w-12 text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -657,16 +657,18 @@ export function BankStatementsView() {
                       {transactions.map(txn => (
                         <TableRow key={txn.id} className={cn(txn.status === 'reconciled' && "opacity-60")}>
                           <TableCell className="text-xs font-medium">{txn.date}</TableCell>
+                          <TableCell className="text-[10px] font-bold uppercase text-muted-foreground">{txn.transactionType}</TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-0.5">
-                                <span className="font-semibold text-sm">{txn.description}</span>
-                                {txn.accountId === 'acc_3' && txn.description.includes('Designer') && (
+                                <span className="font-semibold text-sm truncate max-w-[180px]">{txn.name}</span>
+                                {txn.accountId === 'acc_3' && txn.name.toLowerCase().includes('designer') && (
                                     <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1 uppercase">
-                                        <AlertTriangle className="h-3 w-3" /> Potential Business Expense
+                                        <AlertTriangle className="h-3 w-3" /> Potential Biz
                                     </span>
                                 )}
                             </div>
                           </TableCell>
+                          <TableCell className="text-xs italic truncate max-w-[200px]">{txn.memo}</TableCell>
                           <TableCell className={cn("text-right font-mono font-bold", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
                               {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
@@ -716,7 +718,8 @@ export function BankStatementsView() {
                         </CardHeader>
                         <CardContent className="p-4 flex justify-between items-center">
                             <div className="space-y-1">
-                                <p className="font-bold text-lg">{transactionToReconcile?.description}</p>
+                                <p className="font-bold text-lg">{transactionToReconcile?.name}</p>
+                                <p className="text-xs text-muted-foreground italic">{transactionToReconcile?.memo}</p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1"><CalendarIcon className="h-3 w-3"/> {transactionToReconcile?.date}</p>
                             </div>
                             <p className={cn("text-2xl font-mono font-black", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
@@ -818,7 +821,7 @@ export function BankStatementsView() {
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                         <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
-                                            <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4"/> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                                            <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4" /> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             </div>
                         </div>
                     </div>

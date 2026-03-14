@@ -50,7 +50,8 @@ import {
     Layers,
     Scale,
     Zap,
-    ChevronLeft
+    ChevronLeft,
+    FileSpreadsheet
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -360,6 +361,17 @@ export function BankStatementsView() {
     
     return results.sort((a,b) => (a.confidence === 'High' ? -1 : 1));
   }, [transactionToReconcile, incomeLedger, expenseLedger, invoices, payableBills]);
+
+  const activeCategories = React.useMemo(() => {
+    const raw = newTransactionType === 'income' ? incomeCategories : expenseCategories;
+    const seen = new Set<string>();
+    return raw.filter(cat => {
+        const key = cat.categoryNumber || cat.name;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+  }, [newTransactionType, incomeCategories, expenseCategories]);
 
   const handleMatch = async (match: any) => {
     if (!transactionToReconcile || !user || !selectedAccount) return;
@@ -805,7 +817,16 @@ export function BankStatementsView() {
                             <div className="space-y-2"><Label>Bank Name</Label><Input value={newAccount.bank} onChange={e => setNewAccount(p => ({...p, bank: e.target.value}))} /></div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label>Type</Label><Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Business">Business</SelectItem><SelectItem value="Personal">Personal</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Business">Business</SelectItem>
+                                        <SelectItem value="Personal">Personal</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="space-y-2"><Label>Balance ($)</Label><Input type="number" step="0.01" value={newAccount.balance} onChange={e => setNewAccount(p => ({...p, balance: e.target.value === '' ? '' : Number(e.target.value)}))} /></div>
                         </div>
                         <Separator />
@@ -1055,10 +1076,12 @@ export function BankStatementsView() {
                                 <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">
-                                            {newTransactionType === 'income' ? 
-                                                (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select income line...") :
-                                                (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
-                                            }
+                                            <span className="truncate">
+                                                {newTransactionType === 'income' ? 
+                                                    (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select income line...") :
+                                                    (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
+                                                }
+                                            </span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -1075,7 +1098,7 @@ export function BankStatementsView() {
                                                             setIsIncomeCategoryPopoverOpen(false); 
                                                         }}>
                                                             <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === c.id || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>
-                                                            <div className="flex flex-col">
+                                                            <div className="flex flex-col text-black">
                                                                 <span className="text-[10px] font-black uppercase text-muted-foreground">Line {c.categoryNumber}</span>
                                                                 <span className="text-sm font-semibold">{c.name}</span>
                                                             </div>
@@ -1100,7 +1123,7 @@ export function BankStatementsView() {
 
                     <div className="space-y-4">
                         <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Administrative Context</Label>
-                        <Input placeholder="Short description..." value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} />
+                        <Input placeholder="Internal description..." value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} />
                         <Textarea placeholder="Audit Rationale: Why was this money moved?" rows={3} value={newTransaction.explanation} onChange={(e) => setNewTransaction(prev => ({...prev, explanation: e.target.value}))} />
                     </div>
                 </div>

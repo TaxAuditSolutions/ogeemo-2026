@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -103,7 +102,7 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO, isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -231,6 +230,10 @@ export function BankStatementsView() {
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
+
+  // Filtering states for transactions view
+  const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -493,32 +496,6 @@ export function BankStatementsView() {
             toast({ title: 'Company Created' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to create company', description: error.message });
-        }
-    };
-
-    const handleCreateExpenseCategory = async () => {
-        if (!user || !newExpenseCategoryName.trim()) return;
-        try {
-            const newCategory = await addExpenseCategory({ name: newExpenseCategoryName.trim(), userId: user.uid });
-            setExpenseCategories(prev => [...prev, newCategory]);
-            setNewTransaction(prev => ({ ...prev, category: newCategory.categoryNumber || newCategory.id }));
-            setNewExpenseCategoryName('');
-            toast({ title: 'Category Created' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
-        }
-    };
-
-    const handleCreateIncomeCategory = async () => {
-        if (!user || !newIncomeCategoryName.trim()) return;
-        try {
-            const newCategory = await addIncomeCategory({ name: newIncomeCategoryName.trim(), userId: user.uid });
-            setIncomeCategories(prev => [...prev, newCategory]);
-            setNewTransaction(prev => ({ ...prev, incomeCategory: newCategory.categoryNumber || newCategory.id }));
-            setNewIncomeCategoryName('');
-            toast({ title: 'Category Created' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
         }
     };
 

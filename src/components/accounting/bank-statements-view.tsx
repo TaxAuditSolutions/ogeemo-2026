@@ -50,7 +50,9 @@ import {
     Scale,
     Zap,
     ChevronLeft,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Save,
+    CheckCircle
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +110,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -199,7 +200,7 @@ export function BankStatementsView() {
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
   
-  // Single, unified reconciliation state
+  // Single, unified reconciliation workspace state
   const [transactionToReconcile, setTransactionToReconcile] = React.useState<BankTransaction | null>(null);
   const [reconciliationMode, setReconciliationMode] = React.useState<'suggest' | 'create'>('suggest');
   
@@ -219,9 +220,8 @@ export function BankStatementsView() {
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = React.useState(false);
   const [newCompanyName, setNewCompanyName] = React.useState('');
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = React.useState(false);
-  const [newExpenseCategoryName, setNewExpenseCategoryName] = React.useState('');
+  const [categorySearchValue, setCategorySearchValue] = React.useState('');
   const [isIncomeCategoryPopoverOpen, setIsIncomeCategoryPopoverOpen] = React.useState(false);
-  const [newIncomeCategoryName, setNewIncomeCategoryName] = React.useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
   
   const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);

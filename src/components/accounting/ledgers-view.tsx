@@ -78,6 +78,12 @@ import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
 import { TransactionDialog } from "./transaction-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 

@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -41,15 +43,14 @@ import {
     Search,
     FileDigit,
     X,
-    FileText,
     TrendingUp,
     TrendingDown,
-    Zap,
-    Scale,
-    Layers,
     Bot,
     Upload,
-    Link as LinkIcon
+    Layers,
+    Scale,
+    Zap,
+    ChevronLeft
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -135,15 +136,15 @@ type BankTransaction = {
   id: string;
   accountId: string;
   date: string;
-  transactionType: string; // The "Transaction" column (e.g. ACH, Debit)
-  name: string;            // The "Name" column (Who)
-  memo: string;            // The "Memo" column (Details)
+  transactionType: string;
+  name: string;
+  memo: string;
   amount: number;
   status: "reconciled" | "unreconciled" | "personal";
 };
 
 const initialMockAccounts: BankAccount[] = [
-  { id: 'acc_1', name: 'Primary Checking', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', balance: 15430.22, address: '123 Banking St, Financial District, NY', phone: '555-0100', accountManager: 'John Smith' },
+  { id: 'acc_1', name: 'Primary Checking', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', balance: 15430.22 },
   { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666', balance: 85000.00 },
   { id: 'acc_3', name: 'Personal Checking', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', balance: 5210.50 },
 ];
@@ -189,8 +190,11 @@ const emptyAccountForm: Omit<BankAccount, 'id' | 'balance'> & { balance: number 
 };
 
 export function BankStatementsView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const accountIdParam = searchParams.get('accountId');
+
   const [mockAccounts, setMockAccounts] = React.useState<BankAccount[]>(initialMockAccounts);
-  const [selectedAccountId, setSelectedAccountId] = React.useState<string>(initialMockAccounts[0].id);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
@@ -399,7 +403,6 @@ export function BankStatementsView() {
             balance: Number(newAccount.balance)
         };
         setMockAccounts(prev => [...prev, newMockAccount]);
-        setSelectedAccountId(newMockAccount.id);
         setIsNewAccountOpen(false);
         toast({ title: 'Account Added', description: 'New account node has been registered.' });
     };
@@ -518,7 +521,7 @@ export function BankStatementsView() {
 
   const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !selectedAccountId) return;
+    if (!file || !accountIdParam) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -535,7 +538,7 @@ export function BankStatementsView() {
             
             return {
                 id: `up_${Date.now()}_${index}`,
-                accountId: selectedAccountId,
+                accountId: accountIdParam,
                 date: dateStr,
                 transactionType: typeStr,
                 name: nameStr,
@@ -552,124 +555,332 @@ export function BankStatementsView() {
     if (event.target) event.target.value = '';
   };
 
-  const selectedAccount = mockAccounts.find(acc => acc.id === selectedAccountId);
-  const transactions = bankTransactions.filter(txn => txn.accountId === selectedAccountId);
+  const selectedAccount = mockAccounts.find(acc => acc.id === accountIdParam);
+  const transactions = bankTransactions.filter(txn => txn.accountId === accountIdParam);
+
+  const handleSelectAccount = (id: string) => {
+      router.push(`/accounting/bank-statements?accountId=${id}`);
+  };
+
+  const handleBackToAccounts = () => {
+      router.push(`/accounting/bank-statements`);
+  };
+
+  if (!accountIdParam) {
+      return (
+        <div className="p-4 sm:p-6 space-y-6 text-black min-h-full">
+            <AccountingPageHeader pageTitle="Bank Accounts" />
+            <header className="text-center">
+                <div className="flex items-center justify-center gap-2">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Financial Registry</h1>
+                    <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsInfoDialogOpen(true)}>
+                        <Info className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                </div>
+                <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
+                    Select a secure cloud node to begin the reconciliation process.
+                </p>
+            </header>
+
+            <div className="max-w-4xl mx-auto space-y-6">
+                <Card className="shadow-lg border-primary/10">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Connected Accounts</CardTitle>
+                            <CardDescription>Click an account to manage transactions and build evidence.</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={handleOpenNewAccountDialog}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Registry Node
+                            </Button>
+                            <Button onClick={() => setIsLinkDialogOpen(true)}>
+                                <Link2 className="mr-2 h-4 w-4" /> Secure Bank Link
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {mockAccounts.map(account => (
+                            <Card 
+                                key={account.id} 
+                                className="cursor-pointer hover:border-primary hover:shadow-md transition-all group border-muted"
+                                onClick={() => handleSelectAccount(account.id)}
+                            >
+                                <CardContent className="p-6 flex justify-between items-center">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <Landmark className="h-5 w-5 text-primary" />
+                                            <h3 className="font-bold text-lg">{account.name}</h3>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">{account.bank} • ...{account.accountNumber.slice(-4)}</p>
+                                        <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.type}</Badge>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-sm font-bold font-mono">{formatCurrency(account.balance)}</p>
+                                        <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
+                                            Manage <ArrowRight className="h-3 w-3" />
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="bg-primary/5 border-dashed">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Zap className="h-4 w-4" /> One-Click Reconciliation
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                High-fidelity matching between bank signals and your BKS General Ledger ensures zero administrative gaps.
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary/5 border-dashed">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4" /> The Audit Shield
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Reconciled nodes are pre-verified, protecting your business from the auditor's assumption of personal use.
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary/5 border-dashed">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Bot className="h-4 w-4" /> Data Intelligence
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Integrated with the Ogeemo Spider Web to automatically detect and suggest matches for invoices and bills.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
+            <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+                <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
+                    <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+                        <div className="flex items-center gap-3 text-primary mb-1">
+                            <ShieldCheck className="h-8 w-8" />
+                            <div className="space-y-0.5">
+                                <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
+                                <DialogDescription className="text-sm font-medium">Reconciliation: Bridging the Signal and the Node.</DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    
+                    <ScrollArea className="flex-1 bg-white">
+                        <div className="max-w-4xl mx-auto p-12 space-y-12">
+                            <section className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg"><Zap className="h-5 w-5 text-primary" /></div>
+                                    <h3 className="text-2xl font-bold">1. What is Reconciliation?</h3>
+                                </div>
+                                <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                    <p>
+                                        In the Ogeemo World, your bank statement is an <strong>External Signal</strong>—it is proof that money moved in the physical world. Your General Ledger is an <strong>Internal Node</strong>—it is your record of why that money moved.
+                                    </p>
+                                    <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
+                                        Reconciliation is the professional act of proving that the Signal and the Node match exactly.
+                                    </p>
+                                    <p>
+                                        Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
+                                    </p>
+                                </div>
+                            </section>
+
+                            <Separator />
+
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg"><Layers className="h-5 w-5 text-primary" /></div>
+                                    <h3 className="text-2xl font-bold">2. Step-by-Step Instructions</h3>
+                                </div>
+                                
+                                <div className="space-y-10">
+                                    {[
+                                        { s: "0", t: "Retrieve & Upload Your Data", d: "Log in to your bank portal and download your monthly statement as a CSV file. In Ogeemo, click 'Upload CSV Statement' to ingest these raw facts." },
+                                        { s: "1", t: "The Connection (Plaid or Manual)", d: "Alternatively, click 'Link Bank' to use Ogeemo's secure Plaid integration for automated sync." },
+                                        { s: "2", t: "Identify Unreconciled Signals", d: "Review the list. Items marked with a red 'Unreconciled' badge are mysteries that need a business reason for the CRA." },
+                                        { s: "3", t: "Trigger the Matching Engine", d: "Click 'Reconcile Signal'. Ogeemo scans your invoices, bills, and previous entries to find a matching value and date." },
+                                        { s: "4", t: "Verify Match or Create Node", d: "Select a suggestion to link it instantly, or click 'Create New Verified Entry' to build a new node directly from the signal." },
+                                        { s: "5", t: "Achieve the Audit Shield", d: "Once reconciled, the node is locked. It now contains a bank reference ID, making it a verified fact in your audit trail." }
+                                    ].map(step => (
+                                        <div key={step.s} className="flex gap-6">
+                                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black text-xl border-2 border-primary/20">{step.s}</div>
+                                            <div className="space-y-2">
+                                                <h4 className="font-bold text-lg">{step.t}</h4>
+                                                <p className="text-muted-foreground leading-relaxed">{step.d}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <Separator />
+
+                            <section className="space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
+                                    <h3 className="text-2xl font-bold">3. Why does this matter?</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
+                                        <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                                            <ShieldCheck className="h-5 w-5 text-primary" />
+                                            The Audit Shield
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            A reconciled transaction is <strong>pre-verified</strong> with a unique bank ID, protecting you from the auditor's assumption that expenses are personal.
+                                        </p>
+                                    </Card>
+                                    <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
+                                        <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                                            <Bot className="h-5 w-5 text-primary" />
+                                            Live Intelligence
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate, with zero administrative gaps in your cash position.
+                                        </p>
+                                    </Card>
+                                </div>
+                            </section>
+
+                            <div className="bg-muted p-10 rounded-3xl border-2 border-dashed text-center space-y-4">
+                                <p className="text-lg font-bold text-primary uppercase tracking-[0.2em]">The Ogeemo Mandate</p>
+                                <p className="text-base text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
+                                    "Reconcile your primary checking account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
+                                </p>
+                            </div>
+                        </div>
+                    </ScrollArea>
+
+                    <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
+                        <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-14 px-12 font-bold shadow-xl text-lg">Return to Financial Registry</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2 text-primary mb-1">
+                            <Link2 className="h-6 w-6" />
+                            <DialogTitle>Connect Financial Institution</DialogTitle>
+                        </div>
+                        <DialogDescription>Securely synchronize bank signals using Plaid.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6 space-y-4">
+                        <div className="flex items-start gap-4 p-4 border rounded-xl bg-primary/5">
+                            <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Ogeemo never sees or stores your credentials. Connections are encrypted end-to-end via Plaid's secure portal.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handlePlaidContinue} className="w-full h-12 text-lg font-bold">Continue to Plaid</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
+                <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
+                    <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+                        <DialogTitle>Register Account Node</DialogTitle>
+                        <DialogDescription>Add a new financial account to your registry.</DialogDescription>
+                    </DialogHeader>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>Account Name</Label><Input value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Savings" /></div>
+                            <div className="space-y-2"><Label>Bank Name</Label><Input value={newAccount.bank} onChange={e => setNewAccount(p => ({...p, bank: e.target.value}))} /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>Type</Label><Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Business">Business</SelectItem><SelectItem value="Personal">Personal</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-2"><Label>Balance ($)</Label><Input type="number" step="0.01" value={newAccount.balance} onChange={e => setNewAccount(p => ({...p, balance: e.target.value === '' ? '' : Number(e.target.value)}))} /></div>
+                        </div>
+                        <Separator />
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2"><Label>Inst. #</Label><Input value={newAccount.institutionNumber} onChange={e => setNewAccount(p => ({...p, institutionNumber: e.target.value}))} /></div>
+                            <div className="space-y-2"><Label>Transit #</Label><Input value={newAccount.transitNumber} onChange={e => setNewAccount(p => ({...p, transitNumber: e.target.value}))} /></div>
+                            <div className="space-y-2"><Label>Account #</Label><Input value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} /></div>
+                        </div>
+                    </div>
+                    <DialogFooter className="p-6 border-t bg-muted/10"><Button variant="ghost" onClick={() => setIsNewAccountOpen(false)}>Cancel</Button><Button onClick={handleSaveNewAccount}>Register Node</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+      );
+  }
 
   return (
-    <>
-      <div className="p-4 sm:p-6 space-y-6 text-black">
-        <AccountingPageHeader pageTitle="Bank Statements" />
-        <header className="text-center">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-3xl font-bold font-headline text-primary">Bank Statement Reconciliation</h1>
-              <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsInfoDialogOpen(true)}>
-                <Info className="h-5 w-5 text-muted-foreground" />
-                <span className="sr-only">How to use this page</span>
-              </Button>
+    <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
+        <AccountingPageHeader pageTitle={`Transactions: ${selectedAccount?.name}`} />
+        
+        <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="sm" onClick={handleBackToAccounts}>
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back to Accounts
+                </Button>
+                <div>
+                    <h1 className="text-3xl font-bold font-headline text-primary">{selectedAccount?.name}</h1>
+                    <p className="text-muted-foreground text-sm">{selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}</p>
+                </div>
             </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Synchronize your bank records with the Ogeemo Spider Web to maintain a defensible audit trail.
-          </p>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-10">
+                    <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
+                </Button>
+                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
+                <div className="bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 text-right">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Current Balance</p>
+                    <p className="font-mono font-bold text-primary">{formatCurrency(selectedAccount?.balance || 0)}</p>
+                </div>
+            </div>
         </header>
 
-        <div className="grid lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="shadow-lg border-primary/10">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div><CardTitle className="text-lg">Bank Accounts</CardTitle><CardDescription>Connected cloud nodes.</CardDescription></div>
-                <div className="flex items-center gap-2">
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={handleOpenNewAccountDialog} title="Add New Account Registry"><Plus className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setIsLinkDialogOpen(true)}><Link2 className="mr-2 h-4 w-4" /> Link Bank</Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockAccounts.map(account => (
-                    <div key={account.id} className={cn("w-full p-3 rounded-lg border transition-all", selectedAccountId === account.id ? "bg-primary/5 border-primary shadow-sm" : "hover:bg-muted/50 cursor-pointer border-transparent")} onClick={() => setSelectedAccountId(account.id)}>
-                      <div className="flex justify-between items-center mb-1">
-                          <span className="font-bold text-sm">{account.name}</span>
-                          <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] h-5 uppercase tracking-tighter">{account.type}</Badge>
-                      </div>
-                      <div className="flex justify-between items-end text-xs"><span className="text-muted-foreground">{account.bank} • ...{account.accountNumber.slice(-4)}</span><span className="font-mono font-bold">{formatCurrency(account.balance)}</span></div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-muted/30 border-dashed">
-                <CardHeader>
-                    <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-primary" />
-                        Audit Integrity Protocol
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed space-y-2">
-                    <p>Reconciliation permanently links bank signals to your BKS General Ledger.</p>
-                    <ul className="space-y-1">
-                        <li className="flex gap-2"><Check className="h-3 w-3 text-primary shrink-0 mt-0.5"/> <span><strong>Matching</strong> verifies existing entries.</span></li>
-                        <li className="flex gap-2"><Check className="h-3 w-3 text-primary shrink-0 mt-0.5"/> <span><strong>Creation</strong> builds new verified nodes.</span></li>
-                        <li className="flex gap-2"><Check className="h-3 w-3 text-primary shrink-0 mt-0.5"/> <span>Reconciled items are <strong>locked</strong> for audit.</span></li>
-                    </ul>
-                </CardContent>
-            </Card>
-          </div>
-          
-          <div className="lg:col-span-2">
-            <Card className="shadow-xl">
-              <CardHeader className="border-b bg-muted/10">
-                  <div className="flex justify-between items-center">
+        <Card className="shadow-xl overflow-hidden border-black">
+            <CardHeader className="bg-muted/10 border-b">
+                <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Transactions: {selectedAccount?.name}</CardTitle>
-                        <CardDescription>Verify bank records against your operational web.</CardDescription>
+                        <CardTitle>Transaction Registry</CardTitle>
+                        <CardDescription>Match external signals to internal ledger nodes.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8">
-                            <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
-                        </Button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept=".csv" 
-                            onChange={handleCsvUpload} 
-                        />
-                        {selectedAccount?.type === 'Personal' && (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Mixed Use Alert</Badge>
-                        )}
-                    </div>
-                  </div>
-              </CardHeader>
-              <CardContent className="p-0">
+                    <Badge variant="outline" className="bg-white">
+                        {transactions.filter(t => t.status === 'unreconciled').length} Unreconciled
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
                 <Table>
                     <TableHeader className="bg-muted/5">
                         <TableRow>
-                            <TableHead className="w-24">Date</TableHead>
-                            <TableHead className="w-24">Transaction</TableHead>
-                            <TableHead className="w-48">Name</TableHead>
-                            <TableHead>Memo</TableHead>
-                            <TableHead className="text-right w-32">Amount</TableHead>
+                            <TableHead className="w-32">Date</TableHead>
+                            <TableHead className="w-32">Transaction</TableHead>
+                            <TableHead>Counterparty (Name)</TableHead>
+                            <TableHead>Memo / Details</TableHead>
+                            <TableHead className="text-right w-40">Amount</TableHead>
                             <TableHead className="text-center w-32">Status</TableHead>
                             <TableHead className="w-12 text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                       {transactions.map(txn => (
-                        <TableRow key={txn.id} className={cn(txn.status === 'reconciled' && "opacity-60")}>
-                          <TableCell className="text-xs font-medium">{txn.date}</TableCell>
-                          <TableCell className="text-[10px] font-bold uppercase text-muted-foreground">{txn.transactionType}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-0.5">
-                                <span className="font-semibold text-sm truncate max-w-[180px]">{txn.name}</span>
-                                {txn.accountId === 'acc_3' && txn.name.toLowerCase().includes('designer') && (
-                                    <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1 uppercase">
-                                        <AlertTriangle className="h-3 w-3" /> Potential Biz
-                                    </span>
-                                )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-xs italic truncate max-w-[200px]">{txn.memo}</TableCell>
-                          <TableCell className={cn("text-right font-mono font-bold", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
+                        <TableRow key={txn.id} className={cn(txn.status === 'reconciled' && "bg-muted/30 opacity-60")}>
+                          <TableCell className="text-xs font-bold font-mono">{txn.date}</TableCell>
+                          <TableCell className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{txn.transactionType}</TableCell>
+                          <TableCell className="font-bold text-sm">{txn.name}</TableCell>
+                          <TableCell className="text-xs italic text-muted-foreground truncate max-w-xs">{txn.memo}</TableCell>
+                          <TableCell className={cn("text-right font-mono font-black text-lg", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
                               {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
                           <TableCell className="text-center">{getStatusBadge(txn.status)}</TableCell>
@@ -690,131 +901,145 @@ export function BankStatementsView() {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {transactions.length === 0 && (
+                          <TableRow>
+                              <TableCell colSpan={7} className="h-64 text-center">
+                                  <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
+                                      <FileSpreadsheet className="h-12 w-12" />
+                                      <div className="space-y-1">
+                                          <p className="font-bold">No transactions ingested.</p>
+                                          <p className="text-xs">Upload a CSV statement to begin reconciliation.</p>
+                                      </div>
+                                  </div>
+                              </TableCell>
+                          </TableRow>
+                      )}
                     </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+            </CardContent>
+            <CardFooter className="bg-muted/10 border-t py-3 justify-center">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.3em]">Operational Node: {selectedAccount?.id} • Verified Registry</p>
+            </CardFooter>
+        </Card>
 
-      <Dialog open={!!transactionToReconcile} onOpenChange={() => setTransactionToReconcile(null)}>
-        <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden text-black">
-            <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                <div className="flex items-center gap-2 text-primary mb-1">
-                    <GitMerge className="h-6 w-6" />
-                    <DialogTitle className="text-xl font-headline uppercase tracking-tight">Reconciliation Node</DialogTitle>
-                </div>
-                <DialogDescription>Match bank signal to Ogeemo nodes or create a new verified entry.</DialogDescription>
-            </DialogHeader>
-            
-            <ScrollArea className="flex-1 max-h-[60vh]">
-                <div className="p-6 space-y-6">
-                    <Card className="bg-muted/30 border-2">
-                        <CardHeader className="py-3 px-4 border-b bg-white/50">
-                            <CardTitle className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
-                                <Landmark className="h-3 w-3" /> External Bank Signal
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 flex justify-between items-center">
-                            <div className="space-y-1">
-                                <p className="font-bold text-lg">{transactionToReconcile?.name}</p>
-                                <p className="text-xs text-muted-foreground italic">{transactionToReconcile?.memo}</p>
-                                <p className="text-xs text-muted-foreground flex items-center gap-1"><CalendarIcon className="h-3 w-3"/> {transactionToReconcile?.date}</p>
-                            </div>
-                            <p className={cn("text-2xl font-mono font-black", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
-                                {formatCurrency(transactionToReconcile?.amount || 0)}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <div className="space-y-4">
-                        <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4" /> Internal Spider Web Suggestions
-                        </h4>
-                        
-                        {isLoadingData ? <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div> : (
-                            <div className="space-y-3">
-                                {suggestedMatches.length > 0 ? suggestedMatches.map((match, i) => (
-                                    <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer" onClick={() => handleMatch(match)}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
-                                                {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <ExternalLink className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-bold text-sm">{match.company || match.vendor || match.companyName}</p>
-                                                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-bold h-4 px-1">{match.matchType}</Badge>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground truncate max-w-[300px]">{match.description || `Invoice #${match.invoiceNumber}`}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right flex items-center gap-4">
-                                            <div className="flex flex-col items-end">
-                                                <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
-                                                <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
-                                            </div>
-                                            <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="text-center p-12 border-2 border-dashed rounded-2xl bg-muted/10 space-y-3">
-                                        <Search className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
-                                        <p className="text-sm font-medium text-muted-foreground">No automatic node matches found.</p>
-                                        <p className="text-xs text-muted-foreground italic">Try creating a new ledger entry manually using the button below.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+        {/* Reusable Reconciliation Node Dialog */}
+        <Dialog open={!!transactionToReconcile} onOpenChange={() => setTransactionToReconcile(null)}>
+            <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden text-black shadow-2xl">
+                <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+                    <div className="flex items-center gap-2 text-primary mb-1">
+                        <GitMerge className="h-6 w-6" />
+                        <DialogTitle className="text-xl font-headline uppercase tracking-tight">Reconciliation Node</DialogTitle>
                     </div>
-                </div>
-            </ScrollArea>
-
-            <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                <Button variant="outline" className="h-12 px-6 font-bold" onClick={handleCreateNewEntry}>
-                    <Plus className="mr-2 h-4 w-4" /> Create New Verified Entry
-                </Button>
-                <div className="flex gap-3">
-                    <Button variant="ghost" onClick={() => setTransactionToReconcile(null)} className="h-12 px-6 font-bold">Cancel</Button>
-                </div>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isNewTransactionDialogOpen} onOpenChange={setIsNewTransactionDialogOpen}>
-        <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh] p-0 text-black overflow-hidden">
-          <DialogHeader className="p-6 border-b bg-primary/5">
-            <DialogTitle className="text-2xl text-primary font-bold uppercase tracking-tight">Create & Verify Transaction</DialogTitle>
-            <DialogDescription>Building a new node from a bank signal.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="flex-1 bg-white">
-            <div className="grid gap-6 py-8 px-10">
-                <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense')} className="grid grid-cols-2 gap-4">
-                    <div><RadioGroupItem value="income" id="r-income" className="peer sr-only" /><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 font-bold uppercase text-xs tracking-widest cursor-pointer">Income Node</Label></div>
-                    <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600 font-bold uppercase text-xs tracking-widest cursor-pointer">Expense Node</Label></div>
-                </RadioGroup>
+                    <DialogDescription>Match bank signal to Ogeemo nodes or create a new verified entry.</DialogDescription>
+                </DialogHeader>
                 
-                <div className="space-y-4 border rounded-2xl p-6 bg-muted/5">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tx-date-gl" className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("col-span-3 h-11 justify-start text-left font-normal px-4 bg-white", !newTransaction.date && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                    {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <CustomCalendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
-                        </Popover>
+                <ScrollArea className="flex-1 max-h-[60vh]">
+                    <div className="p-6 space-y-6">
+                        <Card className="bg-muted/30 border-2 shadow-inner">
+                            <CardHeader className="py-3 px-4 border-b bg-white/50">
+                                <CardTitle className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <Landmark className="h-3 w-3" /> External Bank Signal
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 flex justify-between items-center">
+                                <div className="space-y-1">
+                                    <p className="font-bold text-lg">{transactionToReconcile?.name}</p>
+                                    <p className="text-xs text-muted-foreground italic">{transactionToReconcile?.memo}</p>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono"><CalendarIcon className="h-3 w-3"/> {transactionToReconcile?.date}</p>
+                                </div>
+                                <p className={cn("text-2xl font-mono font-black", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
+                                    {formatCurrency(transactionToReconcile?.amount || 0)}
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4" /> Internal Spider Web Suggestions
+                            </h4>
+                            
+                            {isLoadingData ? <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div> : (
+                                <div className="space-y-3">
+                                    {suggestedMatches.length > 0 ? suggestedMatches.map((match, i) => (
+                                        <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer bg-white" onClick={() => handleMatch(match)}>
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
+                                                    {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <ExternalLink className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-sm">{match.company || match.vendor || match.companyName}</p>
+                                                        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-bold h-4 px-1">{match.matchType}</Badge>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground truncate max-w-[300px]">{match.description || `Invoice #${match.invoiceNumber}`}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right flex items-center gap-4">
+                                                <div className="flex flex-col items-end">
+                                                    <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
+                                                    <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
+                                                </div>
+                                                <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center p-12 border-2 border-dashed rounded-2xl bg-muted/10 space-y-3">
+                                            <Search className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
+                                            <p className="text-sm font-medium text-muted-foreground">No automatic node matches found.</p>
+                                            <p className="text-xs text-muted-foreground italic">Try creating a new ledger entry manually using the button below.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tx-company-gl" className="text-xs uppercase font-bold text-muted-foreground">Contact</Label>
-                        <div className="col-span-3 space-y-2">
-                            <div className="flex gap-2">
+                </ScrollArea>
+
+                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
+                    <Button variant="outline" className="h-12 px-6 font-bold" onClick={handleCreateNewEntry}>
+                        <Plus className="mr-2 h-4 w-4" /> Create New Verified Entry
+                    </Button>
+                    <div className="flex gap-3">
+                        <Button variant="ghost" onClick={() => setTransactionToReconcile(null)} className="h-12 px-6 font-bold">Cancel</Button>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* New Transaction Creation Dialog */}
+        <Dialog open={isNewTransactionDialogOpen} onOpenChange={setIsNewTransactionDialogOpen}>
+            <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh] p-0 text-black overflow-hidden">
+            <DialogHeader className="p-6 border-b bg-primary/5">
+                <DialogTitle className="text-2xl text-primary font-bold uppercase tracking-tight">Create & Verify Transaction</DialogTitle>
+                <DialogDescription>Building a new node from a bank signal.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="flex-1 bg-white">
+                <div className="grid gap-6 py-8 px-10">
+                    <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense')} className="grid grid-cols-2 gap-4">
+                        <div><RadioGroupItem value="income" id="r-income" className="peer sr-only" /><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 font-bold uppercase text-xs tracking-widest cursor-pointer text-center">Income Node</Label></div>
+                        <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600 font-bold uppercase text-xs tracking-widest cursor-pointer text-center">Expense Node</Label></div>
+                    </RadioGroup>
+                    
+                    <div className="space-y-4 border rounded-2xl p-6 bg-muted/5">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("col-span-3 h-11 justify-start text-left font-normal px-4 bg-white", !newTransaction.date && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <CustomCalendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Contact</Label>
+                            <div className="col-span-3">
                                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 flex-1 justify-between font-normal bg-white">
+                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">
                                             <span className="truncate">{newTransaction.company || "Select/Add Contact"}</span>
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -824,320 +1049,81 @@ export function BankStatementsView() {
                                             <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4" /> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                             </div>
                         </div>
-                    </div>
-                    {newTransactionType === 'income' ? (
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="tx-income-category-gl" className="text-xs uppercase font-bold text-muted-foreground">Tax Line</Label>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Tax Line</Label>
                             <div className="col-span-3">
                                 <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">{newTransaction.incomeCategory ? (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select category...") : "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
+                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">
+                                            {newTransactionType === 'income' ? 
+                                                (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select income line...") :
+                                                (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
+                                            }
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search..." value={newIncomeCategoryName} onValueChange={setNewIncomeCategoryName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateIncomeCategory()}><Plus className="mr-2 h-4 w-4"/> Create "{newIncomeCategoryName}"</Button></CommandEmpty><CommandGroup>{incomeCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, incomeCategory: c.categoryNumber || c.id })); setIsIncomeCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === c.categoryNumber || newTransaction.incomeCategory === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search..." />
+                                            <CommandList>
+                                                <CommandEmpty>No results.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {activeCategories.map((c) => (
+                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { 
+                                                            if (newTransactionType === 'income') setNewTransaction(prev => ({ ...prev, incomeCategory: c.categoryNumber || c.id }));
+                                                            else setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id }));
+                                                            setIsIncomeCategoryPopoverOpen(false); 
+                                                        }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === c.id || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black uppercase text-muted-foreground">Line {c.categoryNumber}</span>
+                                                                <span className="text-sm font-semibold">{c.name}</span>
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
                                 </Popover>
                             </div>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="tx-category-gl" className="text-xs uppercase font-bold text-muted-foreground">Tax Line</Label>
-                            <div className="col-span-3">
-                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">{newTransaction.category ? (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select category...") : "Select category..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search..." value={newExpenseCategoryName} onValueChange={setNewExpenseCategoryName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateExpenseCategory()}><Plus className="mr-2 h-4 w-4"/> Create "{newExpenseCategoryName}"</Button></CommandEmpty><CommandGroup>{expenseCategories.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id })); setIsCategoryPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", (newTransaction.category === c.categoryNumber || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 flex justify-between items-center">
-                    <Label className="text-sm font-bold uppercase tracking-widest text-primary">Final Verified Amount</Label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-primary">$</span>
-                        <Input value={newTransaction.totalAmount} readOnly disabled className="h-12 w-48 pl-7 text-2xl font-mono font-black text-primary border-primary/20 bg-white" />
                     </div>
-                </div>
 
-                <div className="space-y-4">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Administrative Context</Label>
-                    <Input placeholder="Internal description..." value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} />
-                    <Textarea placeholder="Audit Rationale: Why was this money moved?" rows={3} value={newTransaction.explanation} onChange={(e) => setNewTransaction(prev => ({...prev, explanation: e.target.value}))} />
-                </div>
-            </div>
-          </ScrollArea>
-          <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-            <Button variant="ghost" className="h-12 font-bold" onClick={() => setIsNewTransactionDialogOpen(false)}>Cancel</Button>
-            <Button className="h-12 px-10 font-bold shadow-xl" onClick={handleSaveTransaction}>Build & Reconcile Node</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
-          <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-            <div className="flex items-center gap-3 text-primary mb-1">
-                <ShieldCheck className="h-8 w-8" />
-                <div className="space-y-0.5">
-                    <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
-                    <DialogDescription className="text-sm font-medium">Reconciliation: Bridging the Signal and the Node.</DialogDescription>
-                </div>
-            </div>
-          </DialogHeader>
-          
-          <ScrollArea className="flex-1 bg-white">
-            <div className="max-w-4xl mx-auto p-8 space-y-10">
-                <section className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Zap className="h-5 w-5 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold">1. What is Reconciliation?</h3>
-                    </div>
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed">
-                        <p>
-                            In the Ogeemo World, your bank statement is an <strong>External Signal</strong>—it is proof that money moved in the physical world. Your General Ledger is an <strong>Internal Node</strong>—it is your record of why that money moved.
-                        </p>
-                        <p className="font-semibold text-foreground">
-                            Reconciliation is the professional act of proving that the Signal and the Node match exactly.
-                        </p>
-                        <p>
-                            Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
-                        </p>
-                    </div>
-                </section>
-
-                <Separator />
-
-                <section className="space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Layers className="h-5 w-5 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold">2. Step-by-Step Instructions</h3>
-                    </div>
-                    
-                    <div className="space-y-8">
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">0</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 0: Retrieve & Upload Your Data</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Log in to your bank portal and download your monthly statement as a <strong>CSV</strong> file. In Ogeemo, click <strong>"Upload CSV Statement"</strong> to ingest these raw facts.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">1</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 1: The Connection (Plaid or Manual)</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Alternatively, click <strong>"Link Bank"</strong> to use Ogeemo's secure Plaid integration for automated sync.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">2</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 2: Identify Unreconciled Signals</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Review the list. Items marked with a red <strong>"Unreconciled"</strong> badge are mysteries that need a business reason for the CRA.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">3</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 3: Trigger the Matching Engine</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Click <strong>"Reconcile Signal"</strong>. Ogeemo scans your invoices, bills, and previous entries to find a matching value and date.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">4</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 4: Verify Match or Create Node</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Select a suggestion to link it instantly, or click <strong>"Create New Verified Entry"</strong> to build a new node directly from the signal.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black">5</div>
-                            <div className="space-y-1">
-                                <h4 className="font-bold">Step 5: Achieve the Audit Shield</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Once reconciled, the node is locked. It now contains a bank reference ID, making it a verified fact in your audit trail.
-                                </p>
-                            </div>
+                    <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 flex justify-between items-center">
+                        <Label className="text-sm font-bold uppercase tracking-widest text-primary">Final Verified Amount</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-primary">$</span>
+                            <Input value={newTransaction.totalAmount} readOnly disabled className="h-12 w-48 pl-7 text-2xl font-mono font-black text-primary border-primary/20 bg-white" />
                         </div>
                     </div>
-                </section>
 
-                <Separator />
-
-                <section className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Scale className="h-5 w-5 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold">3. Why does this matter?</h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card className="border-primary/10 bg-primary/5 shadow-none">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <ShieldCheck className="h-4 w-4 text-primary" />
-                                    The Audit Shield
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    A reconciled transaction is <strong>pre-verified</strong> with a unique bank ID, protecting you from the auditor's assumption that expenses are personal.
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-primary/10 bg-primary/5 shadow-none">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <Bot className="h-4 w-4 text-primary" />
-                                    Intelligence
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate, with zero administrative gaps in your cash position.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </section>
-
-                <div className="bg-muted p-6 rounded-2xl border-2 border-dashed text-center space-y-2">
-                    <p className="text-sm font-bold text-primary uppercase tracking-widest">Master Tip</p>
-                    <p className="text-xs text-muted-foreground italic">
-                        "Reconcile your primary checking account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
-                    </p>
-                </div>
-            </div>
-          </ScrollArea>
-
-          <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-            <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-12 px-10 font-bold shadow-lg">Return to Reconciliation Hub</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <div className="flex items-center gap-2 text-primary mb-1">
-                    <Link2 className="h-6 w-6" />
-                    <DialogTitle>Connect Financial Institution</DialogTitle>
-                </div>
-                <DialogDescription>
-                    Securely synchronize your bank signals with Ogeemo using Plaid.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-6 space-y-4">
-                <div className="flex items-start gap-4 p-4 border rounded-xl bg-primary/5">
-                    <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
-                    <div className="space-y-1">
-                        <h4 className="font-bold text-sm">Military-Grade Encryption</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            Ogeemo never sees or stores your login credentials. Connections are encrypted end-to-end via Plaid's secure portal.
-                        </p>
-                    </div>
-                </div>
-                <p className="text-xs text-center text-muted-foreground">
-                    By continuing, you agree to connect your account for read-only access to transaction data.
-                </p>
-            </div>
-            <DialogFooter className="sm:justify-center">
-                <Button onClick={handlePlaidContinue} className="w-full h-12 text-lg font-bold shadow-lg">
-                    Continue to Plaid Secure Link
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
-        <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
-            <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                <DialogTitle>Register Account Node</DialogTitle>
-                <DialogDescription>Add a new financial account to your reconciliation registry.</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="flex-1 max-h-[60vh]">
-                <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-name">Account Name</Label>
-                            <Input id="acc-name" value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Savings" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-bank">Bank Name</Label>
-                            <Input id="acc-bank" value={newAccount.bank} onChange={e => setNewAccount(p => ({...p, bank: e.target.value}))} placeholder="e.g., TD Canada Trust" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Account Type</Label>
-                            <Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Business">Business</SelectItem>
-                                    <SelectItem value="Personal">Personal</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-bal">Initial Balance ($)</Label>
-                            <Input id="acc-bal" type="number" step="0.01" value={newAccount.balance} onChange={e => setNewAccount(p => ({...p, balance: e.target.value === '' ? '' : Number(e.target.value)}))} placeholder="0.00" />
-                        </div>
-                    </div>
-                    <Separator />
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-inst">Inst. #</Label>
-                            <Input id="acc-inst" value={newAccount.institutionNumber} onChange={e => setNewAccount(p => ({...p, institutionNumber: e.target.value}))} placeholder="001" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-tran">Transit #</Label>
-                            <Input id="acc-tran" value={newAccount.transitNumber} onChange={e => setNewAccount(p => ({...p, transitNumber: e.target.value}))} placeholder="12345" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="acc-num">Account #</Label>
-                            <Input id="acc-num" value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} placeholder="111222333" />
-                        </div>
+                    <div className="space-y-4">
+                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Administrative Context</Label>
+                        <Input placeholder="Short description..." value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} />
+                        <Textarea placeholder="Audit Rationale: Why was this money moved?" rows={3} value={newTransaction.explanation} onChange={(e) => setNewTransaction(prev => ({...prev, explanation: e.target.value}))} />
                     </div>
                 </div>
             </ScrollArea>
-            <DialogFooter className="p-6 border-t bg-muted/10">
-                <Button variant="ghost" onClick={() => setIsNewAccountOpen(false)}>Cancel</Button>
-                <Button onClick={handleSaveNewAccount}>Register Node</Button>
+            <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
+                <Button variant="ghost" className="h-12 font-bold" onClick={() => setIsNewTransactionDialogOpen(false)}>Cancel</Button>
+                <Button className="h-12 px-10 font-bold shadow-xl" onClick={handleSaveTransaction}>Build & Reconcile Node</Button>
             </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogContent>
+        </Dialog>
 
-      <ContactFormDialog
-        isOpen={isContactFormOpen}
-        onOpenChange={setIsContactFormOpen}
-        contactToEdit={null}
-        folders={contactFolders}
-        onFoldersChange={setContactFolders}
-        onSave={handleContactSave}
-        companies={companies}
-        onCompaniesChange={setCompanies}
-        customIndustries={customIndustries}
-        onCustomIndustriesChange={setCustomIndustries}
-      />
-    </>
+        <ContactFormDialog
+            isOpen={isContactFormOpen}
+            onOpenChange={setIsContactFormOpen}
+            contactToEdit={null}
+            folders={contactFolders}
+            onFoldersChange={setContactFolders}
+            onSave={handleContactSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+        />
+    </div>
   );
 }

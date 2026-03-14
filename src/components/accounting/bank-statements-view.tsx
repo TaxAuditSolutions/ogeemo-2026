@@ -199,7 +199,10 @@ export function BankStatementsView() {
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
+  
+  // Single, unified reconciliation state
   const [transactionToReconcile, setTransactionToReconcile] = React.useState<BankTransaction | null>(null);
+  const [reconciliationMode, setReconciliationMode] = React.useState<'suggest' | 'create'>('suggest');
   
   const [incomeLedger, setIncomeLedger] = React.useState<IncomeTransaction[]>([]);
   const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
@@ -211,7 +214,6 @@ export function BankStatementsView() {
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
   const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>(mockBankTransactions);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
-  const [isNewTransactionDialogOpen, setIsNewTransactionDialogOpen] = React.useState(false);
 
   const [newTransaction, setNewTransaction] = React.useState(emptyTransactionForm);
   const [newTransactionType, setNewTransactionType] = React.useState<'income' | 'expense'>('income');
@@ -277,7 +279,10 @@ export function BankStatementsView() {
   }, [loadData]);
   
     React.useEffect(() => {
-        if (!transactionToReconcile) return;
+        if (!transactionToReconcile) {
+            setReconciliationMode('suggest');
+            return;
+        }
 
         const isIncome = transactionToReconcile.amount > 0;
         const formDate = transactionToReconcile.date || format(new Date(), 'yyyy-MM-dd');
@@ -420,11 +425,6 @@ export function BankStatementsView() {
     };
 
 
-  const handleCreateNewEntry = () => {
-    if (!transactionToReconcile) return;
-    setIsNewTransactionDialogOpen(true);
-  };
-  
     const handleSaveTransaction = async () => {
         if (!user || !selectedAccount) return;
         const totalAmountNum = parseFloat(newTransaction.totalAmount);
@@ -470,7 +470,12 @@ export function BankStatementsView() {
                 const newEntryData: Omit<ExpenseTransaction, 'id'> = { ...baseData, category: categoryNumber!, paidFrom: selectedAccount.name, userId: user.uid };
                 await addExpenseTransaction(newEntryData);
             }
-            handleNewEntryCreated();
+            
+            // Mark the original bank transaction as reconciled
+            if (transactionToReconcile) {
+                setBankTransactions(prev => prev.map(tx => tx.id === transactionToReconcile.id ? { ...tx, status: 'reconciled' } : tx));
+            }
+            setTransactionToReconcile(null);
             toast({ title: "Transaction Created & Reconciled" });
             loadData();
         } catch (error: any) {
@@ -516,14 +521,6 @@ export function BankStatementsView() {
             toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
         }
     };
-
-  const handleNewEntryCreated = () => {
-      if (transactionToReconcile) {
-          setBankTransactions(prev => prev.map(tx => tx.id === transactionToReconcile.id ? { ...tx, status: 'reconciled' } : tx));
-      }
-      setTransactionToReconcile(null);
-      setIsNewTransactionDialogOpen(false);
-  };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
     setContacts(prev => isEditing ? prev.map(c => c.id === savedContact.id ? savedContact : c) : [savedContact, ...prev]);
@@ -943,19 +940,24 @@ export function BankStatementsView() {
             </CardFooter>
         </Card>
 
-        {/* Reusable Reconciliation Node Dialog */}
+        {/* --- CONSOLIDATED RECONCILIATION WORKSPACE --- */}
         <Dialog open={!!transactionToReconcile} onOpenChange={() => setTransactionToReconcile(null)}>
             <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden text-black shadow-2xl">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
                     <div className="flex items-center gap-2 text-primary mb-1">
                         <GitMerge className="h-6 w-6" />
-                        <DialogTitle className="text-xl font-headline uppercase tracking-tight">Reconciliation Node</DialogTitle>
+                        <DialogTitle className="text-xl font-headline uppercase tracking-tight">Reconciliation Workspace</DialogTitle>
                     </div>
-                    <DialogDescription>Match bank signal to Ogeemo nodes or create a new verified entry.</DialogDescription>
+                    <DialogDescription>
+                        {reconciliationMode === 'suggest' 
+                            ? "Match this bank signal to an existing internal Ogeemo node." 
+                            : "No match found? Create a verified ledger entry directly from this signal."}
+                    </DialogDescription>
                 </DialogHeader>
                 
-                <ScrollArea className="flex-1 max-h-[60vh]">
+                <ScrollArea className="flex-1 max-h-[70vh]">
                     <div className="p-6 space-y-6">
+                        {/* THE FACT: Bank Signal Card */}
                         <Card className="bg-muted/30 border-2 shadow-inner">
                             <CardHeader className="py-3 px-4 border-b bg-white/50">
                                 <CardTitle className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
@@ -963,175 +965,189 @@ export function BankStatementsView() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-4 flex justify-between items-center">
-                                <div className="space-y-1">
-                                    <p className="font-bold text-lg">{transactionToReconcile?.name}</p>
-                                    <p className="text-xs text-muted-foreground italic">{transactionToReconcile?.memo}</p>
+                                <div className="space-y-1 min-w-0">
+                                    <p className="font-bold text-lg truncate">{transactionToReconcile?.name}</p>
+                                    <p className="text-xs text-muted-foreground italic truncate">{transactionToReconcile?.memo}</p>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono"><CalendarIcon className="h-3 w-3"/> {transactionToReconcile?.date}</p>
                                 </div>
-                                <p className={cn("text-2xl font-mono font-black", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
+                                <p className={cn("text-2xl font-mono font-black shrink-0", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
                                     {formatCurrency(transactionToReconcile?.amount || 0)}
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" /> Internal Spider Web Suggestions
-                            </h4>
-                            
-                            {isLoadingData ? <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div> : (
-                                <div className="space-y-3">
-                                    {suggestedMatches.length > 0 ? suggestedMatches.map((match, i) => (
-                                        <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer bg-white" onClick={() => handleMatch(match)}>
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
-                                                    {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <ExternalLink className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-sm">{match.company || match.vendor || match.companyName}</p>
-                                                        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-bold h-4 px-1">{match.matchType}</Badge>
+                        {reconciliationMode === 'suggest' ? (
+                            /* OPTION 1: SUGGESTIONS */
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4" /> Internal Spider Web Suggestions
+                                </h4>
+                                
+                                {isLoadingData ? <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div> : (
+                                    <div className="space-y-3">
+                                        {suggestedMatches.length > 0 ? suggestedMatches.map((match, i) => (
+                                            <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer bg-white" onClick={() => handleMatch(match)}>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
+                                                        {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <ExternalLink className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground truncate max-w-[300px]">{match.description || `Invoice #${match.invoiceNumber}`}</p>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-sm">{match.company || match.vendor || match.companyName}</p>
+                                                            <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-bold h-4 px-1">{match.matchType}</Badge>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground truncate max-w-[300px]">{match.description || `Invoice #${match.invoiceNumber}`}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex items-center gap-4">
+                                                    <div className="flex flex-col items-end">
+                                                        <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
+                                                        <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
+                                                    </div>
+                                                    <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </div>
                                             </div>
-                                            <div className="text-right flex items-center gap-4">
-                                                <div className="flex flex-col items-end">
-                                                    <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
-                                                    <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
-                                                </div>
-                                                <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )) : (
+                                            <div className="text-center p-12 border-2 border-dashed rounded-2xl bg-muted/10 space-y-3">
+                                                <Search className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
+                                                <p className="text-sm font-medium text-muted-foreground">No automatic node matches found.</p>
+                                                <p className="text-xs text-muted-foreground italic">No Ogeemo records match this amount and date.</p>
                                             </div>
-                                        </div>
-                                    )) : (
-                                        <div className="text-center p-12 border-2 border-dashed rounded-2xl bg-muted/10 space-y-3">
-                                            <Search className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
-                                            <p className="text-sm font-medium text-muted-foreground">No automatic node matches found.</p>
-                                            <p className="text-xs text-muted-foreground italic">Try creating a new ledger entry manually using the button below.</p>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* OPTION 2: CREATION FORM */
+                            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 items-start">
+                                    <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-amber-800 leading-relaxed">
+                                        You are creating a new ledger entry to account for this signal. This will add a <strong>Verified</strong> node to your General Ledger.
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold text-muted-foreground">Verification Date</Label>
+                                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="w-full h-11 justify-start font-normal bg-white">
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {newTransaction.date}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <CustomCalendar mode="single" selected={newTransaction.date ? parseISO(newTransaction.date) : undefined} onSelect={(d) => { if(d) setNewTransaction(p => ({...p, date: format(d, 'yyyy-MM-dd')})); setIsDatePickerOpen(false); }} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs uppercase font-bold text-muted-foreground">Final Amount</Label>
+                                        <Input value={formatCurrency(parseFloat(newTransaction.totalAmount) || 0)} readOnly disabled className="h-11 font-mono font-bold bg-muted/50" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground">Identify Contact</Label>
+                                    <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full h-11 justify-between bg-white font-normal">
+                                                <span className="truncate">{newTransaction.company || "Select/Add Identity"}</span>
+                                                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                            <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                                                <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName} />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}>
+                                                            <Plus className="mr-2 h-4 w-4" /> Create "{newCompanyName}"
+                                                        </Button>
+                                                    </CommandEmpty>
+                                                    <CommandGroup>
+                                                        {companies.map(c => (
+                                                            <CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(p => ({...p, company: c.name})); setIsCompanyPopoverOpen(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")} />
+                                                                {c.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground">Tax Line Assignment</Label>
+                                    <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full h-11 justify-between bg-white font-normal">
+                                                <span className="truncate">
+                                                    {newTransactionType === 'income' ? 
+                                                        (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select income line...") :
+                                                        (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
+                                                    }
+                                                </span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search lines..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No results.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {activeCategories.map((c) => (
+                                                            <CommandItem key={c.id} value={c.name} onSelect={() => { 
+                                                                if (newTransactionType === 'income') setNewTransaction(prev => ({ ...prev, incomeCategory: c.categoryNumber || c.id }));
+                                                                else setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id }));
+                                                                setIsIncomeCategoryPopoverOpen(false); 
+                                                            }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === (c.categoryNumber || c.id) || newTransaction.category === (c.categoryNumber || c.id)) ? "opacity-100" : "opacity-0")}/>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[10px] font-black uppercase text-muted-foreground">Line {c.categoryNumber}</span>
+                                                                    <span className="text-sm font-semibold">{c.name}</span>
+                                                                </div>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground">Audit Rationale (Internal)</Label>
+                                    <Textarea placeholder="Explain the business purpose of this transaction..." rows={3} value={newTransaction.explanation} onChange={e => setNewTransaction(p => ({...p, explanation: e.target.value}))} />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
 
                 <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <Button variant="outline" className="h-12 px-6 font-bold" onClick={handleCreateNewEntry}>
-                        <Plus className="mr-2 h-4 w-4" /> Create New Verified Entry
-                    </Button>
+                    {reconciliationMode === 'suggest' ? (
+                        <Button variant="outline" className="h-12 px-6 font-bold" onClick={() => setReconciliationMode('create')}>
+                            <Plus className="mr-2 h-4 w-4" /> No Match? Create Verified Entry
+                        </Button>
+                    ) : (
+                        <Button variant="ghost" className="h-12 px-6 font-bold" onClick={() => setReconciliationMode('suggest')}>
+                            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Suggestions
+                        </Button>
+                    )}
                     <div className="flex gap-3">
                         <Button variant="ghost" onClick={() => setTransactionToReconcile(null)} className="h-12 px-6 font-bold">Cancel</Button>
+                        {reconciliationMode === 'create' && (
+                            <Button className="h-12 px-10 font-bold shadow-xl" onClick={handleSaveTransaction}>
+                                <Save className="mr-2 h-4 w-4" /> Build & Reconcile
+                            </Button>
+                        )}
                     </div>
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        {/* New Transaction Creation Dialog */}
-        <Dialog open={isNewTransactionDialogOpen} onOpenChange={setIsNewTransactionDialogOpen}>
-            <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh] p-0 text-black overflow-hidden">
-            <DialogHeader className="p-6 border-b bg-primary/5">
-                <DialogTitle className="text-2xl text-primary font-bold uppercase tracking-tight">Create & Verify Transaction</DialogTitle>
-                <DialogDescription>Building a new node from a bank signal.</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="flex-1 bg-white">
-                <div className="grid gap-6 py-8 px-10">
-                    <RadioGroup value={newTransactionType} onValueChange={(value) => setNewTransactionType(value as 'income' | 'expense')} className="grid grid-cols-2 gap-4">
-                        <div><RadioGroupItem value="income" id="r-income" className="peer sr-only" /><Label htmlFor="r-income" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 font-bold uppercase text-xs tracking-widest cursor-pointer text-center">Income Node</Label></div>
-                        <div><RadioGroupItem value="expense" id="r-expense" className="peer sr-only" /><Label htmlFor="r-expense" className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-red-600 [&:has([data-state=checked])]:border-red-600 font-bold uppercase text-xs tracking-widest cursor-pointer text-center">Expense Node</Label></div>
-                    </RadioGroup>
-                    
-                    <div className="space-y-4 border rounded-2xl p-6 bg-muted/5">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Date</Label>
-                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("col-span-3 h-11 justify-start text-left font-normal px-4 bg-white", !newTransaction.date && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                        {newTransaction.date ? format(new Date(newTransaction.date), "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <CustomCalendar mode="single" selected={newTransaction.date ? new Date(newTransaction.date) : undefined} onSelect={(date) => { if (date) setNewTransaction(p => ({ ...p, date: format(date, 'yyyy-MM-dd') })); setIsDatePickerOpen(false); }} initialFocus /></PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Contact</Label>
-                            <div className="col-span-3">
-                                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">
-                                            <span className="truncate">{newTransaction.company || "Select/Add Contact"}</span>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
-                                            <CommandInput placeholder="Search..." value={newCompanyName} onValueChange={setNewCompanyName}/><CommandList><CommandEmpty><Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={() => handleCreateCompany(newCompanyName)}><Plus className="mr-2 h-4 w-4" /> Create "{newCompanyName}"</Button></CommandEmpty><CommandGroup>{companies?.map((c) => (<CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(prev => ({ ...prev, company: c.name })); setIsCompanyPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", newTransaction.company.toLowerCase() === c.name.toLowerCase() ? "opacity-100" : "opacity-0")} />{c.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Tax Line</Label>
-                            <div className="col-span-3">
-                                <Popover open={isIncomeCategoryPopoverOpen} onOpenChange={setIsIncomeCategoryPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal bg-white">
-                                            <span className="truncate">
-                                                {newTransactionType === 'income' ? 
-                                                    (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.incomeCategory)?.name || "Select income line...") :
-                                                    (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
-                                                }
-                                            </span>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search..." />
-                                            <CommandList>
-                                                <CommandEmpty>No results.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {activeCategories.map((c) => (
-                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { 
-                                                            if (newTransactionType === 'income') setNewTransaction(prev => ({ ...prev, incomeCategory: c.categoryNumber || c.id }));
-                                                            else setNewTransaction(prev => ({ ...prev, category: c.categoryNumber || c.id }));
-                                                            setIsIncomeCategoryPopoverOpen(false); 
-                                                        }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", (newTransaction.incomeCategory === c.id || newTransaction.category === c.id) ? "opacity-100" : "opacity-0")}/>
-                                                            <div className="flex flex-col text-black">
-                                                                <span className="text-[10px] font-black uppercase text-muted-foreground">Line {c.categoryNumber}</span>
-                                                                <span className="text-sm font-semibold">{c.name}</span>
-                                                            </div>
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 flex justify-between items-center">
-                        <Label className="text-sm font-bold uppercase tracking-widest text-primary">Final Verified Amount</Label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-primary">$</span>
-                            <Input value={newTransaction.totalAmount} readOnly disabled className="h-12 w-48 pl-7 text-2xl font-mono font-black text-primary border-primary/20 bg-white" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Administrative Context</Label>
-                        <Input placeholder="Internal description..." value={newTransaction.description} onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))} />
-                        <Textarea placeholder="Audit Rationale: Why was this money moved?" rows={3} value={newTransaction.explanation} onChange={(e) => setNewTransaction(prev => ({...prev, explanation: e.target.value}))} />
-                    </div>
-                </div>
-            </ScrollArea>
-            <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-                <Button variant="ghost" className="h-12 font-bold" onClick={() => setIsNewTransactionDialogOpen(false)}>Cancel</Button>
-                <Button className="h-12 px-10 font-bold shadow-xl" onClick={handleSaveTransaction}>Build & Reconcile Node</Button>
-            </DialogFooter>
             </DialogContent>
         </Dialog>
 

@@ -41,7 +41,8 @@ import {
     ChevronsUpDown,
     Check,
     Plus,
-    BookOpen
+    BookOpen,
+    Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -139,6 +140,7 @@ export function ReconciliationWizard({
 
             const perfectMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
+                // Match criteria reduced to Date and Amount only
                 return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
 
@@ -261,15 +263,75 @@ export function ReconciliationWizard({
                 await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
             }
 
-            toast({ title: 'Signal Committed', description: 'Signal converted to a verified Ledger Node.' });
-            
             // Mark as reconciled in local state immediately
             setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
             
-            // Trigger refresh in background
+            // Trigger refresh
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Ingestion Failed', description: error.message });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleAutoRecon = async () => {
+        if (!user || results.missing.length === 0) return;
+        setIsProcessing(true);
+        
+        const itemsToProcess = results.missing.filter(bt => bt.status !== 'reconciled');
+        
+        if (itemsToProcess.length === 0) {
+            toast({ title: "No actions required", description: "All signals in this list are already reconciled." });
+            setIsProcessing(false);
+            return;
+        }
+
+        try {
+            let successCount = 0;
+            for (const bt of itemsToProcess) {
+                const isIncome = bt.amount > 0;
+                const absAmount = Math.abs(bt.amount);
+                
+                let categoryId = "";
+                if (isIncome) {
+                    const defaultIncome = incomeCategories.find(c => c.categoryNumber === "Part 3A" || c.name.toLowerCase().includes("sales")) || incomeCategories[0];
+                    categoryId = defaultIncome?.categoryNumber || defaultIncome?.id || "Part 3A";
+                } else {
+                    const defaultExpense = expenseCategories.find(c => c.categoryNumber === "9270" || c.name.toLowerCase().includes("other")) || expenseCategories[0];
+                    categoryId = defaultExpense?.categoryNumber || defaultExpense?.id || "9270";
+                }
+
+                const baseData = {
+                    date: normalizeDate(bt.date),
+                    company: bt.name,
+                    description: `Automated Ingestion: ${bt.memo}`,
+                    totalAmount: absAmount,
+                    preTaxAmount: absAmount,
+                    taxAmount: 0,
+                    taxRate: 0,
+                    explanation: "Batch Auto Recon orchestration.",
+                    type: 'business' as const,
+                    paymentMethod: 'Bank Transfer',
+                    isReconciled: true,
+                    bankReferenceId: bt.id,
+                    userId: user.uid,
+                };
+
+                if (isIncome) {
+                    await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
+                } else {
+                    await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
+                }
+                
+                successCount++;
+                setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
+            }
+
+            toast({ title: "Auto Recon Complete", description: `${successCount} signals committed to General Ledger.` });
+            onSuccess();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Auto Recon Partial Failure', description: error.message });
         } finally {
             setIsProcessing(false);
         }
@@ -397,9 +459,21 @@ export function ReconciliationWizard({
                                 <TabsContent value="missing" className="h-full m-0 focus-visible:ring-0">
                                     <ScrollArea className="h-full">
                                         <div className="max-w-6xl mx-auto p-10 space-y-6">
-                                            <div className="space-y-1 border-b pb-4">
-                                                <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Discovered Unrecorded Signals</h3>
-                                                <p className="text-sm text-muted-foreground">External bank transactions that require a Ledger Node for audit-readiness.</p>
+                                            <div className="flex items-center justify-between border-b pb-4">
+                                                <div className="space-y-1">
+                                                    <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Discovered Unrecorded Signals</h3>
+                                                    <p className="text-sm text-muted-foreground">External bank transactions that require a Ledger Node for audit-readiness.</p>
+                                                </div>
+                                                <Button 
+                                                    size="lg" 
+                                                    variant="secondary"
+                                                    className="h-12 px-8 font-bold shadow-xl border-2 border-primary/20"
+                                                    onClick={handleAutoRecon}
+                                                    disabled={isProcessing || results.missing.filter(m => m.status !== 'reconciled').length === 0}
+                                                >
+                                                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                                                    Auto Recon All Signals
+                                                </Button>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.missing.map((m, i) => (
@@ -507,5 +581,3 @@ export function ReconciliationWizard({
         </Dialog>
     );
 }
-
-    

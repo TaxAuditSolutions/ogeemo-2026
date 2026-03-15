@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -82,7 +83,7 @@ export function ReconciliationWizard({
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Matching Results Logic
+    // Matching Results Logic - High Fidelity Update
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], missing: [], outstanding: [] };
 
@@ -96,12 +97,27 @@ export function ReconciliationWizard({
         const usedLedgerIds = new Set<string>();
 
         bankTransactions.forEach(bt => {
-            const match = allLedger.find(lt => 
-                !lt.isReconciled && 
-                !usedLedgerIds.has(lt.id) &&
-                lt.date === bt.date && 
-                Math.abs(lt.totalAmount - Math.abs(bt.amount)) < 0.01
-            );
+            // 1. Temporal Normalization: Convert bank signal date to Ogeemo standard (YYYY-MM-DD)
+            let normalizedBankDate = bt.date;
+            try {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(bt.date)) {
+                    const parsed = new Date(bt.date);
+                    if (isValid(parsed)) {
+                        normalizedBankDate = format(parsed, 'yyyy-MM-dd');
+                    }
+                }
+            } catch (e) {
+                console.warn("Date normalization failed for signal:", bt.date);
+            }
+
+            // 2. High-Fidelity Matching: Search the Spider Web for a node with parity
+            const match = allLedger.find(lt => {
+                const isMatch = !lt.isReconciled && 
+                    !usedLedgerIds.has(lt.id) &&
+                    lt.date === normalizedBankDate && 
+                    Math.abs(lt.totalAmount - Math.abs(bt.amount)) < 0.01;
+                return isMatch;
+            });
 
             if (match) {
                 perfectMatches.push({ bank: bt, ledger: match });
@@ -111,6 +127,7 @@ export function ReconciliationWizard({
             }
         });
 
+        // 3. Outstanding Triage: Identify nodes in GL not yet matched by a signal
         const outstandingLedger = allLedger.filter(lt => !lt.isReconciled && !usedLedgerIds.has(lt.id));
 
         return { perfectMatches, missing: missingFromLedger, outstanding: outstandingLedger };
@@ -128,7 +145,8 @@ export function ReconciliationWizard({
                 const lines = text.split('\n').filter(l => l.trim());
                 // Expecting Ogeemo 5-column format: Date, Transaction, Name, Memo, Amount
                 const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
-                    const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+                    // Regex split to respect commas inside quotes
+                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
                     return {
                         id: `bank_${Date.now()}_${index}`,
                         date: parts[0] || '',
@@ -139,6 +157,7 @@ export function ReconciliationWizard({
                 });
                 setBankTransactions(newTxns);
                 setStep('triage');
+                toast({ title: "Statement Ingested", description: `Parsed ${newTxns.length} transactions from your bank signal registry.` });
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Upload Failed', description: 'Ensure the CSV matches the Ogeemo bank statement format.' });
             } finally {
@@ -154,7 +173,7 @@ export function ReconciliationWizard({
             for (const match of results.perfectMatches) {
                 await reconcileLedgerEntry(match.ledger.id, match.ledger.type, match.bank.id);
             }
-            toast({ title: 'Reconciliation Complete', description: `Successfully matched ${results.perfectMatches.length} transactions.` });
+            toast({ title: 'Reconciliation Complete', description: `Successfully matched ${results.perfectMatches.length} transactions with absolute parity.` });
             onSuccess();
             onOpenChange(false);
             resetWizard();
@@ -172,7 +191,7 @@ export function ReconciliationWizard({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black">
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black shadow-2xl">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
                     <div className="flex items-center gap-2 text-primary mb-1">
                         <GitMerge className="h-8 w-8" />
@@ -192,7 +211,7 @@ export function ReconciliationWizard({
                             <div className="text-center space-y-2">
                                 <h3 className="text-xl font-bold">Upload Bank Signal Registry</h3>
                                 <p className="text-muted-foreground max-w-sm">
-                                    Drop your monthly bank CSV statement here. Ogeemo will perform an automated node-to-signal comparison.
+                                    Drop your monthly bank CSV statement here. Ogeemo will perform an automated node-to-signal comparison across your Spider Web.
                                 </p>
                             </div>
                             <Button size="lg" className="h-14 px-12 text-lg font-bold shadow-xl" onClick={() => fileInputRef.current?.click()}>
@@ -235,7 +254,7 @@ export function ReconciliationWizard({
                                     <TabsContent value="perfect" className="h-full m-0">
                                         <div className="space-y-4 h-full flex flex-col">
                                             <div className="flex items-center justify-between">
-                                                <p className="text-sm text-muted-foreground italic">These entries match your Ledger and Bank Signal exactly.</p>
+                                                <p className="text-sm text-muted-foreground italic">These entries match your Ledger and Bank Signal exactly by Date and Amount.</p>
                                                 <Button size="sm" onClick={handleBulkReconcile} disabled={results.perfectMatches.length === 0 || isProcessing}>
                                                     Confirm & Reconcile All ({results.perfectMatches.length})
                                                 </Button>
@@ -255,6 +274,13 @@ export function ReconciliationWizard({
                                                         <p className="font-mono font-bold text-sm">{formatCurrency(m.bank.amount)}</p>
                                                     </div>
                                                 ))}
+                                                {results.perfectMatches.length === 0 && (
+                                                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+                                                        <Search className="h-10 w-10 mb-2" />
+                                                        <p className="text-sm font-bold">No Perfect Matches Found</p>
+                                                        <p className="text-xs">Check "Missing from Ledger" for potential discrepancies.</p>
+                                                    </div>
+                                                )}
                                             </ScrollArea>
                                         </div>
                                     </TabsContent>
@@ -315,7 +341,7 @@ export function ReconciliationWizard({
                     )}
                 </div>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center">
+                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
                     <div className="hidden sm:flex items-center gap-2">
                         <Button variant="ghost" onClick={resetWizard}>Restart Wizard</Button>
                         {step === 'triage' && (
@@ -327,9 +353,9 @@ export function ReconciliationWizard({
                         )}
                     </div>
                     <div className="flex gap-3">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                        <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-12 px-6">Cancel</Button>
                         {step === 'triage' && (
-                            <Button onClick={handleBulkReconcile} disabled={isProcessing}>
+                            <Button onClick={handleBulkReconcile} disabled={isProcessing} className="h-12 px-8 shadow-xl font-bold">
                                 {isProcessing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                                 Finalize Perfect Matches
                             </Button>

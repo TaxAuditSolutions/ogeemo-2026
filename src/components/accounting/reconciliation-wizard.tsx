@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
@@ -119,7 +120,6 @@ export function ReconciliationWizard({
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Matching Results Logic (Reduced criteria: Date & Amount strictly)
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
 
@@ -262,7 +262,11 @@ export function ReconciliationWizard({
             }
 
             toast({ title: 'Signal Committed', description: 'Signal converted to a verified Ledger Node.' });
-            setBankTransactions(prev => prev.filter(tx => tx.id !== bt.id));
+            
+            // Mark as reconciled in local state immediately
+            setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
+            
+            // Trigger refresh in background
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Ingestion Failed', description: error.message });
@@ -381,8 +385,8 @@ export function ReconciliationWizard({
                                                 {results.perfectMatches.length === 0 && (
                                                     <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                                                         <Search className="h-10 w-10 mb-2" />
-                                                        <p className="text-sm font-bold uppercase">No Precise Parity Detected</p>
-                                                        <p className="text-xs italic">Review the Ingestion tab for unrecorded signals.</p>
+                                                        <p className="text-sm font-bold uppercase">No Perfect Matches Found</p>
+                                                        <p className="text-xs italic">Check "Missing from Ledger" for potential discrepancies.</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -399,9 +403,11 @@ export function ReconciliationWizard({
                                             </div>
                                             <div className="space-y-3">
                                                 {results.missing.map((m, i) => (
-                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm group hover:border-primary transition-all">
+                                                    <Card key={i} className={cn("flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm group transition-all", m.status === 'reconciled' ? "border-green-500 bg-green-50/50" : "hover:border-primary")}>
                                                         <div className="flex items-center gap-5">
-                                                            <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><AlertCircle className="h-6 w-6" /></div>
+                                                            <div className={cn("p-3 rounded-xl", m.status === 'reconciled' ? "bg-green-100 text-green-600" : "bg-amber-50 text-amber-600")}>
+                                                                {m.status === 'reconciled' ? <CheckCircle2 className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
+                                                            </div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.name}</p>
                                                                 <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.memo}</p>
@@ -412,11 +418,30 @@ export function ReconciliationWizard({
                                                                 <p className={cn("font-mono font-black text-2xl", m.amount > 0 ? "text-green-600" : "text-red-600")}>
                                                                     {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
                                                                 </p>
-                                                                <p className="text-[10px] uppercase font-bold text-amber-600 tracking-widest mt-1">Staging Node</p>
+                                                                <p className={cn("text-[10px] uppercase font-bold tracking-widest mt-1", m.status === 'reconciled' ? "text-green-600" : "text-amber-600")}>
+                                                                    {m.status === 'reconciled' ? "Verified Node" : "Staging Node"}
+                                                                </p>
                                                             </div>
-                                                            <Button size="lg" className="h-14 px-8 font-bold shadow-lg" onClick={() => handleOneClickIngest(m)} disabled={isProcessing}>
-                                                                {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                                                Post & Reconcile
+                                                            <Button 
+                                                                size="lg" 
+                                                                className={cn(
+                                                                    "h-14 px-8 font-bold shadow-lg transition-all",
+                                                                    m.status === 'reconciled' ? "bg-green-600 hover:bg-green-700 text-white border-green-700" : ""
+                                                                )} 
+                                                                onClick={() => m.status !== 'reconciled' && handleOneClickIngest(m)} 
+                                                                disabled={(isProcessing && m.status !== 'reconciled') || m.status === 'reconciled'}
+                                                            >
+                                                                {m.status === 'reconciled' ? (
+                                                                    <>
+                                                                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                                                                        Posted & Reconciled
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {isProcessing ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <PlusCircle className="mr-2 h-5 w-5" />}
+                                                                        Post & Reconcile
+                                                                    </>
+                                                                )}
                                                             </Button>
                                                         </div>
                                                     </Card>
@@ -482,3 +507,5 @@ export function ReconciliationWizard({
         </Dialog>
     );
 }
+
+    

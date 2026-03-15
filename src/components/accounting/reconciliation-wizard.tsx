@@ -24,7 +24,8 @@ import {
     PlusCircle,
     FileSpreadsheet,
     Landmark as BankIcon,
-    Clock
+    Clock,
+    FileDigit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 

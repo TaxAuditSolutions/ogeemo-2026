@@ -10,6 +10,14 @@ import {
     DialogFooter 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    CardFooter,
+} from '@/components/ui/card';
 import { 
     Upload, 
     CheckCircle2, 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
@@ -140,7 +139,7 @@ export function ReconciliationWizard({
 
             const perfectMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
-                // Match criteria reduced to Date and Amount only
+                // Match criteria: Exact Date and Exact Amount
                 return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
 
@@ -159,7 +158,7 @@ export function ReconciliationWizard({
 
             if (potentialMatch) {
                 potentialMatches.push({ bank: bt, ledger: potentialMatch, reason: 'Date variance match' });
-                usedLedgerIds.add(potentialMatch.id);
+                usedLedgerIds.add(perfectMatch.id);
                 return;
             }
 
@@ -263,10 +262,7 @@ export function ReconciliationWizard({
                 await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
             }
 
-            // Mark as reconciled in local state immediately
             setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
-            
-            // Trigger refresh
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Ingestion Failed', description: error.message });

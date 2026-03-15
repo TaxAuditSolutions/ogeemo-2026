@@ -39,7 +39,8 @@ import {
     Save,
     ChevronsUpDown,
     Check,
-    Plus
+    Plus,
+    BookOpen
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -66,7 +67,7 @@ interface BankTransaction {
     name: string;
     memo: string;
     amount: number;
-    status: 'reconciled' | 'unreconciled';
+    status: 'unreconciled' | 'reconciled';
 }
 
 interface ReconciliationWizardProps {
@@ -118,7 +119,7 @@ export function ReconciliationWizard({
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Matching Results Logic (Date & Amount strictly)
+    // Matching Results Logic (Reduced criteria: Date & Amount strictly)
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
 
@@ -229,7 +230,6 @@ export function ReconciliationWizard({
             const isIncome = bt.amount > 0;
             const absAmount = Math.abs(bt.amount);
             
-            // Resolve default audit categories
             let categoryId = "";
             if (isIncome) {
                 const defaultIncome = incomeCategories.find(c => c.categoryNumber === "Part 3A" || c.name.toLowerCase().includes("sales")) || incomeCategories[0];
@@ -262,8 +262,6 @@ export function ReconciliationWizard({
             }
 
             toast({ title: 'Signal Committed', description: 'Signal converted to a verified Ledger Node.' });
-            
-            // Remove from local list to reflect ingestion
             setBankTransactions(prev => prev.filter(tx => tx.id !== bt.id));
             onSuccess();
         } catch (error: any) {
@@ -309,20 +307,28 @@ export function ReconciliationWizard({
                                     {isProcessing ? <LoaderCircle className="mr-3 h-8 w-8 animate-spin" /> : <FileSpreadsheet className="mr-3 h-8 w-8" />}
                                     Select CSV File
                                 </Button>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-16">
                                     <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                        <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-                                        <h4 className="font-bold text-lg mb-2">Automated Parity</h4>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            The engine performs high-fidelity matching across your entire Income and Expense history.
-                                        </p>
+                                        <CardHeader>
+                                            <ShieldCheck className="h-10 w-10 text-primary mb-4" />
+                                            <CardTitle className="text-lg">Automated Parity</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                The engine performs high-fidelity matching across your entire Income and Expense history based strictly on Date and Amount.
+                                            </p>
+                                        </CardContent>
                                     </Card>
                                     <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                        <PlusCircle className="h-10 w-10 text-primary mb-4" />
-                                        <h4 className="font-bold text-lg mb-2">One-Click Post</h4>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Identify missing signals and post them directly to your General Ledger with a single action.
-                                        </p>
+                                        <CardHeader>
+                                            <PlusCircle className="h-10 w-10 text-primary mb-4" />
+                                            <CardTitle className="text-lg">One-Click Ingestion</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                Identify missing signals and post them directly to your General Ledger with a single action.
+                                            </p>
+                                        </CardContent>
                                     </Card>
                                 </div>
                             </div>
@@ -459,6 +465,9 @@ export function ReconciliationWizard({
                         )}
                     </div>
                     <div className="flex gap-4 w-full sm:w-auto">
+                        <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">
+                            <BookOpen className="mr-2 h-5 w-5" /> Back to General Ledger
+                        </Button>
                         <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Close Terminal</Button>
                         {step === 'triage' && (
                             <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white text-primary">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -69,7 +68,8 @@ import {
     getExpenseCategories, type ExpenseCategory,
     getIncomeCategories, type IncomeCategory,
     getCompanies, type Company,
-    getTaxTypes, type TaxType
+    getTaxTypes, type TaxType,
+    reconcileLedgerEntry
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -218,6 +218,10 @@ export function LedgersView() {
                     aValue = a.transactionType;
                     bValue = b.transactionType;
                     break;
+                case 'totalAmount':
+                    aValue = a.totalAmount;
+                    bValue = b.totalAmount;
+                    break;
                 default:
                     aValue = 0;
                     bValue = 0;
@@ -331,7 +335,11 @@ export function LedgersView() {
                         </Button>
                     </TableHead>
                     {type === 'all' && <TableHead className="text-center">Type</TableHead>}
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="p-0 text-right">
+                        <Button variant="ghost" onClick={() => setSortConfig({ key: 'totalAmount', direction: sortConfig?.direction === 'asc' ? 'desc' : 'asc' })} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
+                            Amount {sortConfig?.key === 'totalAmount' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                        </Button>
+                    </TableHead>
                     <TableHead className="text-center print:hidden">Audit</TableHead>
                     <TableHead className="w-12 print:hidden"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
@@ -456,12 +464,10 @@ export function LedgersView() {
                 <div className="flex flex-col items-center space-y-2">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                {endDate ? format(endDate, "PPP") : <span>End of time</span>}
-                            </Button>
-                        </PopoverTrigger>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                            {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                        </Button>
                         <PopoverContent className="w-auto p-0" align="start">
                             <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
                         </PopoverContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { 
     Dialog, 
     DialogContent, 
@@ -34,23 +34,43 @@ import {
     Clock,
     FileDigit,
     Search,
-    X
+    X,
+    TrendingUp,
+    TrendingDown,
+    Save,
+    ChevronsUpDown,
+    Check,
+    Plus,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
     reconcileLedgerEntry,
+    reconcileInvoicePayment,
+    reconcileBillPayment,
+    addIncomeTransaction,
+    addExpenseTransaction,
+    addCompany,
     type IncomeTransaction, 
     type ExpenseTransaction, 
     type Company,
     type IncomeCategory,
-    type ExpenseCategory
+    type ExpenseCategory,
+    type Invoice,
+    type PayableBill
 } from '@/services/accounting-service';
-import { format, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
+import { format, parseISO, isValid, differenceInDays, startOfDay, endOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import Link from 'next/link';
 
 interface BankTransaction {
@@ -59,6 +79,7 @@ interface BankTransaction {
     name: string;
     memo: string;
     amount: number;
+    status: 'reconciled' | 'unreconciled';
 }
 
 interface ReconciliationWizardProps {
@@ -72,67 +93,37 @@ interface ReconciliationWizardProps {
     onSuccess: () => void;
 }
 
-/**
- * Robustly parses an amount string from a bank CSV.
- * Handles: -$2,400.00, (2,400.00), 2400.00, $2.400,00
- */
 const scrubAmount = (val: any): number => {
     if (val === null || val === undefined) return 0;
     const s = String(val).trim();
     if (!s) return 0;
-    
-    // Check for parenthetical negative (1,234.56)
     const isParens = s.startsWith('(') && s.endsWith(')');
-    
-    // Remove currency symbols, commas, and parentheses
     let clean = s.replace(/[$,()]/g, '');
-    
     let num = parseFloat(clean);
     if (isNaN(num)) return 0;
-
-    // Check for negative signs (leading or trailing)
     const isNegative = isParens || s.startsWith('-') || s.endsWith('-');
-    
     return isNegative ? -Math.abs(num) : num;
 };
 
-/**
- * Normalizes disparate bank date formats to Ogeemo standard YYYY-MM-DD.
- * Handles multiple international formats resiliently.
- */
 const normalizeDate = (dateStr: string): string => {
     if (!dateStr) return '';
-    // YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const dObj = new Date(dateStr);
+    return isValid(dObj) ? format(dObj, 'yyyy-MM-dd') : dateStr;
+};
 
-    // Remove any extra noise
-    const cleanStr = dateStr.replace(/[^0-9/-]/g, '');
-    const parts = cleanStr.split(/[-/]/);
-    
-    if (parts.length === 3) {
-        let y, m, d;
-        // Case: YYYY MM DD
-        if (parts[0].length === 4) {
-            y = parts[0]; m = parts[1]; d = parts[2];
-        } 
-        // Case: MM DD YYYY or DD MM YYYY
-        else if (parts[2].length === 4) {
-            y = parts[2];
-            // We'll trust native JS parsing for local ambiguities, but ensure consistency
-            const dObj = new Date(dateStr);
-            if (isValid(dObj)) return format(dObj, 'yyyy-MM-dd');
-            
-            // Manual fallback if standard fails
-            m = parts[0]; d = parts[1];
-        } else {
-            // Assume 2-digit year (e.g. 01/02/25)
-            const yearPrefix = new Date().getFullYear().toString().slice(0, 2);
-            y = `${yearPrefix}${parts[2]}`;
-            m = parts[0]; d = parts[1];
-        }
-        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    }
-    return dateStr;
+const emptyTransactionForm = { 
+    date: '', 
+    company: '', 
+    description: '', 
+    totalAmount: '', 
+    taxRate: '0', 
+    category: '', 
+    incomeCategory: '', 
+    explanation: '', 
+    documentNumber: '', 
+    documentUrl: '', 
+    type: 'business' as 'business' | 'personal'
 };
 
 export function ReconciliationWizard({ 
@@ -140,17 +131,33 @@ export function ReconciliationWizard({
     onOpenChange, 
     incomeLedger, 
     expenseLedger,
+    incomeCategories,
+    expenseCategories,
+    companies,
     onSuccess 
 }: ReconciliationWizardProps) {
     const [step, setStep] = useState<'upload' | 'triage'>('upload');
     const [activeTab, setActiveTab] = useState('perfect');
     const [isProcessing, setIsProcessing] = useState(false);
     const [bankTransactions, setBankTransactions] = useState<BankTransaction[]>([]);
+    
+    // Selection state for granular reconciliation
+    const [transactionToWorkOn, setTransactionToWorkOn] = useState<BankTransaction | null>(null);
+    const [reconciliationMode, setReconciliationMode] = useState<'suggest' | 'create'>('suggest');
+    
+    // Creation form state
+    const [newTransaction, setNewTransaction] = useState(emptyTransactionForm);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = useState(false);
+    const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
+    const [companySearchValue, setCompanySearchValue] = useState("");
+    const [categorySearchValue, setCategorySearchValue] = useState("");
+
     const { toast } = useToast();
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Matching Results Logic - Multi-Interpretive Intelligence
+    // Matching Results Logic
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
 
@@ -168,12 +175,9 @@ export function ReconciliationWizard({
             const absBankAmount = Math.abs(bt.amount);
             const normalizedBankDate = normalizeDate(bt.date);
 
-            // --- REDUCED CRITERIA: Tier 1 Pass: Perfect Match (Exact Date and Amount ONLY) ---
             const perfectMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
-                const amountMatch = Math.abs(lt.totalAmount - absBankAmount) < 0.01;
-                const dateMatch = lt.date === normalizedBankDate;
-                return dateMatch && amountMatch;
+                return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
 
             if (perfectMatch) {
@@ -182,26 +186,15 @@ export function ReconciliationWizard({
                 return;
             }
 
-            // --- REDUCED CRITERIA: Tier 2 Pass: Fuzzy Match (Amount Match + High Confidence Similarity) ---
             const potentialMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
-                
-                const amountMatch = Math.abs(lt.totalAmount - absBankAmount) < 0.01;
-                if (!amountMatch) return false;
-
-                // Check date variance (+/- 7 days - processing window)
-                const ledgerDate = new Date(lt.date);
-                const bankDate = new Date(normalizedBankDate);
-                const dateDiff = Math.abs(differenceInDays(ledgerDate, bankDate));
-                
+                if (Math.abs(lt.totalAmount - absBankAmount) > 0.01) return false;
+                const dateDiff = Math.abs(differenceInDays(new Date(lt.date), new Date(normalizedBankDate)));
                 return dateDiff <= 7;
             });
 
             if (potentialMatch) {
-                const reason = differenceInDays(new Date(potentialMatch.date), new Date(normalizedBankDate)) !== 0 
-                    ? 'Processing Window Delay' 
-                    : 'Amount match (diff date)';
-                potentialMatches.push({ bank: bt, ledger: potentialMatch, reason });
+                potentialMatches.push({ bank: bt, ledger: potentialMatch, reason: 'Date variance match' });
                 usedLedgerIds.add(potentialMatch.id);
                 return;
             }
@@ -224,52 +217,26 @@ export function ReconciliationWizard({
             try {
                 const text = e.target?.result as string;
                 const lines = text.split(/\r?\n/).filter(l => l.trim());
-                if (lines.length < 2) throw new Error("The CSV file is too small or improperly formatted.");
+                if (lines.length < 2) throw new Error("CSV invalid.");
 
-                const headerLine = lines[0].toLowerCase();
-                const headers = headerLine.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, ''));
-
-                const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('posted'));
-                const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('total') || h.includes('price'));
-                const debitIdx = headers.findIndex(h => h.includes('debit') || h.includes('withdrawal'));
-                const creditIdx = headers.findIndex(h => h.includes('credit') || h.includes('deposit'));
-                const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('description') || h.includes('payee') || h.includes('merchant'));
-                const memoIdx = headers.findIndex(h => h.includes('memo') || h.includes('notes') || h.includes('details') || h.includes('transaction type'));
-
-                if (dateIdx === -1 && (amountIdx === -1 && debitIdx === -1)) {
-                    throw new Error("Could not automatically discover Date or Amount columns.");
-                }
-
-                const finalDateIdx = dateIdx !== -1 ? dateIdx : 0;
-                const finalNameIdx = nameIdx !== -1 ? nameIdx : (headers.length > 2 ? 2 : 1);
-                const finalMemoIdx = memoIdx !== -1 ? memoIdx : (headers.length > 3 ? 3 : 1);
-
+                // Simple parser for prototype fidelity
                 const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
                     const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
-                    
-                    let amount = 0;
-                    if (amountIdx !== -1) {
-                        amount = scrubAmount(parts[amountIdx]);
-                    } else {
-                        const debit = debitIdx !== -1 ? Math.abs(scrubAmount(parts[debitIdx])) : 0;
-                        const credit = creditIdx !== -1 ? Math.abs(scrubAmount(parts[creditIdx])) : 0;
-                        amount = credit !== 0 ? credit : -debit;
-                    }
-
                     return {
                         id: `bank_${Date.now()}_${index}`,
-                        date: parts[finalDateIdx] || '',
-                        name: parts[finalNameIdx] || 'Unknown',
-                        memo: parts[finalMemoIdx] || '',
-                        amount: amount
+                        date: parts[0] || '',
+                        name: parts[2] || 'Unknown',
+                        memo: parts[3] || '',
+                        amount: scrubAmount(parts[4]),
+                        status: 'unreconciled'
                     };
                 });
                 
                 setBankTransactions(newTxns);
                 setStep('triage');
-                toast({ title: "Statement Ingested", description: `Discovered columns and parsed ${newTxns.length} signals.` });
+                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} signals.` });
             } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Ingestion Error', description: error.message || 'Invalid CSV format.' });
+                toast({ variant: 'destructive', title: 'Ingestion Error', description: error.message });
             } finally {
                 setIsProcessing(false);
             }
@@ -284,7 +251,7 @@ export function ReconciliationWizard({
             for (const match of allMatches) {
                 await reconcileLedgerEntry(match.ledger.id, match.ledger.type, match.bank.id);
             }
-            toast({ title: 'Synchronization Complete', description: `Verified and locked ${allMatches.length} ledger nodes.` });
+            toast({ title: 'Sync Complete', description: `${allMatches.length} nodes verified.` });
             onSuccess();
             onOpenChange(false);
             resetWizard();
@@ -299,6 +266,69 @@ export function ReconciliationWizard({
         setStep('upload');
         setBankTransactions([]);
         setActiveTab('perfect');
+        setTransactionToWorkOn(null);
+    };
+
+    const handleStartManualCreation = (bt: BankTransaction) => {
+        setTransactionToWorkOn(bt);
+        setReconciliationMode('create');
+        setNewTransaction({
+            ...emptyTransactionForm,
+            date: normalizeDate(bt.date),
+            company: bt.name,
+            totalAmount: String(Math.abs(bt.amount)),
+            description: `Reconciled from bank signal: ${bt.memo}`,
+        });
+    };
+
+    const handleSaveNewNode = async () => {
+        if (!user || !transactionToWorkOn) return;
+        
+        const isIncome = transactionToWorkOn.amount > 0;
+        const total = parseFloat(newTransaction.totalAmount);
+        const rate = parseFloat(newTransaction.taxRate) || 0;
+        const preTax = total / (1 + rate / 100);
+        const tax = total - preTax;
+
+        if (!newTransaction.company || !newTransaction.category) {
+            toast({ variant: 'destructive', title: 'Missing Info', description: 'Please select a contact and category.' });
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const baseData = {
+                date: newTransaction.date,
+                company: newTransaction.company,
+                description: newTransaction.description,
+                totalAmount: total,
+                preTaxAmount: preTax,
+                taxAmount: tax,
+                taxRate: rate,
+                explanation: newTransaction.explanation,
+                documentNumber: newTransaction.documentNumber,
+                documentUrl: newTransaction.documentUrl,
+                type: newTransaction.type,
+                paymentMethod: 'Bank Transfer',
+                isReconciled: true,
+                bankReferenceId: transactionToWorkOn.id,
+                userId: user.uid,
+            };
+
+            if (isIncome) {
+                await addIncomeTransaction({ ...baseData, incomeCategory: newTransaction.category, depositedTo: 'Bank Account' } as any);
+            } else {
+                await addExpenseTransaction({ ...baseData, category: newTransaction.category, paidFrom: 'Bank Account' } as any);
+            }
+
+            toast({ title: 'Node Created & Linked' });
+            setTransactionToWorkOn(null);
+            onSuccess();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -317,13 +347,13 @@ export function ReconciliationWizard({
                 <div className="flex-1 flex flex-col overflow-hidden bg-white">
                     {step === 'upload' ? (
                         <div className="flex-1 flex flex-col items-center justify-center p-12 space-y-10">
-                            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse border-4 border-primary/20">
+                            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-primary/20">
                                 <Upload className="h-14 w-14" />
                             </div>
                             <div className="text-center space-y-4 max-w-xl">
                                 <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900">Ingest Bank Signals</h3>
                                 <p className="text-muted-foreground text-xl leading-relaxed">
-                                    Upload your monthly bank CSV statement. Ogeemo will automatically discover column mapping and match signals to your BKS General Ledger by Date and Amount.
+                                    Upload your bank CSV statement to automatically match signals to your BKS General Ledger by Date and Amount.
                                 </p>
                             </div>
                             <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
@@ -331,29 +361,12 @@ export function ReconciliationWizard({
                                 Select CSV File
                             </Button>
                             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-16">
-                                <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                    <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-                                    <h4 className="font-bold text-lg mb-2">Simplified Parity</h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Matches are now determined strictly by Date and Amount, ensuring high-fidelity discovery even across complex ledger structures.
-                                    </p>
-                                </Card>
-                                <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                    <Clock className="h-10 w-10 text-primary mb-4" />
-                                    <h4 className="font-bold text-lg mb-2">Audit Lock</h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Verified signals are permanently locked to their Ledger nodes, securing your Black Box of Evidence for professional compliance.
-                                    </p>
-                                </Card>
-                            </div>
                         </div>
                     ) : (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                             <TabsList className="w-full justify-start h-16 bg-muted/50 rounded-none px-8 border-b shrink-0 gap-2">
                                 <TabsTrigger value="perfect" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
-                                    Discovered Matches <Badge className="ml-2 bg-green-500 font-mono">{results.perfectMatches.length + results.potentialMatches.length}</Badge>
+                                    Matches <Badge className="ml-2 bg-green-500 font-mono">{results.perfectMatches.length + results.potentialMatches.length}</Badge>
                                 </TabsTrigger>
                                 <TabsTrigger value="missing" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
                                     Missing from Ledger <Badge className="ml-2 bg-amber-500 font-mono">{results.missing.length}</Badge>
@@ -369,11 +382,8 @@ export function ReconciliationWizard({
                                         <div className="space-y-6">
                                             <div className="flex items-center justify-between border-b pb-4">
                                                 <div className="space-y-1">
-                                                    <h3 className="text-xl font-bold flex items-center gap-2">
-                                                        <CheckCircle2 className="h-5 w-5 text-green-600" /> 
-                                                        Ready for Synchronization
-                                                    </h3>
-                                                    <p className="text-sm text-muted-foreground">High-confidence matches found by Date and Amount.</p>
+                                                    <h3 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-600" /> Ready for Synchronization</h3>
+                                                    <p className="text-sm text-muted-foreground">Matches found by Date and Amount.</p>
                                                 </div>
                                                 <Button size="lg" onClick={handleBulkReconcile} disabled={(results.perfectMatches.length + results.potentialMatches.length) === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
@@ -382,20 +392,12 @@ export function ReconciliationWizard({
                                             </div>
                                             <div className="space-y-3">
                                                 {[...results.perfectMatches, ...results.potentialMatches].map((m, i) => (
-                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm hover:border-primary/30 transition-all group">
+                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm">
                                                         <div className="flex items-center gap-5">
-                                                            <div className="p-3 bg-green-50 rounded-xl text-green-600">
-                                                                <CheckCircle2 className="h-6 w-6" />
-                                                            </div>
+                                                            <div className="p-3 bg-green-50 rounded-xl text-green-600"><CheckCircle2 className="h-6 w-6" /></div>
                                                             <div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
-                                                                    {'reason' in m && <Badge variant="outline" className="text-[8px] uppercase border-amber-200 text-amber-700 bg-amber-50">{m.reason}</Badge>}
-                                                                </div>
-                                                                <div className="flex items-center gap-3 mt-1">
-                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">Ledger: {m.ledger.date}</p>
-                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">Bank Signal: {m.bank.date} • {m.bank.name}</p>
-                                                                </div>
+                                                                <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
+                                                                <p className="text-xs text-muted-foreground italic">Signal: {m.bank.date} • {m.bank.name}</p>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
@@ -404,13 +406,6 @@ export function ReconciliationWizard({
                                                         </div>
                                                     </Card>
                                                 ))}
-                                                {(results.perfectMatches.length + results.potentialMatches.length) === 0 && (
-                                                    <div className="flex flex-col items-center justify-center py-24 text-center opacity-40">
-                                                        <Search className="h-16 w-16 mb-4 text-primary" />
-                                                        <p className="text-2xl font-bold">No Perfect Matches Found</p>
-                                                        <p className="text-sm max-w-xs mt-2">Adjust your interpretation strategy or check "Missing from Ledger" for potential discrepancies.</p>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </TabsContent>
@@ -418,32 +413,29 @@ export function ReconciliationWizard({
                                     <TabsContent value="missing" className="m-0 focus-visible:ring-0">
                                         <div className="space-y-6">
                                             <div className="space-y-1 border-b pb-4">
-                                                <h3 className="text-xl font-bold flex items-center gap-2">
-                                                    <AlertCircle className="h-5 w-5 text-amber-600" />
-                                                    Unrecorded External Signals
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">Transactions discovered in the bank statement that lack an internal BKS node with matching amount.</p>
+                                                <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Unrecorded External Signals</h3>
+                                                <p className="text-sm text-muted-foreground">Transactions discovered in the bank statement that lack a ledger node.</p>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.missing.map((m, i) => (
-                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm group">
+                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm group hover:border-primary transition-colors">
                                                         <div className="flex items-center gap-5">
-                                                            <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
-                                                                <AlertCircle className="h-6 w-6" />
-                                                            </div>
+                                                            <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><AlertCircle className="h-6 w-6" /></div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.name}</p>
-                                                                <div className="flex items-center gap-3 mt-1">
-                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">{m.date}</p>
-                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">{m.memo}</p>
-                                                                </div>
+                                                                <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.memo}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <p className={cn("font-mono font-black text-2xl", m.amount > 0 ? "text-green-600" : "text-red-600")}>
-                                                                {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
-                                                            </p>
-                                                            <p className="text-[10px] uppercase font-bold text-amber-600 tracking-widest mt-1">Unassigned Signal</p>
+                                                        <div className="flex items-center gap-8">
+                                                            <div className="text-right">
+                                                                <p className={cn("font-mono font-black text-2xl", m.amount > 0 ? "text-green-600" : "text-red-600")}>
+                                                                    {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
+                                                                </p>
+                                                                <p className="text-[10px] uppercase font-bold text-amber-600 tracking-widest mt-1">Unassigned</p>
+                                                            </div>
+                                                            <Button size="icon" variant="outline" className="h-12 w-12 rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-md" onClick={() => handleStartManualCreation(m)} title="Add to General Ledger">
+                                                                <PlusCircle className="h-6 w-6" />
+                                                            </Button>
                                                         </div>
                                                     </Card>
                                                 ))}
@@ -454,25 +446,17 @@ export function ReconciliationWizard({
                                     <TabsContent value="outstanding" className="m-0 focus-visible:ring-0">
                                         <div className="space-y-6">
                                             <div className="space-y-1 border-b pb-4">
-                                                <h3 className="text-xl font-bold flex items-center gap-2">
-                                                    <Clock className="h-5 w-5 text-blue-600" />
-                                                    Internal Ledger Gaps
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">Records in Ogeemo that have not yet matched a bank signal by amount.</p>
+                                                <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-blue-600" /> Internal Ledger Gaps</h3>
+                                                <p className="text-sm text-muted-foreground">Records in Ogeemo that have not yet matched a bank signal.</p>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.outstanding.map((m, i) => (
                                                     <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm opacity-80">
                                                         <div className="flex items-center gap-5">
-                                                            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-                                                                <Clock className="h-6 w-6" />
-                                                            </div>
+                                                            <div className="p-3 bg-blue-50 rounded-xl text-blue-600"><Clock className="h-6 w-6" /></div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.company}</p>
-                                                                <div className="flex items-center gap-3 mt-1">
-                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">{m.date}</p>
-                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">{m.description}</p>
-                                                                </div>
+                                                                <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.description}</p>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
@@ -492,29 +476,144 @@ export function ReconciliationWizard({
 
                 <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-6">
                     <div className="hidden sm:flex items-center gap-4">
-                        {step === 'triage' ? (
-                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest">
-                                <X className="mr-2 h-4 w-4" /> Cancel & Restart
-                            </Button>
-                        ) : (
-                            <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-primary/20">
-                                <ShieldCheck className="h-5 w-5 text-primary" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Protocol: Verified Registry</span>
-                            </div>
+                        {step === 'triage' && (
+                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest"><X className="mr-2 h-4 w-4" /> Cancel & Restart</Button>
                         )}
                     </div>
                     <div className="flex gap-4 w-full sm:w-auto">
                         <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Close Hub</Button>
                         {step === 'triage' && (
-                            <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white">
+                            <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white text-primary">
                                 <Link href={`/reports/bank-reconciliation?from=${bankTransactions[bankTransactions.length - 1]?.date}&to=${bankTransactions[0]?.date}`}>
-                                    <FileDigit className="mr-2 h-5 w-5 text-primary" /> Audit Parity Report
+                                    <FileDigit className="mr-2 h-5 w-5" /> Audit Parity Report
                                 </Link>
                             </Button>
                         )}
                     </div>
                 </DialogFooter>
             </DialogContent>
+
+            {/* --- MANUAL CREATION WORKSPACE --- */}
+            <Dialog open={!!transactionToWorkOn} onOpenChange={() => setTransactionToWorkOn(null)}>
+                <DialogContent className="sm:max-w-2xl text-black shadow-2xl">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2 text-primary mb-1">
+                            <PlusCircle className="h-6 w-6" />
+                            <DialogTitle className="text-xl font-headline uppercase tracking-tight">Create Ledger Node</DialogTitle>
+                        </div>
+                        <DialogDescription>Add a missing transaction directly from the bank signal.</DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6 py-4">
+                        <Card className="bg-primary/5 border-primary/20 shadow-inner">
+                            <CardContent className="p-4 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Bank Signal</p>
+                                    <p className="font-bold text-lg">{transactionToWorkOn?.name}</p>
+                                    <p className="text-xs text-muted-foreground italic">{transactionToWorkOn?.memo}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className={cn("text-2xl font-mono font-black", (transactionToWorkOn?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
+                                        {formatCurrency(transactionToWorkOn?.amount || 0)}
+                                    </p>
+                                    <p className="text-xs font-bold text-muted-foreground">{transactionToWorkOn?.date}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">1. Identify Contact</Label>
+                                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full h-11 justify-between bg-white font-normal">
+                                            <span className="truncate">{newTransaction.company || "Select/Add Contact"}</span>
+                                            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                        <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                                            <CommandInput placeholder="Search..." value={companySearchValue} onValueChange={setCompanySearchValue} />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    <Button variant="ghost" className="w-full justify-start text-sm text-primary" onClick={async () => {
+                                                        const newComp = await addCompany({ name: companySearchValue.trim(), userId: user?.uid || '' });
+                                                        setNewTransaction(p => ({...p, company: newComp.name}));
+                                                        setIsCompanyPopoverOpen(false);
+                                                        onSuccess();
+                                                    }}>
+                                                        <Plus className="mr-2 h-4 w-4" /> Create "{companySearchValue}"
+                                                    </Button>
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {companies.map(c => (
+                                                        <CommandItem key={c.id} value={c.name} onSelect={() => { setNewTransaction(p => ({...p, company: c.name})); setIsCompanyPopoverOpen(false); }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", newTransaction.company === c.name ? "opacity-100" : "opacity-0")} />
+                                                            {c.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">2. Tax Line Assignment</Label>
+                                <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full h-11 justify-between bg-white font-normal">
+                                            <span className="truncate">
+                                                {(transactionToWorkOn?.amount || 0) > 0 
+                                                    ? (incomeCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select income line...")
+                                                    : (expenseCategories.find(c => (c.categoryNumber || c.id) === newTransaction.category)?.name || "Select expense line...")
+                                                }
+                                            </span>
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search lines..." value={categorySearchValue} onValueChange={setCategorySearchValue} />
+                                            <CommandList className="max-h-[300px]">
+                                                <CommandEmpty>No results found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {((transactionToWorkOn?.amount || 0) > 0 ? incomeCategories : expenseCategories).map((c) => (
+                                                        <CommandItem key={c.id} value={`${c.name} ${c.categoryNumber}`} onSelect={() => { 
+                                                            setNewTransaction(p => ({ ...p, category: c.categoryNumber || c.id }));
+                                                            setIsCategoryPopoverOpen(false); 
+                                                        }}>
+                                                            <Check className={cn("mr-2 h-4 w-4", newTransaction.category === (c.categoryNumber || c.id) ? "opacity-100" : "opacity-0")}/>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black uppercase text-muted-foreground">Line {c.categoryNumber}</span>
+                                                                <span className="text-sm font-semibold">{c.name}</span>
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">3. Audit Rationale</Label>
+                                <Textarea placeholder="Explain the business purpose..." rows={3} value={newTransaction.explanation} onChange={e => setNewTransaction(p => ({...p, explanation: e.target.value}))} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="bg-muted/10 -mx-6 -mb-6 p-6 rounded-b-lg">
+                        <Button variant="ghost" onClick={() => setTransactionToWorkOn(null)} disabled={isProcessing}>Cancel</Button>
+                        <Button onClick={handleSaveNewNode} disabled={isProcessing} className="font-bold shadow-xl">
+                            {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Build & Reconcile Node
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     );
 }

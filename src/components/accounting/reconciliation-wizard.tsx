@@ -25,7 +25,8 @@ import {
     FileSpreadsheet,
     Clock,
     FileDigit,
-    Search
+    Search,
+    X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -187,95 +188,108 @@ export function ReconciliationWizard({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden text-black shadow-2xl border-2 border-black">
+            <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black shadow-2xl">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
                     <div className="flex items-center gap-2 text-primary mb-1">
                         <GitMerge className="h-8 w-8" />
                         <div>
-                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Reconciliation Wizard</DialogTitle>
-                            <DialogDescription className="text-base">GL-First Verification Strategy</DialogDescription>
+                            <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Reconciliation Wizard</DialogTitle>
+                            <DialogDescription className="text-base font-medium">GL-First Verification Strategy</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {step === 'upload' ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 space-y-8 overflow-y-auto bg-white">
-                            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse border-2 border-primary/20">
-                                <Upload className="h-10 w-10" />
+                        <div className="flex-1 flex flex-col items-center justify-center p-12 space-y-10 bg-white">
+                            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse border-4 border-primary/20">
+                                <Upload className="h-14 w-14" />
                             </div>
-                            <div className="text-center space-y-2">
-                                <h3 className="text-2xl font-bold">Ingest Bank Signals</h3>
-                                <p className="text-muted-foreground max-w-sm text-lg">
-                                    Drop your monthly bank CSV statement here to begin the high-fidelity matching process.
+                            <div className="text-center space-y-4 max-w-xl">
+                                <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900">Ingest Bank Signals</h3>
+                                <p className="text-muted-foreground text-xl leading-relaxed">
+                                    Upload your monthly bank CSV statement to begin the high-fidelity matching process across your Spider Web.
                                 </p>
                             </div>
-                            <Button size="lg" className="h-16 px-16 text-xl font-bold shadow-2xl" onClick={() => fileInputRef.current?.click()}>
-                                {isProcessing ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : <FileSpreadsheet className="mr-2 h-6 w-6" />}
-                                Select CSV File
+                            <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
+                                {isProcessing ? <LoaderCircle className="mr-3 h-8 w-8 animate-spin" /> : <FileSpreadsheet className="mr-3 h-8 w-8" />}
+                                Select CSV Statement File
                             </Button>
                             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mt-12">
-                                <div className="p-5 border-2 rounded-2xl bg-primary/5 flex gap-4 border-primary/10">
-                                    <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-16">
+                                <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
+                                    <ShieldCheck className="h-10 w-10 text-primary mb-4" />
+                                    <h4 className="font-bold text-lg mb-2">Automated Parity</h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        <strong>Automated Parity:</strong> Exact Date and Amount matches result in an instant <strong>Audit Shield</strong> verification.
+                                        Exact Date and Amount matches result in an instant <strong>Audit Shield</strong> verification, locking the node in your General Ledger.
                                     </p>
-                                </div>
-                                <div className="p-5 border-2 rounded-2xl bg-muted/30 flex gap-4 border-black/5">
-                                    <Info className="h-6 w-6 text-primary shrink-0" />
+                                </Card>
+                                <Card className="p-6 border-2 rounded-3xl bg-muted/30 border-black/5 shadow-sm">
+                                    <Info className="h-10 w-10 text-primary mb-4" />
+                                    <h4 className="font-bold text-lg mb-2">Intelligent Triage</h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        <strong>Intelligent Triage:</strong> Seamlessly identify missing ledger nodes or uncleared bank signals from a single hub.
+                                        Identify "Surprise" bank signals (Missing from Ledger) or uncleared GL entries (Outstanding Items) from a unified hub.
                                     </p>
-                                </div>
+                                </Card>
                             </div>
                         </div>
                     ) : (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden bg-white">
-                            <TabsList className="w-full justify-start h-14 bg-muted/50 rounded-none px-6 border-b shrink-0">
-                                <TabsTrigger value="perfect" className="data-[state=active]:border-b-2 border-primary rounded-none h-full px-6 font-bold">
-                                    Perfect Matches <Badge className="ml-2 bg-green-500">{results.perfectMatches.length}</Badge>
+                            <TabsList className="w-full justify-start h-16 bg-muted/50 rounded-none px-8 border-b shrink-0 gap-2">
+                                <TabsTrigger value="perfect" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
+                                    Perfect Matches <Badge className="ml-2 bg-green-500 font-mono">{results.perfectMatches.length}</Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="missing" className="data-[state=active]:border-b-2 border-primary rounded-none h-full px-6 font-bold">
-                                    Missing from Ledger <Badge className="ml-2 bg-amber-500">{results.missing.length}</Badge>
+                                <TabsTrigger value="missing" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
+                                    Missing from Ledger <Badge className="ml-2 bg-amber-500 font-mono">{results.missing.length}</Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="outstanding" className="data-[state=active]:border-b-2 border-primary rounded-none h-full px-6 font-bold">
-                                    Outstanding Ledger <Badge className="ml-2 bg-blue-500">{results.outstanding.length}</Badge>
+                                <TabsTrigger value="outstanding" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
+                                    Outstanding Ledger <Badge className="ml-2 bg-blue-500 font-mono">{results.outstanding.length}</Badge>
                                 </TabsTrigger>
                             </TabsList>
 
                             <ScrollArea className="flex-1">
-                                <div className="p-6">
+                                <div className="max-w-6xl mx-auto p-10">
                                     <TabsContent value="perfect" className="m-0 focus-visible:ring-0">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-sm text-muted-foreground italic">Nodes that share identical dates and amounts with your bank signals.</p>
-                                                <Button size="sm" onClick={handleBulkReconcile} disabled={results.perfectMatches.length === 0 || isProcessing} className="shadow-md">
-                                                    Reconcile All Matches ({results.perfectMatches.length})
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between border-b pb-4">
+                                                <div className="space-y-1">
+                                                    <h3 className="text-xl font-bold flex items-center gap-2">
+                                                        <CheckCircle2 className="h-5 w-5 text-green-600" /> 
+                                                        Verified Nodes
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">Nodes that share identical dates and amounts with external bank signals.</p>
+                                                </div>
+                                                <Button size="lg" onClick={handleBulkReconcile} disabled={results.perfectMatches.length === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
+                                                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                                                    Finalize All Matches ({results.perfectMatches.length})
                                                 </Button>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                                 {results.perfectMatches.length > 0 ? results.perfectMatches.map((m, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-4 bg-white border-2 rounded-xl shadow-sm hover:border-primary/30 transition-colors">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                                                                <CheckCircle2 className="h-5 w-5" />
+                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm hover:border-primary/30 transition-all group">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="p-3 bg-green-50 rounded-xl text-green-600 group-hover:scale-110 transition-transform">
+                                                                <CheckCircle2 className="h-6 w-6" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-base">{m.ledger.company}</p>
-                                                                <p className="text-xs text-muted-foreground uppercase font-mono tracking-tighter">
-                                                                    {m.ledger.date} • {m.bank.memo}
-                                                                </p>
+                                                                <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
+                                                                <div className="flex items-center gap-3 mt-1">
+                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">{m.ledger.date}</p>
+                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">{m.bank.memo}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <p className="font-mono font-black text-lg text-slate-900">{formatCurrency(m.bank.amount)}</p>
-                                                    </div>
+                                                        <div className="text-right">
+                                                            <p className="font-mono font-black text-2xl text-slate-900">{formatCurrency(m.bank.amount)}</p>
+                                                            <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mt-1">Ready to Lock</p>
+                                                        </div>
+                                                    </Card>
                                                 )) : (
-                                                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-                                                        <Search className="h-12 w-12 mb-4" />
-                                                        <p className="text-lg font-bold">No Perfect Matches Found</p>
-                                                        <p className="text-sm">Verify the date and amounts in your Ledger.</p>
+                                                    <div className="flex flex-col items-center justify-center py-24 text-center opacity-40">
+                                                        <Search className="h-16 w-16 mb-4 text-primary" />
+                                                        <p className="text-2xl font-bold">No Perfect Matches Found</p>
+                                                        <p className="text-sm max-w-xs mt-2">Verify the date and amounts in your Ledger. Check the other tabs for discrepancies.</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -283,52 +297,88 @@ export function ReconciliationWizard({
                                     </TabsContent>
 
                                     <TabsContent value="missing" className="m-0 focus-visible:ring-0">
-                                        <div className="space-y-4">
-                                            <p className="text-sm text-muted-foreground italic">Signals found in your bank but NOT in Ogeemo. Create nodes to resolve.</p>
-                                            <div className="space-y-2">
-                                                {results.missing.map((m, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-4 bg-white border-2 rounded-xl shadow-sm group">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
-                                                                <AlertCircle className="h-5 w-5" />
+                                        <div className="space-y-6">
+                                            <div className="space-y-1 border-b pb-4">
+                                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                                                    Discovered Signals
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">Signals found in your bank but NOT in Ogeemo. Create new nodes to resolve the gap.</p>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {results.missing.length > 0 ? results.missing.map((m, i) => (
+                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm hover:border-amber-200 transition-all group">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
+                                                                <AlertCircle className="h-6 w-6" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-base">{m.name}</p>
-                                                                <p className="text-xs text-muted-foreground font-mono">{m.date} • {m.memo}</p>
+                                                                <p className="font-bold text-lg text-slate-900">{m.name}</p>
+                                                                <div className="flex items-center gap-3 mt-1">
+                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">{m.date}</p>
+                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">{m.memo}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-6">
-                                                            <p className={cn("font-mono font-black text-lg", m.amount > 0 ? "text-green-600" : "text-red-600")}>
-                                                                {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
-                                                            </p>
-                                                            <Button size="sm" variant="outline" className="h-9 px-4 text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all border-2">
+                                                        <div className="flex items-center gap-8">
+                                                            <div className="text-right">
+                                                                <p className={cn("font-mono font-black text-2xl", m.amount > 0 ? "text-green-600" : "text-red-600")}>
+                                                                    {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
+                                                                </p>
+                                                                <p className="text-[10px] uppercase font-bold text-amber-600 tracking-widest mt-1">Unrecorded Signal</p>
+                                                            </div>
+                                                            <Button size="sm" variant="outline" className="h-10 px-6 text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all border-2 border-primary text-primary hover:bg-primary/5">
                                                                 <PlusCircle className="mr-2 h-4 w-4" /> Create Node
                                                             </Button>
                                                         </div>
+                                                    </Card>
+                                                )) : (
+                                                    <div className="flex flex-col items-center justify-center py-24 text-center opacity-40">
+                                                        <CheckCircle2 className="h-16 w-16 mb-4 text-green-500" />
+                                                        <p className="text-2xl font-bold">Registry Perfectly Aligned</p>
+                                                        <p className="text-sm mt-2">Every bank signal has a corresponding node in your Spider Web.</p>
                                                     </div>
-                                                ))}
+                                                )}
                                             </div>
                                         </div>
                                     </TabsContent>
 
                                     <TabsContent value="outstanding" className="m-0 focus-visible:ring-0">
-                                        <div className="space-y-4">
-                                            <p className="text-sm text-muted-foreground italic">Nodes in Ogeemo that haven't cleared your physical bank account yet.</p>
-                                            <div className="space-y-2">
-                                                {results.outstanding.map((m, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-4 bg-white border-2 rounded-xl shadow-sm">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                                                <Clock className="h-5 w-5" />
+                                        <div className="space-y-6">
+                                            <div className="space-y-1 border-b pb-4">
+                                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                                    <Clock className="h-5 w-5 text-blue-600" />
+                                                    Pending Clearance
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">Nodes in Ogeemo that have not yet cleared your physical bank account.</p>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {results.outstanding.length > 0 ? results.outstanding.map((m, i) => (
+                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm opacity-80">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+                                                                <Clock className="h-6 w-6" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-base">{m.company}</p>
-                                                                <p className="text-xs text-muted-foreground font-mono">{m.date} • {m.description}</p>
+                                                                <p className="font-bold text-lg text-slate-900">{m.company}</p>
+                                                                <div className="flex items-center gap-3 mt-1">
+                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest border-r pr-3">{m.date}</p>
+                                                                    <p className="text-xs text-muted-foreground italic truncate max-w-sm">{m.description}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <p className="font-mono font-bold text-lg text-slate-400">{formatCurrency(m.totalAmount)}</p>
+                                                        <div className="text-right">
+                                                            <p className="font-mono font-bold text-xl text-slate-400">{formatCurrency(m.totalAmount)}</p>
+                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Uncleared Ledger Node</p>
+                                                        </div>
+                                                    </Card>
+                                                )) : (
+                                                    <div className="flex flex-col items-center justify-center py-24 text-center opacity-40">
+                                                        <XCircle className="h-16 w-16 mb-4 text-slate-400" />
+                                                        <p className="text-2xl font-bold">No Outstanding Items</p>
+                                                        <p className="text-sm mt-2">Your Ledger is perfectly synchronized with reality.</p>
                                                     </div>
-                                                ))}
+                                                )}
                                             </div>
                                         </div>
                                     </TabsContent>
@@ -338,29 +388,31 @@ export function ReconciliationWizard({
                     )}
                 </div>
 
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-3">
+                <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-6">
+                    <div className="hidden sm:flex items-center gap-4">
                         {step === 'triage' ? (
                             <>
-                                <Button variant="ghost" onClick={resetWizard} className="font-semibold">Restart Wizard</Button>
-                                <Button variant="outline" asChild className="border-2 font-bold">
+                                <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest hover:bg-white">
+                                    <X className="mr-2 h-4 w-4" /> Cancel & Restart
+                                </Button>
+                                <Button variant="outline" size="lg" asChild className="border-2 font-bold shadow-sm bg-white">
                                     <Link href={`/reports/bank-reconciliation?from=${bankTransactions[bankTransactions.length - 1]?.date}&to=${bankTransactions[0]?.date}`}>
-                                        <FileDigit className="mr-2 h-4 w-4" /> Bank Rec Statement
+                                        <FileDigit className="mr-2 h-5 w-5 text-primary" /> Generate Audit Statement
                                     </Link>
                                 </Button>
                             </>
                         ) : (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <ShieldCheck className="h-4 w-4" />
-                                <span className="text-xs font-medium uppercase tracking-widest">Protocol: Verified Registry</span>
+                            <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-primary/20">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Protocol: Verified Registry</span>
                             </div>
                         )}
                     </div>
-                    <div className="flex gap-3">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-12 px-8 font-bold">Cancel</Button>
+                    <div className="flex gap-4 w-full sm:w-auto">
+                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Close Hub</Button>
                         {step === 'triage' && results.perfectMatches.length > 0 && (
-                            <Button onClick={handleBulkReconcile} disabled={isProcessing} className="h-12 px-10 shadow-xl font-bold text-lg">
-                                {isProcessing ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                            <Button size="lg" onClick={handleBulkReconcile} disabled={isProcessing} className="h-14 px-16 shadow-2xl font-bold text-xl">
+                                {isProcessing ? <LoaderCircle className="mr-3 h-6 w-6 animate-spin" /> : <ShieldCheck className="mr-3 h-6 w-6" />}
                                 Finalize Perfect Matches
                             </Button>
                         )}

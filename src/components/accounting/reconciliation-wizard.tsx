@@ -165,18 +165,15 @@ export function ReconciliationWizard({
         const usedLedgerIds = new Set<string>();
 
         bankTransactions.forEach(bt => {
-            const bankAmount = bt.amount;
-            const absBankAmount = Math.abs(bankAmount);
-            const isBankIncome = bankAmount > 0;
+            const absBankAmount = Math.abs(bt.amount);
             const normalizedBankDate = normalizeDate(bt.date);
 
-            // 1. Tier 1 Pass: Perfect Match (Exact Date, Amount, and Direction)
+            // --- REDUCED CRITERIA: Tier 1 Pass: Perfect Match (Exact Date and Amount ONLY) ---
             const perfectMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
                 const amountMatch = Math.abs(lt.totalAmount - absBankAmount) < 0.01;
-                const typeMatch = (isBankIncome && lt.type === 'income') || (!isBankIncome && lt.type === 'expense');
                 const dateMatch = lt.date === normalizedBankDate;
-                return dateMatch && amountMatch && typeMatch;
+                return dateMatch && amountMatch;
             });
 
             if (perfectMatch) {
@@ -185,34 +182,25 @@ export function ReconciliationWizard({
                 return;
             }
 
-            // 2. Tier 2 Pass: Fuzzy Match (Amount Match + High Confidence Similarity)
+            // --- REDUCED CRITERIA: Tier 2 Pass: Fuzzy Match (Amount Match + High Confidence Similarity) ---
             const potentialMatch = allLedger.find(lt => {
                 if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
                 
                 const amountMatch = Math.abs(lt.totalAmount - absBankAmount) < 0.01;
-                const typeMatch = (isBankIncome && lt.type === 'income') || (!isBankIncome && lt.type === 'expense');
-                
-                if (!amountMatch || !typeMatch) return false;
+                if (!amountMatch) return false;
 
                 // Check date variance (+/- 7 days - processing window)
                 const ledgerDate = new Date(lt.date);
                 const bankDate = new Date(normalizedBankDate);
                 const dateDiff = Math.abs(differenceInDays(ledgerDate, bankDate));
                 
-                if (dateDiff <= 7) return true;
-
-                // Basic string similarity for counterparty
-                const bankName = bt.name.toLowerCase();
-                const ledgerName = lt.company.toLowerCase();
-                if (bankName.includes(ledgerName) || ledgerName.includes(bankName)) return true;
-
-                return false;
+                return dateDiff <= 7;
             });
 
             if (potentialMatch) {
                 const reason = differenceInDays(new Date(potentialMatch.date), new Date(normalizedBankDate)) !== 0 
                     ? 'Processing Window Delay' 
-                    : 'Amount & Entity match';
+                    : 'Amount match (diff date)';
                 potentialMatches.push({ bank: bt, ledger: potentialMatch, reason });
                 usedLedgerIds.add(potentialMatch.id);
                 return;
@@ -239,10 +227,8 @@ export function ReconciliationWizard({
                 if (lines.length < 2) throw new Error("The CSV file is too small or improperly formatted.");
 
                 const headerLine = lines[0].toLowerCase();
-                // Split by comma but respect quoted values
                 const headers = headerLine.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"|"$/g, ''));
 
-                // DISCOVERY NODE: Intelligent column identification
                 const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('posted'));
                 const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('total') || h.includes('price'));
                 const debitIdx = headers.findIndex(h => h.includes('debit') || h.includes('withdrawal'));
@@ -251,7 +237,7 @@ export function ReconciliationWizard({
                 const memoIdx = headers.findIndex(h => h.includes('memo') || h.includes('notes') || h.includes('details') || h.includes('transaction type'));
 
                 if (dateIdx === -1 && (amountIdx === -1 && debitIdx === -1)) {
-                    throw new Error("Could not automatically discover Date or Amount columns. Ensure your CSV has headers like 'Date' and 'Amount'.");
+                    throw new Error("Could not automatically discover Date or Amount columns.");
                 }
 
                 const finalDateIdx = dateIdx !== -1 ? dateIdx : 0;
@@ -261,7 +247,6 @@ export function ReconciliationWizard({
                 const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
                     const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
                     
-                    // Logic for combined amount vs split debit/credit columns
                     let amount = 0;
                     if (amountIdx !== -1) {
                         amount = scrubAmount(parts[amountIdx]);
@@ -338,7 +323,7 @@ export function ReconciliationWizard({
                             <div className="text-center space-y-4 max-w-xl">
                                 <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900">Ingest Bank Signals</h3>
                                 <p className="text-muted-foreground text-xl leading-relaxed">
-                                    Upload your monthly bank CSV statement. Ogeemo will automatically discover column mapping and match signals to your BKS General Ledger.
+                                    Upload your monthly bank CSV statement. Ogeemo will automatically discover column mapping and match signals to your BKS General Ledger by Date and Amount.
                                 </p>
                             </div>
                             <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
@@ -350,16 +335,16 @@ export function ReconciliationWizard({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-16">
                                 <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
                                     <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-                                    <h4 className="font-bold text-lg mb-2">Automated Parity</h4>
+                                    <h4 className="font-bold text-lg mb-2">Simplified Parity</h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Our interpretive engine handles disparate date and currency formats, ensuring your Triangle Mastercard or Chase signals match your Ledger nodes.
+                                        Matches are now determined strictly by Date and Amount, ensuring high-fidelity discovery even across complex ledger structures.
                                     </p>
                                 </Card>
                                 <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
                                     <Clock className="h-10 w-10 text-primary mb-4" />
                                     <h4 className="font-bold text-lg mb-2">Audit Lock</h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Matches are permanently linked to external bank IDs, creating an immutable paper trail for your Black Box of Evidence.
+                                        Verified signals are permanently locked to their Ledger nodes, securing your Black Box of Evidence for professional compliance.
                                     </p>
                                 </Card>
                             </div>
@@ -388,7 +373,7 @@ export function ReconciliationWizard({
                                                         <CheckCircle2 className="h-5 w-5 text-green-600" /> 
                                                         Ready for Synchronization
                                                     </h3>
-                                                    <p className="text-sm text-muted-foreground">High-confidence matches found across your BKS Spider Web.</p>
+                                                    <p className="text-sm text-muted-foreground">High-confidence matches found by Date and Amount.</p>
                                                 </div>
                                                 <Button size="lg" onClick={handleBulkReconcile} disabled={(results.perfectMatches.length + results.potentialMatches.length) === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
@@ -437,7 +422,7 @@ export function ReconciliationWizard({
                                                     <AlertCircle className="h-5 w-5 text-amber-600" />
                                                     Unrecorded External Signals
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">Transactions discovered in the bank statement that lack an internal BKS node.</p>
+                                                <p className="text-sm text-muted-foreground">Transactions discovered in the bank statement that lack an internal BKS node with matching amount.</p>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.missing.map((m, i) => (
@@ -473,7 +458,7 @@ export function ReconciliationWizard({
                                                     <Clock className="h-5 w-5 text-blue-600" />
                                                     Internal Ledger Gaps
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">Records in Ogeemo that have not yet appeared as external signals (cleared).</p>
+                                                <p className="text-sm text-muted-foreground">Records in Ogeemo that have not yet matched a bank signal by amount.</p>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.outstanding.map((m, i) => (

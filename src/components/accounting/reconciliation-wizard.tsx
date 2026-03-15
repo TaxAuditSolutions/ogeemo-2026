@@ -23,7 +23,8 @@ import {
     Info,
     PlusCircle,
     FileSpreadsheet,
-    Landmark as BankIcon
+    Landmark as BankIcon,
+    Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -42,6 +43,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
+import Link from 'next/link';
 
 interface BankTransaction {
     id: string;
@@ -171,7 +173,7 @@ export function ReconciliationWizard({
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden text-black">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <div className="flex items-center gap-3 text-primary mb-1">
+                    <div className="flex items-center gap-2 text-primary mb-1">
                         <GitMerge className="h-8 w-8" />
                         <div>
                             <DialogTitle className="text-2xl font-headline uppercase tracking-tight">Reconciliation Wizard</DialogTitle>

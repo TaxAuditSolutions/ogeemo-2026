@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -26,7 +25,8 @@ import {
     FileSpreadsheet,
     Landmark as BankIcon,
     Clock,
-    FileDigit
+    FileDigit,
+    Search
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 

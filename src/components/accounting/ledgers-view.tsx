@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from "react";
@@ -54,7 +55,9 @@ import {
     Link as LinkIcon,
     PlusCircle,
     FileSpreadsheet,
-    ShieldCheck
+    ShieldCheck,
+    GitMerge,
+    CheckCircle2
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +81,7 @@ import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
 import { TransactionDialog } from "./transaction-dialog";
+import { ReconciliationWizard } from "./reconciliation-wizard";
 import {
   Tooltip,
   TooltipContent,
@@ -102,6 +106,7 @@ export function LedgersView() {
   const [transactionToDelete, setTransactionToDelete] = React.useState<GeneralTransaction | null>(null);
   const [transactionToEdit, setTransactionToEdit] = React.useState<GeneralTransaction | null>(null);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
+  const [isReconciliationWizardOpen, setIsReconciliationWizardOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -136,7 +141,7 @@ export function LedgersView() {
         const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
-            getContacts(), // Synchronized Directory
+            getContacts(), 
             getContactFolders(user.uid),
             getExpenseCategories(user.uid), 
             getIncomeCategories(user.uid),
@@ -271,10 +276,7 @@ export function LedgersView() {
       return;
     }
 
-    // CSV Headers
     const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Notes", "Document Link", "Reconciled"];
-    
-    // Rows
     const csvRows = dataToExport.map(item => {
       const catNum = item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
       const catName = getCategoryName(catNum, item.transactionType);
@@ -295,11 +297,7 @@ export function LedgersView() {
       ];
     });
 
-    const csvString = [
-      headers.join(","),
-      ...csvRows.map(row => row.join(","))
-    ].join("\n");
-
+    const csvString = [headers.join(","), ...csvRows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -309,8 +307,7 @@ export function LedgersView() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    toast({ title: "Export Successful", description: "Your ledger has been saved to your downloads folder." });
+    toast({ title: "Export Successful" });
   };
 
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
@@ -412,7 +409,7 @@ export function LedgersView() {
         
         <header className="text-center relative print:hidden">
             <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
-            <p className="text-muted-foreground">Comprehensive record of all processed business income and expenses.</p>
+            <p className="text-muted-foreground">The Source of Truth for all processed business transactions.</p>
             <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
                     <Link href="/action-manager"><X className="h-5 w-5"/></Link>
@@ -423,10 +420,13 @@ export function LedgersView() {
         <Card className="print:hidden">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b bg-muted/30">
                 <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm font-medium">Filter & Report Options</CardTitle>
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm font-medium">Orchestration Options</CardTitle>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="bg-white border-primary text-primary hover:bg-primary/5" onClick={() => setIsReconciliationWizardOpen(true)}>
+                        <GitMerge className="mr-2 h-4 w-4" /> Reconcile with Bank
+                    </Button>
                     <Button variant="outline" size="sm" className="bg-white" onClick={handleDownloadCSV} disabled={generalLedger.length === 0}>
                         <FileSpreadsheet className="mr-2 h-4 w-4" /> Download CSV
                     </Button>
@@ -507,6 +507,17 @@ export function LedgersView() {
             taxTypes={taxTypes}
             onSuccess={loadData}
             transactionToEdit={transactionToEdit}
+        />
+
+        <ReconciliationWizard
+            isOpen={isReconciliationWizardOpen}
+            onOpenChange={setIsReconciliationWizardOpen}
+            incomeLedger={incomeLedger}
+            expenseLedger={expenseLedger}
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
+            companies={companies}
+            onSuccess={loadData}
         />
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >

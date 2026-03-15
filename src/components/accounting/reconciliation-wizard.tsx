@@ -101,7 +101,7 @@ export function ReconciliationWizard({
         const usedLedgerIds = new Set<string>();
 
         bankTransactions.forEach(bt => {
-            // Temporal Normalization: Convert bank date to Ogeemo standard YYYY-MM-DD
+            // 1. Temporal Normalization: Convert bank date to Ogeemo standard YYYY-MM-DD
             let normalizedBankDate = bt.date;
             try {
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(bt.date)) {
@@ -114,12 +114,17 @@ export function ReconciliationWizard({
                 console.warn("Date normalization failed for signal:", bt.date);
             }
 
-            // High-Fidelity Matching Engine
+            // 2. High-Fidelity Matching Engine
             const match = allLedger.find(lt => {
+                const amountMatch = Math.abs(lt.totalAmount - Math.abs(bt.amount)) < 0.01;
+                // Important: Sign matching. Bank negatives (Debits) match Expense nodes.
+                const typeMatch = (bt.amount < 0 && lt.type === 'expense') || (bt.amount > 0 && lt.type === 'income');
+                
                 return !lt.isReconciled && 
                     !usedLedgerIds.has(lt.id) &&
                     lt.date === normalizedBankDate && 
-                    Math.abs(lt.totalAmount - Math.abs(bt.amount)) < 0.01;
+                    amountMatch &&
+                    typeMatch;
             });
 
             if (match) {
@@ -130,7 +135,7 @@ export function ReconciliationWizard({
             }
         });
 
-        // Outstanding Triage
+        // 3. Outstanding Triage (GL items not found in current statement)
         const outstandingLedger = allLedger.filter(lt => !lt.isReconciled && !usedLedgerIds.has(lt.id));
 
         return { perfectMatches, missing: missingFromLedger, outstanding: outstandingLedger };
@@ -147,15 +152,20 @@ export function ReconciliationWizard({
                 const text = e.target?.result as string;
                 const lines = text.split('\n').filter(l => l.trim());
                 
-                // Advanced CSV Parsing (handles quoted values containing commas)
+                // Advanced CSV Parsing (handles quoted values containing commas and currency symbols)
                 const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
                     const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
+                    
+                    // Scrub amount string: remove currency symbols and thousands separators
+                    const rawAmount = parts[4] || '0';
+                    const cleanAmount = rawAmount.replace(/[^-0-9.]/g, '');
+                    
                     return {
                         id: `bank_${Date.now()}_${index}`,
                         date: parts[0] || '',
                         name: parts[2] || 'Unknown',
                         memo: parts[3] || '',
-                        amount: parseFloat(parts[4]) || 0
+                        amount: parseFloat(cleanAmount) || 0
                     };
                 });
                 
@@ -163,7 +173,8 @@ export function ReconciliationWizard({
                 setStep('triage');
                 toast({ title: "Statement Ingested", description: `Parsed ${newTxns.length} transactions.` });
             } catch (error) {
-                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Invalid CSV format.' });
+                console.error("CSV Parsing Error:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Invalid CSV format or missing data.' });
             } finally {
                 setIsProcessing(false);
             }
@@ -405,7 +416,7 @@ export function ReconciliationWizard({
                                 </Button>
                                 <Button variant="outline" size="lg" asChild className="border-2 font-bold shadow-sm bg-white">
                                     <Link href={`/reports/bank-reconciliation?from=${bankTransactions[bankTransactions.length - 1]?.date}&to=${bankTransactions[0]?.date}`}>
-                                        <FileDigit className="mr-2 h-5 w-5 text-primary" /> Generate Audit Statement
+                                        <FileDigit className="mr-2 h-5 w-5 text-primary" /> Final Reconciliation Report
                                     </Link>
                                 </Button>
                             </>

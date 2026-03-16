@@ -37,7 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/services/accounting-service';
 import { ReportsPageHeader } from '@/components/reports/page-header';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 

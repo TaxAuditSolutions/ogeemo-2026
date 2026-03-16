@@ -46,15 +46,19 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { 
     reconcileLedgerEntry,
+    reconcileInvoicePayment,
+    reconcileBillPayment,
     addIncomeTransaction,
     addExpenseTransaction,
     type IncomeTransaction, 
     type ExpenseTransaction, 
+    type Invoice,
+    type PayableBill,
     type Company,
     type IncomeCategory,
     type ExpenseCategory
 } from '@/services/accounting-service';
-import { format, isValid, differenceInDays } from 'date-fns';
+import { format, isValid, differenceInDays, parse } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -76,6 +80,8 @@ interface ReconciliationWizardProps {
     onOpenChange: (open: boolean) => void;
     incomeLedger: IncomeTransaction[];
     expenseLedger: ExpenseTransaction[];
+    invoices: Invoice[];
+    payableBills: PayableBill[];
     incomeCategories: IncomeCategory[];
     expenseCategories: ExpenseCategory[];
     companies: Company[];
@@ -96,7 +102,18 @@ const scrubAmount = (val: any): number => {
 
 const normalizeDate = (dateStr: string): string => {
     if (!dateStr) return '';
+    // Standard ISO
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    
+    // Attempt standard formats
+    const formats = ['M/d/yyyy', 'MM/dd/yyyy', 'd/M/yyyy', 'dd/MM/yyyy', 'yyyy/MM/dd', 'MMM d, yyyy'];
+    for (const f of formats) {
+        try {
+            const parsed = parse(dateStr, f, new Date());
+            if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd');
+        } catch (e) {}
+    }
+
     const dObj = new Date(dateStr);
     return isValid(dObj) ? format(dObj, 'yyyy-MM-dd') : dateStr;
 };
@@ -106,6 +123,8 @@ export function ReconciliationWizard({
     onOpenChange, 
     incomeLedger, 
     expenseLedger,
+    invoices,
+    payableBills,
     incomeCategories,
     expenseCategories,
     companies,
@@ -123,9 +142,25 @@ export function ReconciliationWizard({
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
 
+        // Unified Matching Pool: GL + AR + AP
         const allLedger = [
-            ...incomeLedger.map(i => ({ ...i, type: 'income' as const })),
-            ...expenseLedger.map(e => ({ ...e, type: 'expense' as const }))
+            ...incomeLedger.map(i => ({ ...i, type: 'income' as const, matchType: 'ledger' as const })),
+            ...expenseLedger.map(e => ({ ...e, type: 'expense' as const, matchType: 'ledger' as const })),
+            ...invoices.map(inv => ({ 
+                ...inv, 
+                type: 'income' as const, 
+                matchType: 'invoice' as const, 
+                totalAmount: inv.originalAmount - inv.amountPaid, 
+                company: inv.companyName,
+                date: format(new Date(inv.invoiceDate), 'yyyy-MM-dd')
+            })),
+            ...payableBills.map(bill => ({ 
+                ...bill, 
+                type: 'expense' as const, 
+                matchType: 'bill' as const, 
+                company: bill.vendor,
+                date: bill.dueDate 
+            }))
         ];
 
         const perfectMatches: { bank: BankTransaction; ledger: any }[] = [];
@@ -138,7 +173,8 @@ export function ReconciliationWizard({
             const normalizedBankDate = normalizeDate(bt.date);
 
             const perfectMatch = allLedger.find(lt => {
-                if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
+                if (usedLedgerIds.has(lt.id)) return false;
+                if ('isReconciled' in lt && lt.isReconciled) return false;
                 // Match criteria: Exact Date and Exact Amount
                 return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
@@ -150,7 +186,8 @@ export function ReconciliationWizard({
             }
 
             const potentialMatch = allLedger.find(lt => {
-                if (lt.isReconciled || usedLedgerIds.has(lt.id)) return false;
+                if (usedLedgerIds.has(lt.id)) return false;
+                if ('isReconciled' in lt && lt.isReconciled) return false;
                 if (Math.abs(lt.totalAmount - absBankAmount) > 0.01) return false;
                 const dateDiff = Math.abs(differenceInDays(new Date(lt.date), new Date(normalizedBankDate)));
                 return dateDiff <= 7;
@@ -158,17 +195,17 @@ export function ReconciliationWizard({
 
             if (potentialMatch) {
                 potentialMatches.push({ bank: bt, ledger: potentialMatch, reason: 'Date variance match' });
-                usedLedgerIds.add(perfectMatch.id);
+                usedLedgerIds.add(potentialMatch.id);
                 return;
             }
 
             missingFromLedger.push(bt);
         });
 
-        const outstandingLedger = allLedger.filter(lt => !lt.isReconciled && !usedLedgerIds.has(lt.id));
+        const outstandingLedger = allLedger.filter(lt => (!('isReconciled' in lt) || !lt.isReconciled) && !usedLedgerIds.has(lt.id));
 
         return { perfectMatches, potentialMatches, missing: missingFromLedger, outstanding: outstandingLedger };
-    }, [bankTransactions, incomeLedger, expenseLedger]);
+    }, [bankTransactions, incomeLedger, expenseLedger, invoices, payableBills]);
 
     const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -207,11 +244,18 @@ export function ReconciliationWizard({
     };
 
     const handleBulkReconcile = async () => {
+        if (!user) return;
         setIsProcessing(true);
         try {
             const allMatches = [...results.perfectMatches, ...results.potentialMatches];
             for (const match of allMatches) {
-                await reconcileLedgerEntry(match.ledger.id, match.ledger.type, match.bank.id);
+                if (match.ledger.matchType === 'ledger') {
+                    await reconcileLedgerEntry(match.ledger.id, match.ledger.type, match.bank.id);
+                } else if (match.ledger.matchType === 'invoice') {
+                    await reconcileInvoicePayment(user.uid, match.ledger.id, Math.abs(match.bank.amount), match.bank.date, match.bank.id, 'Bank Account');
+                } else if (match.ledger.matchType === 'bill') {
+                    await reconcileBillPayment(user.uid, match.ledger.id, match.bank.date, match.bank.id, 'Bank Account');
+                }
             }
             toast({ title: 'Sync Complete', description: `${allMatches.length} nodes verified.` });
             onSuccess();
@@ -431,7 +475,7 @@ export function ReconciliationWizard({
                                                             <div className="p-3 bg-green-50 rounded-xl text-green-600"><CheckCircle2 className="h-6 w-6" /></div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
-                                                                <p className="text-xs text-muted-foreground italic">Signal Source: {m.bank.date} • {m.bank.name}</p>
+                                                                <p className="text-xs text-muted-foreground italic">Signal Source: {m.bank.date} • {m.bank.name} • Type: {m.ledger.matchType}</p>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">

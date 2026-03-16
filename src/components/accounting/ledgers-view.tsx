@@ -69,7 +69,11 @@ import {
     getIncomeCategories, type IncomeCategory,
     getCompanies, type Company,
     getTaxTypes, type TaxType,
-    reconcileLedgerEntry
+    reconcileLedgerEntry,
+    getInvoices,
+    getPayableBills,
+    type Invoice,
+    type PayableBill
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -94,6 +98,8 @@ type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transacti
 export function LedgersView() {
   const [incomeLedger, setIncomeLedger] = React.useState<IncomeTransaction[]>([]);
   const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
+  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [payableBills, setPayableBills] = React.useState<PayableBill[]>([]);
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
@@ -138,9 +144,11 @@ export function LedgersView() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-        const [income, expenses, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
+        const [income, expenses, invs, bills, fetchedContacts, fetchedFolders, fetchedExpenseCategories, fetchedIncomeCategories, fetchedIndustries, fetchedCompanies, fetchedTaxTypes] = await Promise.all([
             getIncomeTransactions(user.uid), 
             getExpenseTransactions(user.uid), 
+            getInvoices(user.uid),
+            getPayableBills(user.uid),
             getContacts(), 
             getContactFolders(user.uid),
             getExpenseCategories(user.uid), 
@@ -151,6 +159,8 @@ export function LedgersView() {
         ]);
         setIncomeLedger(income); 
         setExpenseLedger(expenses); 
+        setInvoices(invs.filter(i => i.originalAmount - i.amountPaid > 0.01));
+        setPayableBills(bills);
         setContacts(fetchedContacts);
         setContactFolders(fetchedFolders);
         setExpenseCategories(fetchedExpenseCategories); 
@@ -520,6 +530,8 @@ export function LedgersView() {
             onOpenChange={setIsReconciliationWizardOpen}
             incomeLedger={incomeLedger}
             expenseLedger={expenseLedger}
+            invoices={invoices}
+            payableBills={payableBills}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
             companies={companies}

@@ -34,6 +34,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,10 @@ import {
     FileSpreadsheet,
     ShieldCheck,
     GitMerge,
-    CheckCircle2
+    CheckCircle2,
+    Eye,
+    ScanSearch,
+    AlertTriangle
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +77,9 @@ import {
     getInvoices,
     getPayableBills,
     type Invoice,
-    type PayableBill
+    type PayableBill,
+    deleteIncomeTransactions,
+    deleteExpenseTransactions
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -92,6 +98,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Checkbox } from "../ui/checkbox";
+import { Switch } from "../ui/switch";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -121,6 +129,11 @@ export function LedgersView() {
   const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
   const [isStartFilterOpen, setIsStartFilterOpen] = React.useState(false);
   const [isEndFilterOpen, setIsEndFilterOpen] = React.useState(false);
+
+  // Selection & Duplicate states
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = React.useState(false);
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = React.useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -174,34 +187,52 @@ export function LedgersView() {
 
   React.useEffect(() => { loadData(); }, [loadData]);
 
-  const filteredIncome = React.useMemo(() => {
-    if (!startDate && !endDate) return incomeLedger;
-    return incomeLedger.filter(tx => {
-        const txDate = new Date(tx.date);
-        const start = startDate ? startOfDay(startDate) : new Date(0);
-        const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
-        return isWithinInterval(txDate, { start, end });
-    });
-  }, [incomeLedger, startDate, endDate]);
-
-  const filteredExpenses = React.useMemo(() => {
-    if (!startDate && !endDate) return expenseLedger;
-    return expenseLedger.filter(tx => {
-        const txDate = new Date(tx.date);
-        const start = startDate ? startOfDay(startDate) : new Date(0);
-        const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
-        return isWithinInterval(txDate, { start, end });
-    });
-  }, [expenseLedger, startDate, endDate]);
-
-  const generalLedger = React.useMemo(() => {
+  const generalLedgerFull = React.useMemo(() => {
     const combined: GeneralTransaction[] = [
-      ...filteredIncome.map(item => ({ ...item, transactionType: 'income' as const })),
-      ...filteredExpenses.map(item => ({ ...item, transactionType: 'expense' as const })),
+      ...incomeLedger.map(item => ({ ...item, transactionType: 'income' as const })),
+      ...expenseLedger.map(item => ({ ...item, transactionType: 'expense' as const })),
     ];
+    return combined;
+  }, [incomeLedger, expenseLedger]);
+
+  const duplicateMap = React.useMemo(() => {
+    const counts = new Map<string, string[]>();
+    generalLedgerFull.forEach(item => {
+        const key = `${item.date}|${item.company.toLowerCase().trim()}|${item.totalAmount.toFixed(2)}`;
+        const existing = counts.get(key) || [];
+        counts.set(key, [...existing, item.id]);
+    });
     
+    const dupeIds = new Set<string>();
+    counts.forEach((ids) => {
+        if (ids.length > 1) {
+            ids.forEach(id => dupeIds.add(id));
+        }
+    });
+    return dupeIds;
+  }, [generalLedgerFull]);
+
+  const generalLedgerFiltered = React.useMemo(() => {
+    let list = generalLedgerFull;
+
+    if (activeTab === 'income') list = list.filter(tx => tx.transactionType === 'income');
+    if (activeTab === 'expenses') list = list.filter(tx => tx.transactionType === 'expense');
+
+    if (startDate || endDate) {
+        list = list.filter(tx => {
+            const txDate = new Date(tx.date);
+            const start = startDate ? startOfDay(startDate) : new Date(0);
+            const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
+            return isWithinInterval(txDate, { start, end });
+        });
+    }
+
+    if (showDuplicatesOnly) {
+        list = list.filter(tx => duplicateMap.has(tx.id));
+    }
+
     if (sortConfig !== null) {
-        combined.sort((a, b) => {
+        list.sort((a, b) => {
             let aValue: any;
             let bValue: any;
 
@@ -243,11 +274,11 @@ export function LedgersView() {
         });
     }
 
-    return combined;
-  }, [filteredIncome, filteredExpenses, sortConfig, getCategoryName]);
+    return list;
+  }, [generalLedgerFull, activeTab, startDate, endDate, showDuplicatesOnly, duplicateMap, sortConfig, getCategoryName]);
 
-  const incomeTotal = React.useMemo(() => filteredIncome.reduce((sum, item) => sum + item.totalAmount, 0), [filteredIncome]);
-  const expenseTotal = React.useMemo(() => filteredExpenses.reduce((sum, item) => sum + item.totalAmount, 0), [filteredExpenses]);
+  const incomeTotal = React.useMemo(() => generalLedgerFiltered.filter(t => t.transactionType === 'income').reduce((sum, item) => sum + item.totalAmount, 0), [generalLedgerFiltered]);
+  const expenseTotal = React.useMemo(() => generalLedgerFiltered.filter(t => t.transactionType === 'expense').reduce((sum, item) => sum + item.totalAmount, 0), [generalLedgerFiltered]);
   const netIncome = incomeTotal - expenseTotal;
 
   const handleConfirmDelete = () => {
@@ -261,6 +292,27 @@ export function LedgersView() {
     setTimeout(loadData, 500);
   };
 
+  const handleBulkDelete = async () => {
+      if (!user || selectedIds.length === 0) return;
+      setIsLoading(true);
+      try {
+          const incomeIds = selectedIds.filter(id => incomeLedger.some(tx => tx.id === id));
+          const expenseIds = selectedIds.filter(id => expenseLedger.some(tx => tx.id === id));
+
+          if (incomeIds.length > 0) await deleteIncomeTransactions(incomeIds);
+          if (expenseIds.length > 0) await deleteExpenseTransactions(expenseIds);
+
+          toast({ title: 'Batch Delete Complete', description: `${selectedIds.length} records removed.` });
+          setSelectedIds([]);
+          loadData();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: 'Batch Failed', description: e.message });
+      } finally {
+          setIsLoading(false);
+          setIsBulkDeleteAlertOpen(false);
+      }
+  };
+
   const handleEdit = (transaction: GeneralTransaction) => {
       setTransactionToEdit(transaction);
       setIsTransactionDialogOpen(true);
@@ -269,21 +321,12 @@ export function LedgersView() {
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
+      setShowDuplicatesOnly(false);
   };
 
   const handleDownloadCSV = () => {
-    let dataToExport: GeneralTransaction[] = [];
+    let dataToExport = generalLedgerFiltered;
     let fileName = "Ogeemo_General_Ledger";
-
-    if (activeTab === 'all') {
-      dataToExport = generalLedger;
-    } else if (activeTab === 'income') {
-      dataToExport = filteredIncome.map(i => ({ ...i, transactionType: 'income' as const }));
-      fileName = "Ogeemo_Income_Ledger";
-    } else if (activeTab === 'expenses') {
-      dataToExport = filteredExpenses.map(e => ({ ...e, transactionType: 'expense' as const }));
-      fileName = "Ogeemo_Expense_Ledger";
-    }
 
     if (dataToExport.length === 0) {
       toast({ variant: 'destructive', title: "No data to export", description: "The current view has no transactions." });
@@ -324,11 +367,25 @@ export function LedgersView() {
     toast({ title: "Export Successful" });
   };
 
+  const handleToggleSelect = (id: string) => {
+      setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+      setSelectedIds(checked ? generalLedgerFiltered.map(t => t.id) : []);
+  };
+
   const renderTable = (data: GeneralTransaction[], type: 'income' | 'expense' | 'all') => (
-    <div className="border rounded-md overflow-hidden bg-card">
+    <div className="border border-black rounded-md overflow-hidden bg-card">
         <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50 border-b border-black">
                 <TableRow>
+                    <TableHead className="w-12 text-center">
+                        <Checkbox 
+                            checked={data.length > 0 && selectedIds.length === data.length}
+                            onCheckedChange={handleToggleSelectAll}
+                        />
+                    </TableHead>
                     <TableHead className="p-0">
                         <Button variant="ghost" onClick={() => setSortConfig({ key: 'date', direction: sortConfig?.direction === 'asc' ? 'desc' : 'asc' })} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
                             Date {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
@@ -355,62 +412,86 @@ export function LedgersView() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {data.map(item => (
-                    <TableRow id={`row-${item.id}`} key={item.id} className={cn(highlightedId === item.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
-                        <TableCell>{item.date}</TableCell>
-                        <TableCell className="font-medium">{item.company}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                            {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
-                        </TableCell>
-                        {type === 'all' && <TableCell className="text-center"><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'}>{item.transactionType}</Badge></TableCell>}
-                        <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
-                            {formatCurrency(item.totalAmount)}
-                        </TableCell>
-                        <TableCell className="text-center print:hidden">
-                            <div className="flex items-center justify-center gap-2">
-                                {item.isReconciled && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <ShieldCheck className="h-4 w-4 text-green-600" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p className="text-xs">Reconciled against bank record.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
-                                {item.documentUrl ? (
-                                    <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                                        <LinkIcon className="h-4 w-4" />
-                                    </a>
-                                ) : '-'}
-                            </div>
-                        </TableCell>
-                        <TableCell className="print:hidden">
-                            <div className="flex justify-end">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={() => handleEdit(item)}><Pencil className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                ))}
+                {data.map(item => {
+                    const isDupe = duplicateMap.has(item.id);
+                    return (
+                        <TableRow 
+                            id={`row-${item.id}`} 
+                            key={item.id} 
+                            className={cn(
+                                highlightedId === item.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset",
+                                isDupe && !showDuplicatesOnly && "bg-amber-50/30"
+                            )}
+                        >
+                            <TableCell className="text-center">
+                                <Checkbox 
+                                    checked={selectedIds.includes(item.id)} 
+                                    onCheckedChange={() => handleToggleSelect(item.id)} 
+                                />
+                            </TableCell>
+                            <TableCell className="text-xs">{item.date}</TableCell>
+                            <TableCell className="font-medium">{item.company}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                                {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
+                            </TableCell>
+                            {type === 'all' && <TableCell className="text-center"><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'} className="text-[10px] h-4 uppercase">{item.transactionType}</Badge></TableCell>}
+                            <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
+                                {formatCurrency(item.totalAmount)}
+                            </TableCell>
+                            <TableCell className="text-center print:hidden">
+                                <div className="flex items-center justify-center gap-2">
+                                    {isDupe && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                                </TooltipTrigger>
+                                                <TooltipContent><p className="text-xs">Potential duplicate found.</p></TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+                                    {item.isReconciled && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <ShieldCheck className="h-4 w-4 text-green-600" />
+                                                </TooltipTrigger>
+                                                <TooltipContent><p className="text-xs">Reconciled against bank record.</p></TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )}
+                                    {item.documentUrl ? (
+                                        <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                            <LinkIcon className="h-4 w-4" />
+                                        </a>
+                                    ) : '-'}
+                                </div>
+                            </TableCell>
+                            <TableCell className="print:hidden">
+                                <div className="flex justify-end">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => handleEdit(item)}><Pencil className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
                 {data.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={type === 'all' ? 7 : 6} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
+                        <TableCell colSpan={type === 'all' ? 8 : 7} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
                     </TableRow>
                 )}
             </TableBody>
-            <TableFooter>
+            <TableFooter className="bg-muted/10 border-t border-black">
                 <TableRow>
-                    <TableCell colSpan={type === 'all' ? 4 : 3} className="text-right font-bold">Total</TableCell>
+                    <TableCell colSpan={type === 'all' ? 5 : 4} className="text-right font-bold">Total</TableCell>
                     <TableCell className={cn("text-right font-bold font-mono", type === 'expense' ? "text-red-600" : type === 'income' ? "text-green-600" : (netIncome >= 0 ? "text-green-600" : "text-red-600"))}>
                         {formatCurrency(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome)}
                     </TableCell>
@@ -422,7 +503,7 @@ export function LedgersView() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 text-black">
         <AccountingPageHeader pageTitle="BKS Ledger" hubPath="/accounting" hubLabel="Accounting Hub" />
         
         <header className="text-center relative print:hidden">
@@ -435,21 +516,37 @@ export function LedgersView() {
             </div>
         </header>
 
-        <Card className="print:hidden">
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b bg-muted/30">
-                <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm font-medium">Orchestration Options</CardTitle>
+        <Card className="print:hidden border-black shadow-lg">
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-black bg-muted/30">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-sm font-medium">Orchestration</CardTitle>
+                    </div>
+                    {selectedIds.length > 0 && (
+                        <div className="flex items-center gap-2 animate-in slide-in-from-left-2">
+                            <Badge variant="destructive" className="h-6">{selectedIds.length} Selected</Badge>
+                            <Button variant="destructive" size="sm" className="h-8" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
+                            </Button>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-2">
+                    <div className="flex items-center space-x-2 mr-4 border-r pr-4 border-black/10">
+                        <Switch id="dupe-audit" checked={showDuplicatesOnly} onCheckedChange={setShowDuplicatesOnly} />
+                        <Label htmlFor="dupe-audit" className="text-xs font-bold uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
+                            <ScanSearch className="h-3.5 w-3.5" /> Duplicate Audit
+                        </Label>
+                    </div>
                     <Button variant="outline" size="sm" className="bg-white border-primary text-primary hover:bg-primary/5" onClick={() => setIsReconciliationWizardOpen(true)}>
                         <GitMerge className="mr-2 h-4 w-4" /> Reconcile with Bank
                     </Button>
-                    <Button variant="outline" size="sm" className="bg-white" onClick={handleDownloadCSV} disabled={generalLedger.length === 0}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Download CSV
+                    <Button variant="outline" size="sm" className="bg-white" onClick={handleDownloadCSV} disabled={generalLedgerFiltered.length === 0}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Export CSV
                     </Button>
-                    <Button variant="outline" size="sm" className="bg-white" onClick={handlePrint} disabled={generalLedger.length === 0}>
-                        <Printer className="mr-2 h-4 w-4" /> Print Ledger
+                    <Button variant="outline" size="sm" className="bg-white" onClick={handlePrint} disabled={generalLedgerFiltered.length === 0}>
+                        <Printer className="mr-2 h-4 w-4" /> Print
                     </Button>
                     <Button size="sm" onClick={() => { setTransactionToEdit(null); setIsTransactionDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Post Transaction
@@ -458,10 +555,10 @@ export function LedgersView() {
             </CardHeader>
             <CardContent className="p-4 flex flex-wrap items-end justify-center gap-6">
                 <div className="flex flex-col items-center space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start Date</Label>
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Start Date</Label>
                     <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !startDate && "text-muted-foreground")}>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !startDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                 {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
                             </Button>
@@ -472,9 +569,9 @@ export function LedgersView() {
                     </Popover>
                 </div>
                 <div className="flex flex-col items-center space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End Date</Label>
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !endDate && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                             {endDate ? format(endDate, "PPP") : <span>End of time</span>}
                         </Button>
@@ -483,29 +580,34 @@ export function LedgersView() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <Button variant="outline" className="bg-white" onClick={clearFilters} disabled={!startDate && !endDate}>
+                <Button variant="outline" className="bg-white border-black/20" onClick={clearFilters} disabled={!startDate && !endDate && !showDuplicatesOnly}>
                     <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                 </Button>
             </CardContent>
         </Card>
 
         <div ref={contentRef}>
-            <div className="hidden print:block text-center mb-8 border-b pb-4">
-                <h1 className="text-3xl font-bold">BKS General Ledger</h1>
-                <p className="text-muted-foreground">
+            <div className="hidden print:block text-center mb-8 border-b-2 border-black pb-4">
+                <h1 className="text-3xl font-bold uppercase tracking-widest">BKS General Ledger</h1>
+                <p className="text-gray-600 font-medium">
                     {startDate ? format(startDate, 'PPP') : 'Beginning of time'} - {endDate ? format(endDate, 'PPP') : 'Present'}
                 </p>
+                <div className="mt-4 grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+                    <div className="p-2 border border-black"><p className="text-[10px] uppercase font-bold">Total Income</p><p className="font-mono text-lg">{formatCurrency(incomeTotal)}</p></div>
+                    <div className="p-2 border border-black"><p className="text-[10px] uppercase font-bold">Total Expenses</p><p className="font-mono text-lg">{formatCurrency(expenseTotal)}</p></div>
+                    <div className="p-2 border-2 border-black bg-muted/10"><p className="text-[10px] uppercase font-bold">Net Profit</p><p className="font-mono text-lg font-bold">{formatCurrency(netIncome)}</p></div>
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4 print:hidden">
-                    <TabsTrigger value="all">General Ledger</TabsTrigger>
-                    <TabsTrigger value="income">Income Ledger</TabsTrigger>
-                    <TabsTrigger value="expenses">Expense Ledger</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 mb-4 print:hidden border border-black p-1 bg-muted">
+                    <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white uppercase text-xs font-black tracking-widest">General Ledger</TabsTrigger>
+                    <TabsTrigger value="income" className="data-[state=active]:bg-primary data-[state=active]:text-white uppercase text-xs font-black tracking-widest">Income Ledger</TabsTrigger>
+                    <TabsTrigger value="expenses" className="data-[state=active]:bg-primary data-[state=active]:text-white uppercase text-xs font-black tracking-widest">Expense Ledger</TabsTrigger>
                 </TabsList>
-                <TabsContent value="all">{renderTable(generalLedger, 'all')}</TabsContent>
-                <TabsContent value="income">{renderTable(filteredIncome.map(i => ({...i, transactionType: 'income'})), 'income')}</TabsContent>
-                <TabsContent value="expenses">{renderTable(filteredExpenses.map(e => ({...e, transactionType: 'expense'})), 'expense')}</TabsContent>
+                <TabsContent value="all" className="focus-visible:ring-0">{renderTable(generalLedgerFiltered, 'all')}</TabsContent>
+                <TabsContent value="income" className="focus-visible:ring-0">{renderTable(generalLedgerFiltered, 'income')}</TabsContent>
+                <TabsContent value="expenses" className="focus-visible:ring-0">{renderTable(generalLedgerFiltered, 'expense')}</TabsContent>
             </Tabs>
         </div>
 
@@ -547,6 +649,23 @@ export function LedgersView() {
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You are about to permanently delete {selectedIds.length} ledger entries. This action will destroy the audit trail for these transactions and cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                        Delete All Selected
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

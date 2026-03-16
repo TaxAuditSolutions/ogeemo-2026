@@ -574,6 +574,20 @@ export async function deleteIncomeTransaction(id: string): Promise<void> {
     });
 }
 
+export async function deleteIncomeTransactions(ids: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, INCOME_COLLECTION, id)));
+    await batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch',
+                operation: 'delete',
+            }));
+        }
+    });
+}
+
 
 // --- Expense ---
 const docToExpense = (doc: any): ExpenseTransaction => ({ id: doc.id, ...doc.data() } as ExpenseTransaction);
@@ -637,6 +651,20 @@ export async function deleteExpenseTransaction(id: string): Promise<void> {
           operation: 'delete',
         }));
       }
+    });
+}
+
+export async function deleteExpenseTransactions(ids: string[]): Promise<void> {
+    const db = getDb();
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, EXPENSE_COLLECTION, id)));
+    await batch.commit().catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch',
+                operation: 'delete',
+            }));
+        }
     });
 }
 
@@ -1057,18 +1085,18 @@ export async function getLoans(userId: string): Promise<Loan[]> {
 
 export async function addLoan(data: Omit<Loan, 'id'>): Promise<Loan> {
     const db = getDb();
-    const docRef = doc(collection(db, LOANS_COLLECTION));
-    const newLoan = { id: docRef.id, ...data };
-    setDoc(docRef, data).catch(async (error) => {
+    const docRef = collection(db, LOANS_COLLECTION);
+    const newLoanDoc = await addDoc(docRef, data).catch(async (error) => {
       if (error.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: docRef.path,
+          path: LOANS_COLLECTION,
           operation: 'create',
           requestResourceData: data,
         }));
       }
+      throw error;
     });
-    return newLoan;
+    return { id: newLoanDoc.id, ...data };
 }
 
 export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'userId'>>): Promise<void> {

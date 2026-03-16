@@ -552,7 +552,7 @@ export function ReconciliationWizard({
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        {isProcessing ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <PlusCircle className="mr-2 h-5 w-5" />}
+                                                                        {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                                                                         Post & Reconcile
                                                                     </>
                                                                 )}
@@ -605,12 +605,12 @@ export function ReconciliationWizard({
                     </div>
                     <div className="flex gap-4 w-full sm:w-auto">
                         <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">
-                            <BookOpen className="mr-2 h-5 w-5" /> Back to General Ledger
+                            <BookOpen className="mr-2 h-4 w-4" /> Back to General Ledger
                         </Button>
                         <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Close Terminal</Button>
                         {step === 'triage' && (
                             <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white text-primary">
-                                <Link href={`/reports/bank-reconciliation?from=${bankTransactions[bankTransactions.length - 1]?.date}&to=${bankTransactions[0]?.date}`}>
+                                <Link href={`/reports/bank-reconciliation?from=${normalizeDate(bankTransactions[bankTransactions.length - 1]?.date)}&to=${normalizeDate(bankTransactions[0]?.date)}`}>
                                     <FileDigit className="mr-2 h-5 w-5" /> Final Reconciliation Report
                                 </Link>
                             </Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -24,23 +23,23 @@ import { Button } from '@/components/ui/button';
 import { 
     LoaderCircle, 
     Printer, 
-    ArrowLeft, 
     ShieldCheck, 
-    Landmark, 
     Scale, 
     Info, 
     CheckCircle2, 
     Clock,
-    XCircle
+    XCircle,
+    ArrowRight
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/services/accounting-service';
 import { ReportsPageHeader } from '@/components/reports/page-header';
-import { cn, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 function BankReconciliationReportContent() {
     const { user } = useAuth();
@@ -54,6 +53,16 @@ function BankReconciliationReportContent() {
 
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
+
+    // High-Fidelity Date Renderer: Handles raw bank strings or ISO nodes
+    const renderDate = (dateStr: string | null) => {
+        if (!dateStr) return '';
+        const date = parseISO(dateStr);
+        if (isValid(date)) return format(date, 'PP');
+        const fallback = new Date(dateStr);
+        if (isValid(fallback)) return format(fallback, 'PP');
+        return dateStr;
+    };
 
     useEffect(() => {
         async function loadData() {
@@ -119,7 +128,7 @@ function BankReconciliationReportContent() {
                 {/* Formal Header */}
                 <div className="text-center space-y-2 border-b pb-8">
                     <h2 className="text-2xl font-bold uppercase tracking-[0.2em]">Statement of Account Reconciliation</h2>
-                    <p className="text-sm font-medium">Reporting Period: {fromParam ? `${format(parseISO(fromParam), 'PP')} - ${toParam ? format(parseISO(toParam), 'PP') : 'Present'}` : 'Year-to-Date'}</p>
+                    <p className="text-sm font-medium">Reporting Period: {fromParam ? `${renderDate(fromParam)} - ${toParam ? renderDate(toParam) : 'Present'}` : 'Year-to-Date'}</p>
                     <p className="text-[10px] text-muted-foreground uppercase font-black">Generated: {format(new Date(), 'PPpp')}</p>
                 </div>
 
@@ -231,7 +240,7 @@ function BankReconciliationReportContent() {
 
 export default function BankReconciliationReportPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>}>
             <BankReconciliationReportContent />
         </Suspense>
     );

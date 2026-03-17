@@ -187,6 +187,7 @@ export function BankStatementsView() {
   const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
 
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof BankTransaction; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -246,6 +247,18 @@ export function BankStatementsView() {
     const acc = mockAccounts.find(a => a.id === accountIdParam);
     let txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
     
+    // Discovery Node: Filter by Query
+    if (searchQuery.trim()) {
+        const term = searchQuery.toLowerCase().trim();
+        txs = txs.filter(t => 
+            t.name.toLowerCase().includes(term) || 
+            t.memo.toLowerCase().includes(term) || 
+            t.transactionType.toLowerCase().includes(term) ||
+            t.amount.toFixed(2).includes(term) ||
+            Math.abs(t.amount).toFixed(2).includes(term)
+        );
+    }
+
     const debits = txs.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0);
     const credits = txs.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
     const diff = credits + debits;
@@ -273,7 +286,7 @@ export function BankStatementsView() {
         totalCredits: credits,
         netDifference: diff
     };
-  }, [bankTransactions, accountIdParam, mockAccounts, sortConfig]);
+  }, [bankTransactions, accountIdParam, mockAccounts, sortConfig, searchQuery]);
 
   const handlePlaidContinue = () => {
     setIsLinkDialogOpen(false);
@@ -626,59 +639,79 @@ export function BankStatementsView() {
     <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
         <AccountingPageHeader pageTitle={`Transactions: ${selectedAccount?.name}`} />
         
-        <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+        <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" onClick={handleBackToAccounts}>
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back to Registry
+                <Button variant="outline" size="sm" onClick={handleBackToAccounts} className="h-10">
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
-                <div>
-                    <h1 className="text-3xl font-bold font-headline text-primary">{selectedAccount?.name}</h1>
-                    <p className="text-muted-foreground text-sm">{selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}</p>
+                <div className="text-left">
+                    <h1 className="text-2xl font-bold font-headline text-primary leading-none">{selectedAccount?.name}</h1>
+                    <p className="text-muted-foreground text-xs mt-1">{selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}</p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-10">
-                    <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
+                    <Upload className="mr-2 h-4 w-4" /> Upload CSV
                 </Button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
-                <div className="flex gap-4">
-                    <div className="bg-red-50 px-4 py-2 rounded-lg border border-red-200 text-right min-w-[120px]">
-                        <p className="text-[10px] uppercase font-bold text-red-600 tracking-widest flex items-center justify-end gap-1">
-                            <TrendingDown className="h-3 w-3" /> Debits
-                        </p>
-                        <p className="font-mono font-bold text-red-600">({formatCurrency(totalDebits)})</p>
-                    </div>
-                    <div className="bg-green-50 px-4 py-2 rounded-lg border border-green-200 text-right min-w-[120px]">
-                        <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest flex items-center justify-end gap-1">
-                            <TrendingUp className="h-3 w-3" /> Credits
-                        </p>
-                        <p className="font-mono font-bold text-green-600">{formatCurrency(totalCredits)}</p>
-                    </div>
-                    <div className="bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 text-right min-w-[140px]">
-                        <p className="text-[10px] uppercase font-bold text-primary tracking-widest flex items-center justify-end gap-1">
-                            <Activity className="h-3 w-3" /> Difference
-                        </p>
-                        <p className={cn("font-mono font-bold", netDifference >= 0 ? "text-primary" : "text-destructive")}>
-                            {netDifference >= 0 ? '+' : ''}{formatCurrency(netDifference)}
-                        </p>
-                    </div>
-                </div>
+                <Button asChild variant="ghost" size="icon" className="h-10 w-10">
+                    <Link href="/action-manager"><X className="h-5 w-5" /></Link>
+                </Button>
             </div>
         </header>
 
-        <Card className="shadow-xl overflow-hidden border-black">
-            <CardHeader className="bg-muted/10 border-b">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>External Transaction Mirror (Info Only)</CardTitle>
-                        <CardDescription>Reviewing physical world signals. The difference between credits and debits represents the net period change.</CardDescription>
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="md:col-span-1 space-y-1">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Discovery Terminal</Label>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search terms or amount..." 
+                        className="h-11 pl-10 bg-white border-black/20 focus-visible:ring-primary"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent"
+                            onClick={() => setSearchQuery('')}
+                        >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    )}
                 </div>
+            </div>
+            <div className="md:col-span-3 grid grid-cols-3 gap-3">
+                <Card className="bg-red-50/50 border-red-100 shadow-none py-2 px-4">
+                    <p className="text-[9px] uppercase font-bold text-red-600 tracking-[0.2em] mb-0.5">Total Debits</p>
+                    <p className="font-mono font-bold text-red-600 text-lg">({formatCurrency(totalDebits)})</p>
+                </Card>
+                <Card className="bg-green-50/50 border-green-100 shadow-none py-2 px-4">
+                    <p className="text-[9px] uppercase font-bold text-green-600 tracking-[0.2em] mb-0.5">Total Credits</p>
+                    <p className="font-mono font-bold text-green-600 text-lg">{formatCurrency(totalCredits)}</p>
+                </Card>
+                <Card className="bg-primary/5 border-primary/10 shadow-none py-2 px-4">
+                    <p className="text-[9px] uppercase font-bold text-primary tracking-[0.2em] mb-0.5">Net Activity</p>
+                    <p className={cn("font-mono font-bold text-lg", netDifference >= 0 ? "text-primary" : "text-destructive")}>
+                        {netDifference >= 0 ? '+' : ''}{formatCurrency(netDifference)}
+                    </p>
+                </Card>
+            </div>
+        </div>
+
+        <Card className="shadow-xl overflow-hidden border-black">
+            <CardHeader className="bg-muted/10 border-b py-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4 text-primary" />
+                    External Transaction Mirror (Info Only)
+                </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
                 <Table>
                     <TableHeader className="bg-muted/5">
-                        <TableRow>
+                        <TableRow className="hover:bg-transparent border-b-black">
                             <TableHead className="p-0 w-32">
                                 <Button variant="ghost" onClick={() => requestSort('date')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
                                     Date {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
@@ -686,7 +719,7 @@ export function BankStatementsView() {
                             </TableHead>
                             <TableHead className="p-0 w-32">
                                 <Button variant="ghost" onClick={() => requestSort('transactionType')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                    Transaction {sortConfig?.key === 'transactionType' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                    Type {sortConfig?.key === 'transactionType' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0">
@@ -700,7 +733,7 @@ export function BankStatementsView() {
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0 text-right w-40">
-                                <Button variant="ghost" onClick={() => requestSort('amount')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
+                                <Button variant="ghost" onClick={() => requestSort('amount')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none pr-8">
                                     Amount {sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                 </Button>
                             </TableHead>
@@ -708,12 +741,12 @@ export function BankStatementsView() {
                     </TableHeader>
                     <TableBody>
                       {transactions.map(txn => (
-                        <TableRow key={txn.id}>
-                          <TableCell className="text-xs font-bold font-mono">{txn.date}</TableCell>
+                        <TableRow key={txn.id} className="border-b-black/10">
+                          <TableCell className="text-xs font-bold font-mono pl-4">{txn.date}</TableCell>
                           <TableCell className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{txn.transactionType}</TableCell>
                           <TableCell className="font-bold text-sm">{txn.name}</TableCell>
                           <TableCell className="text-xs italic text-muted-foreground truncate max-w-xs">{txn.memo}</TableCell>
-                          <TableCell className={cn("text-right font-mono font-black text-lg", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
+                          <TableCell className={cn("text-right font-mono font-black text-lg pr-8", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
                               {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
                         </TableRow>
@@ -722,10 +755,10 @@ export function BankStatementsView() {
                           <TableRow>
                               <TableCell colSpan={5} className="h-64 text-center">
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
-                                      <FileSpreadsheet className="h-12 w-12" />
+                                      {searchQuery ? <Search className="h-12 w-12" /> : <FileSpreadsheet className="h-12 w-12" />}
                                       <div className="space-y-1">
-                                          <p className="font-bold">No signals ingested.</p>
-                                          <p className="text-xs">Upload a CSV statement to begin reviewing the period activity.</p>
+                                          <p className="font-bold">{searchQuery ? 'No matching records found.' : 'No signals ingested.'}</p>
+                                          <p className="text-xs">{searchQuery ? 'Try a different search term or amount.' : 'Upload a CSV statement to begin reviewing activity.'}</p>
                                       </div>
                                   </div>
                               </TableCell>

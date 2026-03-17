@@ -369,7 +369,7 @@ export function BankStatementsView() {
         });
         
         setBankTransactions(prev => [...newTxns, ...prev]);
-        toast({ title: 'Statement Ingested', description: `Detected ${newTxns.length} new signals in the CSV.` });
+        toast({ title: 'Statement Ingested', description: `Detected ${newTxns.length} new transactions in the CSV.` });
     };
     reader.readAsText(file);
     if (event.target) event.target.value = '';
@@ -392,7 +392,7 @@ export function BankStatementsView() {
                         <Link2 className="h-6 w-6" />
                         <DialogTitle>Connect Financial Institution</DialogTitle>
                     </div>
-                    <DialogDescription>Securely synchronize bank signals using Plaid.</DialogDescription>
+                    <DialogDescription>Securely synchronize bank data using Plaid.</DialogDescription>
                 </DialogHeader>
                 <div className="py-6 space-y-4">
                     <div className="flex items-start gap-4 p-4 border rounded-xl bg-primary/5">
@@ -479,125 +479,127 @@ export function BankStatementsView() {
 
   if (!accountIdParam) {
       return (
-        <div className="p-4 sm:p-6 space-y-6 text-black min-h-full bg-muted/5">
-            <AccountingPageHeader pageTitle="Bank Accounts" />
-            <header className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Bank Accounts</h1>
-                </div>
-                <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
-                    Select a bank account to download and review a statement
-                </p>
-            </header>
+        <React.Fragment>
+            <div className="p-4 sm:p-6 space-y-6 text-black min-h-full bg-muted/5">
+                <AccountingPageHeader pageTitle="Bank Accounts" />
+                <header className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Bank Accounts</h1>
+                    </div>
+                    <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
+                        Select a bank account to download and review a statement
+                    </p>
+                </header>
 
-            <div className="max-w-4xl mx-auto space-y-6">
-                <Card className="shadow-lg border-primary/10">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Connected Accounts</CardTitle>
-                            <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => handleOpenAccountDialog()}>
-                                <Plus className="mr-2 h-4 w-4" /> Add An Account
-                            </Button>
-                            <Button onClick={() => setIsLinkDialogOpen(true)}>
-                                <Link2 className="mr-2 h-4 w-4" /> Secure Bank Link
-                            </Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {accounts.map(account => (
-                            <Card 
-                                key={account.id} 
-                                className="group border-muted hover:border-primary hover:shadow-md transition-all relative overflow-hidden"
-                            >
-                                <CardContent className="p-6 flex justify-between items-center cursor-pointer" onClick={() => handleSelectAccount(account.id)}>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <Landmark className="h-5 w-5 text-primary" />
-                                            <h3 className="font-bold text-lg">{account.name}</h3>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{account.bankName} • Ending in: {account.accountNumber?.slice(-4)}</p>
-                                        <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.businessType || 'N/A'}</Badge>
-                                    </div>
-                                    <div className="text-right space-y-1">
-                                        <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
-                                            Review Activity <ArrowRight className="h-3 w-3" />
-                                        </p>
-                                    </div>
-                                </CardContent>
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onSelect={() => handleOpenAccountDialog(account)}>
-                                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onSelect={() => { setAccountToDelete(account); setIsDeleteAlertOpen(true); }} className="text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Account
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </Card>
-                        ))}
-                        {accounts.length === 0 && !isLoadingData && (
-                            <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl opacity-40">
-                                <Landmark className="h-12 w-12 mx-auto mb-2" />
-                                <p className="font-bold">No accounts registered.</p>
-                                <p className="text-xs">Click "Add An Account" to establish your first connection.</p>
+                <div className="max-w-4xl mx-auto space-y-6">
+                    <Card className="shadow-lg border-primary/10">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Connected Accounts</CardTitle>
+                                <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => handleOpenAccountDialog()}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add An Account
+                                </Button>
+                                <Button onClick={() => setIsLinkDialogOpen(true)}>
+                                    <Link2 className="mr-2 h-4 w-4" /> Secure Bank Link
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {accounts.map(account => (
+                                <Card 
+                                    key={account.id} 
+                                    className="group border-muted hover:border-primary hover:shadow-md transition-all relative overflow-hidden"
+                                >
+                                    <CardContent className="p-6 flex justify-between items-center cursor-pointer" onClick={() => handleSelectAccount(account.id)}>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <Landmark className="h-5 w-5 text-primary" />
+                                                <h3 className="font-bold text-lg">{account.name}</h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">{account.bankName} • Ending in: {account.accountNumber?.slice(-4)}</p>
+                                            <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.businessType || 'N/A'}</Badge>
+                                        </div>
+                                        <div className="text-right space-y-1">
+                                            <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
+                                                Review Activity <ArrowRight className="h-3 w-3" />
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleOpenAccountDialog(account)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => { setAccountToDelete(account); setIsDeleteAlertOpen(true); }} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </Card>
+                            ))}
+                            {accounts.length === 0 && !isLoadingData && (
+                                <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl opacity-40">
+                                    <Landmark className="h-12 w-12 mx-auto mb-2" />
+                                    <p className="font-bold">No accounts registered.</p>
+                                    <p className="text-xs">Click "Add An Account" to establish your first connection.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="bg-primary/5 border-dashed">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <Zap className="h-4 w-4" /> High-Fidelity Mirror
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                Review external bank signals directly in Ogeemo. These records provide the physical world proof for your audit trail.
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary/5 border-dashed">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" /> GL-First Workflow
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                Use this hub for information only. The act of reconciliation occurs in the General Ledger to ensure professional node parity.
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary/5 border-dashed">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <Bot className="h-4 w-4" /> Data Triage
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                Ingest CSV statements or link via Plaid to build your Black Box of Evidence without redundant manual entry.
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-primary/5 border-dashed">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <Zap className="h-4 w-4" /> High-Fidelity Mirror
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Review external bank transactions directly in Ogeemo. These records provide the physical world proof for your audit trail.
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary/5 border-dashed">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4" /> GL-First Workflow
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Use this hub for information only. The act of reconciliation occurs in the General Ledger to ensure professional node parity.
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary/5 border-dashed">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <Bot className="h-4 w-4" /> Data Triage
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Ingest CSV statements or link via Plaid to build your Black Box of Evidence without redundant manual entry.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
             {commonDialogs}
-        </div>
+        </React.Fragment>
       );
   }
 
@@ -634,7 +636,7 @@ export function BankStatementsView() {
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Search names, memos, or amount..." 
+                        placeholder="Search names, amounts, or rationale..." 
                         className="h-11 pl-10 bg-white border-black/20 focus-visible:ring-primary shadow-sm"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -703,7 +705,7 @@ export function BankStatementsView() {
                             </TableHead>
                             <TableHead className="p-0">
                                 <Button variant="ghost" onClick={() => requestSort('memo')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                    Memo / Details {sortConfig?.key === 'memo' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                    Rationale / Memo {sortConfig?.key === 'memo' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0 text-right w-40">
@@ -731,7 +733,7 @@ export function BankStatementsView() {
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
                                       <Search className="h-12 w-12" />
                                       <div className="space-y-1">
-                                          <p className="font-bold">{searchQuery ? 'No matching records found.' : 'No signals ingested.'}</p>
+                                          <p className="font-bold">{searchQuery ? 'No matching records found.' : 'No transactions ingested.'}</p>
                                           <p className="text-xs">{searchQuery ? 'Try a different search term or amount.' : 'Upload a CSV statement to begin reviewing activity.'}</p>
                                       </div>
                                   </div>

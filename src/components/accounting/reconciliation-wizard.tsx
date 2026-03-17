@@ -241,7 +241,7 @@ export function ReconciliationWizard({
                 
                 setBankTransactions(newTxns);
                 setStep('triage');
-                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} signals.` });
+                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} transactions.` });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Ingestion Error', description: error.message });
             } finally {
@@ -328,7 +328,7 @@ export function ReconciliationWizard({
         setIsProcessing(true);
         const itemsToProcess = results.missing.filter(bt => bt.status !== 'reconciled');
         if (itemsToProcess.length === 0) {
-            toast({ title: "No actions required", description: "All signals in this list are already reconciled." });
+            toast({ title: "No actions required", description: "All transactions in this list are already reconciled." });
             setIsProcessing(false);
             return;
         }
@@ -336,7 +336,7 @@ export function ReconciliationWizard({
             for (const bt of itemsToProcess) {
                 await handleOneClickIngest(bt);
             }
-            toast({ title: "Auto Recon Complete", description: "Missing signals committed to General Ledger." });
+            toast({ title: "Auto Recon Complete", description: "Missing bank records committed to General Ledger." });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Auto Recon Failure', description: error.message });
         } finally {
@@ -358,7 +358,7 @@ export function ReconciliationWizard({
                         <GitMerge className="h-8 w-8" />
                         <div>
                             <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Financial Ingestion Hub</DialogTitle>
-                            <DialogDescription className="text-base font-medium">Synchronizing Reality with the Registry of Nodes</DialogDescription>
+                            <DialogDescription className="text-base font-medium">Synchronizing Bank Records with the Registry of Nodes</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -372,7 +372,7 @@ export function ReconciliationWizard({
                             <div className="text-center space-y-4 max-w-2xl">
                                 <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900 uppercase">Commence Ingestion</h3>
                                 <p className="text-muted-foreground text-xl leading-relaxed">
-                                    Upload your bank statement to match signals to your BKS General Ledger by Date and Amount.
+                                    Upload your bank statement to match transactions to your BKS General Ledger by Date and Amount.
                                 </p>
                             </div>
                             <div className="flex flex-col items-center gap-6">
@@ -388,18 +388,18 @@ export function ReconciliationWizard({
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Scans your ledger history, invoices, and bills for exact or near-date matches against incoming bank signals.
+                                                Scans your ledger history, invoices, and bills for exact or near-date matches against incoming bank transactions.
                                             </p>
                                         </CardContent>
                                     </Card>
                                     <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
                                         <CardHeader>
                                             <Zap className="h-10 w-10 text-primary mb-4" />
-                                            <CardTitle className="text-lg">Signal Ingestion</CardTitle>
+                                            <CardTitle className="text-lg">Transaction Ingestion</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Instantly create new ledger nodes for unrecorded signals to ensure your "Black Box of Evidence" is complete.
+                                                Instantly create new ledger nodes for unrecorded bank entries to ensure your "Black Box of Evidence" is complete.
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -428,7 +428,7 @@ export function ReconciliationWizard({
                                             <div className="flex items-center justify-between border-b pb-4">
                                                 <div className="space-y-1">
                                                     <h3 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-600" /> Verify Match Parity</h3>
-                                                    <p className="text-sm text-muted-foreground">Detected signals that correspond to existing registry entries. Total Value: {formatCurrency(totals.matchesTotal)}</p>
+                                                    <p className="text-sm text-muted-foreground">Detected transactions that correspond to existing registry entries. Total Value: {formatCurrency(totals.matchesTotal)}</p>
                                                 </div>
                                                 <Button size="lg" onClick={handleBulkReconcile} disabled={(results.perfectMatches.length + results.potentialMatches.length) === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
@@ -445,7 +445,7 @@ export function ReconciliationWizard({
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
                                                                 <div className="flex items-center gap-2">
-                                                                    <p className="text-xs text-muted-foreground italic">Signal: {m.bank.date} • {m.bank.name}</p>
+                                                                    <p className="text-xs text-muted-foreground italic">Bank Record: {m.bank.date} • {m.bank.name}</p>
                                                                     {'drift' in m && (
                                                                         <Badge variant="outline" className="text-[9px] font-bold border-amber-200 text-amber-700 bg-amber-50 uppercase">
                                                                             {Math.abs(m.drift)} Day Drift
@@ -471,7 +471,7 @@ export function ReconciliationWizard({
                                             <div className="flex items-center justify-between border-b pb-4">
                                                 <div className="space-y-1">
                                                     <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Missing Ledger Nodes</h3>
-                                                    <p className="text-sm text-muted-foreground">External signals with no internal node record. Net Impact: {formatCurrency(totals.missingTotal)}</p>
+                                                    <p className="text-sm text-muted-foreground">External bank records with no internal node record. Net Impact: {formatCurrency(totals.missingTotal)}</p>
                                                 </div>
                                                 <Button 
                                                     size="lg" 
@@ -481,7 +481,7 @@ export function ReconciliationWizard({
                                                     disabled={isProcessing || results.missing.filter(m => m.status !== 'reconciled').length === 0}
                                                 >
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                                                    Auto-Ingest All Signals
+                                                    Auto-Ingest All Transactions
                                                 </Button>
                                             </div>
                                             <div className="space-y-3">
@@ -502,7 +502,7 @@ export function ReconciliationWizard({
                                                                     {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
                                                                 </p>
                                                                 <p className={cn("text-[10px] uppercase font-bold tracking-widest mt-1", m.status === 'reconciled' ? "text-green-600" : "text-amber-600")}>
-                                                                    {m.status === 'reconciled' ? "Node Provisioned" : "Unrecorded Signal"}
+                                                                    {m.status === 'reconciled' ? "Node Provisioned" : "Unrecorded Transaction"}
                                                                 </p>
                                                             </div>
                                                             <Button 
@@ -550,7 +550,7 @@ export function ReconciliationWizard({
                                                             <p className={cn("font-mono font-bold text-xl", m.type === 'income' ? 'text-green-600' : 'text-red-600')}>
                                                                 {m.type === 'income' ? '+' : '-'}{formatCurrency(m.totalAmount)}
                                                             </p>
-                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Awaiting Signal</p>
+                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Awaiting Proof</p>
                                                         </div>
                                                     </Card>
                                                 ))}

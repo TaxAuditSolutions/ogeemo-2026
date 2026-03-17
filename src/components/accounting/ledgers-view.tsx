@@ -42,7 +42,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
@@ -97,7 +96,6 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
@@ -355,7 +353,7 @@ export function LedgersView() {
       const catName = getCategoryName(catNum, item.transactionType);
       const notesValue = item.description || "";
       const explanationValue = item.explanation || "";
-      const combinedNotes = `${notesValue}${explanationValue ? ' - ' + explanationValue : ''}`;
+      const combinedRationale = `${notesValue}${explanationValue ? ' - ' + explanationValue : ''}`;
       
       return [
         item.date,
@@ -364,7 +362,7 @@ export function LedgersView() {
         catNum,
         item.transactionType.toUpperCase(),
         item.totalAmount.toFixed(2),
-        `"${combinedNotes.replace(/"/g, '""')}"`,
+        `"${combinedRationale.replace(/"/g, '""')}"`,
         item.documentUrl || "",
         item.isReconciled ? "YES" : "NO"
       ];
@@ -585,7 +583,7 @@ export function LedgersView() {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setIsStartFilterOpen(false); }} initialFocus />
+                            <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { if(d) { setStartDate(d); setIsStartFilterOpen(false); } }} initialFocus />
                         </PopoverContent>
                     </Popover>
                 </div>
@@ -599,7 +597,7 @@ export function LedgersView() {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
+                            <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { if(d) { setEndDate(d); setIsEndFilterOpen(false); } }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
                         </PopoverContent>
                     </Popover>
                 </div>
@@ -670,7 +668,7 @@ export function LedgersView() {
                         <ShieldCheck className="h-8 w-8" />
                         <div className="space-y-0.5">
                             <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
-                            <DialogDescription className="text-sm font-medium">Reconciliation: Achieving Parity between Reality and Record.</DialogDescription>
+                            <DialogDescription className="text-sm font-medium">Reconciliation: Achieving Parity between Activity and Record.</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -679,14 +677,14 @@ export function LedgersView() {
                         <section className="space-y-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-primary/10 rounded-lg"><Zap className="h-5 w-5 text-primary" /></div>
-                                <h3 className="text-2xl font-bold">1. The Signal and the Node</h3>
+                                <h3 className="text-2xl font-bold">1. The Evidence and the Entry</h3>
                             </div>
                             <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
                                 <p>
-                                    In the Ogeemo World, your BKS General Ledger is your <strong>Internal Node Registry</strong>—it is your professional record of *why* money moved. The Bank Statement is an <strong>External Signal</strong>—raw proof that money moved in the physical world.
+                                    In the Ogeemo World, your BKS General Ledger is your <strong>Internal Node Registry</strong>—it is your professional record of *why* money moved. The Bank Statement is <strong>External Bank Evidence</strong>—raw proof that money moved in the physical world.
                                 </p>
                                 <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
-                                    Reconciliation is the professional act of proving that the Signal and the Node match exactly.
+                                    Reconciliation is the professional act of proving that the Bank Activity and the Ledger Entry match exactly.
                                 </p>
                                 <p>
                                     Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
@@ -701,10 +699,10 @@ export function LedgersView() {
                             </div>
                             <div className="space-y-10">
                                 {[
-                                    { s: "0", t: "Ingest Raw Facts", d: "Upload your bank statement (CSV) to the 'Bank Accounts' hub to ingest external signals into the staging area." },
-                                    { s: "1", t: "Identify Gaps", d: "The engine highlights unreconciled signals. These are physical events that haven't been linked to a business rationale yet." },
+                                    { s: "0", t: "Ingest Raw Bank Data", d: "Upload your bank statement (CSV) to the 'Bank Accounts' hub to ingest external bank transactions into the staging area." },
+                                    { s: "1", t: "Identify Gaps", d: "The engine highlights unreconciled bank transactions. These are physical events that haven't been linked to a business rationale yet." },
                                     { s: "2", t: "Trigger the Match Engine", d: "Use the Reconciliation Wizard to scan your ledger for matching values and dates across income, expenses, and invoices." },
-                                    { s: "3", t: "Verify & Commit", d: "Select the correct match or create a new 'Verified Entry' directly from the signal to fill the gap in your registry." },
+                                    { s: "3", t: "Verify & Commit", d: "Select the correct match or create a new 'Verified Entry' directly from the bank record to fill the gap in your registry." },
                                     { s: "4", t: "Achieve Parity", d: "Once reconciled, the node is locked with a unique Bank Reference ID, becoming a verified fact in your permanent audit trail." }
                                 ].map(step => (
                                     <div key={step.s} className="flex gap-6">

@@ -125,9 +125,9 @@ type BankTransaction = {
 };
 
 const initialMockAccounts: BankAccount[] = [
-  { id: 'acc_1', name: 'Primary Checking', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', openingBalance: 10430.22, closingBalance: 15430.22 },
+  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', openingBalance: 10430.22, closingBalance: 15430.22 },
   { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666', openingBalance: 75000.00, closingBalance: 85000.00 },
-  { id: 'acc_3', name: 'Personal Checking', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, closingBalance: 5210.50 },
+  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, closingBalance: 5210.50 },
 ];
 
 const mockBankTransactions: BankTransaction[] = [
@@ -394,7 +394,7 @@ export function BankStatementsView() {
                         <div className="bg-muted p-10 rounded-3xl border-2 border-dashed text-center space-y-4">
                             <p className="text-lg font-bold text-primary uppercase tracking-[0.2em]">The Ogeemo Mandate</p>
                             <p className="text-base text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
-                                "Reconcile your primary checking account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
+                                "Reconcile your primary chequing account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
                             </p>
                         </div>
                     </div>

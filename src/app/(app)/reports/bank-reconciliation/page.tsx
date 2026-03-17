@@ -156,7 +156,7 @@ function BankReconciliationReportContent() {
                             <div className="flex justify-between items-center text-sm font-medium text-red-600">
                                 <span className="flex items-center gap-2">
                                     <XCircle className="h-4 w-4" />
-                                    Less: Outstanding Checks/Payments
+                                    Less: Outstanding Cheques/Payments
                                 </span>
                                 <span className="font-mono">({formatCurrency(reportData.outstandingItems.filter(i => i.type === 'expense').reduce((sum, i) => sum + i.totalAmount, 0))})</span>
                             </div>

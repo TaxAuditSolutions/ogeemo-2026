@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -46,7 +45,7 @@ const defaultSettings: PayrollSettings = {
 };
 
 // Mock data, in a real app this would come from the user's chart of accounts
-const bankAccounts = ["Main Checking Account (...1234)", "Operating Account (...5678)"];
+const bankAccounts = ["Main Chequing Account (...1234)", "Operating Account (...5678)"];
 
 export function PayrollSettingsView() {
   const [settings, setSettings] = useState<PayrollSettings>(defaultSettings);

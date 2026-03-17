@@ -42,7 +42,8 @@ import {
     ChevronLeft,
     FileSpreadsheet,
     Bot,
-    Search
+    Search,
+    AlertTriangle
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -94,6 +95,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -108,8 +110,8 @@ type BankAccount = {
   institutionNumber: string;
   transitNumber: string;
   accountNumber: string;
-  openingBalance: number;
-  closingBalance: number; // This serves as the reference closing balance from the bank
+  openingBalance: number; // Balance at start of period
+  statementClosingBalance: number; // Reference balance from the physical statement
   address?: string;
   phone?: string;
   accountManager?: string;
@@ -126,9 +128,9 @@ type BankTransaction = {
 };
 
 const initialMockAccounts: BankAccount[] = [
-  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', openingBalance: 10430.22, closingBalance: 15430.22 },
-  { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666', openingBalance: 75000.00, closingBalance: 85000.00 },
-  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, closingBalance: 5210.50 },
+  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', openingBalance: 10430.22, statementClosingBalance: 15430.22 },
+  { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666', openingBalance: 75000.00, statementClosingBalance: 85000.00 },
+  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, statementClosingBalance: 5210.50 },
 ];
 
 const initialBankTransactions: BankTransaction[] = [
@@ -140,7 +142,7 @@ const initialBankTransactions: BankTransaction[] = [
   { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45 },
 ];
 
-const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | ''; closingBalance: number | '' } = {
+const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | ''; statementClosingBalance: number | '' } = {
     name: '',
     bank: '',
     type: 'Business',
@@ -151,7 +153,7 @@ const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | '';
     phone: '',
     accountManager: '',
     openingBalance: '',
-    closingBalance: '',
+    statementClosingBalance: '',
 };
 
 export function BankStatementsView() {
@@ -231,17 +233,21 @@ export function BankStatementsView() {
   /**
    * High-Fidelity Temporal Calculation Node:
    * Aggregates all bank transactions for the active account to derive the Closing Balance.
+   * Compares the derived balance with the statement's claimed closing balance.
    */
-  const { selectedAccount, transactions, calculatedClosingBalance } = React.useMemo(() => {
+  const { selectedAccount, transactions, calculatedClosingBalance, isBalanced } = React.useMemo(() => {
     const acc = mockAccounts.find(a => a.id === accountIdParam);
     const txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
     const netChange = txs.reduce((sum, txn) => sum + txn.amount, 0);
     const opening = acc?.openingBalance || 0;
+    const calculated = opening + netChange;
+    const target = acc?.statementClosingBalance || 0;
     
     return { 
         selectedAccount: acc,
         transactions: txs, 
-        calculatedClosingBalance: opening + netChange 
+        calculatedClosingBalance: calculated,
+        isBalanced: Math.abs(calculated - target) < 0.01
     };
   }, [bankTransactions, accountIdParam, mockAccounts]);
 
@@ -259,7 +265,7 @@ export function BankStatementsView() {
   };
 
   const handleSaveNewAccount = () => {
-      if (!newAccount.name || !newAccount.bank || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber || newAccount.openingBalance === '' || newAccount.closingBalance === '') {
+      if (!newAccount.name || !newAccount.bank || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber || newAccount.openingBalance === '' || newAccount.statementClosingBalance === '') {
           toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all fields correctly.' });
           return;
       }
@@ -267,7 +273,7 @@ export function BankStatementsView() {
           id: `acc_${Date.now()}`,
           ...newAccount,
           openingBalance: Number(newAccount.openingBalance),
-          closingBalance: Number(newAccount.closingBalance)
+          statementClosingBalance: Number(newAccount.statementClosingBalance)
       } as BankAccount;
       setMockAccounts(prev => [...prev, newMockAccount]);
       setIsNewAccountOpen(false);
@@ -464,10 +470,16 @@ export function BankStatementsView() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2"><Label>Opening Balance ($)</Label><Input type="number" step="0.01" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} /></div>
+                        <div className="space-y-2">
+                            <Label>Statement Opening Balance ($)</Label>
+                            <Input type="number" step="0.01" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} />
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Closing Balance ($)</Label><Input type="number" step="0.01" value={newAccount.closingBalance} onChange={e => setNewAccount(p => ({...p, closingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} /></div>
+                        <div className="space-y-2">
+                            <Label>Statement Closing Balance ($)</Label>
+                            <Input type="number" step="0.01" value={newAccount.statementClosingBalance} onChange={e => setNewAccount(p => ({...p, statementClosingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} />
+                        </div>
                     </div>
                     <Separator />
                     <div className="grid grid-cols-3 gap-4">
@@ -545,7 +557,7 @@ export function BankStatementsView() {
                                     </div>
                                     <div className="text-right space-y-1">
                                         <p className="text-xs text-muted-foreground">Open: {formatCurrency(account.openingBalance)}</p>
-                                        <p className="text-sm font-bold font-mono text-primary">Close: {formatCurrency(account.closingBalance)}</p>
+                                        <p className="text-sm font-bold font-mono text-primary">Statement: {formatCurrency(account.statementClosingBalance)}</p>
                                         <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
                                             View <ArrowRight className="h-3 w-3" />
                                         </p>
@@ -624,9 +636,29 @@ export function BankStatementsView() {
                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Opening Balance</p>
                         <p className="font-mono font-bold text-muted-foreground">{formatCurrency(selectedAccount?.openingBalance || 0)}</p>
                     </div>
-                    <div className="bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 text-right">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Closing Balance</p>
-                        <p className="font-mono font-bold text-primary">{formatCurrency(calculatedClosingBalance)}</p>
+                    <div className={cn(
+                        "px-4 py-2 rounded-lg border text-right transition-colors",
+                        isBalanced ? "bg-primary/5 border-primary/20" : "bg-destructive/5 border-destructive/20"
+                    )}>
+                        <div className="flex items-center justify-end gap-2">
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Calculated Balance</p>
+                            {!isBalanced && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <AlertTriangle className="h-3 w-3 text-destructive animate-pulse cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-destructive text-destructive-foreground p-3 max-w-xs">
+                                            <p className="font-bold mb-1 uppercase text-[10px]">Discrepancy Detected</p>
+                                            <p className="text-xs">Your calculated balance does not match the statement closing balance of <strong>{formatCurrency(selectedAccount?.statementClosingBalance || 0)}</strong>. Check for missing or duplicate transactions.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
+                        <p className={cn("font-mono font-bold", isBalanced ? "text-primary" : "text-destructive")}>
+                            {formatCurrency(calculatedClosingBalance)}
+                        </p>
                     </div>
                 </div>
             </div>

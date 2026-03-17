@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -646,8 +647,10 @@ export function BankStatementsView() {
                     <ChevronLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
                 <div className="text-left">
-                    <h1 className="text-2xl font-bold font-headline text-primary leading-none">{selectedAccount?.name}</h1>
-                    <p className="text-muted-foreground text-xs mt-1">{selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}</p>
+                    <h1 className="text-3xl font-bold font-headline text-primary leading-none">Bank Statement</h1>
+                    <p className="text-muted-foreground text-sm font-medium mt-1">
+                        {selectedAccount?.name} • {selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}
+                    </p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
@@ -756,7 +759,7 @@ export function BankStatementsView() {
                           <TableRow>
                               <TableCell colSpan={5} className="h-64 text-center">
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
-                                      {searchQuery ? <Search className="h-12 w-12" /> : <FileSpreadsheet className="h-12 w-12" />}
+                                      <Search className="h-12 w-12" />
                                       <div className="space-y-1">
                                           <p className="font-bold">{searchQuery ? 'No matching records found.' : 'No signals ingested.'}</p>
                                           <p className="text-xs">{searchQuery ? 'Try a different search term or amount.' : 'Upload a CSV statement to begin reviewing activity.'}</p>

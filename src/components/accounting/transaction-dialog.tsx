@@ -749,7 +749,7 @@ export function TransactionDialog({
                                                                 <FormControl>
                                                                     <Button variant="outline" role="combobox" className="h-12 flex-1 justify-between font-normal px-4 text-base">
                                                                         <span className="truncate">{selectedAccount ? selectedAccount.name : "Search or add account..."}</span>
-                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                                                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                                                     </Button>
                                                                 </FormControl>
                                                             </PopoverTrigger>

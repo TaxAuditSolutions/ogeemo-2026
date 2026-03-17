@@ -43,6 +43,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -351,9 +356,7 @@ export function LedgersView() {
     const csvRows = dataToExport.map(item => {
       const catNum = item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
       const catName = getCategoryName(catNum, item.transactionType);
-      const notesValue = item.description || "";
-      const explanationValue = item.explanation || "";
-      const combinedRationale = `${notesValue}${explanationValue ? ' - ' + explanationValue : ''}`;
+      const combinedRationale = `${item.description || ""}${item.explanation ? ' - ' + item.explanation : ''}`;
       
       return [
         item.date,

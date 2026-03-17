@@ -384,14 +384,14 @@ export function AddLineItemDialog({
                     />
                 </div>
 
-                {/* 3. Internal Memo (Private) */}
+                {/* 3. Operational Memo (Private) */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="internalNotes" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <PlusCircle className="h-4 w-4" /> 3. Internal Operational Memo
+                            <PlusCircle className="h-4 w-4" /> 3. Operational Memo (Internal Only)
                         </Label>
                         <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 uppercase text-[10px] tracking-widest">
-                            Internal Only - Hidden from Invoice
+                            Internal - Hidden from Invoice
                         </Badge>
                     </div>
                     <Textarea

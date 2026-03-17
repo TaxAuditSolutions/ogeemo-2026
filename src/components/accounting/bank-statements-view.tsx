@@ -98,7 +98,7 @@ import {
     type InternalAccount
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
+import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, parseISO, isValid } from 'date-fns';
 import { Input } from '@/components/ui/input';
@@ -591,7 +591,7 @@ export function BankStatementsView() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Ingest CSV statements or link via Plaid to build your Black Box of Evidence without redundant manual entry.
+                                    Ingest CSV transactions or link via Plaid to build your Black Box of Evidence without redundant manual entry.
                                 </p>
                             </CardContent>
                         </Card>

@@ -30,6 +30,14 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -60,7 +68,12 @@ import {
     CheckCircle2,
     Eye,
     ScanSearch,
-    AlertTriangle
+    AlertTriangle,
+    Info,
+    Zap,
+    Layers,
+    Scale,
+    Bot
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +113,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Checkbox } from "../ui/checkbox";
 import { Switch } from "../ui/switch";
+import { ScrollArea } from "../ui/scroll-area";
+import { Separator } from "../ui/separator";
 
 type GeneralTransaction = (IncomeTransaction | ExpenseTransaction) & { transactionType: 'income' | 'expense' };
 
@@ -122,6 +137,7 @@ export function LedgersView() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = React.useState(false);
   const [isReconciliationWizardOpen, setIsReconciliationWizardOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
+  const [isPhilosophyDialogOpen, setIsPhilosophyDialogOpen] = React.useState(false);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
@@ -507,7 +523,12 @@ export function LedgersView() {
         <AccountingPageHeader pageTitle="BKS Ledger" hubPath="/accounting" hubLabel="Accounting Hub" />
         
         <header className="text-center relative print:hidden">
-            <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
+            <div className="flex items-center justify-center gap-2">
+                <h1 className="text-3xl font-bold font-headline text-primary">BKS General Ledger</h1>
+                <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsPhilosophyDialogOpen(true)}>
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                </Button>
+            </div>
             <p className="text-muted-foreground">The Source of Truth for all processed business transactions.</p>
             <div className="absolute top-0 right-0">
                 <Button asChild variant="ghost" size="icon">
@@ -639,6 +660,101 @@ export function LedgersView() {
             companies={companies}
             onSuccess={loadData}
         />
+
+        <Dialog open={isPhilosophyDialogOpen} onOpenChange={setIsPhilosophyDialogOpen}>
+            <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
+                <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
+                    <div className="flex items-center gap-3 text-primary mb-1">
+                        <ShieldCheck className="h-8 w-8" />
+                        <div className="space-y-0.5">
+                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
+                            <DialogDescription className="text-sm font-medium">Reconciliation: Achieving Parity between Reality and Record.</DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+                <ScrollArea className="flex-1 bg-white">
+                    <div className="max-w-4xl mx-auto p-12 space-y-12">
+                        <section className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><Zap className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">1. The Signal and the Node</h3>
+                            </div>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    In the Ogeemo World, your BKS General Ledger is your <strong>Internal Node Registry</strong>—it is your professional record of *why* money moved. The Bank Statement is an <strong>External Signal</strong>—raw proof that money moved in the physical world.
+                                </p>
+                                <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
+                                    Reconciliation is the professional act of proving that the Signal and the Node match exactly.
+                                </p>
+                                <p>
+                                    Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
+                                </p>
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><Layers className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">2. The Audit-Ready Workflow</h3>
+                            </div>
+                            <div className="space-y-10">
+                                {[
+                                    { s: "0", t: "Ingest Raw Facts", d: "Upload your bank statement (CSV) to the 'Bank Accounts' hub to ingest external signals into the staging area." },
+                                    { s: "1", t: "Identify Gaps", d: "The engine highlights unreconciled signals. These are physical events that haven't been linked to a business rationale yet." },
+                                    { s: "2", t: "Trigger the Match Engine", d: "Use the Reconciliation Wizard to scan your ledger for matching values and dates across income, expenses, and invoices." },
+                                    { s: "3", t: "Verify & Commit", d: "Select the correct match or create a new 'Verified Entry' directly from the signal to fill the gap in your registry." },
+                                    { s: "4", t: "Achieve Parity", d: "Once reconciled, the node is locked with a unique Bank Reference ID, becoming a verified fact in your permanent audit trail." }
+                                ].map(step => (
+                                    <div key={step.s} className="flex gap-6">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black text-xl border-2 border-primary/20">{step.s}</div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-bold text-lg">{step.t}</h4>
+                                            <p className="text-muted-foreground leading-relaxed">{step.d}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">3. The Result: Total Defense</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
+                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                                        <ShieldCheck className="h-5 w-5 text-primary" />
+                                        The Audit Shield
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        A reconciled transaction is <strong>pre-verified</strong> by your financial institution. This protects you from the auditor's default assumption that undocumented expenses are personal.
+                                    </p>
+                                </Card>
+                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
+                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                                        <Bot className="h-5 w-5 text-primary" />
+                                        Operational Intelligence
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        Reconciliation ensures your <strong>Financial Snapshot</strong> is a high-fidelity mirror of reality, with zero administrative gaps in your cash position.
+                                    </p>
+                                </Card>
+                            </div>
+                        </section>
+                        <div className="bg-muted p-10 rounded-3xl border-2 border-dashed text-center space-y-4">
+                            <p className="text-lg font-bold text-primary uppercase tracking-[0.2em]">The Ogeemo Mandate</p>
+                            <p className="text-base text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
+                                "Reconcile your ledger against your bank statement at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
+                            </p>
+                        </div>
+                    </div>
+                </ScrollArea>
+                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
+                    <Button onClick={() => setIsPhilosophyDialogOpen(false)} className="w-full sm:w-auto h-14 px-12 font-bold shadow-xl text-lg">Back to General Ledger</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >
             <AlertDialogContent>

@@ -161,7 +161,6 @@ export function BankStatementsView() {
   const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>(initialBankTransactions);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
 
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
   const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
@@ -386,102 +385,6 @@ export function BankStatementsView() {
 
   const commonDialogs = (
     <React.Fragment>
-        <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-            <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
-                <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <div className="flex items-center gap-3 text-primary mb-1">
-                        <ShieldCheck className="h-8 w-8" />
-                        <div className="space-y-0.5">
-                            <DialogTitle className="text-2xl font-headline uppercase tracking-tight">The Philosophy of Evidence</DialogTitle>
-                            <DialogDescription className="text-sm font-medium">Reconciliation: Bridging the Signal and the Node.</DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
-                <ScrollArea className="flex-1 bg-white">
-                    <div className="max-w-4xl mx-auto p-12 space-y-12">
-                        <section className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg"><Zap className="h-5 w-5 text-primary" /></div>
-                                <h3 className="text-2xl font-bold">1. What is Reconciliation?</h3>
-                            </div>
-                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
-                                <p>
-                                    In the Ogeemo World, your bank statement is an <strong>External Signal</strong>—it is proof that money moved in the physical world. Your General Ledger is an <strong>Internal Node</strong>—it is your record of why that money moved.
-                                </p>
-                                <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
-                                    Reconciliation is the professional act of proving that the Signal and the Node match exactly.
-                                </p>
-                                <p>
-                                    Without reconciliation, your books are just a collection of claims. With it, they become a <strong>Black Box of Evidence</strong> that is legally defensible and audit-ready.
-                                </p>
-                            </div>
-                        </section>
-                        <Separator />
-                        <section className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg"><Layers className="h-5 w-5 text-primary" /></div>
-                                <h3 className="text-2xl font-bold">2. Step-by-Step Instructions</h3>
-                            </div>
-                            <div className="space-y-10">
-                                {[
-                                    { s: "0", t: "Retrieve & Upload Your Data", d: "Log in to your bank portal and download your monthly statement as a CSV file. In Ogeemo, click 'Upload CSV Statement' to ingest these raw facts." },
-                                    { s: "1", t: "The Connection (Plaid or Manual)", d: "Alternatively, click 'Link Bank' to use Ogeemo's secure Plaid integration for automated sync." },
-                                    { s: "2", t: "Identify Unreconciled Signals", d: "Review the list. Items marked with a red 'Unreconciled' badge are mysteries that need a business reason for the CRA." },
-                                    { s: "3", t: "Trigger the Matching Engine", d: "Click 'Reconcile Signal'. Ogeemo scans your invoices, bills, and previous entries to find a matching value and date." },
-                                    { s: "4", t: "Verify Match or Create Node", d: "Select a suggestion to link it instantly, or click 'Create New Verified Entry' to build a new node directly from the signal." },
-                                    { s: "5", t: "Achieve the Audit Shield", d: "Once reconciled, the node is locked. It now contains a bank reference ID, making it a verified fact in your audit trail." }
-                                ].map(step => (
-                                    <div key={step.s} className="flex gap-6">
-                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 font-black text-xl border-2 border-primary/20">{step.s}</div>
-                                        <div className="space-y-2">
-                                            <h4 className="font-bold text-lg">{step.t}</h4>
-                                            <p className="text-muted-foreground leading-relaxed">{step.d}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                        <Separator />
-                        <section className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
-                                <h3 className="text-2xl font-bold">3. Why does this matter?</h3>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
-                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
-                                        <ShieldCheck className="h-5 w-5 text-primary" />
-                                        The Audit Shield
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        A reconciled transaction is <strong>pre-verified</strong> with a unique bank ID, protecting you from the auditor's assumption that expenses are personal.
-                                    </p>
-                                </Card>
-                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
-                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
-                                        <Bot className="h-5 w-5 text-primary" />
-                                        Live Intelligence
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Reconciliation ensures your <strong>Financial Snapshot</strong> is 100% accurate, with zero administrative gaps in your cash position.
-                                    </p>
-                                </Card>
-                            </div>
-                        </section>
-                        <div className="bg-muted p-10 rounded-3xl border-2 border-dashed text-center space-y-4">
-                            <p className="text-lg font-bold text-primary uppercase tracking-[0.2em]">The Ogeemo Mandate</p>
-                            <p className="text-base text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
-                                "Reconcile your primary chequing account at least once a week. It takes 5 minutes but saves 5 days of stress during tax season."
-                            </p>
-                        </div>
-                    </div>
-                </ScrollArea>
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-                    <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-14 px-12 font-bold shadow-xl text-lg">Return to Bank Accounts</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
         <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -581,9 +484,6 @@ export function BankStatementsView() {
             <header className="text-center">
                 <div className="flex items-center justify-center gap-2">
                     <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Bank Accounts</h1>
-                    <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsInfoDialogOpen(true)}>
-                        <Info className="h-5 w-5 text-muted-foreground" />
-                    </Button>
                 </div>
                 <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
                     Select a bank account to download and review a statement

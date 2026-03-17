@@ -349,7 +349,7 @@ export function LedgersView() {
       return;
     }
 
-    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Notes", "Document Link", "Reconciled"];
+    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Rationale", "Document Link", "Reconciled"];
     const csvRows = dataToExport.map(item => {
       const catNum = item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
       const catName = getCategoryName(catNum, item.transactionType);
@@ -423,7 +423,7 @@ export function LedgersView() {
                             Amount {sortConfig?.key === 'totalAmount' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                         </Button>
                     </TableHead>
-                    <TableHead className="text-center print:hidden">Audit</TableHead>
+                    <TableHead className="text-center print:hidden">Audit Rationale</TableHead>
                     <TableHead className="w-12 print:hidden"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
             </TableHeader>
@@ -592,10 +592,12 @@ export function LedgersView() {
                 <div className="flex flex-col items-center space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !endDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                            {endDate ? format(endDate, "PPP") : <span>End of time</span>}
-                        </Button>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !endDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                {endDate ? format(endDate, "PPP") : <span>End of time</span>}
+                            </Button>
+                        </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                             <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setIsEndFilterOpen(false); }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
                         </PopoverContent>

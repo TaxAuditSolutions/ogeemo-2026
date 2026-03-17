@@ -865,7 +865,7 @@ export function TransactionDialog({
                                     render={({ field }) => (
                                         <FormItem className="space-y-2">
                                             <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                                <Info className="h-4 w-4" /> Audit Rationale (Internal Notes)
+                                                <Info className="h-4 w-4" /> Audit Rationale (Internal Memo)
                                             </FormLabel>
                                             <FormControl><Textarea placeholder="Explain the business purpose of this transaction for audit records..." rows={4} className="text-base leading-relaxed" {...field} /></FormControl>
                                         </FormItem>

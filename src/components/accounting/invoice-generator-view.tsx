@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -135,7 +134,7 @@ const InvoiceDocument = ({
             </div>
         </section>
         <section className="mt-16 pt-8 border-t border-dashed border-gray-300">
-            <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Notes & Terms</h4>
+            <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Terms & Explanation</h4>
             <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">{notes}</p>
             {attachReport && (
                 <div className="mt-4 p-3 border rounded bg-muted/10 flex items-center justify-between">
@@ -473,8 +472,8 @@ export function InvoiceGeneratorView() {
             Select contacts from your master list to generate a professional invoice.
           </p>
           <div className="absolute top-0 right-0">
-            <Button asChild variant="ghost" size="icon">
-                <a onClick={() => router.back()} className="cursor-pointer">
+            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                <a className="cursor-pointer">
                     <X className="h-5 w-5" />
                     <span className="sr-only">Close</span>
                 </a>
@@ -706,7 +705,7 @@ export function InvoiceGeneratorView() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                          <div className="space-y-2">
                              <div className="flex items-center gap-2">
-                                <Label htmlFor="notes">Notes / Terms</Label>
+                                <Label htmlFor="notes">Terms & Explanation</Label>
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -720,7 +719,7 @@ export function InvoiceGeneratorView() {
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
-                            <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4}/>
+                            <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Add additional terms or explanation..."/>
                          </div>
                          <div className="space-y-2 border rounded-lg p-4 bg-muted/50 h-fit self-end">
                             <div className="flex justify-between text-sm">

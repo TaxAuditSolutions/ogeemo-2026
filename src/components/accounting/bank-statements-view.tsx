@@ -43,7 +43,10 @@ import {
     FileSpreadsheet,
     Bot,
     Search,
-    AlertTriangle
+    AlertTriangle,
+    TrendingUp,
+    TrendingDown,
+    Activity
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -110,8 +113,6 @@ type BankAccount = {
   institutionNumber: string;
   transitNumber: string;
   accountNumber: string;
-  openingBalance: number; // Balance at start of period
-  statementClosingBalance: number; // Reference balance from the physical statement
   address?: string;
   phone?: string;
   accountManager?: string;
@@ -128,9 +129,9 @@ type BankTransaction = {
 };
 
 const initialMockAccounts: BankAccount[] = [
-  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333', openingBalance: 10430.22, statementClosingBalance: 15430.22 },
-  { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666', openingBalance: 75000.00, statementClosingBalance: 85000.00 },
-  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, statementClosingBalance: 5210.50 },
+  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333' },
+  { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666' },
+  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999' },
 ];
 
 const initialBankTransactions: BankTransaction[] = [
@@ -142,7 +143,7 @@ const initialBankTransactions: BankTransaction[] = [
   { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45 },
 ];
 
-const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | ''; statementClosingBalance: number | '' } = {
+const emptyAccountForm: Omit<BankAccount, 'id'> = {
     name: '',
     bank: '',
     type: 'Business',
@@ -152,8 +153,6 @@ const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | '';
     address: '',
     phone: '',
     accountManager: '',
-    openingBalance: '',
-    statementClosingBalance: '',
 };
 
 export function BankStatementsView() {
@@ -231,23 +230,24 @@ export function BankStatementsView() {
   }, [loadData]);
 
   /**
-   * High-Fidelity Temporal Calculation Node:
-   * Aggregates all bank transactions for the active account to derive the Closing Balance.
-   * Compares the derived balance with the statement's claimed closing balance.
+   * High-Fidelity Activity Orchestration Node:
+   * Aggregates inflows (Credits) and outflows (Debits) from the statement signals.
+   * Calculates the Net Difference representing the total shift for the period.
    */
-  const { selectedAccount, transactions, calculatedClosingBalance, isBalanced } = React.useMemo(() => {
+  const { selectedAccount, transactions, totalDebits, totalCredits, netDifference } = React.useMemo(() => {
     const acc = mockAccounts.find(a => a.id === accountIdParam);
     const txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
-    const netChange = txs.reduce((sum, txn) => sum + txn.amount, 0);
-    const opening = acc?.openingBalance || 0;
-    const calculated = opening + netChange;
-    const target = acc?.statementClosingBalance || 0;
+    
+    const debits = txs.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0);
+    const credits = txs.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
+    const diff = credits + debits;
     
     return { 
         selectedAccount: acc,
         transactions: txs, 
-        calculatedClosingBalance: calculated,
-        isBalanced: Math.abs(calculated - target) < 0.01
+        totalDebits: Math.abs(debits),
+        totalCredits: credits,
+        netDifference: diff
     };
   }, [bankTransactions, accountIdParam, mockAccounts]);
 
@@ -265,19 +265,17 @@ export function BankStatementsView() {
   };
 
   const handleSaveNewAccount = () => {
-      if (!newAccount.name || !newAccount.bank || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber || newAccount.openingBalance === '' || newAccount.statementClosingBalance === '') {
-          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all fields correctly.' });
+      if (!newAccount.name || !newAccount.bank || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber) {
+          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all identification fields.' });
           return;
       }
       const newMockAccount: BankAccount = {
           id: `acc_${Date.now()}`,
           ...newAccount,
-          openingBalance: Number(newAccount.openingBalance),
-          statementClosingBalance: Number(newAccount.statementClosingBalance)
       } as BankAccount;
       setMockAccounts(prev => [...prev, newMockAccount]);
       setIsNewAccountOpen(false);
-      toast({ title: 'Account Added', description: 'New account node has been registered.' });
+      toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -313,7 +311,7 @@ export function BankStatementsView() {
         });
         
         setBankTransactions(prev => [...newTxns, ...prev]);
-        toast({ title: 'Statement Ingested', description: `Added ${newTxns.length} transactions to the registry.` });
+        toast({ title: 'Statement Ingested', description: `Detected ${newTxns.length} new signals in the CSV.` });
     };
     reader.readAsText(file);
     if (event.target) event.target.value = '';
@@ -470,16 +468,6 @@ export function BankStatementsView() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Statement Opening Balance ($)</Label>
-                            <Input type="number" step="0.01" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Statement Closing Balance ($)</Label>
-                            <Input type="number" step="0.01" value={newAccount.statementClosingBalance} onChange={e => setNewAccount(p => ({...p, statementClosingBalance: e.target.value === '' ? '' : Number(e.target.value)}))} />
-                        </div>
                     </div>
                     <Separator />
                     <div className="grid grid-cols-3 gap-4">
@@ -556,10 +544,8 @@ export function BankStatementsView() {
                                         <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.type}</Badge>
                                     </div>
                                     <div className="text-right space-y-1">
-                                        <p className="text-xs text-muted-foreground">Open: {formatCurrency(account.openingBalance)}</p>
-                                        <p className="text-sm font-bold font-mono text-primary">Statement: {formatCurrency(account.statementClosingBalance)}</p>
                                         <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
-                                            View <ArrowRight className="h-3 w-3" />
+                                            View Activity <ArrowRight className="h-3 w-3" />
                                         </p>
                                     </div>
                                 </CardContent>
@@ -619,7 +605,7 @@ export function BankStatementsView() {
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="sm" onClick={handleBackToAccounts}>
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back to Accounts
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back to Registry
                 </Button>
                 <div>
                     <h1 className="text-3xl font-bold font-headline text-primary">{selectedAccount?.name}</h1>
@@ -632,32 +618,24 @@ export function BankStatementsView() {
                 </Button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
                 <div className="flex gap-4">
-                    <div className="bg-muted px-4 py-2 rounded-lg border border-border text-right">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Opening Balance</p>
-                        <p className="font-mono font-bold text-muted-foreground">{formatCurrency(selectedAccount?.openingBalance || 0)}</p>
+                    <div className="bg-red-50 px-4 py-2 rounded-lg border border-red-200 text-right min-w-[120px]">
+                        <p className="text-[10px] uppercase font-bold text-red-600 tracking-widest flex items-center justify-end gap-1">
+                            <TrendingDown className="h-3 w-3" /> Debits
+                        </p>
+                        <p className="font-mono font-bold text-red-600">({formatCurrency(totalDebits)})</p>
                     </div>
-                    <div className={cn(
-                        "px-4 py-2 rounded-lg border text-right transition-colors",
-                        isBalanced ? "bg-primary/5 border-primary/20" : "bg-destructive/5 border-destructive/20"
-                    )}>
-                        <div className="flex items-center justify-end gap-2">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Calculated Balance</p>
-                            {!isBalanced && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <AlertTriangle className="h-3 w-3 text-destructive animate-pulse cursor-help" />
-                                        </TooltipTrigger>
-                                        <TooltipContent className="bg-destructive text-destructive-foreground p-3 max-w-xs">
-                                            <p className="font-bold mb-1 uppercase text-[10px]">Discrepancy Detected</p>
-                                            <p className="text-xs">Your calculated balance does not match the statement closing balance of <strong>{formatCurrency(selectedAccount?.statementClosingBalance || 0)}</strong>. Check for missing or duplicate transactions.</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-                        </div>
-                        <p className={cn("font-mono font-bold", isBalanced ? "text-primary" : "text-destructive")}>
-                            {formatCurrency(calculatedClosingBalance)}
+                    <div className="bg-green-50 px-4 py-2 rounded-lg border border-green-200 text-right min-w-[120px]">
+                        <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest flex items-center justify-end gap-1">
+                            <TrendingUp className="h-3 w-3" /> Credits
+                        </p>
+                        <p className="font-mono font-bold text-green-600">{formatCurrency(totalCredits)}</p>
+                    </div>
+                    <div className="bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 text-right min-w-[140px]">
+                        <p className="text-[10px] uppercase font-bold text-primary tracking-widest flex items-center justify-end gap-1">
+                            <Activity className="h-3 w-3" /> Difference
+                        </p>
+                        <p className={cn("font-mono font-bold", netDifference >= 0 ? "text-primary" : "text-destructive")}>
+                            {netDifference >= 0 ? '+' : ''}{formatCurrency(netDifference)}
                         </p>
                     </div>
                 </div>
@@ -668,8 +646,8 @@ export function BankStatementsView() {
             <CardHeader className="bg-muted/10 border-b">
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Transaction Registry (Info Only)</CardTitle>
-                        <CardDescription>Viewing external bank signals. Reconcile these items in the General Ledger.</CardDescription>
+                        <CardTitle>External Transaction Mirror (Info Only)</CardTitle>
+                        <CardDescription>Reviewing physical world signals. The difference between credits and debits represents the net period change.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -702,8 +680,8 @@ export function BankStatementsView() {
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
                                       <FileSpreadsheet className="h-12 w-12" />
                                       <div className="space-y-1">
-                                          <p className="font-bold">No transactions ingested.</p>
-                                          <p className="text-xs">Upload a CSV statement to begin reviewing signals.</p>
+                                          <p className="font-bold">No signals ingested.</p>
+                                          <p className="text-xs">Upload a CSV statement to begin reviewing the period activity.</p>
                                       </div>
                                   </div>
                               </TableCell>
@@ -713,7 +691,7 @@ export function BankStatementsView() {
                 </Table>
             </CardContent>
             <CardFooter className="bg-muted/10 border-t py-3 justify-center">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.3em]">Operational Node: {selectedAccount?.id} • External Registry</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.3em]">Operational Node: {selectedAccount?.id} • Evidence Mirror</p>
             </CardFooter>
         </Card>
         {commonDialogs}

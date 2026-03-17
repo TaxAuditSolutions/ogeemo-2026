@@ -46,7 +46,10 @@ import {
     AlertTriangle,
     TrendingUp,
     TrendingDown,
-    Activity
+    Activity,
+    ArrowUpDown,
+    ArrowUpZA,
+    ArrowDownAZ
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -183,6 +186,8 @@ export function BankStatementsView() {
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [taxTypes, setTaxTypes] = React.useState<TaxType[]>([]);
 
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof BankTransaction; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -229,18 +234,37 @@ export function BankStatementsView() {
     loadData();
   }, [loadData]);
 
-  /**
-   * High-Fidelity Activity Orchestration Node:
-   * Aggregates inflows (Credits) and outflows (Debits) from the statement signals.
-   * Calculates the Net Difference representing the total shift for the period.
-   */
+  const requestSort = (key: keyof BankTransaction) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const { selectedAccount, transactions, totalDebits, totalCredits, netDifference } = React.useMemo(() => {
     const acc = mockAccounts.find(a => a.id === accountIdParam);
-    const txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
+    let txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
     
     const debits = txs.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0);
     const credits = txs.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
     const diff = credits + debits;
+
+    if (sortConfig) {
+        txs = [...txs].sort((a, b) => {
+            let aValue = a[sortConfig.key];
+            let bValue = b[sortConfig.key];
+
+            if (sortConfig.key === 'date') {
+                aValue = new Date(a.date).getTime();
+                bValue = new Date(b.date).getTime();
+            }
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
     
     return { 
         selectedAccount: acc,
@@ -249,7 +273,7 @@ export function BankStatementsView() {
         totalCredits: credits,
         netDifference: diff
     };
-  }, [bankTransactions, accountIdParam, mockAccounts]);
+  }, [bankTransactions, accountIdParam, mockAccounts, sortConfig]);
 
   const handlePlaidContinue = () => {
     setIsLinkDialogOpen(false);
@@ -655,11 +679,31 @@ export function BankStatementsView() {
                 <Table>
                     <TableHeader className="bg-muted/5">
                         <TableRow>
-                            <TableHead className="w-32">Date</TableHead>
-                            <TableHead className="w-32">Transaction</TableHead>
-                            <TableHead>Counterparty (Name)</TableHead>
-                            <TableHead>Memo / Details</TableHead>
-                            <TableHead className="text-right w-40">Amount</TableHead>
+                            <TableHead className="p-0 w-32">
+                                <Button variant="ghost" onClick={() => requestSort('date')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Date {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                </Button>
+                            </TableHead>
+                            <TableHead className="p-0 w-32">
+                                <Button variant="ghost" onClick={() => requestSort('transactionType')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Transaction {sortConfig?.key === 'transactionType' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                </Button>
+                            </TableHead>
+                            <TableHead className="p-0">
+                                <Button variant="ghost" onClick={() => requestSort('name')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Counterparty {sortConfig?.key === 'name' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                </Button>
+                            </TableHead>
+                            <TableHead className="p-0">
+                                <Button variant="ghost" onClick={() => requestSort('memo')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Memo / Details {sortConfig?.key === 'memo' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                </Button>
+                            </TableHead>
+                            <TableHead className="p-0 text-right w-40">
+                                <Button variant="ghost" onClick={() => requestSort('amount')} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Amount {sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                </Button>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -311,11 +311,11 @@ export function BankStatementsView() {
           if (editingAccount) {
               await updateInternalAccount(editingAccount.id, accountData);
               setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, ...accountData } : a));
-              toast({ title: 'Account Updated', description: 'Account node details have been saved.' });
+              toast({ title: 'Account Updated', description: 'Account details have been saved.' });
           } else {
               const savedAccount = await addInternalAccount(accountData as Omit<InternalAccount, 'id'>);
               setAccounts(prev => [...prev, savedAccount]);
-              toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
+              toast({ title: 'Account Added', description: 'New account is ready for use.' });
           }
           setIsAccountDialogOpen(false);
       } catch (error: any) {
@@ -508,9 +508,9 @@ export function BankStatementsView() {
         <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
             <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <DialogTitle>{editingAccount ? 'Edit Account Node' : 'Register Account Node'}</DialogTitle>
+                    <DialogTitle>{editingAccount ? 'Edit Account Details' : 'Add New Account'}</DialogTitle>
                     <DialogDescription>
-                        {editingAccount ? 'Update identification for this financial node.' : 'Add a new financial account to your registry.'}
+                        {editingAccount ? 'Update identification for this financial node.' : 'Add a new financial account to your workspace.'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="p-6 space-y-4">
@@ -539,7 +539,7 @@ export function BankStatementsView() {
                 </div>
                 <DialogFooter className="p-6 border-t bg-muted/10">
                     <Button variant="ghost" onClick={() => setIsAccountDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveAccount}>{editingAccount ? 'Save Changes' : 'Register Node'}</Button>
+                    <Button onClick={handleSaveAccount}>{editingAccount ? 'Save Changes' : 'Add Account'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -562,12 +562,12 @@ export function BankStatementsView() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the account node <strong className="font-bold">"{accountToDelete?.name}"</strong> from your registry. This action cannot be undone.
+                        This will permanently delete the account <strong className="font-bold">"{accountToDelete?.name}"</strong> from your registry. This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmDeleteAccount} className="bg-destructive hover:bg-destructive/90">Delete Node</AlertDialogAction>
+                    <AlertDialogAction onClick={handleConfirmDeleteAccount} className="bg-destructive hover:bg-destructive/90">Delete Account</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -599,7 +599,7 @@ export function BankStatementsView() {
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={() => handleOpenAccountDialog()}>
-                                <Plus className="mr-2 h-4 w-4" /> Add Registry Node
+                                <Plus className="mr-2 h-4 w-4" /> Add An Account
                             </Button>
                             <Button onClick={() => setIsLinkDialogOpen(true)}>
                                 <Link2 className="mr-2 h-4 w-4" /> Secure Bank Link
@@ -651,7 +651,7 @@ export function BankStatementsView() {
                             <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl opacity-40">
                                 <Landmark className="h-12 w-12 mx-auto mb-2" />
                                 <p className="font-bold">No accounts registered.</p>
-                                <p className="text-xs">Click "Add Registry Node" to establish your first connection.</p>
+                                <p className="text-xs">Click "Add An Account" to establish your first connection.</p>
                             </div>
                         )}
                     </CardContent>

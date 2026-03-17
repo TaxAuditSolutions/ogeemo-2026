@@ -41,7 +41,8 @@ import {
     Check,
     Plus,
     BookOpen,
-    Zap
+    Zap,
+    AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -58,7 +59,7 @@ import {
     type IncomeCategory,
     type ExpenseCategory
 } from '@/services/accounting-service';
-import { format, isValid, differenceInDays, parse } from 'date-fns';
+import { format, isValid, differenceInDays, parse, startOfDay, endOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -102,10 +103,7 @@ const scrubAmount = (val: any): number => {
 
 const normalizeDate = (dateStr: string): string => {
     if (!dateStr) return '';
-    // Standard ISO
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-    
-    // Attempt standard formats
     const formats = ['M/d/yyyy', 'MM/dd/yyyy', 'd/M/yyyy', 'dd/MM/yyyy', 'yyyy/MM/dd', 'MMM d, yyyy'];
     for (const f of formats) {
         try {
@@ -113,7 +111,6 @@ const normalizeDate = (dateStr: string): string => {
             if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd');
         } catch (e) {}
     }
-
     const dObj = new Date(dateStr);
     return isValid(dObj) ? format(dObj, 'yyyy-MM-dd') : dateStr;
 };
@@ -142,7 +139,6 @@ export function ReconciliationWizard({
     const results = useMemo(() => {
         if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
 
-        // Unified Matching Pool: GL + AR + AP
         const allLedger = [
             ...incomeLedger.map(i => ({ ...i, type: 'income' as const, matchType: 'ledger' as const })),
             ...expenseLedger.map(e => ({ ...e, type: 'expense' as const, matchType: 'ledger' as const })),
@@ -164,7 +160,7 @@ export function ReconciliationWizard({
         ];
 
         const perfectMatches: { bank: BankTransaction; ledger: any }[] = [];
-        const potentialMatches: { bank: BankTransaction; ledger: any; reason: string }[] = [];
+        const potentialMatches: { bank: BankTransaction; ledger: any; drift: number }[] = [];
         const missingFromLedger: BankTransaction[] = [];
         const usedLedgerIds = new Set<string>();
 
@@ -175,7 +171,6 @@ export function ReconciliationWizard({
             const perfectMatch = allLedger.find(lt => {
                 if (usedLedgerIds.has(lt.id)) return false;
                 if ('isReconciled' in lt && lt.isReconciled) return false;
-                // Match criteria: Exact Date and Exact Amount
                 return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
 
@@ -194,7 +189,8 @@ export function ReconciliationWizard({
             });
 
             if (potentialMatch) {
-                potentialMatches.push({ bank: bt, ledger: potentialMatch, reason: 'Date variance match' });
+                const drift = differenceInDays(new Date(potentialMatch.date), new Date(normalizedBankDate));
+                potentialMatches.push({ bank: bt, ledger: potentialMatch, drift });
                 usedLedgerIds.add(potentialMatch.id);
                 return;
             }
@@ -202,10 +198,22 @@ export function ReconciliationWizard({
             missingFromLedger.push(bt);
         });
 
-        const outstandingLedger = allLedger.filter(lt => (!('isReconciled' in lt) || !lt.isReconciled) && !usedLedgerIds.has(lt.id));
+        const outstandingLedger = allLedger
+            .filter(lt => (!('isReconciled' in lt) || !lt.isReconciled) && !usedLedgerIds.has(lt.id))
+            .map(lt => ({
+                ...lt,
+                daysOld: Math.abs(differenceInDays(new Date(), new Date(lt.date)))
+            }));
 
         return { perfectMatches, potentialMatches, missing: missingFromLedger, outstanding: outstandingLedger };
     }, [bankTransactions, incomeLedger, expenseLedger, invoices, payableBills]);
+
+    const totals = useMemo(() => {
+        const matchesTotal = [...results.perfectMatches, ...results.potentialMatches].reduce((sum, m) => sum + Math.abs(m.bank.amount), 0);
+        const missingTotal = results.missing.reduce((sum, m) => sum + m.amount, 0);
+        const outstandingTotal = results.outstanding.reduce((sum, o) => sum + (o.type === 'income' ? o.totalAmount : -o.totalAmount), 0);
+        return { matchesTotal, missingTotal, outstandingTotal };
+    }, [results]);
 
     const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -287,12 +295,12 @@ export function ReconciliationWizard({
             const baseData = {
                 date: normalizeDate(bt.date),
                 company: bt.name,
-                description: `Ingested from bank: ${bt.memo}`,
+                description: `Bank Ingested: ${bt.memo}`,
                 totalAmount: absAmount,
                 preTaxAmount: absAmount,
                 taxAmount: 0,
                 taxRate: 0,
-                explanation: "Automated one-click ingestion from bank statement ingestion.",
+                explanation: "Automated verification from statement ingestion.",
                 type: 'business' as const,
                 paymentMethod: 'Bank Transfer',
                 isReconciled: true,
@@ -318,60 +326,19 @@ export function ReconciliationWizard({
     const handleAutoRecon = async () => {
         if (!user || results.missing.length === 0) return;
         setIsProcessing(true);
-        
         const itemsToProcess = results.missing.filter(bt => bt.status !== 'reconciled');
-        
         if (itemsToProcess.length === 0) {
             toast({ title: "No actions required", description: "All signals in this list are already reconciled." });
             setIsProcessing(false);
             return;
         }
-
         try {
-            let successCount = 0;
             for (const bt of itemsToProcess) {
-                const isIncome = bt.amount > 0;
-                const absAmount = Math.abs(bt.amount);
-                
-                let categoryId = "";
-                if (isIncome) {
-                    const defaultIncome = incomeCategories.find(c => c.categoryNumber === "Part 3A" || c.name.toLowerCase().includes("sales")) || incomeCategories[0];
-                    categoryId = defaultIncome?.categoryNumber || defaultIncome?.id || "Part 3A";
-                } else {
-                    const defaultExpense = expenseCategories.find(c => c.categoryNumber === "9270" || c.name.toLowerCase().includes("other")) || expenseCategories[0];
-                    categoryId = defaultExpense?.categoryNumber || defaultExpense?.id || "9270";
-                }
-
-                const baseData = {
-                    date: normalizeDate(bt.date),
-                    company: bt.name,
-                    description: `Automated Ingestion: ${bt.memo}`,
-                    totalAmount: absAmount,
-                    preTaxAmount: absAmount,
-                    taxAmount: 0,
-                    taxRate: 0,
-                    explanation: "Batch Auto Recon orchestration.",
-                    type: 'business' as const,
-                    paymentMethod: 'Bank Transfer',
-                    isReconciled: true,
-                    bankReferenceId: bt.id,
-                    userId: user.uid,
-                };
-
-                if (isIncome) {
-                    await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
-                } else {
-                    await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
-                }
-                
-                successCount++;
-                setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
+                await handleOneClickIngest(bt);
             }
-
-            toast({ title: "Auto Recon Complete", description: `${successCount} signals committed to General Ledger.` });
-            onSuccess();
+            toast({ title: "Auto Recon Complete", description: "Missing signals committed to General Ledger." });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Auto Recon Partial Failure', description: error.message });
+            toast({ variant: 'destructive', title: 'Auto Recon Failure', description: error.message });
         } finally {
             setIsProcessing(false);
         }
@@ -391,7 +358,7 @@ export function ReconciliationWizard({
                         <GitMerge className="h-8 w-8" />
                         <div>
                             <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Financial Ingestion Hub</DialogTitle>
-                            <DialogDescription className="text-base font-medium">GL-First Verification Strategy</DialogDescription>
+                            <DialogDescription className="text-base font-medium">Synchronizing Reality with the Registry of Nodes</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -417,22 +384,22 @@ export function ReconciliationWizard({
                                     <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
                                         <CardHeader>
                                             <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-                                            <CardTitle className="text-lg">Automated Parity</CardTitle>
+                                            <CardTitle className="text-lg">Parity Match Engine</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                                The engine performs high-fidelity matching across your entire Income and Expense history based strictly on Date and Amount.
+                                                Scans your ledger history, invoices, and bills for exact or near-date matches against incoming bank signals.
                                             </p>
                                         </CardContent>
                                     </Card>
                                     <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
                                         <CardHeader>
-                                            <PlusCircle className="h-10 w-10 text-primary mb-4" />
-                                            <CardTitle className="text-lg">One-Click Ingestion</CardTitle>
+                                            <Zap className="h-10 w-10 text-primary mb-4" />
+                                            <CardTitle className="text-lg">Signal Ingestion</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Identify missing signals and post them directly to your General Ledger with a single action.
+                                                Instantly create new ledger nodes for unrecorded signals to ensure your "Black Box of Evidence" is complete.
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -460,37 +427,39 @@ export function ReconciliationWizard({
                                         <div className="max-w-6xl mx-auto p-10 space-y-6">
                                             <div className="flex items-center justify-between border-b pb-4">
                                                 <div className="space-y-1">
-                                                    <h3 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-600" /> Perfect Match Found</h3>
-                                                    <p className="text-sm text-muted-foreground">Synchronize signal parity by Date and Amount.</p>
+                                                    <h3 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-600" /> Verify Match Parity</h3>
+                                                    <p className="text-sm text-muted-foreground">Detected signals that correspond to existing registry entries. Total Value: {formatCurrency(totals.matchesTotal)}</p>
                                                 </div>
                                                 <Button size="lg" onClick={handleBulkReconcile} disabled={(results.perfectMatches.length + results.potentialMatches.length) === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                                                    Commit All Matches ({results.perfectMatches.length + results.potentialMatches.length})
+                                                    Commit Verification ({results.perfectMatches.length + results.potentialMatches.length})
                                                 </Button>
                                             </div>
                                             <div className="space-y-3">
                                                 {[...results.perfectMatches, ...results.potentialMatches].map((m, i) => (
                                                     <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm">
                                                         <div className="flex items-center gap-5">
-                                                            <div className="p-3 bg-green-50 rounded-xl text-green-600"><CheckCircle2 className="h-6 w-6" /></div>
+                                                            <div className={cn("p-3 rounded-xl", 'drift' in m ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600")}>
+                                                                {'drift' in m ? <GitMerge className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
+                                                            </div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
-                                                                <p className="text-xs text-muted-foreground italic">Signal Source: {m.bank.date} • {m.bank.name} • Type: {m.ledger.matchType}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-xs text-muted-foreground italic">Signal: {m.bank.date} • {m.bank.name}</p>
+                                                                    {'drift' in m && (
+                                                                        <Badge variant="outline" className="text-[9px] font-bold border-amber-200 text-amber-700 bg-amber-50 uppercase">
+                                                                            {Math.abs(m.drift)} Day Drift
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="font-mono font-black text-2xl text-slate-900">{formatCurrency(Math.abs(m.bank.amount))}</p>
-                                                            <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mt-1">Verified Node</p>
+                                                            <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mt-1">Found in {m.ledger.matchType}</p>
                                                         </div>
                                                     </Card>
                                                 ))}
-                                                {results.perfectMatches.length === 0 && (
-                                                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-                                                        <Search className="h-10 w-10 mb-2" />
-                                                        <p className="text-sm font-bold uppercase">No Perfect Matches Found</p>
-                                                        <p className="text-xs italic">Check "Missing from Ledger" for potential discrepancies.</p>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </ScrollArea>
@@ -501,8 +470,8 @@ export function ReconciliationWizard({
                                         <div className="max-w-6xl mx-auto p-10 space-y-6">
                                             <div className="flex items-center justify-between border-b pb-4">
                                                 <div className="space-y-1">
-                                                    <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Discovered Unrecorded Signals</h3>
-                                                    <p className="text-sm text-muted-foreground">External bank transactions that require a Ledger Node for audit-readiness.</p>
+                                                    <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Missing Ledger Nodes</h3>
+                                                    <p className="text-sm text-muted-foreground">External signals with no internal node record. Net Impact: {formatCurrency(totals.missingTotal)}</p>
                                                 </div>
                                                 <Button 
                                                     size="lg" 
@@ -512,7 +481,7 @@ export function ReconciliationWizard({
                                                     disabled={isProcessing || results.missing.filter(m => m.status !== 'reconciled').length === 0}
                                                 >
                                                     {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                                                    Auto Recon All Signals
+                                                    Auto-Ingest All Signals
                                                 </Button>
                                             </div>
                                             <div className="space-y-3">
@@ -533,7 +502,7 @@ export function ReconciliationWizard({
                                                                     {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
                                                                 </p>
                                                                 <p className={cn("text-[10px] uppercase font-bold tracking-widest mt-1", m.status === 'reconciled' ? "text-green-600" : "text-amber-600")}>
-                                                                    {m.status === 'reconciled' ? "Verified Node" : "Staging Node"}
+                                                                    {m.status === 'reconciled' ? "Node Provisioned" : "Unrecorded Signal"}
                                                                 </p>
                                                             </div>
                                                             <Button 
@@ -545,17 +514,7 @@ export function ReconciliationWizard({
                                                                 onClick={() => m.status !== 'reconciled' && handleOneClickIngest(m)} 
                                                                 disabled={(isProcessing && m.status !== 'reconciled') || m.status === 'reconciled'}
                                                             >
-                                                                {m.status === 'reconciled' ? (
-                                                                    <>
-                                                                        <CheckCircle2 className="mr-2 h-5 w-5" />
-                                                                        Posted & Reconciled
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                                                        Post & Reconcile
-                                                                    </>
-                                                                )}
+                                                                {m.status === 'reconciled' ? <><CheckCircle2 className="mr-2 h-5 w-5" /> Ingested</> : <><PlusCircle className="mr-2 h-5 w-5" /> One-Click Ingest</>}
                                                             </Button>
                                                         </div>
                                                     </Card>
@@ -569,8 +528,8 @@ export function ReconciliationWizard({
                                     <ScrollArea className="h-full">
                                         <div className="max-w-6xl mx-auto p-10 space-y-6">
                                             <div className="space-y-1 border-b pb-4">
-                                                <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-blue-600" /> Pending Ledger Nodes</h3>
-                                                <p className="text-sm text-muted-foreground">Internal records awaiting matching signal verification.</p>
+                                                <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-blue-600" /> Pending Node Registry</h3>
+                                                <p className="text-sm text-muted-foreground">Internal nodes awaiting physical world proof. Variance Total: {formatCurrency(totals.outstandingTotal)}</p>
                                             </div>
                                             <div className="space-y-3">
                                                 {results.outstanding.map((m, i) => (
@@ -579,12 +538,19 @@ export function ReconciliationWizard({
                                                             <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Clock className="h-5 w-5" /></div>
                                                             <div>
                                                                 <p className="font-bold text-lg text-slate-900">{m.company}</p>
-                                                                <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.description}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.description}</p>
+                                                                    <Badge variant="outline" className={cn("text-[9px] font-bold uppercase", m.daysOld > 30 ? "text-red-600 border-red-200 bg-red-50" : "text-blue-600 border-blue-200")}>
+                                                                        {m.daysOld} Days Outstanding
+                                                                    </Badge>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
-                                                            <p className="font-mono font-bold text-xl text-slate-400">{formatCurrency(m.totalAmount)}</p>
-                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Pending Node</p>
+                                                            <p className={cn("font-mono font-bold text-xl", m.type === 'income' ? 'text-green-600' : 'text-red-600')}>
+                                                                {m.type === 'income' ? '+' : '-'}{formatCurrency(m.totalAmount)}
+                                                            </p>
+                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Awaiting Signal</p>
                                                         </div>
                                                     </Card>
                                                 ))}
@@ -600,14 +566,11 @@ export function ReconciliationWizard({
                 <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-6">
                     <div className="hidden sm:flex items-center gap-4">
                         {step === 'triage' && (
-                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest"><X className="mr-2 h-4 w-4" /> Abandon & Restart</Button>
+                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest"><X className="mr-2 h-4 w-4" /> Reset Ingestion</Button>
                         )}
                     </div>
                     <div className="flex gap-4 w-full sm:w-auto">
-                        <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">
-                            <BookOpen className="mr-2 h-4 w-4" /> Back to General Ledger
-                        </Button>
-                        <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Close Terminal</Button>
+                        <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Back to Ledger</Button>
                         {step === 'triage' && (
                             <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white text-primary">
                                 <Link href={`/reports/bank-reconciliation?from=${normalizeDate(bankTransactions[bankTransactions.length - 1]?.date)}&to=${normalizeDate(bankTransactions[0]?.date)}`}>

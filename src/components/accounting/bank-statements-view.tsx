@@ -42,7 +42,8 @@ import {
     Layers,
     Scale,
     ChevronLeft,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Bot
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';

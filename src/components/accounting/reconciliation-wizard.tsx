@@ -46,7 +46,8 @@ import {
     AlertTriangle,
     Ban,
     Filter,
-    RefreshCw
+    RefreshCw,
+    Activity
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -251,8 +252,12 @@ export function ReconciliationWizard({
     const stats = useMemo(() => {
         const total = reconciliationNodes.length;
         const matched = reconciliationNodes.filter(n => n.matchStatus === 'perfect' || n.matchStatus === 'drift').length;
-        const totalValue = reconciliationNodes.reduce((sum, n) => sum + Math.abs(n.bank.amount), 0);
-        return { total, matched, totalValue };
+        
+        const debits = reconciliationNodes.filter(n => n.bank.amount < 0).reduce((sum, n) => sum + n.bank.amount, 0);
+        const credits = reconciliationNodes.filter(n => n.bank.amount > 0).reduce((sum, n) => sum + n.bank.amount, 0);
+        const net = credits + debits;
+
+        return { total, matched, totalDebits: Math.abs(debits), totalCredits: credits, netActivity: net };
     }, [reconciliationNodes]);
 
     const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -396,7 +401,7 @@ export function ReconciliationWizard({
     const handleFlagAsOrphan = () => {
         setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'orphan' } : tx));
         setSelectedIds([]);
-        toast({ title: 'Nodes Flagged', description: 'Selected items marked as Orphan / Personal.' });
+        toast({ title: 'Records Flagged', description: 'Selected items marked as Orphan / Duplicate.' });
     };
 
     const handleToggleSelect = (id: string) => {
@@ -442,24 +447,44 @@ export function ReconciliationWizard({
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="bg-muted/30 border-b p-4 px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-6">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Statement Value</span>
-                                        <span className="font-mono font-bold text-xl">{formatCurrency(stats.totalValue)}</span>
+                            <div className="bg-muted/30 border-b p-4 px-8 space-y-4">
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div className="grid grid-cols-3 gap-3 flex-1 max-w-2xl">
+                                        <Card className="bg-red-50/50 border-red-100 py-2 px-4 border-2 shadow-none">
+                                            <p className="text-[9px] uppercase font-bold text-red-600 tracking-widest mb-0.5 flex items-center gap-1">
+                                                <TrendingDown className="h-3 w-3" /> Debits
+                                            </p>
+                                            <p className="font-mono font-bold text-red-600 text-lg">({formatCurrency(stats.totalDebits)})</p>
+                                        </Card>
+                                        <Card className="bg-green-50/50 border-green-100 py-2 px-4 border-2 shadow-none">
+                                            <p className="text-[9px] uppercase font-bold text-green-600 tracking-widest mb-0.5 flex items-center gap-1">
+                                                <TrendingUp className="h-3 w-3" /> Credits
+                                            </p>
+                                            <p className="font-mono font-bold text-green-600 text-lg">{formatCurrency(stats.totalCredits)}</p>
+                                        </Card>
+                                        <Card className="bg-primary/5 border-primary/10 py-2 px-4 border-2 shadow-none">
+                                            <p className="text-[9px] uppercase font-bold text-primary tracking-widest mb-0.5 flex items-center gap-1">
+                                                <Activity className="h-3 w-3" /> Net Impact
+                                            </p>
+                                            <p className={cn("font-mono font-bold text-lg", stats.netActivity >= 0 ? "text-primary" : "text-destructive")}>
+                                                {formatCurrency(stats.netActivity)}
+                                            </p>
+                                        </Card>
                                     </div>
-                                    <div className="h-8 w-px bg-muted-foreground/20" />
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Match Parity</span>
-                                        <span className="text-xl font-bold text-primary">{stats.matched} / {stats.total}</span>
+
+                                    <div className="flex items-center gap-6">
+                                        <div className="flex flex-col text-right">
+                                            <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Match Parity</span>
+                                            <span className="text-xl font-bold text-primary">{stats.matched} / {stats.total} Verified</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 w-full sm:w-auto">
-                                    <div className="relative flex-1 sm:w-64">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                                    <div className="relative w-full sm:w-96">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input 
-                                            placeholder="Search activity..." 
+                                            placeholder="Search ingested activity..." 
                                             className="h-10 pl-9 bg-white"
                                             value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
@@ -468,13 +493,13 @@ export function ReconciliationWizard({
                                     {selectedIds.length > 0 && (
                                         <div className="flex items-center gap-2 p-1 bg-white border rounded-lg shadow-sm animate-in slide-in-from-right-2">
                                             <Button size="sm" onClick={handleBulkVerify} className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase">
-                                                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Reconciled
+                                                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Verify Matches
                                             </Button>
                                             <Button size="sm" onClick={handleBulkAutoIngest} className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] uppercase">
-                                                <Zap className="mr-1.5 h-3.5 w-3.5" /> Ingest Unmatched
+                                                <Zap className="mr-1.5 h-3.5 w-3.5" /> Ingest & Reconcile
                                             </Button>
                                             <Button size="sm" variant="ghost" onClick={handleFlagAsOrphan} className="h-8 text-muted-foreground font-bold text-[10px] uppercase hover:bg-red-50 hover:text-red-600">
-                                                <Ban className="mr-1.5 h-3.5 w-3.5" /> Orphan / Duplicate
+                                                <Ban className="mr-1.5 h-3.5 w-3.5" /> Duplicate / Orphan
                                             </Button>
                                             <Separator orientation="vertical" className="h-6 mx-1" />
                                             <Button variant="ghost" size="icon" onClick={() => setSelectedIds([])} className="h-8 w-8 text-muted-foreground">
@@ -498,8 +523,8 @@ export function ReconciliationWizard({
                                             <TableHead className="w-32">Date</TableHead>
                                             <TableHead>Counterparty / Memo</TableHead>
                                             <TableHead className="text-right w-32">Amount</TableHead>
-                                            <TableHead className="text-center w-40">Verification Status</TableHead>
-                                            <TableHead>Recommended Action</TableHead>
+                                            <TableHead className="text-center w-40">Status Node</TableHead>
+                                            <TableHead>Orchestration Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -569,7 +594,7 @@ export function ReconciliationWizard({
                                                             <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter w-24">{node.recommendation}</span>
                                                             {!isReconciled && !isOrphan && (
                                                                 <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-black hover:bg-primary/10 hover:text-primary" onClick={() => handleToggleSelect(bt.id)}>
-                                                                    Select Node
+                                                                    Select Item
                                                                 </Button>
                                                             )}
                                                         </div>

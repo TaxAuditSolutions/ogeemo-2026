@@ -43,7 +43,8 @@ import {
     Scale,
     ChevronLeft,
     FileSpreadsheet,
-    Bot
+    Bot,
+    Search
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -808,7 +809,7 @@ export function BankStatementsView() {
                                             <div className="text-right flex items-center gap-4">
                                                 <div className="flex flex-col items-end">
                                                     <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
-                                                    <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-500" : "bg-amber-500")}>{match.confidence} Confidence</Badge>
+                                                    <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-50" : "bg-amber-50")}>{match.confidence} Confidence</Badge>
                                                 </div>
                                                 <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>

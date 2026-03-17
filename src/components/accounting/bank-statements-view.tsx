@@ -91,6 +91,10 @@ import {
     type IncomeCategory,
     type TaxType,
     getTaxTypes,
+    getInternalAccounts,
+    addInternalAccount,
+    deleteInternalAccount,
+    type InternalAccount
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -109,19 +113,6 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
   loading: () => <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><LoaderCircle className="h-10 w-10 animate-spin text-white" /></div>,
 });
 
-type BankAccount = {
-  id: string;
-  name: string;
-  bank: string;
-  type: "Business" | "Personal";
-  institutionNumber: string;
-  transitNumber: string;
-  accountNumber: string;
-  address?: string;
-  phone?: string;
-  accountManager?: string;
-};
-
 type BankTransaction = {
   id: string;
   accountId: string;
@@ -132,31 +123,22 @@ type BankTransaction = {
   amount: number;
 };
 
-const initialMockAccounts: BankAccount[] = [
-  { id: 'acc_1', name: 'Primary Chequing', bank: 'Chase', type: 'Business', institutionNumber: '001', transitNumber: '12345', accountNumber: '111222333' },
-  { id: 'acc_2', name: 'High-Yield Savings', bank: 'Marcus', type: 'Business', institutionNumber: '002', transitNumber: '67890', accountNumber: '444555666' },
-  { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999' },
-];
-
 const initialBankTransactions: BankTransaction[] = [
   { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', transactionType: 'ACH', name: 'Client Alpha', memo: 'Invoice #1001 payment', amount: 5000 },
   { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', transactionType: 'DEBIT', name: 'Cloud Hosting Inc.', memo: 'Monthly server fee', amount: -150 },
   { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', transactionType: 'TRANSFER', name: 'Stripe Payout', memo: 'Merchant settle', amount: 850.75 },
   { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', transactionType: 'DEBIT', name: 'SaaS Tools Co.', memo: 'Subscription', amount: -75.99 },
-  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To acc_2', amount: -10000 },
+  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To savings', amount: -10000 },
   { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45 },
 ];
 
-const emptyAccountForm: Omit<BankAccount, 'id'> = {
+const emptyAccountForm = {
     name: '',
-    bank: '',
-    type: 'Business',
+    bankName: '',
+    businessType: 'Business' as "Business" | "Personal",
     institutionNumber: '',
     transitNumber: '',
     accountNumber: '',
-    address: '',
-    phone: '',
-    accountManager: '',
 };
 
 export function BankStatementsView() {
@@ -164,7 +146,7 @@ export function BankStatementsView() {
   const searchParams = useSearchParams();
   const accountIdParam = searchParams.get('accountId');
 
-  const [mockAccounts, setMockAccounts] = React.useState<BankAccount[]>(initialMockAccounts);
+  const [accounts, setAccounts] = React.useState<InternalAccount[]>([]);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
@@ -196,7 +178,8 @@ export function BankStatementsView() {
     }
     setIsLoadingData(true);
     try {
-        const [fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts, fetchedTaxTypes] = await Promise.all([
+        const [fetchedAccounts, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts, fetchedTaxTypes] = await Promise.all([
+            getInternalAccounts(user.uid),
             getCompanies(user.uid),
             getExpenseCategories(user.uid),
             getIncomeCategories(user.uid),
@@ -205,6 +188,7 @@ export function BankStatementsView() {
             getContacts(),
             getTaxTypes(user.uid)
         ]);
+        setAccounts(fetchedAccounts);
         setCompanies(fetchedCompanies);
         setExpenseCategories(fetchedExpenseCategories);
         setIncomeCategories(fetchedIncomeCategories);
@@ -232,7 +216,7 @@ export function BankStatementsView() {
   };
 
   const { selectedAccount, transactions, totalDebits, totalCredits, netDifference } = React.useMemo(() => {
-    const acc = mockAccounts.find(a => a.id === accountIdParam);
+    const acc = accounts.find(a => a.id === accountIdParam);
     let txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
     
     if (searchQuery.trim()) {
@@ -273,7 +257,7 @@ export function BankStatementsView() {
         totalCredits: credits,
         netDifference: diff
     };
-  }, [bankTransactions, accountIdParam, mockAccounts, sortConfig, searchQuery]);
+  }, [bankTransactions, accountIdParam, accounts, sortConfig, searchQuery]);
 
   const handlePlaidContinue = () => {
     setIsLinkDialogOpen(false);
@@ -288,18 +272,31 @@ export function BankStatementsView() {
       setIsNewAccountOpen(true);
   };
 
-  const handleSaveNewAccount = () => {
-      if (!newAccount.name || !newAccount.bank || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber) {
+  const handleSaveNewAccount = async () => {
+      if (!user) return;
+      if (!newAccount.name || !newAccount.bankName || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber) {
           toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all identification fields.' });
           return;
       }
-      const newMockAccount: BankAccount = {
-          id: `acc_${Date.now()}`,
-          ...newAccount,
-      } as BankAccount;
-      setMockAccounts(prev => [...prev, newMockAccount]);
-      setIsNewAccountOpen(false);
-      toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
+      
+      try {
+          const accountData: Omit<InternalAccount, 'id'> = {
+              name: newAccount.name,
+              bankName: newAccount.bankName,
+              businessType: newAccount.businessType,
+              institutionNumber: newAccount.institutionNumber,
+              transitNumber: newAccount.transitNumber,
+              accountNumber: newAccount.accountNumber,
+              type: 'Bank',
+              userId: user.uid,
+          };
+          const savedAccount = await addInternalAccount(accountData);
+          setAccounts(prev => [...prev, savedAccount]);
+          setIsNewAccountOpen(false);
+          toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
+      }
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -478,17 +475,17 @@ export function BankStatementsView() {
                 </DialogHeader>
                 <div className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Account Name</Label><Input value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Savings" /></div>
-                        <div className="space-y-2"><Label>Bank Name</Label><Input value={newAccount.bank} onChange={e => setNewAccount(p => ({...p, bank: e.target.value}))} /></div>
+                        <div className="space-y-2"><Label>Account Nickname</Label><Input value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Chequing" /></div>
+                        <div className="space-y-2"><Label>Bank Name</Label><Input value={newAccount.bankName} onChange={e => setNewAccount(p => ({...p, bankName: e.target.value}))} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Type</Label>
-                            <Select value={newAccount.type} onValueChange={(v: any) => setNewAccount(p => ({...p, type: v}))}>
+                            <Label>Categorization</Label>
+                            <Select value={newAccount.businessType} onValueChange={(v: any) => setNewAccount(p => ({...p, businessType: v}))}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Business">Business</SelectItem>
-                                    <SelectItem value="Personal">Personal</SelectItem>
+                                    <SelectItem value="Business">Business Operations</SelectItem>
+                                    <SelectItem value="Personal">Personal Identity</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -552,7 +549,7 @@ export function BankStatementsView() {
                         </div>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {mockAccounts.map(account => (
+                        {accounts.map(account => (
                             <Card 
                                 key={account.id} 
                                 className="cursor-pointer hover:border-primary hover:shadow-md transition-all group border-muted"
@@ -564,8 +561,8 @@ export function BankStatementsView() {
                                             <Landmark className="h-5 w-5 text-primary" />
                                             <h3 className="font-bold text-lg">{account.name}</h3>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{account.bank} • Ending in: {account.accountNumber.slice(-4)}</p>
-                                        <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.type}</Badge>
+                                        <p className="text-xs text-muted-foreground">{account.bankName} • Ending in: {account.accountNumber?.slice(-4)}</p>
+                                        <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.businessType || 'N/A'}</Badge>
                                     </div>
                                     <div className="text-right space-y-1">
                                         <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
@@ -575,6 +572,13 @@ export function BankStatementsView() {
                                 </CardContent>
                             </Card>
                         ))}
+                        {accounts.length === 0 && !isLoadingData && (
+                            <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl opacity-40">
+                                <Landmark className="h-12 w-12 mx-auto mb-2" />
+                                <p className="font-bold">No accounts registered.</p>
+                                <p className="text-xs">Click "Add Registry Node" to establish your first connection.</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -634,7 +638,7 @@ export function BankStatementsView() {
                 <div className="text-left">
                     <h1 className="text-3xl font-bold font-headline text-primary leading-none uppercase tracking-tight">Bank Statement</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        {selectedAccount?.name} • {selectedAccount?.bank} • Ending in: {selectedAccount?.accountNumber.slice(-4)}
+                        {selectedAccount?.name} • {selectedAccount?.bankName} • Ending in: {selectedAccount?.accountNumber?.slice(-4)}
                     </p>
                 </div>
             </div>
@@ -723,8 +727,8 @@ export function BankStatementsView() {
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0">
-                                <Button variant="ghost" onClick={() => requestSort('name')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                    Memo / Details {sortConfig?.key === 'name' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                <Button variant="ghost" onClick={() => requestSort('memo')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Memo / Details {sortConfig?.key === 'memo' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0 text-right w-40">

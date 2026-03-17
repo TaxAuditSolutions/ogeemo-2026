@@ -102,6 +102,12 @@ export interface InternalAccount {
     name: string;
     type: 'Bank' | 'Credit Card' | 'Cash' | 'Other';
     userId: string;
+    // Registry Extensions
+    bankName?: string;
+    institutionNumber?: string;
+    transitNumber?: string;
+    accountNumber?: string;
+    businessType?: "Business" | "Personal";
 }
 
 // --- Invoice Interfaces & Functions ---
@@ -711,7 +717,7 @@ export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<Pay
 
 export async function updatePayableBill(id: string, data: Partial<Omit<PayableBill, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
-  const docRef = db.collection(PAYABLES_COLLECTION).doc(id);
+  const docRef = doc(db, PAYABLES_COLLECTION, id);
   updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({

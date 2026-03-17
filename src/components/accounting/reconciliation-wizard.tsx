@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
@@ -45,7 +44,8 @@ import {
     Zap,
     AlertTriangle,
     Ban,
-    Filter
+    Filter,
+    RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -84,6 +84,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Separator } from '@/components/ui/separator';
 
 interface BankTransaction {
     id: string;
@@ -163,7 +164,6 @@ export function ReconciliationWizard({
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Core Logic: Unified Node Generation ---
     const reconciliationNodes = useMemo(() => {
         if (bankTransactions.length === 0) return [];
 
@@ -193,7 +193,6 @@ export function ReconciliationWizard({
             const absBankAmount = Math.abs(bt.amount);
             const normalizedBankDate = normalizeDate(bt.date);
 
-            // 1. Check for Perfect Match
             const perfectMatch = allRegistry.find(lt => {
                 if (usedRegistryIds.has(lt.id)) return false;
                 if ('isReconciled' in lt && lt.isReconciled) return false;
@@ -210,7 +209,6 @@ export function ReconciliationWizard({
                 };
             }
 
-            // 2. Check for Drift Match
             const driftMatch = allRegistry.find(lt => {
                 if (usedRegistryIds.has(lt.id)) return false;
                 if ('isReconciled' in lt && lt.isReconciled) return false;
@@ -231,7 +229,6 @@ export function ReconciliationWizard({
                 };
             }
 
-            // 3. Unmatched
             return {
                 bank: bt,
                 matchStatus: 'unmatched' as const,
@@ -256,8 +253,6 @@ export function ReconciliationWizard({
         const totalValue = reconciliationNodes.reduce((sum, n) => sum + Math.abs(n.bank.amount), 0);
         return { total, matched, totalValue };
     }, [reconciliationNodes]);
-
-    // --- Bulk Actions ---
 
     const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -446,7 +441,6 @@ export function ReconciliationWizard({
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            {/* Command Bar & Vitals */}
                             <div className="bg-muted/30 border-b p-4 px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="flex items-center gap-6">
                                     <div className="flex flex-col">
@@ -490,7 +484,6 @@ export function ReconciliationWizard({
                                 </div>
                             </div>
 
-                            {/* Unified Table */}
                             <div className="flex-1 overflow-auto">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-white z-10 border-b-2 border-black/5">

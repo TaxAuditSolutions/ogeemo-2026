@@ -586,7 +586,7 @@ export function BankStatementsView() {
                     </Button>
                 </div>
                 <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
-                    Select a secure cloud node to begin reviewing external financial signals.
+                    Select a bank account to download and review a statement
                 </p>
             </header>
 

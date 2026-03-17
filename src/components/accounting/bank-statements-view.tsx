@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -249,7 +248,6 @@ export function BankStatementsView() {
     const acc = mockAccounts.find(a => a.id === accountIdParam);
     let txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
     
-    // Discovery Node: Filter by Query
     if (searchQuery.trim()) {
         const term = searchQuery.toLowerCase().trim();
         txs = txs.filter(t => 
@@ -267,8 +265,8 @@ export function BankStatementsView() {
 
     if (sortConfig) {
         txs = [...txs].sort((a, b) => {
-            let aValue = a[sortConfig.key];
-            let bValue = b[sortConfig.key];
+            let aValue: any = a[sortConfig.key];
+            let bValue: any = b[sortConfig.key];
 
             if (sortConfig.key === 'date') {
                 aValue = new Date(a.date).getTime();
@@ -536,11 +534,11 @@ export function BankStatementsView() {
 
   if (!accountIdParam) {
       return (
-        <div className="p-4 sm:p-6 space-y-6 text-black min-h-full">
+        <div className="p-4 sm:p-6 space-y-6 text-black min-h-full bg-muted/5">
             <AccountingPageHeader pageTitle="Bank Accounts" />
             <header className="text-center">
                 <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Financial Registry</h1>
+                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Financial Registry</h1>
                     <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsInfoDialogOpen(true)}>
                         <Info className="h-5 w-5 text-muted-foreground" />
                     </Button>
@@ -639,7 +637,7 @@ export function BankStatementsView() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
-        <AccountingPageHeader pageTitle={`Transactions: ${selectedAccount?.name}`} />
+        <AccountingPageHeader pageTitle="Bank Statement" />
         
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
@@ -647,15 +645,15 @@ export function BankStatementsView() {
                     <ChevronLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
                 <div className="text-left">
-                    <h1 className="text-3xl font-bold font-headline text-primary leading-none">Bank Statement</h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary leading-none uppercase tracking-tight">Bank Statement</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
                         {selectedAccount?.name} • {selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}
                     </p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-10">
-                    <Upload className="mr-2 h-4 w-4" /> Upload CSV
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-10 font-bold border-primary text-primary hover:bg-primary/5">
+                    <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
                 </Button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
                 <Button asChild variant="ghost" size="icon" className="h-10 w-10">
@@ -670,8 +668,8 @@ export function BankStatementsView() {
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Search terms or amount..." 
-                        className="h-11 pl-10 bg-white border-black/20 focus-visible:ring-primary"
+                        placeholder="Search names, memos, or amount..." 
+                        className="h-11 pl-10 bg-white border-black/20 focus-visible:ring-primary shadow-sm"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -688,16 +686,22 @@ export function BankStatementsView() {
                 </div>
             </div>
             <div className="md:col-span-3 grid grid-cols-3 gap-3">
-                <Card className="bg-red-50/50 border-red-100 shadow-none py-2 px-4">
-                    <p className="text-[9px] uppercase font-bold text-red-600 tracking-[0.2em] mb-0.5">Total Debits</p>
+                <Card className="bg-red-50/50 border-red-100 shadow-sm py-2 px-4 border-2">
+                    <p className="text-[9px] uppercase font-bold text-red-600 tracking-[0.2em] mb-0.5 flex items-center gap-1">
+                        <TrendingDown className="h-3 w-3" /> Total Debits
+                    </p>
                     <p className="font-mono font-bold text-red-600 text-lg">({formatCurrency(totalDebits)})</p>
                 </Card>
-                <Card className="bg-green-50/50 border-green-100 shadow-none py-2 px-4">
-                    <p className="text-[9px] uppercase font-bold text-green-600 tracking-[0.2em] mb-0.5">Total Credits</p>
+                <Card className="bg-green-50/50 border-green-100 shadow-sm py-2 px-4 border-2">
+                    <p className="text-[9px] uppercase font-bold text-green-600 tracking-[0.2em] mb-0.5 flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" /> Total Credits
+                    </p>
                     <p className="font-mono font-bold text-green-600 text-lg">{formatCurrency(totalCredits)}</p>
                 </Card>
-                <Card className="bg-primary/5 border-primary/10 shadow-none py-2 px-4">
-                    <p className="text-[9px] uppercase font-bold text-primary tracking-[0.2em] mb-0.5">Net Activity</p>
+                <Card className="bg-primary/5 border-primary/10 shadow-sm py-2 px-4 border-2">
+                    <p className="text-[9px] uppercase font-bold text-primary tracking-[0.2em] mb-0.5 flex items-center gap-1">
+                        <Activity className="h-3 w-3" /> Net Activity
+                    </p>
                     <p className={cn("font-mono font-bold text-lg", netDifference >= 0 ? "text-primary" : "text-destructive")}>
                         {netDifference >= 0 ? '+' : ''}{formatCurrency(netDifference)}
                     </p>
@@ -705,11 +709,11 @@ export function BankStatementsView() {
             </div>
         </div>
 
-        <Card className="shadow-xl overflow-hidden border-black">
+        <Card className="shadow-2xl overflow-hidden border-black">
             <CardHeader className="bg-muted/10 border-b py-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <FileSpreadsheet className="h-4 w-4 text-primary" />
-                    External Transaction Mirror (Info Only)
+                    External Transaction Mirror (Information Only)
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -745,7 +749,7 @@ export function BankStatementsView() {
                     </TableHeader>
                     <TableBody>
                       {transactions.map(txn => (
-                        <TableRow key={txn.id} className="border-b-black/10">
+                        <TableRow key={txn.id} className="border-b-black/10 group">
                           <TableCell className="text-xs font-bold font-mono pl-4">{txn.date}</TableCell>
                           <TableCell className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{txn.transactionType}</TableCell>
                           <TableCell className="font-bold text-sm">{txn.name}</TableCell>

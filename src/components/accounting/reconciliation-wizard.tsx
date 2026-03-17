@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
@@ -42,7 +43,9 @@ import {
     Plus,
     BookOpen,
     Zap,
-    AlertTriangle
+    AlertTriangle,
+    Ban,
+    Filter
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -62,10 +65,25 @@ import {
 import { format, isValid, differenceInDays, parse, startOfDay, endOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableHead, 
+    TableHeader, 
+    TableRow,
+    TableFooter
+} from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface BankTransaction {
     id: string;
@@ -73,7 +91,15 @@ interface BankTransaction {
     name: string;
     memo: string;
     amount: number;
-    status: 'unreconciled' | 'reconciled';
+    status: 'unreconciled' | 'reconciled' | 'orphan';
+}
+
+interface ReconciliationNode {
+    bank: BankTransaction;
+    matchStatus: 'perfect' | 'drift' | 'unmatched' | 'duplicate';
+    matchedLedgerNode?: any;
+    driftDays?: number;
+    recommendation: string;
 }
 
 interface ReconciliationWizardProps {
@@ -127,19 +153,21 @@ export function ReconciliationWizard({
     companies,
     onSuccess 
 }: ReconciliationWizardProps) {
-    const [step, setStep] = useState<'upload' | 'triage'>('upload');
-    const [activeTab, setActiveTab] = useState('perfect');
+    const [step, setStep] = useState<'upload' | 'ledger'>('upload');
     const [isProcessing, setIsProcessing] = useState(false);
     const [bankTransactions, setBankTransactions] = useState<BankTransaction[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     
     const { toast } = useToast();
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const results = useMemo(() => {
-        if (bankTransactions.length === 0) return { perfectMatches: [], potentialMatches: [], missing: [], outstanding: [] };
+    // --- Core Logic: Unified Node Generation ---
+    const reconciliationNodes = useMemo(() => {
+        if (bankTransactions.length === 0) return [];
 
-        const allLedger = [
+        const allRegistry = [
             ...incomeLedger.map(i => ({ ...i, type: 'income' as const, matchType: 'ledger' as const })),
             ...expenseLedger.map(e => ({ ...e, type: 'expense' as const, matchType: 'ledger' as const })),
             ...invoices.map(inv => ({ 
@@ -159,61 +187,77 @@ export function ReconciliationWizard({
             }))
         ];
 
-        const perfectMatches: { bank: BankTransaction; ledger: any }[] = [];
-        const potentialMatches: { bank: BankTransaction; ledger: any; drift: number }[] = [];
-        const missingFromLedger: BankTransaction[] = [];
-        const usedLedgerIds = new Set<string>();
+        const usedRegistryIds = new Set<string>();
 
-        bankTransactions.forEach(bt => {
+        return bankTransactions.map(bt => {
             const absBankAmount = Math.abs(bt.amount);
             const normalizedBankDate = normalizeDate(bt.date);
 
-            const perfectMatch = allLedger.find(lt => {
-                if (usedLedgerIds.has(lt.id)) return false;
+            // 1. Check for Perfect Match
+            const perfectMatch = allRegistry.find(lt => {
+                if (usedRegistryIds.has(lt.id)) return false;
                 if ('isReconciled' in lt && lt.isReconciled) return false;
                 return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
             });
 
             if (perfectMatch) {
-                perfectMatches.push({ bank: bt, ledger: perfectMatch });
-                usedLedgerIds.add(perfectMatch.id);
-                return;
+                usedRegistryIds.add(perfectMatch.id);
+                return {
+                    bank: bt,
+                    matchStatus: 'perfect' as const,
+                    matchedLedgerNode: perfectMatch,
+                    recommendation: 'Verify Match'
+                };
             }
 
-            const potentialMatch = allLedger.find(lt => {
-                if (usedLedgerIds.has(lt.id)) return false;
+            // 2. Check for Drift Match
+            const driftMatch = allRegistry.find(lt => {
+                if (usedRegistryIds.has(lt.id)) return false;
                 if ('isReconciled' in lt && lt.isReconciled) return false;
                 if (Math.abs(lt.totalAmount - absBankAmount) > 0.01) return false;
                 const dateDiff = Math.abs(differenceInDays(new Date(lt.date), new Date(normalizedBankDate)));
                 return dateDiff <= 7;
             });
 
-            if (potentialMatch) {
-                const drift = differenceInDays(new Date(potentialMatch.date), new Date(normalizedBankDate));
-                potentialMatches.push({ bank: bt, ledger: potentialMatch, drift });
-                usedLedgerIds.add(potentialMatch.id);
-                return;
+            if (driftMatch) {
+                const drift = differenceInDays(new Date(driftMatch.date), new Date(normalizedBankDate));
+                usedRegistryIds.add(driftMatch.id);
+                return {
+                    bank: bt,
+                    matchStatus: 'drift' as const,
+                    matchedLedgerNode: driftMatch,
+                    driftDays: drift,
+                    recommendation: 'Verify Drift'
+                };
             }
 
-            missingFromLedger.push(bt);
+            // 3. Unmatched
+            return {
+                bank: bt,
+                matchStatus: 'unmatched' as const,
+                recommendation: 'Create Entry'
+            };
         });
-
-        const outstandingLedger = allLedger
-            .filter(lt => (!('isReconciled' in lt) || !lt.isReconciled) && !usedLedgerIds.has(lt.id))
-            .map(lt => ({
-                ...lt,
-                daysOld: Math.abs(differenceInDays(new Date(), new Date(lt.date)))
-            }));
-
-        return { perfectMatches, potentialMatches, missing: missingFromLedger, outstanding: outstandingLedger };
     }, [bankTransactions, incomeLedger, expenseLedger, invoices, payableBills]);
 
-    const totals = useMemo(() => {
-        const matchesTotal = [...results.perfectMatches, ...results.potentialMatches].reduce((sum, m) => sum + Math.abs(m.bank.amount), 0);
-        const missingTotal = results.missing.reduce((sum, m) => sum + m.amount, 0);
-        const outstandingTotal = results.outstanding.reduce((sum, o) => sum + (o.type === 'income' ? o.totalAmount : -o.totalAmount), 0);
-        return { matchesTotal, missingTotal, outstandingTotal };
-    }, [results]);
+    const filteredNodes = useMemo(() => {
+        if (!searchQuery.trim()) return reconciliationNodes;
+        const term = searchQuery.toLowerCase();
+        return reconciliationNodes.filter(node => 
+            node.bank.name.toLowerCase().includes(term) || 
+            node.bank.memo.toLowerCase().includes(term) ||
+            node.bank.amount.toString().includes(term)
+        );
+    }, [reconciliationNodes, searchQuery]);
+
+    const stats = useMemo(() => {
+        const total = reconciliationNodes.length;
+        const matched = reconciliationNodes.filter(n => n.matchStatus === 'perfect' || n.matchStatus === 'drift').length;
+        const totalValue = reconciliationNodes.reduce((sum, n) => sum + Math.abs(n.bank.amount), 0);
+        return { total, matched, totalValue };
+    }, [reconciliationNodes]);
+
+    // --- Bulk Actions ---
 
     const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -225,7 +269,7 @@ export function ReconciliationWizard({
             try {
                 const text = e.target?.result as string;
                 const lines = text.split(/\r?\n/).filter(l => l.trim());
-                if (lines.length < 2) throw new Error("CSV invalid.");
+                if (lines.length < 2) throw new Error("CSV invalid format.");
 
                 const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
                     const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
@@ -240,8 +284,8 @@ export function ReconciliationWizard({
                 });
                 
                 setBankTransactions(newTxns);
-                setStep('triage');
-                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} transactions.` });
+                setStep('ledger');
+                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} bank transactions.` });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Ingestion Error', description: error.message });
             } finally {
@@ -251,70 +295,100 @@ export function ReconciliationWizard({
         reader.readAsText(file);
     };
 
-    const handleBulkReconcile = async () => {
-        if (!user) return;
+    const handleBulkVerify = async () => {
+        if (!user || selectedIds.length === 0) return;
         setIsProcessing(true);
         try {
-            const allMatches = [...results.perfectMatches, ...results.potentialMatches];
-            for (const match of allMatches) {
-                if (match.ledger.matchType === 'ledger') {
-                    await reconcileLedgerEntry(match.ledger.id, match.ledger.type, match.bank.id);
-                } else if (match.ledger.matchType === 'invoice') {
-                    await reconcileInvoicePayment(user.uid, match.ledger.id, Math.abs(match.bank.amount), match.bank.date, match.bank.id, 'Bank Account');
-                } else if (match.ledger.matchType === 'bill') {
-                    await reconcileBillPayment(user.uid, match.ledger.id, match.bank.date, match.bank.id, 'Bank Account');
+            const nodesToVerify = reconciliationNodes.filter(n => 
+                selectedIds.includes(n.bank.id) && 
+                (n.matchStatus === 'perfect' || n.matchStatus === 'drift') &&
+                n.bank.status !== 'reconciled'
+            );
+
+            if (nodesToVerify.length === 0) {
+                toast({ variant: 'destructive', title: 'Invalid Selection', description: 'Selected items must have a registry match to verify.' });
+                setIsProcessing(false);
+                return;
+            }
+
+            for (const node of nodesToVerify) {
+                const match = node.matchedLedgerNode;
+                if (match.matchType === 'ledger') {
+                    await reconcileLedgerEntry(match.id, match.type, node.bank.id);
+                } else if (match.matchType === 'invoice') {
+                    await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), node.bank.date, node.bank.id, 'Bank Account');
+                } else if (match.matchType === 'bill') {
+                    await reconcileBillPayment(user.uid, match.id, node.bank.date, node.bank.id, 'Bank Account');
                 }
             }
-            toast({ title: 'Sync Complete', description: `${allMatches.length} nodes verified.` });
+
+            setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
+            setSelectedIds([]);
+            toast({ title: 'Verification Complete', description: `${nodesToVerify.length} nodes achieves parity.` });
             onSuccess();
-            onOpenChange(false);
-            resetWizard();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Process Failed', description: error.message });
+            toast({ variant: 'destructive', title: 'Verification Failed', description: error.message });
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const handleOneClickIngest = async (bt: BankTransaction) => {
-        if (!user) return;
+    const handleBulkAutoIngest = async () => {
+        if (!user || selectedIds.length === 0) return;
         setIsProcessing(true);
         try {
-            const isIncome = bt.amount > 0;
-            const absAmount = Math.abs(bt.amount);
-            
-            let categoryId = "";
-            if (isIncome) {
-                const defaultIncome = incomeCategories.find(c => c.categoryNumber === "Part 3A" || c.name.toLowerCase().includes("sales")) || incomeCategories[0];
-                categoryId = defaultIncome?.categoryNumber || defaultIncome?.id || "Part 3A";
-            } else {
-                const defaultExpense = expenseCategories.find(c => c.categoryNumber === "9270" || c.name.toLowerCase().includes("other")) || expenseCategories[0];
-                categoryId = defaultExpense?.categoryNumber || defaultExpense?.id || "9270";
+            const nodesToIngest = reconciliationNodes.filter(n => 
+                selectedIds.includes(n.bank.id) && 
+                n.matchStatus === 'unmatched' &&
+                n.bank.status !== 'reconciled'
+            );
+
+            if (nodesToIngest.length === 0) {
+                toast({ variant: 'destructive', title: 'Invalid Selection', description: 'Selected items must be unmatched to auto-ingest.' });
+                setIsProcessing(false);
+                return;
             }
 
-            const baseData = {
-                date: normalizeDate(bt.date),
-                company: bt.name,
-                description: `Bank Ingested: ${bt.memo}`,
-                totalAmount: absAmount,
-                preTaxAmount: absAmount,
-                taxAmount: 0,
-                taxRate: 0,
-                explanation: "Automated verification from statement ingestion.",
-                type: 'business' as const,
-                paymentMethod: 'Bank Transfer',
-                isReconciled: true,
-                bankReferenceId: bt.id,
-                userId: user.uid,
-            };
+            for (const node of nodesToIngest) {
+                const bt = node.bank;
+                const isIncome = bt.amount > 0;
+                const absAmount = Math.abs(bt.amount);
+                
+                let categoryId = "";
+                if (isIncome) {
+                    const defaultIncome = incomeCategories.find(c => c.categoryNumber === "Part 3A" || c.name.toLowerCase().includes("sales")) || incomeCategories[0];
+                    categoryId = defaultIncome?.categoryNumber || defaultIncome?.id || "Part 3A";
+                } else {
+                    const defaultExpense = expenseCategories.find(c => c.categoryNumber === "9270" || c.name.toLowerCase().includes("other")) || expenseCategories[0];
+                    categoryId = defaultExpense?.categoryNumber || defaultExpense?.id || "9270";
+                }
 
-            if (isIncome) {
-                await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
-            } else {
-                await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
+                const baseData = {
+                    date: normalizeDate(bt.date),
+                    company: bt.name,
+                    description: `Bank Ingested: ${bt.memo}`,
+                    totalAmount: absAmount,
+                    preTaxAmount: absAmount,
+                    taxAmount: 0,
+                    taxRate: 0,
+                    explanation: "Automated verification from statement ingestion hub.",
+                    type: 'business' as const,
+                    paymentMethod: 'Bank Transfer',
+                    isReconciled: true,
+                    bankReferenceId: bt.id,
+                    userId: user.uid,
+                };
+
+                if (isIncome) {
+                    await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
+                } else {
+                    await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
+                }
             }
 
-            setBankTransactions(prev => prev.map(tx => tx.id === bt.id ? { ...tx, status: 'reconciled' } : tx));
+            setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
+            setSelectedIds([]);
+            toast({ title: 'Ingestion Successful', description: `${nodesToIngest.length} new transactions committed to General Ledger.` });
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Ingestion Failed', description: error.message });
@@ -323,42 +397,31 @@ export function ReconciliationWizard({
         }
     };
 
-    const handleAutoRecon = async () => {
-        if (!user || results.missing.length === 0) return;
-        setIsProcessing(true);
-        const itemsToProcess = results.missing.filter(bt => bt.status !== 'reconciled');
-        if (itemsToProcess.length === 0) {
-            toast({ title: "No actions required", description: "All transactions in this list are already reconciled." });
-            setIsProcessing(false);
-            return;
-        }
-        try {
-            for (const bt of itemsToProcess) {
-                await handleOneClickIngest(bt);
-            }
-            toast({ title: "Auto Recon Complete", description: "Missing bank records committed to General Ledger." });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Auto Recon Failure', description: error.message });
-        } finally {
-            setIsProcessing(false);
-        }
+    const handleFlagAsOrphan = () => {
+        setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'orphan' } : tx));
+        setSelectedIds([]);
+        toast({ title: 'Nodes Flagged', description: 'Selected items marked as Orphan / Personal.' });
+    };
+
+    const handleToggleSelect = (id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
     const resetWizard = () => {
         setStep('upload');
         setBankTransactions([]);
-        setActiveTab('perfect');
+        setSelectedIds([]);
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-none w-screen h-screen flex flex-col p-0 rounded-none overflow-hidden text-black bg-background">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <div className="flex items-center gap-2 text-primary mb-1">
+                    <div className="flex items-center gap-3 text-primary mb-1">
                         <GitMerge className="h-8 w-8" />
                         <div>
                             <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Financial Ingestion Hub</DialogTitle>
-                            <DialogDescription className="text-base font-medium">Synchronizing Bank Records with the Registry of Nodes</DialogDescription>
+                            <DialogDescription className="text-base font-medium">Unified Transaction Reconciliation Ledger</DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -372,208 +435,174 @@ export function ReconciliationWizard({
                             <div className="text-center space-y-4 max-w-2xl">
                                 <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900 uppercase">Commence Ingestion</h3>
                                 <p className="text-muted-foreground text-xl leading-relaxed">
-                                    Upload your bank statement to match transactions to your BKS General Ledger by Date and Amount.
+                                    Ingest a bank statement (CSV) to achieve professional parity between your bank activity and registry entries.
                                 </p>
                             </div>
-                            <div className="flex flex-col items-center gap-6">
-                                <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
-                                    {isProcessing ? <LoaderCircle className="mr-3 h-8 w-8 animate-spin" /> : <FileSpreadsheet className="mr-3 h-8 w-8" />}
-                                    Select CSV File
-                                </Button>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-16">
-                                    <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                        <CardHeader>
-                                            <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-                                            <CardTitle className="text-lg">Parity Match Engine</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Scans your ledger history, invoices, and bills for exact or near-date matches against incoming bank transactions.
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="p-6 border-2 rounded-3xl bg-primary/5 border-primary/10 shadow-sm">
-                                        <CardHeader>
-                                            <Zap className="h-10 w-10 text-primary mb-4" />
-                                            <CardTitle className="text-lg">Transaction Ingestion</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Instantly create new ledger nodes for unrecorded bank entries to ensure your "Black Box of Evidence" is complete.
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </div>
+                            <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
+                                {isProcessing ? <LoaderCircle className="mr-3 h-8 w-8 animate-spin" /> : <FileSpreadsheet className="mr-3 h-8 w-8" />}
+                                Select Statement File
+                            </Button>
                             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
                         </div>
                     ) : (
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                            <TabsList className="w-full justify-start h-16 bg-muted/50 rounded-none px-8 border-b shrink-0 gap-2">
-                                <TabsTrigger value="perfect" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
-                                    Verify Matches <Badge className="ml-2 bg-green-500 font-mono">{results.perfectMatches.length + results.potentialMatches.length}</Badge>
-                                </TabsTrigger>
-                                <TabsTrigger value="missing" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
-                                    Ingest to Ledger <Badge className="ml-2 bg-amber-500 font-mono">{results.missing.length}</Badge>
-                                </TabsTrigger>
-                                <TabsTrigger value="outstanding" className="data-[state=active]:border-b-4 border-primary rounded-none h-full px-8 font-black uppercase text-xs tracking-widest">
-                                    Pending Node Registry <Badge className="ml-2 bg-blue-500 font-mono">{results.outstanding.length}</Badge>
-                                </TabsTrigger>
-                            </TabsList>
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            {/* Command Bar & Vitals */}
+                            <div className="bg-muted/30 border-b p-4 px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Statement Value</span>
+                                        <span className="font-mono font-bold text-xl">{formatCurrency(stats.totalValue)}</span>
+                                    </div>
+                                    <div className="h-8 w-px bg-muted-foreground/20" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Match Parity</span>
+                                        <span className="text-xl font-bold text-primary">{stats.matched} / {stats.total}</span>
+                                    </div>
+                                </div>
 
-                            <div className="flex-1 overflow-hidden relative">
-                                <TabsContent value="perfect" className="h-full m-0 focus-visible:ring-0">
-                                    <ScrollArea className="h-full">
-                                        <div className="max-w-6xl mx-auto p-10 space-y-6">
-                                            <div className="flex items-center justify-between border-b pb-4">
-                                                <div className="space-y-1">
-                                                    <h3 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-600" /> Verify Match Parity</h3>
-                                                    <p className="text-sm text-muted-foreground">Detected transactions that correspond to existing registry entries. Total Value: {formatCurrency(totals.matchesTotal)}</p>
-                                                </div>
-                                                <Button size="lg" onClick={handleBulkReconcile} disabled={(results.perfectMatches.length + results.potentialMatches.length) === 0 || isProcessing} className="shadow-xl h-12 px-8 font-bold">
-                                                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                                                    Commit Verification ({results.perfectMatches.length + results.potentialMatches.length})
-                                                </Button>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {[...results.perfectMatches, ...results.potentialMatches].map((m, i) => (
-                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm">
-                                                        <div className="flex items-center gap-5">
-                                                            <div className={cn("p-3 rounded-xl", 'drift' in m ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600")}>
-                                                                {'drift' in m ? <GitMerge className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-lg text-slate-900">{m.ledger.company}</p>
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="text-xs text-muted-foreground italic">Bank Record: {m.bank.date} • {m.bank.name}</p>
-                                                                    {'drift' in m && (
-                                                                        <Badge variant="outline" className="text-[9px] font-bold border-amber-200 text-amber-700 bg-amber-50 uppercase">
-                                                                            {Math.abs(m.drift)} Day Drift
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="font-mono font-black text-2xl text-slate-900">{formatCurrency(Math.abs(m.bank.amount))}</p>
-                                                            <p className="text-[10px] uppercase font-bold text-green-600 tracking-widest mt-1">Found in {m.ledger.matchType}</p>
-                                                        </div>
-                                                    </Card>
-                                                ))}
-                                            </div>
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <div className="relative flex-1 sm:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input 
+                                            placeholder="Search activity..." 
+                                            className="h-10 pl-9 bg-white"
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    {selectedIds.length > 0 && (
+                                        <div className="flex items-center gap-2 p-1 bg-white border rounded-lg shadow-sm animate-in slide-in-from-right-2">
+                                            <Button size="sm" onClick={handleBulkVerify} className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase">
+                                                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Reconciled
+                                            </Button>
+                                            <Button size="sm" onClick={handleBulkAutoIngest} className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] uppercase">
+                                                <Zap className="mr-1.5 h-3.5 w-3.5" /> Ingest Unmatched
+                                            </Button>
+                                            <Button size="sm" variant="ghost" onClick={handleFlagAsOrphan} className="h-8 text-muted-foreground font-bold text-[10px] uppercase hover:bg-red-50 hover:text-red-600">
+                                                <Ban className="mr-1.5 h-3.5 w-3.5" /> Orphan / Duplicate
+                                            </Button>
+                                            <Separator orientation="vertical" className="h-6 mx-1" />
+                                            <Button variant="ghost" size="icon" onClick={() => setSelectedIds([])} className="h-8 w-8 text-muted-foreground">
+                                                <X className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                    </ScrollArea>
-                                </TabsContent>
-
-                                <TabsContent value="missing" className="h-full m-0 focus-visible:ring-0">
-                                    <ScrollArea className="h-full">
-                                        <div className="max-w-6xl mx-auto p-10 space-y-6">
-                                            <div className="flex items-center justify-between border-b pb-4">
-                                                <div className="space-y-1">
-                                                    <h3 className="text-xl font-bold flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /> Missing Ledger Nodes</h3>
-                                                    <p className="text-sm text-muted-foreground">External bank records with no internal node record. Net Impact: {formatCurrency(totals.missingTotal)}</p>
-                                                </div>
-                                                <Button 
-                                                    size="lg" 
-                                                    variant="secondary"
-                                                    className="h-12 px-8 font-bold shadow-xl border-2 border-primary/20"
-                                                    onClick={handleAutoRecon}
-                                                    disabled={isProcessing || results.missing.filter(m => m.status !== 'reconciled').length === 0}
-                                                >
-                                                    {isProcessing ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                                                    Auto-Ingest All Transactions
-                                                </Button>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {results.missing.map((m, i) => (
-                                                    <Card key={i} className={cn("flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm group transition-all", m.status === 'reconciled' ? "border-green-500 bg-green-50/50" : "hover:border-primary")}>
-                                                        <div className="flex items-center gap-5">
-                                                            <div className={cn("p-3 rounded-xl", m.status === 'reconciled' ? "bg-green-100 text-green-600" : "bg-amber-50 text-amber-600")}>
-                                                                {m.status === 'reconciled' ? <CheckCircle2 className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-lg text-slate-900">{m.name}</p>
-                                                                <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.memo}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-10">
-                                                            <div className="text-right">
-                                                                <p className={cn("font-mono font-black text-2xl", m.amount > 0 ? "text-green-600" : "text-red-600")}>
-                                                                    {m.amount > 0 ? '+' : ''}{formatCurrency(m.amount)}
-                                                                </p>
-                                                                <p className={cn("text-[10px] uppercase font-bold tracking-widest mt-1", m.status === 'reconciled' ? "text-green-600" : "text-amber-600")}>
-                                                                    {m.status === 'reconciled' ? "Node Provisioned" : "Unrecorded Transaction"}
-                                                                </p>
-                                                            </div>
-                                                            <Button 
-                                                                size="lg" 
-                                                                className={cn(
-                                                                    "h-14 px-8 font-bold shadow-lg transition-all",
-                                                                    m.status === 'reconciled' ? "bg-green-600 hover:bg-green-700 text-white border-green-700" : ""
-                                                                )} 
-                                                                onClick={() => m.status !== 'reconciled' && handleOneClickIngest(m)} 
-                                                                disabled={(isProcessing && m.status !== 'reconciled') || m.status === 'reconciled'}
-                                                            >
-                                                                {m.status === 'reconciled' ? <><CheckCircle2 className="mr-2 h-5 w-5" /> Ingested</> : <><PlusCircle className="mr-2 h-5 w-5" /> One-Click Ingest</>}
-                                                            </Button>
-                                                        </div>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </ScrollArea>
-                                </TabsContent>
-
-                                <TabsContent value="outstanding" className="h-full m-0 focus-visible:ring-0">
-                                    <ScrollArea className="h-full">
-                                        <div className="max-w-6xl mx-auto p-10 space-y-6">
-                                            <div className="space-y-1 border-b pb-4">
-                                                <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-blue-600" /> Pending Node Registry</h3>
-                                                <p className="text-sm text-muted-foreground">Internal nodes awaiting physical world proof. Variance Total: {formatCurrency(totals.outstandingTotal)}</p>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {results.outstanding.map((m, i) => (
-                                                    <Card key={i} className="flex items-center justify-between p-5 bg-white border-2 rounded-2xl shadow-sm opacity-80">
-                                                        <div className="flex items-center gap-5">
-                                                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Clock className="h-5 w-5" /></div>
-                                                            <div>
-                                                                <p className="font-bold text-lg text-slate-900">{m.company}</p>
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{m.date} • {m.description}</p>
-                                                                    <Badge variant="outline" className={cn("text-[9px] font-bold uppercase", m.daysOld > 30 ? "text-red-600 border-red-200 bg-red-50" : "text-blue-600 border-blue-200")}>
-                                                                        {m.daysOld} Days Outstanding
-                                                                    </Badge>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className={cn("font-mono font-bold text-xl", m.type === 'income' ? 'text-green-600' : 'text-red-600')}>
-                                                                {m.type === 'income' ? '+' : '-'}{formatCurrency(m.totalAmount)}
-                                                            </p>
-                                                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mt-1">Awaiting Proof</p>
-                                                        </div>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </ScrollArea>
-                                </TabsContent>
+                                    )}
+                                </div>
                             </div>
-                        </Tabs>
+
+                            {/* Unified Table */}
+                            <div className="flex-1 overflow-auto">
+                                <Table>
+                                    <TableHeader className="sticky top-0 bg-white z-10 border-b-2 border-black/5">
+                                        <TableRow>
+                                            <TableHead className="w-12 text-center">
+                                                <Checkbox 
+                                                    checked={filteredNodes.length > 0 && selectedIds.length === filteredNodes.length}
+                                                    onCheckedChange={(checked) => setSelectedIds(checked ? filteredNodes.map(n => n.bank.id) : [])}
+                                                />
+                                            </TableHead>
+                                            <TableHead className="w-32">Date</TableHead>
+                                            <TableHead>Counterparty / Memo</TableHead>
+                                            <TableHead className="text-right w-32">Amount</TableHead>
+                                            <TableHead className="text-center w-40">Verification Status</TableHead>
+                                            <TableHead>Recommended Action</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredNodes.map((node) => {
+                                            const bt = node.bank;
+                                            const isSelected = selectedIds.includes(bt.id);
+                                            const isReconciled = bt.status === 'reconciled';
+                                            const isOrphan = bt.status === 'orphan';
+
+                                            return (
+                                                <TableRow 
+                                                    key={bt.id} 
+                                                    className={cn(
+                                                        isSelected && "bg-primary/5",
+                                                        isReconciled && "bg-green-50/30 opacity-60",
+                                                        isOrphan && "opacity-40 grayscale"
+                                                    )}
+                                                >
+                                                    <TableCell className="text-center">
+                                                        <Checkbox 
+                                                            checked={isSelected}
+                                                            onCheckedChange={() => handleToggleSelect(bt.id)}
+                                                            disabled={isReconciled}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-xs font-mono font-bold">{bt.date}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-sm">{bt.name}</span>
+                                                            <span className="text-[10px] text-muted-foreground truncate max-w-sm italic">{bt.memo}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className={cn("text-right font-mono font-black", bt.amount > 0 ? "text-green-600" : "text-red-600")}>
+                                                        {bt.amount > 0 ? '+' : ''}{formatCurrency(bt.amount)}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {isReconciled ? (
+                                                            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 text-[9px] uppercase tracking-widest font-black">
+                                                                <CheckCircle2 className="h-2.5 w-2.5 mr-1" /> Reconciled
+                                                            </Badge>
+                                                        ) : isOrphan ? (
+                                                            <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black">Orphaned</Badge>
+                                                        ) : (
+                                                            <div className="flex justify-center">
+                                                                {node.matchStatus === 'perfect' && <Badge className="bg-green-500 text-[9px] uppercase tracking-widest font-black">Perfect Match</Badge>}
+                                                                {node.matchStatus === 'drift' && (
+                                                                    <TooltipProvider>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 text-[9px] uppercase tracking-widest font-black cursor-help">
+                                                                                    {Math.abs(node.driftDays!)} Day Drift
+                                                                                </Badge>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <p className="text-xs font-bold">Matches {node.matchedLedgerNode.company}</p>
+                                                                                <p className="text-[10px] opacity-80">Recorded on {node.matchedLedgerNode.date}</p>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
+                                                                )}
+                                                                {node.matchStatus === 'unmatched' && <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black">Unmatched</Badge>}
+                                                            </div>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter w-24">{node.recommendation}</span>
+                                                            {!isReconciled && !isOrphan && (
+                                                                <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-black hover:bg-primary/10 hover:text-primary" onClick={() => handleToggleSelect(bt.id)}>
+                                                                    Select Node
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
                     )}
                 </div>
 
                 <DialogFooter className="p-8 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-6">
                     <div className="hidden sm:flex items-center gap-4">
-                        {step === 'triage' && (
-                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest"><X className="mr-2 h-4 w-4" /> Reset Ingestion</Button>
+                        {step === 'ledger' && (
+                            <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest">
+                                <RefreshCw className="mr-2 h-4 w-4" /> Reset Hub
+                            </Button>
                         )}
                     </div>
                     <div className="flex gap-4 w-full sm:w-auto">
-                        <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Back to Ledger</Button>
-                        {step === 'triage' && (
-                            <Button variant="outline" size="lg" asChild className="h-14 px-8 border-2 font-bold shadow-sm bg-white text-primary">
-                                <Link href={`/reports/bank-reconciliation?from=${normalizeDate(bankTransactions[bankTransactions.length - 1]?.date)}&to=${normalizeDate(bankTransactions[0]?.date)}`}>
+                        <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-12 font-bold text-lg">Exit Terminal</Button>
+                        {step === 'ledger' && (
+                            <Button size="lg" asChild className="h-14 px-8 font-bold shadow-xl">
+                                <Link href="/reports/bank-reconciliation">
                                     <FileDigit className="mr-2 h-5 w-5" /> Final Reconciliation Report
                                 </Link>
                             </Button>

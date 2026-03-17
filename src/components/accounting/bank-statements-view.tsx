@@ -102,7 +102,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
   ssr: false,
@@ -577,7 +576,7 @@ export function BankStatementsView() {
                                             <Landmark className="h-5 w-5 text-primary" />
                                             <h3 className="font-bold text-lg">{account.name}</h3>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{account.bank} • ...{account.accountNumber.slice(-4)}</p>
+                                        <p className="text-xs text-muted-foreground">{account.bank} • Ending in: {account.accountNumber.slice(-4)}</p>
                                         <Badge variant={account.type === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.type}</Badge>
                                     </div>
                                     <div className="text-right space-y-1">
@@ -647,7 +646,7 @@ export function BankStatementsView() {
                 <div className="text-left">
                     <h1 className="text-3xl font-bold font-headline text-primary leading-none uppercase tracking-tight">Bank Statement</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        {selectedAccount?.name} • {selectedAccount?.bank} • ...{selectedAccount?.accountNumber.slice(-4)}
+                        {selectedAccount?.name} • {selectedAccount?.bank} • Ending in: {selectedAccount?.accountNumber.slice(-4)}
                     </p>
                 </div>
             </div>

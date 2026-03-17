@@ -25,13 +25,10 @@ import {
     Link2, 
     GitMerge, 
     UserCheck, 
-    AlertTriangle, 
     ShieldCheck, 
-    ExternalLink, 
     LoaderCircle, 
     ChevronsUpDown, 
     Check, 
-    PlusCircle, 
     MoreVertical, 
     Pencil, 
     Trash2, 
@@ -39,20 +36,13 @@ import {
     ArrowRight,
     Landmark,
     Calendar as CalendarIcon,
-    Search,
-    FileDigit,
     X,
-    TrendingUp,
-    TrendingDown,
-    Bot,
+    Zap,
     Upload,
     Layers,
     Scale,
-    Zap,
     ChevronLeft,
-    FileSpreadsheet,
-    Save,
-    CheckCircle
+    FileSpreadsheet
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -77,11 +67,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, 
-    deleteIncomeTransaction, 
-    type IncomeTransaction, 
     getExpenseTransactions, 
-    deleteExpenseTransaction, 
-    type ExpenseTransaction, 
     getInvoices,
     getPayableBills,
     reconcileLedgerEntry,
@@ -93,23 +79,18 @@ import {
     getExpenseCategories, 
     getIncomeCategories, 
     addCompany, 
-    addExpenseCategory, 
-    addIncomeCategory, 
     type Company, 
     type ExpenseCategory, 
     type IncomeCategory,
     type TaxType,
-    getTaxTypes,
-    addIncomeTransaction,
-    addExpenseTransaction
+    getTaxTypes
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, parseISO, isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -161,24 +142,6 @@ const mockBankTransactions: BankTransaction[] = [
   { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To acc_2', amount: -10000, status: 'reconciled' },
   { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45, status: 'unreconciled' },
 ];
-
-const emptyTransactionForm = { 
-    date: '', 
-    company: '', 
-    description: '', 
-    totalAmount: '', 
-    taxRate: '', 
-    preTaxAmount: '', 
-    taxAmount: '', 
-    category: '', 
-    incomeCategory: '', 
-    explanation: '', 
-    documentNumber: '', 
-    documentUrl: '', 
-    type: 'business' as 'business' | 'personal', 
-    paymentMethod: '',
-    depositedTo: 'Bank Account #1' 
-};
 
 const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | ''; closingBalance: number | '' } = {
     name: '',
@@ -276,19 +239,6 @@ export function BankStatementsView() {
         title: "Connecting to Plaid...",
         description: "In a real application, the secure Plaid Link flow would start now."
     });
-  };
-
-  const getStatusBadge = (status: BankTransaction['status']) => {
-    switch (status) {
-      case 'reconciled':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-            <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reconciled
-        </Badge>;
-      case 'unreconciled':
-        return <Badge variant="destructive">Unreconciled</Badge>;
-      case 'personal':
-        return <Badge variant="outline">Personal</Badge>;
-    }
   };
 
   const suggestedMatches = React.useMemo(() => {
@@ -737,11 +687,8 @@ export function BankStatementsView() {
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle>Transaction Registry</CardTitle>
-                        <CardDescription>Match external signals to internal ledger nodes.</CardDescription>
+                        <CardDescription>View external bank signals for matching.</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-white">
-                        {transactions.filter(t => t.status === 'unreconciled').length} Unreconciled
-                    </Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -753,13 +700,12 @@ export function BankStatementsView() {
                             <TableHead>Counterparty (Name)</TableHead>
                             <TableHead>Memo / Details</TableHead>
                             <TableHead className="text-right w-40">Amount</TableHead>
-                            <TableHead className="text-center w-32">Status</TableHead>
                             <TableHead className="w-12 text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                       {transactions.map(txn => (
-                        <TableRow key={txn.id} className={cn(txn.status === 'reconciled' && "bg-muted/30 opacity-60")}>
+                        <TableRow key={txn.id}>
                           <TableCell className="text-xs font-bold font-mono">{txn.date}</TableCell>
                           <TableCell className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{txn.transactionType}</TableCell>
                           <TableCell className="font-bold text-sm">{txn.name}</TableCell>
@@ -767,17 +713,16 @@ export function BankStatementsView() {
                           <TableCell className={cn("text-right font-mono font-black text-lg", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
                               {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
-                          <TableCell className="text-center">{getStatusBadge(txn.status)}</TableCell>
                           <TableCell className="text-right">
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => setTransactionToReconcile(txn)} disabled={txn.status === 'reconciled'}>
+                                    <DropdownMenuItem onSelect={() => setTransactionToReconcile(txn)}>
                                         <GitMerge className="mr-2 h-4 w-4 text-primary" />Reconcile Signal
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleMarkAsPersonal(txn)} disabled={txn.status !== 'unreconciled'}>
+                                    <DropdownMenuItem onSelect={() => handleMarkAsPersonal(txn)}>
                                         <UserCheck className="mr-2 h-4 w-4" />Mark as Personal
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -787,7 +732,7 @@ export function BankStatementsView() {
                       ))}
                       {transactions.length === 0 && (
                           <TableRow>
-                              <TableCell colSpan={7} className="h-64 text-center">
+                              <TableCell colSpan={6} className="h-64 text-center">
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
                                       <FileSpreadsheet className="h-12 w-12" />
                                       <div className="space-y-1">
@@ -806,7 +751,6 @@ export function BankStatementsView() {
             </CardFooter>
         </Card>
 
-        {/* --- CONSOLIDATED RECONCILIATION WORKSPACE --- */}
         <Dialog open={!!transactionToReconcile} onOpenChange={() => setTransactionToReconcile(null)}>
             <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden text-black shadow-2xl">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
@@ -821,7 +765,6 @@ export function BankStatementsView() {
                 
                 <ScrollArea className="flex-1 max-h-[70vh]">
                     <div className="p-6 space-y-6">
-                        {/* THE FACT: Bank Signal Card */}
                         <Card className="bg-muted/30 border-2 shadow-inner">
                             <CardHeader className="py-3 px-4 border-b bg-white/50">
                                 <CardTitle className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
@@ -851,7 +794,7 @@ export function BankStatementsView() {
                                         <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer bg-white" onClick={() => handleMatch(match)}>
                                             <div className="flex items-center gap-4">
                                                 <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
-                                                    {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <ExternalLink className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
+                                                    {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <PlusCircle className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">

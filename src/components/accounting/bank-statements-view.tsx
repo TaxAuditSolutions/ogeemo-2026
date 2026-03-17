@@ -70,19 +70,19 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { 
-    getIncomeTransactions, 
-    deleteIncomeTransaction, 
-    type IncomeTransaction, 
-    getExpenseTransactions, 
-    deleteExpenseTransaction, 
-    type ExpenseTransaction, 
-    getInvoices,
-    getPayableBills,
-    type Invoice,
-    type PayableBill,
     getCompanies, 
     getExpenseCategories, 
     getIncomeCategories, 
@@ -93,6 +93,7 @@ import {
     getTaxTypes,
     getInternalAccounts,
     addInternalAccount,
+    updateInternalAccount,
     deleteInternalAccount,
     type InternalAccount
 } from '@/services/accounting-service';
@@ -148,8 +149,11 @@ export function BankStatementsView() {
 
   const [accounts, setAccounts] = React.useState<InternalAccount[]>([]);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
-  const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
-  const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = React.useState(false);
+  const [accountForm, setAccountForm] = React.useState(emptyAccountForm);
+  const [editingAccount, setEditingAccount] = React.useState<InternalAccount | null>(null);
+  const [accountToDelete, setAccountToDelete] = React.useState<InternalAccount | null>(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
@@ -267,35 +271,69 @@ export function BankStatementsView() {
     });
   };
 
-  const handleOpenNewAccountDialog = () => {
-      setNewAccount(emptyAccountForm);
-      setIsNewAccountOpen(true);
+  const handleOpenAccountDialog = (account?: InternalAccount) => {
+      if (account) {
+          setEditingAccount(account);
+          setAccountForm({
+              name: account.name,
+              bankName: account.bankName || '',
+              businessType: account.businessType || 'Business',
+              institutionNumber: account.institutionNumber || '',
+              transitNumber: account.transitNumber || '',
+              accountNumber: account.accountNumber || '',
+          });
+      } else {
+          setEditingAccount(null);
+          setAccountForm(emptyAccountForm);
+      }
+      setIsAccountDialogOpen(true);
   };
 
-  const handleSaveNewAccount = async () => {
+  const handleSaveAccount = async () => {
       if (!user) return;
-      if (!newAccount.name || !newAccount.bankName || !newAccount.institutionNumber || !newAccount.transitNumber || !newAccount.accountNumber) {
+      if (!accountForm.name || !accountForm.bankName || !accountForm.institutionNumber || !accountForm.transitNumber || !accountForm.accountNumber) {
           toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all identification fields.' });
           return;
       }
       
       try {
-          const accountData: Omit<InternalAccount, 'id'> = {
-              name: newAccount.name,
-              bankName: newAccount.bankName,
-              businessType: newAccount.businessType,
-              institutionNumber: newAccount.institutionNumber,
-              transitNumber: newAccount.transitNumber,
-              accountNumber: newAccount.accountNumber,
+          const accountData: Partial<InternalAccount> = {
+              name: accountForm.name,
+              bankName: accountForm.bankName,
+              businessType: accountForm.businessType,
+              institutionNumber: accountForm.institutionNumber,
+              transitNumber: accountForm.transitNumber,
+              accountNumber: accountForm.accountNumber,
               type: 'Bank',
               userId: user.uid,
           };
-          const savedAccount = await addInternalAccount(accountData);
-          setAccounts(prev => [...prev, savedAccount]);
-          setIsNewAccountOpen(false);
-          toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
+
+          if (editingAccount) {
+              await updateInternalAccount(editingAccount.id, accountData);
+              setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, ...accountData } : a));
+              toast({ title: 'Account Updated', description: 'Account node details have been saved.' });
+          } else {
+              const savedAccount = await addInternalAccount(accountData as Omit<InternalAccount, 'id'>);
+              setAccounts(prev => [...prev, savedAccount]);
+              toast({ title: 'Account Registered', description: 'New account node is ready for ingestion.' });
+          }
+          setIsAccountDialogOpen(false);
       } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
+          toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
+      }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+      if (!accountToDelete) return;
+      try {
+          await deleteInternalAccount(accountToDelete.id);
+          setAccounts(prev => prev.filter(a => a.id !== accountToDelete.id));
+          toast({ title: 'Account Deleted', description: 'Financial node removed from registry.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Deletion Failed', description: error.message });
+      } finally {
+          setAccountToDelete(null);
+          setIsDeleteAlertOpen(false);
       }
   };
 
@@ -467,21 +505,23 @@ export function BankStatementsView() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
+        <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
             <DialogContent className="sm:max-w-lg overflow-hidden flex flex-col p-0 text-black">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <DialogTitle>Register Account Node</DialogTitle>
-                    <DialogDescription>Add a new financial account to your registry.</DialogDescription>
+                    <DialogTitle>{editingAccount ? 'Edit Account Node' : 'Register Account Node'}</DialogTitle>
+                    <DialogDescription>
+                        {editingAccount ? 'Update identification for this financial node.' : 'Add a new financial account to your registry.'}
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Account Nickname</Label><Input value={newAccount.name} onChange={e => setNewAccount(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Chequing" /></div>
-                        <div className="space-y-2"><Label>Bank Name</Label><Input value={newAccount.bankName} onChange={e => setNewAccount(p => ({...p, bankName: e.target.value}))} /></div>
+                        <div className="space-y-2"><Label>Account Nickname</Label><Input value={accountForm.name} onChange={e => setAccountForm(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Chequing" /></div>
+                        <div className="space-y-2"><Label>Bank Name</Label><Input value={accountForm.bankName} onChange={e => setAccountForm(p => ({...p, bankName: e.target.value}))} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Categorization</Label>
-                            <Select value={newAccount.businessType} onValueChange={(v: any) => setNewAccount(p => ({...p, businessType: v}))}>
+                            <Select value={accountForm.businessType} onValueChange={(v: any) => setAccountForm(p => ({...p, businessType: v}))}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="Business">Business Operations</SelectItem>
@@ -492,12 +532,15 @@ export function BankStatementsView() {
                     </div>
                     <Separator />
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label>Inst. #</Label><Input value={newAccount.institutionNumber} onChange={e => setNewAccount(p => ({...p, institutionNumber: e.target.value}))} /></div>
-                        <div className="space-y-2"><Label>Transit #</Label><Input value={newAccount.transitNumber} onChange={e => setNewAccount(p => ({...p, transitNumber: e.target.value}))} /></div>
-                        <div className="space-y-2"><Label>Account #</Label><Input value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} /></div>
+                        <div className="space-y-2"><Label>Inst. #</Label><Input value={accountForm.institutionNumber} onChange={e => setAccountForm(p => ({...p, institutionNumber: e.target.value}))} /></div>
+                        <div className="space-y-2"><Label>Transit #</Label><Input value={accountForm.transitNumber} onChange={e => setAccountForm(p => ({...p, transitNumber: e.target.value}))} /></div>
+                        <div className="space-y-2"><Label>Account #</Label><Input value={accountForm.accountNumber} onChange={e => setAccountForm(p => ({...p, accountNumber: e.target.value}))} /></div>
                     </div>
                 </div>
-                <DialogFooter className="p-6 border-t bg-muted/10"><Button variant="ghost" onClick={() => setIsNewAccountOpen(false)}>Cancel</Button><Button onClick={handleSaveNewAccount}>Register Node</Button></DialogFooter>
+                <DialogFooter className="p-6 border-t bg-muted/10">
+                    <Button variant="ghost" onClick={() => setIsAccountDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveAccount}>{editingAccount ? 'Save Changes' : 'Register Node'}</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
 
@@ -513,6 +556,21 @@ export function BankStatementsView() {
             customIndustries={customIndustries}
             onCustomIndustriesChange={setCustomIndustries}
         />
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the account node <strong className="font-bold">"{accountToDelete?.name}"</strong> from your registry. This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDeleteAccount} className="bg-destructive hover:bg-destructive/90">Delete Node</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </React.Fragment>
   );
 
@@ -540,7 +598,7 @@ export function BankStatementsView() {
                             <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={handleOpenNewAccountDialog}>
+                            <Button variant="outline" onClick={() => handleOpenAccountDialog()}>
                                 <Plus className="mr-2 h-4 w-4" /> Add Registry Node
                             </Button>
                             <Button onClick={() => setIsLinkDialogOpen(true)}>
@@ -552,10 +610,9 @@ export function BankStatementsView() {
                         {accounts.map(account => (
                             <Card 
                                 key={account.id} 
-                                className="cursor-pointer hover:border-primary hover:shadow-md transition-all group border-muted"
-                                onClick={() => handleSelectAccount(account.id)}
+                                className="group border-muted hover:border-primary hover:shadow-md transition-all relative overflow-hidden"
                             >
-                                <CardContent className="p-6 flex justify-between items-center">
+                                <CardContent className="p-6 flex justify-between items-center cursor-pointer" onClick={() => handleSelectAccount(account.id)}>
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <Landmark className="h-5 w-5 text-primary" />
@@ -566,10 +623,28 @@ export function BankStatementsView() {
                                     </div>
                                     <div className="text-right space-y-1">
                                         <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
-                                            View Activity <ArrowRight className="h-3 w-3" />
+                                            Review Activity <ArrowRight className="h-3 w-3" />
                                         </p>
                                     </div>
                                 </CardContent>
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => handleOpenAccountDialog(account)}>
+                                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onSelect={() => { setAccountToDelete(account); setIsDeleteAlertOpen(true); }} className="text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </Card>
                         ))}
                         {accounts.length === 0 && !isLoadingData && (

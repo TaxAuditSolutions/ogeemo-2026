@@ -1597,6 +1597,21 @@ export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Pro
     return newAcc;
 }
 
+export async function updateInternalAccount(id: string, data: Partial<Omit<InternalAccount, 'id' | 'userId'>>): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, INTERNAL_ACCOUNT_COLLECTION, id);
+    updateDoc(docRef, data).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: data,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    });
+}
+
 export async function deleteInternalAccount(id: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, INTERNAL_ACCOUNT_COLLECTION, id);

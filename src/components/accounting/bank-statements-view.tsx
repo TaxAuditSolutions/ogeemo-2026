@@ -23,8 +23,6 @@ import { Button } from '@/components/ui/button';
 import { 
     Plus, 
     Link2, 
-    GitMerge, 
-    UserCheck, 
     ShieldCheck, 
     LoaderCircle, 
     ChevronsUpDown, 
@@ -72,15 +70,11 @@ import {
     getExpenseTransactions, 
     getInvoices,
     getPayableBills,
-    reconcileLedgerEntry,
-    reconcileInvoicePayment,
-    reconcileBillPayment,
     type Invoice,
     type PayableBill,
     getCompanies, 
     getExpenseCategories, 
     getIncomeCategories, 
-    addCompany, 
     type Company, 
     type ExpenseCategory, 
     type IncomeCategory,
@@ -96,7 +90,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CustomCalendar } from '@/components/ui/custom-calendar';
+import { CustomCalendar } from '../ui/custom-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
@@ -168,8 +162,6 @@ export function BankStatementsView() {
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
-  
-  const [transactionToReconcile, setTransactionToReconcile] = React.useState<BankTransaction | null>(null);
   
   const [incomeLedger, setIncomeLedger] = React.useState<IncomeTransaction[]>([]);
   const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
@@ -243,64 +235,6 @@ export function BankStatementsView() {
     });
   };
 
-  const suggestedMatches = React.useMemo(() => {
-    if (!transactionToReconcile) return [];
-    const results: any[] = [];
-    const amount = Math.abs(transactionToReconcile.amount);
-    
-    const allLedger = [...incomeLedger, ...expenseLedger];
-    allLedger.forEach(entry => {
-        if (Math.abs(entry.totalAmount - amount) < 0.01) {
-            results.push({ ...entry, matchType: 'ledger', confidence: entry.date === transactionToReconcile.date ? 'High' : 'Medium' });
-        }
-    });
-
-    if (transactionToReconcile.amount > 0) {
-        invoices.forEach(inv => {
-            const balance = inv.originalAmount - inv.amountPaid;
-            if (Math.abs(balance - amount) < 0.01) {
-                results.push({ ...inv, matchType: 'invoice', confidence: 'High' });
-            }
-        });
-    }
-
-    if (transactionToReconcile.amount < 0) {
-        payableBills.forEach(bill => {
-            if (Math.abs(bill.totalAmount - amount) < 0.01) {
-                results.push({ ...bill, matchType: 'bill', confidence: 'High' });
-            }
-        });
-    }
-    
-    return results.sort((a,b) => (a.confidence === 'High' ? -1 : 1));
-  }, [transactionToReconcile, incomeLedger, expenseLedger, invoices, payableBills]);
-
-  const handleMatch = async (match: any) => {
-    if (!transactionToReconcile || !user || !selectedAccount) return;
-
-    try {
-        if (match.matchType === 'ledger') {
-            await reconcileLedgerEntry(match.id, 'incomeCategory' in match ? 'income' : 'expense', transactionToReconcile.id);
-        } else if (match.matchType === 'invoice') {
-            await reconcileInvoicePayment(user.uid, match.id, Math.abs(transactionToReconcile.amount), transactionToReconcile.date, transactionToReconcile.id, selectedAccount.name);
-        } else if (match.matchType === 'bill') {
-            await reconcileBillPayment(user.uid, match.id, transactionToReconcile.date, transactionToReconcile.id, selectedAccount.name);
-        }
-
-        setBankTransactions(prev => prev.map(tx => tx.id === transactionToReconcile.id ? { ...tx, status: 'reconciled' } : tx));
-        setTransactionToReconcile(null);
-        toast({ title: 'Matched & Reconciled', description: 'The audit trail has been established.' });
-        loadData();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Reconciliation Failed', description: error.message });
-    }
-  };
-  
-  const handleMarkAsPersonal = (transaction: BankTransaction) => {
-      setBankTransactions(prev => prev.map(tx => tx.id === transaction.id ? { ...tx, status: 'personal' } : tx));
-      toast({ title: 'Transaction Marked as Personal' });
-  };
-
   const handleOpenNewAccountDialog = () => {
       setNewAccount(emptyAccountForm);
       setIsNewAccountOpen(true);
@@ -316,7 +250,7 @@ export function BankStatementsView() {
           ...newAccount,
           openingBalance: Number(newAccount.openingBalance),
           closingBalance: Number(newAccount.closingBalance)
-      };
+      } as BankAccount;
       setMockAccounts(prev => [...prev, newMockAccount]);
       setIsNewAccountOpen(false);
       toast({ title: 'Account Added', description: 'New account node has been registered.' });
@@ -559,7 +493,7 @@ export function BankStatementsView() {
                     </Button>
                 </div>
                 <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
-                    Select a secure cloud node to begin the reconciliation process.
+                    Select a secure cloud node to begin reviewing external financial signals.
                 </p>
             </header>
 
@@ -568,7 +502,7 @@ export function BankStatementsView() {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Connected Accounts</CardTitle>
-                            <CardDescription>Click an account to manage transactions and build evidence.</CardDescription>
+                            <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={handleOpenNewAccountDialog}>
@@ -599,7 +533,7 @@ export function BankStatementsView() {
                                         <p className="text-xs text-muted-foreground">Open: {formatCurrency(account.openingBalance)}</p>
                                         <p className="text-sm font-bold font-mono text-primary">Close: {formatCurrency(account.closingBalance)}</p>
                                         <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
-                                            Manage <ArrowRight className="h-3 w-3" />
+                                            View <ArrowRight className="h-3 w-3" />
                                         </p>
                                     </div>
                                 </CardContent>
@@ -612,36 +546,36 @@ export function BankStatementsView() {
                     <Card className="bg-primary/5 border-dashed">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <Zap className="h-4 w-4" /> One-Click Reconciliation
+                                <Zap className="h-4 w-4" /> High-Fidelity Mirror
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                High-fidelity matching between bank signals and your BKS General Ledger ensures zero administrative gaps.
+                                Review external bank signals directly in Ogeemo. These records provide the physical world proof for your audit trail.
                             </p>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary/5 border-dashed">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" /> The Audit Shield
+                                <ShieldCheck className="h-4 w-4" /> GL-First Workflow
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Reconciled nodes are pre-verified, protecting your business from the auditor's assumption of personal use.
+                                Use this hub for information only. The act of reconciliation occurs in the General Ledger to ensure professional node parity.
                             </p>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary/5 border-dashed">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <Bot className="h-4 w-4" /> Data Intelligence
+                                <Bot className="h-4 w-4" /> Data Triage
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Integrated with the Ogeemo Spider Web to automatically detect and suggest matches for invoices and bills.
+                                Ingest CSV statements or link via Plaid to build your Black Box of Evidence without redundant manual entry.
                             </p>
                         </CardContent>
                     </Card>
@@ -688,8 +622,8 @@ export function BankStatementsView() {
             <CardHeader className="bg-muted/10 border-b">
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Transaction Registry</CardTitle>
-                        <CardDescription>View external bank signals for matching.</CardDescription>
+                        <CardTitle>Transaction Registry (Info Only)</CardTitle>
+                        <CardDescription>Viewing external bank signals. Reconcile these items in the General Ledger.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -702,7 +636,6 @@ export function BankStatementsView() {
                             <TableHead>Counterparty (Name)</TableHead>
                             <TableHead>Memo / Details</TableHead>
                             <TableHead className="text-right w-40">Amount</TableHead>
-                            <TableHead className="w-12 text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -715,31 +648,16 @@ export function BankStatementsView() {
                           <TableCell className={cn("text-right font-mono font-black text-lg", txn.amount > 0 ? 'text-green-600' : 'text-red-600')}>
                               {txn.amount > 0 ? '+' : ''}{formatCurrency(txn.amount)}
                           </TableCell>
-                          <TableCell className="text-right">
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => setTransactionToReconcile(txn)}>
-                                        <GitMerge className="mr-2 h-4 w-4 text-primary" />Reconcile Signal
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleMarkAsPersonal(txn)}>
-                                        <UserCheck className="mr-2 h-4 w-4" />Mark as Personal
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
                         </TableRow>
                       ))}
                       {transactions.length === 0 && (
                           <TableRow>
-                              <TableCell colSpan={6} className="h-64 text-center">
+                              <TableCell colSpan={5} className="h-64 text-center">
                                   <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
                                       <FileSpreadsheet className="h-12 w-12" />
                                       <div className="space-y-1">
                                           <p className="font-bold">No transactions ingested.</p>
-                                          <p className="text-xs">Upload a CSV statement to begin reconciliation.</p>
+                                          <p className="text-xs">Upload a CSV statement to begin reviewing signals.</p>
                                       </div>
                                   </div>
                               </TableCell>
@@ -749,89 +667,9 @@ export function BankStatementsView() {
                 </Table>
             </CardContent>
             <CardFooter className="bg-muted/10 border-t py-3 justify-center">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.3em]">Operational Node: {selectedAccount?.id} • Verified Registry</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.3em]">Operational Node: {selectedAccount?.id} • External Registry</p>
             </CardFooter>
         </Card>
-
-        <Dialog open={!!transactionToReconcile} onOpenChange={() => setTransactionToReconcile(null)}>
-            <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden text-black shadow-2xl">
-                <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
-                    <div className="flex items-center gap-2 text-primary mb-1">
-                        <GitMerge className="h-6 w-6" />
-                        <DialogTitle className="text-xl font-headline uppercase tracking-tight">Reconciliation Workspace</DialogTitle>
-                    </div>
-                    <DialogDescription>
-                        Match this bank signal to an existing internal Ogeemo node.
-                    </DialogDescription>
-                </DialogHeader>
-                
-                <ScrollArea className="flex-1 max-h-[70vh]">
-                    <div className="p-6 space-y-6">
-                        <Card className="bg-muted/30 border-2 shadow-inner">
-                            <CardHeader className="py-3 px-4 border-b bg-white/50">
-                                <CardTitle className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
-                                    <Landmark className="h-3 w-3" /> External Bank Signal
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 flex justify-between items-center">
-                                <div className="space-y-1 min-w-0">
-                                    <p className="font-bold text-lg truncate">{transactionToReconcile?.name}</p>
-                                    <p className="text-xs text-muted-foreground italic truncate">{transactionToReconcile?.memo}</p>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono"><CalendarIcon className="h-3 w-3"/> {transactionToReconcile?.date}</p>
-                                </div>
-                                <p className={cn("text-2xl font-mono font-black shrink-0", (transactionToReconcile?.amount || 0) < 0 ? 'text-red-600' : 'text-green-600')}>
-                                    {formatCurrency(transactionToReconcile?.amount || 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" /> Internal Spider Web Suggestions
-                            </h4>
-                            
-                            {isLoadingData ? <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary"/></div> : (
-                                <div className="space-y-3">
-                                    {suggestedMatches.length > 0 ? suggestedMatches.map((match, i) => (
-                                        <div key={`${match.id}-${i}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 transition-all group cursor-pointer bg-white" onClick={() => handleMatch(match)}>
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2 bg-muted rounded-lg group-hover:bg-white transition-colors">
-                                                    {match.matchType === 'invoice' ? <FileDigit className="h-5 w-5 text-blue-500" /> : match.matchType === 'bill' ? <PlusCircle className="h-5 w-5 text-orange-500" /> : <PlusCircle className="h-5 w-5 text-green-500" />}
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-sm">{match.company || match.vendor || match.companyName}</p>
-                                                        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-bold h-4 px-1">{match.matchType}</Badge>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground truncate max-w-[300px]">{match.description || `Invoice #${match.invoiceNumber}`}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right flex items-center gap-4">
-                                                <div className="flex flex-col items-end">
-                                                    <p className="font-mono text-sm font-bold">${Math.abs(match.totalAmount || (match.originalAmount - match.amountPaid)).toFixed(2)}</p>
-                                                    <Badge className={cn("text-[8px] h-3 px-1 uppercase font-black", match.confidence === 'High' ? "bg-green-50" : "bg-amber-50")}>{match.confidence} Confidence</Badge>
-                                                </div>
-                                                <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="text-center p-12 border-2 border-dashed rounded-2xl bg-muted/10 space-y-3">
-                                            <Search className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
-                                            <p className="text-sm font-medium text-muted-foreground">No automatic node matches found.</p>
-                                            <p className="text-xs text-muted-foreground italic">No Ogeemo records match this amount and date.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </ScrollArea>
-
-                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0 sm:justify-between items-center gap-4">
-                    <Button variant="ghost" onClick={() => setTransactionToReconcile(null)} className="h-12 px-6 font-bold">Cancel</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
         {commonDialogs}
     </div>
   );

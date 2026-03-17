@@ -44,7 +44,6 @@ import {
     FileSpreadsheet,
     Bot,
     Search,
-    AlertTriangle,
     TrendingUp,
     TrendingDown,
     Activity,
@@ -75,7 +74,11 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { 
     getIncomeTransactions, 
+    deleteIncomeTransaction, 
+    type IncomeTransaction, 
     getExpenseTransactions, 
+    deleteExpenseTransaction, 
+    type ExpenseTransaction, 
     getInvoices,
     getPayableBills,
     type Invoice,
@@ -88,8 +91,6 @@ import {
     type IncomeCategory,
     type TaxType,
     getTaxTypes,
-    type IncomeTransaction,
-    type ExpenseTransaction
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -168,11 +169,6 @@ export function BankStatementsView() {
   const [isNewAccountOpen, setIsNewAccountOpen] = React.useState(false);
   const [newAccount, setNewAccount] = React.useState(emptyAccountForm);
   
-  const [incomeLedger, setIncomeLedger] = React.useState<IncomeTransaction[]>([]);
-  const [expenseLedger, setExpenseLedger] = React.useState<ExpenseTransaction[]>([]);
-  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
-  const [payableBills, setPayableBills] = React.useState<PayableBill[]>([]);
-  
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
@@ -200,11 +196,7 @@ export function BankStatementsView() {
     }
     setIsLoadingData(true);
     try {
-        const [income, expenses, invs, bills, fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts, fetchedTaxTypes] = await Promise.all([
-            getIncomeTransactions(user.uid),
-            getExpenseTransactions(user.uid),
-            getInvoices(user.uid),
-            getPayableBills(user.uid),
+        const [fetchedCompanies, fetchedExpenseCategories, fetchedIncomeCategories, fetchedFolders, fetchedIndustries, fetchedContacts, fetchedTaxTypes] = await Promise.all([
             getCompanies(user.uid),
             getExpenseCategories(user.uid),
             getIncomeCategories(user.uid),
@@ -213,10 +205,6 @@ export function BankStatementsView() {
             getContacts(),
             getTaxTypes(user.uid)
         ]);
-        setIncomeLedger(income);
-        setExpenseLedger(expenses);
-        setInvoices(invs.filter(i => i.originalAmount - i.amountPaid > 0.01));
-        setPayableBills(bills);
         setCompanies(fetchedCompanies);
         setExpenseCategories(fetchedExpenseCategories);
         setIncomeCategories(fetchedIncomeCategories);
@@ -735,8 +723,8 @@ export function BankStatementsView() {
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0">
-                                <Button variant="ghost" onClick={() => requestSort('memo')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
-                                    Memo / Details {sortConfig?.key === 'memo' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
+                                <Button variant="ghost" onClick={() => requestSort('name')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">
+                                    Memo / Details {sortConfig?.key === 'name' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                                 </Button>
                             </TableHead>
                             <TableHead className="p-0 text-right w-40">

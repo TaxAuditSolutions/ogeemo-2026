@@ -79,7 +79,9 @@ import {
     type ExpenseCategory, 
     type IncomeCategory,
     type TaxType,
-    getTaxTypes
+    getTaxTypes,
+    type IncomeTransaction,
+    type ExpenseTransaction
 } from '@/services/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
@@ -107,7 +109,7 @@ type BankAccount = {
   transitNumber: string;
   accountNumber: string;
   openingBalance: number;
-  closingBalance: number;
+  closingBalance: number; // This serves as the reference closing balance from the bank
   address?: string;
   phone?: string;
   accountManager?: string;
@@ -121,7 +123,6 @@ type BankTransaction = {
   name: string;
   memo: string;
   amount: number;
-  status: "reconciled" | "unreconciled" | "personal";
 };
 
 const initialMockAccounts: BankAccount[] = [
@@ -130,13 +131,13 @@ const initialMockAccounts: BankAccount[] = [
   { id: 'acc_3', name: 'Personal Chequing', bank: 'Chase', type: 'Personal', institutionNumber: '001', transitNumber: '12345', accountNumber: '777888999', openingBalance: 4210.50, closingBalance: 5210.50 },
 ];
 
-const mockBankTransactions: BankTransaction[] = [
-  { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', transactionType: 'ACH', name: 'Client Alpha', memo: 'Invoice #1001 payment', amount: 5000, status: 'reconciled' },
-  { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', transactionType: 'DEBIT', name: 'Cloud Hosting Inc.', memo: 'Monthly server fee', amount: -150, status: 'reconciled' },
-  { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', transactionType: 'TRANSFER', name: 'Stripe Payout', memo: 'Merchant settle', amount: 850.75, status: 'reconciled' },
-  { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', transactionType: 'DEBIT', name: 'SaaS Tools Co.', memo: 'Subscription', amount: -75.99, status: 'unreconciled' },
-  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To acc_2', amount: -10000, status: 'reconciled' },
-  { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45, status: 'unreconciled' },
+const initialBankTransactions: BankTransaction[] = [
+  { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', transactionType: 'ACH', name: 'Client Alpha', memo: 'Invoice #1001 payment', amount: 5000 },
+  { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', transactionType: 'DEBIT', name: 'Cloud Hosting Inc.', memo: 'Monthly server fee', amount: -150 },
+  { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', transactionType: 'TRANSFER', name: 'Stripe Payout', memo: 'Merchant settle', amount: 850.75 },
+  { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', transactionType: 'DEBIT', name: 'SaaS Tools Co.', memo: 'Subscription', amount: -75.99 },
+  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To acc_2', amount: -10000 },
+  { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45 },
 ];
 
 const emptyAccountForm: Omit<BankAccount, 'id'> & { openingBalance: number | ''; closingBalance: number | '' } = {
@@ -171,7 +172,7 @@ export function BankStatementsView() {
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
-  const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>(mockBankTransactions);
+  const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>(initialBankTransactions);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
 
   const [isInfoDialogOpen, setIsInfoDialogOpen] = React.useState(false);
@@ -226,6 +227,23 @@ export function BankStatementsView() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  /**
+   * High-Fidelity Temporal Calculation Node:
+   * Aggregates all bank transactions for the active account to derive the Closing Balance.
+   */
+  const { selectedAccount, transactions, calculatedClosingBalance } = React.useMemo(() => {
+    const acc = mockAccounts.find(a => a.id === accountIdParam);
+    const txs = bankTransactions.filter(txn => txn.accountId === accountIdParam);
+    const netChange = txs.reduce((sum, txn) => sum + txn.amount, 0);
+    const opening = acc?.openingBalance || 0;
+    
+    return { 
+        selectedAccount: acc,
+        transactions: txs, 
+        calculatedClosingBalance: opening + netChange 
+    };
+  }, [bankTransactions, accountIdParam, mockAccounts]);
 
   const handlePlaidContinue = () => {
     setIsLinkDialogOpen(false);
@@ -285,7 +303,6 @@ export function BankStatementsView() {
                 name: nameStr,
                 memo: memoStr,
                 amount: parseFloat(amountStr),
-                status: 'unreconciled'
             };
         });
         
@@ -295,9 +312,6 @@ export function BankStatementsView() {
     reader.readAsText(file);
     if (event.target) event.target.value = '';
   };
-
-  const selectedAccount = mockAccounts.find(acc => acc.id === accountIdParam);
-  const transactions = bankTransactions.filter(txn => txn.accountId === accountIdParam);
 
   const handleSelectAccount = (id: string) => {
       router.push(`/accounting/bank-statements?accountId=${id}`);
@@ -612,7 +626,7 @@ export function BankStatementsView() {
                     </div>
                     <div className="bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 text-right">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Closing Balance</p>
-                        <p className="font-mono font-bold text-primary">{formatCurrency(selectedAccount?.closingBalance || 0)}</p>
+                        <p className="font-mono font-bold text-primary">{formatCurrency(calculatedClosingBalance)}</p>
                     </div>
                 </div>
             </div>

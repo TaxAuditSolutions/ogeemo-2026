@@ -477,7 +477,7 @@ export function BankStatementsView() {
                     </div>
                 </ScrollArea>
                 <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-                    <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-14 px-12 font-bold shadow-xl text-lg">Return to Financial Registry</Button>
+                    <Button onClick={() => setIsInfoDialogOpen(false)} className="w-full sm:w-auto h-14 px-12 font-bold shadow-xl text-lg">Return to Bank Accounts</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -580,7 +580,7 @@ export function BankStatementsView() {
             <AccountingPageHeader pageTitle="Bank Accounts" />
             <header className="text-center">
                 <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Financial Registry</h1>
+                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Bank Accounts</h1>
                     <Button variant="ghost" size="icon" className="mt-1" onClick={() => setIsInfoDialogOpen(true)}>
                         <Info className="h-5 w-5 text-muted-foreground" />
                     </Button>

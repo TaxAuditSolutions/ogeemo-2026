@@ -47,7 +47,11 @@ import {
     Ban,
     Filter,
     RefreshCw,
-    Activity
+    Activity,
+    ArrowUpZA,
+    ArrowDownAZ,
+    ArrowUpDown,
+    ScanSearch
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -62,9 +66,10 @@ import {
     type PayableBill,
     type Company,
     type IncomeCategory,
-    type ExpenseCategory
+    type ExpenseCategory,
+    type TaxType
 } from '@/services/accounting-service';
-import { format, isValid, differenceInDays, parse, startOfDay, endOfDay } from 'date-fns';
+import { format, isValid, differenceInDays, parse, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -87,6 +92,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 interface BankTransaction {
     id: string;
@@ -162,6 +170,13 @@ export function ReconciliationWizard({
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     
+    // Filter State (Snag resolution)
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [isStartFilterOpen, setIsStartFilterOpen] = useState(false);
+    const [isEndFilterOpen, setIsEndFilterOpen] = useState(false);
+    const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+
     const { toast } = useToast();
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -240,14 +255,28 @@ export function ReconciliationWizard({
     }, [bankTransactions, incomeLedger, expenseLedger, invoices, payableBills]);
 
     const filteredNodes = useMemo(() => {
-        if (!searchQuery.trim()) return reconciliationNodes;
-        const term = searchQuery.toLowerCase();
-        return reconciliationNodes.filter(node => 
-            node.bank.name.toLowerCase().includes(term) || 
-            node.bank.memo.toLowerCase().includes(term) ||
-            node.bank.amount.toString().includes(term)
-        );
-    }, [reconciliationNodes, searchQuery]);
+        let list = reconciliationNodes;
+
+        if (searchQuery.trim()) {
+            const term = searchQuery.toLowerCase();
+            list = list.filter(node => 
+                node.bank.name.toLowerCase().includes(term) || 
+                node.bank.memo.toLowerCase().includes(term) ||
+                node.bank.amount.toString().includes(term)
+            );
+        }
+
+        if (startDate || endDate) {
+            list = list.filter(node => {
+                const txDate = new Date(node.bank.date);
+                const start = startDate ? startOfDay(startDate) : new Date(0);
+                const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
+                return isWithinInterval(txDate, { start, end });
+            });
+        }
+
+        return list;
+    }, [reconciliationNodes, searchQuery, startDate, endDate]);
 
     const stats = useMemo(() => {
         const total = reconciliationNodes.length;
@@ -325,7 +354,7 @@ export function ReconciliationWizard({
 
             setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
             setSelectedIds([]);
-            toast({ title: 'Verification Complete', description: `${nodesToVerify.length} nodes achieves parity.` });
+            toast({ title: 'Verification Complete', description: `${nodesToVerify.length} nodes achieved parity.` });
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Verification Failed', description: error.message });
@@ -412,6 +441,8 @@ export function ReconciliationWizard({
         setStep('upload');
         setBankTransactions([]);
         setSelectedIds([]);
+        setStartDate(undefined);
+        setEndDate(undefined);
     };
 
     return (
@@ -436,7 +467,7 @@ export function ReconciliationWizard({
                             <div className="text-center space-y-4 max-w-2xl">
                                 <h3 className="text-4xl font-bold font-headline tracking-tight text-slate-900 uppercase">Commence Ingestion</h3>
                                 <p className="text-muted-foreground text-xl leading-relaxed">
-                                    Ingest a bank statement (CSV) to achieve professional parity between your bank activity and registry entries.
+                                    Ingest a bank statement (CSV) to achieve professional parity between your bank activity and ledger entries.
                                 </p>
                             </div>
                             <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
@@ -480,22 +511,60 @@ export function ReconciliationWizard({
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                                    <div className="relative w-full sm:w-96">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input 
-                                            placeholder="Search ingested activity..." 
-                                            className="h-10 pl-9 bg-white"
-                                            value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
-                                        />
+                                <div className="flex flex-col md:flex-row items-end justify-center gap-6 pt-2">
+                                    <div className="flex-1 max-w-sm space-y-1">
+                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Search Terminal</Label>
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input 
+                                                placeholder="Search ingested activity..." 
+                                                className="h-10 pl-9 bg-white"
+                                                value={searchQuery}
+                                                onChange={e => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
                                     </div>
+
+                                    <div className="flex flex-col items-center space-y-1">
+                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Start Date</Label>
+                                        <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white border-black/20", !startDate && "text-muted-foreground")}>
+                                                    <CalendarIcon className="mr-2 h-3 w-3 opacity-50" />
+                                                    {startDate ? format(startDate, "PP") : <span>Beginning</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CustomCalendar mode="single" selected={startDate} onSelect={(d) => { if(d) { setStartDate(d); setIsStartFilterOpen(false); } }} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    <div className="flex flex-col items-center space-y-1">
+                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">End Date</Label>
+                                        <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white border-black/20", !endDate && "text-muted-foreground")} disabled={!startDate}>
+                                                    <CalendarIcon className="mr-2 h-3 w-3 opacity-50" />
+                                                    {endDate ? format(endDate, "PP") : <span>End</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CustomCalendar mode="single" selected={endDate} onSelect={(d) => { if(d) { setEndDate(d); setIsEndFilterOpen(false); } }} initialFocus disabled={(date) => startDate ? date < startDate : false} />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    <Button variant="ghost" className="h-10 text-xs border-black/10" onClick={() => { setSearchQuery(''); setStartDate(undefined); setEndDate(undefined); }} disabled={!searchQuery && !startDate && !endDate}>
+                                        <FilterX className="mr-2 h-4 w-4" /> Reset Filters
+                                    </Button>
+
                                     {selectedIds.length > 0 && (
-                                        <div className="flex items-center gap-2 p-1 bg-white border rounded-lg shadow-sm animate-in slide-in-from-right-2">
-                                            <Button size="sm" onClick={handleBulkVerify} className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase">
+                                        <div className="flex items-center gap-2 p-1 bg-white border rounded-lg shadow-sm animate-in slide-in-from-right-2 ml-auto">
+                                            <Button size="sm" onClick={handleBulkVerify} className="h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase px-4">
                                                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Verify Matches
                                             </Button>
-                                            <Button size="sm" onClick={handleBulkAutoIngest} className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] uppercase">
+                                            <Button size="sm" onClick={handleBulkAutoIngest} className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] uppercase px-4">
                                                 <Zap className="mr-1.5 h-3.5 w-3.5" /> Ingest & Reconcile
                                             </Button>
                                             <Button size="sm" variant="ghost" onClick={handleFlagAsOrphan} className="h-8 text-muted-foreground font-bold text-[10px] uppercase hover:bg-red-50 hover:text-red-600">
@@ -523,7 +592,7 @@ export function ReconciliationWizard({
                                             <TableHead className="w-32">Date</TableHead>
                                             <TableHead>Counterparty / Memo</TableHead>
                                             <TableHead className="text-right w-32">Amount</TableHead>
-                                            <TableHead className="text-center w-40">Status Node</TableHead>
+                                            <TableHead className="text-center w-48">Status Node</TableHead>
                                             <TableHead>Orchestration Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -569,13 +638,17 @@ export function ReconciliationWizard({
                                                             <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black">Orphaned</Badge>
                                                         ) : (
                                                             <div className="flex justify-center">
-                                                                {node.matchStatus === 'perfect' && <Badge className="bg-green-500 text-[9px] uppercase tracking-widest font-black">Perfect Match</Badge>}
+                                                                {node.matchStatus === 'perfect' && (
+                                                                    <Badge className="bg-green-500 text-[9px] uppercase tracking-widest font-black">
+                                                                        Matched: {node.matchedLedgerNode.company}
+                                                                    </Badge>
+                                                                )}
                                                                 {node.matchStatus === 'drift' && (
                                                                     <TooltipProvider>
                                                                         <Tooltip>
                                                                             <TooltipTrigger asChild>
                                                                                 <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 text-[9px] uppercase tracking-widest font-black cursor-help">
-                                                                                    {Math.abs(node.driftDays!)} Day Drift
+                                                                                    {Math.abs(node.driftDays!)} Day Drift: {node.matchedLedgerNode.company}
                                                                                 </Badge>
                                                                             </TooltipTrigger>
                                                                             <TooltipContent>
@@ -593,8 +666,8 @@ export function ReconciliationWizard({
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter w-24">{node.recommendation}</span>
                                                             {!isReconciled && !isOrphan && (
-                                                                <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-black hover:bg-primary/10 hover:text-primary" onClick={() => handleToggleSelect(bt.id)}>
-                                                                    Select Item
+                                                                <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-black hover:bg-primary/10 hover:text-primary px-3" onClick={() => handleToggleSelect(bt.id)}>
+                                                                    {isSelected ? 'Deselect' : 'Select Item'}
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -613,7 +686,7 @@ export function ReconciliationWizard({
                     <div className="hidden sm:flex items-center gap-4">
                         {step === 'ledger' && (
                             <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest">
-                                <RefreshCw className="mr-2 h-4 w-4" /> Reset Hub
+                                <RefreshCw className="mr-2 h-4 w-4" /> Reset Ingestion Hub
                             </Button>
                         )}
                     </div>

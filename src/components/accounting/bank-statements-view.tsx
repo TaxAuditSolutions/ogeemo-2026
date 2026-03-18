@@ -493,11 +493,11 @@ export function BankStatementsView() {
                 </header>
 
                 <div className="max-w-4xl mx-auto space-y-6">
-                    <Card className="shadow-lg border-primary/10">
+                    <Card className="shadow-lg border-primary/10 border-black">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Connected Accounts</CardTitle>
-                                <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
+                                <CardDescription>Use this page to manage your bank and credit card accounts</CardDescription>
                             </div>
                             <div className="flex gap-2">
                                 <Button asChild variant="outline">
@@ -697,7 +697,7 @@ export function BankStatementsView() {
             </CardHeader>
             <CardContent className="p-0">
                 <Table>
-                    <TableHeader className="bg-muted/5">
+                    <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-black">
                             <TableHead className="p-0 w-32">
                                 <Button variant="ghost" onClick={() => requestSort('date')} className="h-full w-full justify-start px-4 font-bold hover:bg-muted/50 rounded-none">

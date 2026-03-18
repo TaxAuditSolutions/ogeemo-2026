@@ -529,12 +529,12 @@ export function BankStatementsView() {
                                             <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.businessType || 'N/A'}</Badge>
                                         </div>
                                         <div className="text-right space-y-1">
-                                            <p className="text-[10px] uppercase font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 justify-end">
-                                                Review Activity <ArrowRight className="h-3 w-3" />
+                                            <p className="text-[10px] uppercase font-black text-primary transition-opacity flex items-center gap-1 justify-end">
+                                                View Activity <ArrowRight className="h-3 w-3" />
                                             </p>
                                         </div>
                                     </CardContent>
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute top-2 right-2 transition-opacity">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8">

@@ -49,7 +49,8 @@ import {
     Activity,
     ArrowUpDown,
     ArrowUpZA,
-    ArrowDownAZ
+    ArrowDownAZ,
+    BookOpen
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -499,6 +500,11 @@ export function BankStatementsView() {
                                 <CardDescription>Review external transactions before matching them in the General Ledger.</CardDescription>
                             </div>
                             <div className="flex gap-2">
+                                <Button asChild variant="outline">
+                                    <Link href="/accounting/ledgers">
+                                        <BookOpen className="mr-2 h-4 w-4" /> BKS Ledger
+                                    </Link>
+                                </Button>
                                 <Button variant="outline" onClick={() => handleOpenAccountDialog()}>
                                     <Plus className="mr-2 h-4 w-4" /> Add An Account
                                 </Button>
@@ -620,6 +626,11 @@ export function BankStatementsView() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm" className="h-10">
+                    <Link href="/accounting/ledgers">
+                        <BookOpen className="mr-2 h-4 w-4" /> BKS Ledger
+                    </Link>
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-10 font-bold border-primary text-primary hover:bg-primary/5">
                     <Upload className="mr-2 h-4 w-4" /> Upload CSV Statement
                 </Button>

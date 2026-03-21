@@ -146,7 +146,7 @@ export default function PricingPage() {
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-primary">$30</span>
-                                <span className="text-muted-foreground">/month</span>
+                                <span className="text-muted-foreground">/month (Includes membership)</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">
                                 Unlocks every tool in the Spider Web. No upsells.
@@ -377,7 +377,7 @@ export default function PricingPage() {
                         </div>
                         <h3 className="text-2xl font-bold font-headline">The Ethical Exit</h3>
                         <p className="text-muted-foreground leading-relaxed">
-                            Paradoxically, the easier it is to leave, the more likely people are to stay. If you ever decide Ogeemo isn't for you, we'll help you pack. No hidden fees or delays to export your own data.
+                            Paradoxically, the easier it is to leave, the more likely people are to stay. If you ever decide Ogeemo isn't for you, we'll help you pack. No hidden fees or delays or fees to export your own data.
                         </p>
                     </div>
                     <div className="space-y-4">

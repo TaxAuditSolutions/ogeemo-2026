@@ -105,26 +105,27 @@ export default function PricingPage() {
                             <ShieldCheck className="h-6 w-6" />
                         </div>
                         <CardTitle className="text-2xl">Base Membership</CardTitle>
-                        <CardDescription>The Cost of Existence</CardDescription>
+                        <CardDescription>Entry into the Collective</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-bold">$15</span>
+                                <span className="text-4xl font-bold text-slate-900">$15</span>
                                 <span className="text-muted-foreground">/month</span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">
-                                Covers hosting, security, and basic cloud orchestration.
+                                Covers the cost of cloud existence and community orchestration.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "Encrypted Master Mind Database",
-                                "Basic CRM Relationship Hub",
-                                "Document Manager Integration",
-                                "Daily Automated Backups",
-                                "Unlimited Contact Records",
-                                "Standard Support Terminal"
+                                "Access to the Ogeemo Community",
+                                "Full Knowledge Base & Manuals",
+                                "Direct Line to Ogeemo Founders",
+                                "Peer-to-Peer Support Forums",
+                                "Daily Automated System Backups",
+                                "Encrypted Personal Master Mind Node",
+                                "High-Fidelity Security Protocols"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
@@ -138,7 +139,7 @@ export default function PricingPage() {
                 {/* Pillar 2: Full Service */}
                 <Card className="relative overflow-hidden border-2 border-primary shadow-xl bg-white flex flex-col scale-105 z-10">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
-                        Ultimate Value
+                        Total Power
                     </div>
                     <CardHeader className="bg-primary/5 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
@@ -152,20 +153,24 @@ export default function PricingPage() {
                                 <span className="text-muted-foreground">/month</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">
-                                Everything in Membership + Full Operational Suite.
+                                Everything Ogeemo offers. No upsells. No tiers.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "All Base Membership Features",
-                                "BKS General Ledger (Income/Expenses)",
+                                "Includes All Base Membership Access",
+                                "BKS Accounting (General Ledger)",
                                 "Professional Invoicing & A/R",
-                                "Full Payroll (Runs & Remittances)",
-                                "AI Dispatch & Ingestion Terminals",
-                                "Multi-User Team Access",
-                                "Vote on the Roadmap"
+                                "Accounts Payable & Bill Tracking",
+                                "Full Payroll & Remittance Engine",
+                                "AI Dispatch Terminal & Search",
+                                "Neural Data Ingestion (OCR)",
+                                "Project Forge & Kanban Boards",
+                                "Unified Contact Hub & CRM",
+                                "Dual-Mirror Document Manager",
+                                "High-Fidelity Time Logs & Live Timer"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
@@ -175,8 +180,8 @@ export default function PricingPage() {
                         </ul>
                     </CardContent>
                     <CardFooter className="bg-primary/5 border-t p-6">
-                        <Button asChild className="w-full font-bold">
-                            <Link href="/register">Choose the Movement</Link>
+                        <Button asChild className="w-full font-bold h-12 text-lg shadow-lg">
+                            <Link href="/register">Activate My Hub</Link>
                         </Button>
                     </CardFooter>
                 </Card>

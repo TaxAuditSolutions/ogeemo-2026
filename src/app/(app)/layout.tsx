@@ -48,7 +48,7 @@ export default function AppLayout({ children }: { children: React.Node }) {
                    <SidebarTrigger className="md:hidden" />
                    
                    <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80">
-                      <Logo className="text-white" />
+                      <Logo className="text-black" />
                    </Link>
                  </div>
 

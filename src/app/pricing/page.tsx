@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -40,12 +41,12 @@ export default function PricingPage() {
       
       <main className="flex-1">
         {/* The Member's Manifesto Hero */}
-        <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden">
+        <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden text-black">
           <div className="container px-4 text-center max-w-4xl mx-auto space-y-8 relative z-10">
-            <Badge className="bg-primary text-primary-foreground hover:bg-primary px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
+            <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
               The Ogeemo Member's Manifesto
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tighter leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tighter leading-tight text-white">
               Software built for us, <br />
               <span className="text-primary">not for Wall Street.</span>
             </h1>
@@ -54,7 +55,7 @@ export default function PricingPage() {
                 <p>
                     We built Ogeemo because we’re tired. Tired of "introductory rates" that double after six months. Tired of being "upsold" on features we actually need. And frankly, we’re tired of being treated like a data point for a billion-dollar corporation.
                 </p>
-                <p className="text-white font-bold text-2xl italic">
+                <p className="text-white font-bold text-2xl italic font-headline">
                     "Accounting shouldn’t be a hostage situation."
                 </p>
                 <p>
@@ -66,7 +67,7 @@ export default function PricingPage() {
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
                     <Link href="/register">Join the Community</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/20 hover:bg-white/10">
+                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/20 hover:bg-white/10 text-white">
                     <Link href="#ethics-comparison">Compare Our Ethics</Link>
                 </Button>
             </div>
@@ -88,7 +89,7 @@ export default function PricingPage() {
         </section>
 
         {/* Simplified Pricing Pillars */}
-        <section className="py-24 bg-slate-50 border-y">
+        <section className="py-24 bg-slate-50 border-y text-black">
           <div className="container px-4">
             <div className="text-center mb-16 space-y-4">
                 <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900">One Membership. No Surprises.</h2>
@@ -98,34 +99,35 @@ export default function PricingPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                {/* Pillar 1: Base Membership */}
-                <Card className="relative overflow-hidden border-2 bg-white flex flex-col">
+                {/* Pillar 1: Base Membership - THE COLLECTIVE */}
+                <Card className="relative overflow-hidden border-2 bg-white flex flex-col hover:border-primary/50 transition-colors">
                     <CardHeader className="bg-slate-50 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
-                            <ShieldCheck className="h-6 w-6" />
+                            <Users className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl">Base Membership</CardTitle>
-                        <CardDescription>Entry into the Collective</CardDescription>
+                        <CardTitle className="text-2xl font-headline">The Collective Node</CardTitle>
+                        <CardDescription>Entry into the Ogeemo Community</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-slate-900">$15</span>
                                 <span className="text-muted-foreground">/month</span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Covers the cost of cloud existence and community orchestration.
+                            <p className="text-xs text-muted-foreground mt-2 font-medium">
+                                Covers the base "Cost of Existence" and community support.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "Access to the Ogeemo Community",
-                                "Full Knowledge Base & Manuals",
+                                "Access to the Ogeemo Community Forums",
+                                "Full High-Fidelity Knowledge Base",
                                 "Direct Line to Ogeemo Founders",
-                                "Peer-to-Peer Support Forums",
-                                "Daily Automated System Backups",
+                                "Daily Automated Disaster Backups",
                                 "Encrypted Personal Master Mind Node",
-                                "High-Fidelity Security Protocols"
+                                "Peer-to-Peer Strategic Networking",
+                                "Eligibility for the Community Dividend",
+                                "Voting Rights on the Product Roadmap"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
@@ -134,54 +136,59 @@ export default function PricingPage() {
                             ))}
                         </ul>
                     </CardContent>
+                    <CardFooter className="bg-slate-50 border-t p-6">
+                        <Button asChild variant="outline" className="w-full font-bold">
+                            <Link href="/register">Join the Collective</Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
 
-                {/* Pillar 2: Full Service */}
+                {/* Pillar 2: Full Service - THE ORCHESTRATOR */}
                 <Card className="relative overflow-hidden border-2 border-primary shadow-xl bg-white flex flex-col scale-105 z-10">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
-                        Total Power
+                        Total Orchestration
                     </div>
                     <CardHeader className="bg-primary/5 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <Zap className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl">Full Service Node</CardTitle>
-                        <CardDescription>Total Business Orchestration</CardDescription>
+                        <CardTitle className="text-2xl font-headline">The Orchestrator Node</CardTitle>
+                        <CardDescription>Total Business Management Suite</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-primary">$30</span>
                                 <span className="text-muted-foreground">/month</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">
-                                Everything Ogeemo offers. No upsells. No tiers.
+                                Unlocks every tool in the Spider Web. No upsells.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "Includes All Base Membership Access",
-                                "BKS Accounting (General Ledger)",
-                                "Professional Invoicing & A/R",
-                                "Accounts Payable & Bill Tracking",
-                                "Full Payroll & Remittance Engine",
-                                "AI Dispatch Terminal & Search",
-                                "Neural Data Ingestion (OCR)",
-                                "Project Forge & Kanban Boards",
-                                "Unified Contact Hub & CRM",
-                                "Dual-Mirror Document Manager",
+                                "Includes All Collective Access",
+                                "BKS General Ledger (Audit-Ready)",
+                                "Professional Invoicing & A/R Tracking",
+                                "Accounts Payable & Bill Management",
+                                "Integrated Payroll & Remittance Engine",
+                                "AI Dispatch Terminal & Global Search",
+                                "Neural Financial Data Ingestion (OCR)",
+                                "Project Forge & Strategic Kanban Boards",
+                                "Unified Relationship Hub (CRM)",
+                                "Dual-Mirror GDrive Document Manager",
                                 "High-Fidelity Time Logs & Live Timer"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                                    <span className="font-medium">{item}</span>
+                                    <span className="font-bold">{item}</span>
                                 </li>
                             ))}
                         </ul>
                     </CardContent>
                     <CardFooter className="bg-primary/5 border-t p-6">
                         <Button asChild className="w-full font-bold h-12 text-lg shadow-lg">
-                            <Link href="/register">Activate My Hub</Link>
+                            <Link href="/register">Activate Total Command</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -190,12 +197,12 @@ export default function PricingPage() {
         </section>
 
         {/* Feature & Value Comparison Matrix */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white text-black">
             <div className="container px-4 max-w-6xl mx-auto space-y-12">
                 <div className="text-center space-y-4">
-                    <Badge variant="outline" className="border-primary text-primary">Competitive Value</Badge>
+                    <Badge variant="outline" className="border-primary text-primary">Competitive Logic</Badge>
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900 uppercase tracking-tight">The Feature Parity Gap</h2>
-                    <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Compare Ogeemo against the "Big Accounting" giants. We don't hide critical business functions behind expensive paywalls.</p>
+                    <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Compare Ogeemo against the giants. We don't hide your tools behind paywalls.</p>
                 </div>
 
                 <div className="overflow-x-auto rounded-2xl border-2 border-slate-900 shadow-2xl">
@@ -282,7 +289,7 @@ export default function PricingPage() {
         </section>
 
         {/* The Ethics Comparison Table */}
-        <section id="ethics-comparison" className="py-24 bg-slate-50 border-y">
+        <section id="ethics-comparison" className="py-24 bg-slate-50 border-y text-black">
             <div className="container px-4 max-w-6xl mx-auto">
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900 uppercase tracking-tight">The Ethics of Pricing</h2>
@@ -354,14 +361,14 @@ export default function PricingPage() {
         </section>
 
         {/* Our Anti-Greed Promises */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white text-black">
             <div className="container px-4 max-w-5xl mx-auto space-y-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div className="space-y-4">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Scale className="h-6 w-6" />
                         </div>
-                        <h3 className="text-2xl font-bold">The Community Dividend</h3>
+                        <h3 className="text-2xl font-bold font-headline">The Community Dividend</h3>
                         <p className="text-muted-foreground leading-relaxed">
                             If Ogeemo has a highly profitable year, we don’t just buy a bigger office. We value-load the platform with more features or offer a "December is on us" month. When we win, the community wins.
                         </p>
@@ -370,7 +377,7 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Vote className="h-6 w-6" />
                         </div>
-                        <h3 className="text-2xl font-bold">You Own the Roadmap</h3>
+                        <h3 className="text-2xl font-bold font-headline">You Own the Roadmap</h3>
                         <p className="text-muted-foreground leading-relaxed">
                             Don’t like a feature? Want a new one? Your membership gives you a vote. We build what the community asks for, not what a board of directors thinks will "increase engagement."
                         </p>
@@ -379,7 +386,7 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Unlock className="h-6 w-6" />
                         </div>
-                        <h3 className="text-2xl font-bold">The Ethical Exit</h3>
+                        <h3 className="text-2xl font-bold font-headline">The Ethical Exit</h3>
                         <p className="text-muted-foreground leading-relaxed">
                             Paradoxically, the easier it is to leave, the more likely people are to stay. If you ever decide Ogeemo isn't for you, we'll help you pack. No hidden fees or delays to export your own data.
                         </p>
@@ -388,7 +395,7 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Gift className="h-6 w-6" />
                         </div>
-                        <h3 className="text-2xl font-bold">Price Protection for Life</h3>
+                        <h3 className="text-2xl font-bold font-headline">Price Protection for Life</h3>
                         <p className="text-muted-foreground leading-relaxed">
                             The membership price you sign up with is your price for life. We will never hike your rates to pad our margins or meet arbitrary corporate targets.
                         </p>

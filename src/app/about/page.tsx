@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -27,7 +28,7 @@ export default function AboutLandingPage() {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative w-full py-20 md:py-32 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
+        <section className="relative w-full py-20 md:py-32 overflow-hidden bg-gradient-to-b from-primary/5 to-background text-black">
           <div className="container px-4 flex flex-col items-center text-center relative z-10">
             <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
               Built for Us, Not for Wall Street
@@ -46,7 +47,7 @@ export default function AboutLandingPage() {
             </p>
 
             <p className="text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              Ogeemo was born in the trenches of real business. We're a community of freelancers, consultants, and small business owners taking back control from bloated corporate software.
+              Ogeemo was born in the trenches of real business. We're a community of freelancers, consultants, and small business owners taking back control from fragmented corporate software.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Button asChild size="lg" className="h-12 px-8 text-lg font-bold shadow-lg hover:shadow-xl transition-all">
@@ -63,7 +64,7 @@ export default function AboutLandingPage() {
         </section>
 
         {/* The "Main Street" Story */}
-        <section id="visionaries-section" className="py-24 bg-white border-y">
+        <section id="visionaries-section" className="py-24 bg-white border-y text-black">
           <div className="container px-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
@@ -104,7 +105,7 @@ export default function AboutLandingPage() {
         </section>
 
         {/* Anti-Greed Values */}
-        <section className="py-24 bg-muted/30">
+        <section className="py-24 bg-muted/30 text-black">
             <div className="container px-4 max-w-5xl mx-auto space-y-16">
                 <div className="text-center space-y-4">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900 uppercase">The Ogeemo Difference</h2>
@@ -117,7 +118,7 @@ export default function AboutLandingPage() {
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
                                 <HeartHandshake className="h-6 w-6" />
                             </div>
-                            <h3 className="font-bold text-xl uppercase tracking-tighter">Radical Unity</h3>
+                            <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Radical Unity</h3>
                             <p className="text-sm text-muted-foreground leading-relaxed">No more app-juggling. Every node of your business is natively connected in one high-fidelity environment.</p>
                         </CardContent>
                     </Card>
@@ -126,7 +127,7 @@ export default function AboutLandingPage() {
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
                                 <ShieldCheck className="h-6 w-6" />
                             </div>
-                            <h3 className="font-bold text-xl uppercase tracking-tighter">Audit Ready</h3>
+                            <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Audit Ready</h3>
                             <p className="text-sm text-muted-foreground leading-relaxed">Built on the BKS method to keep you defensible and compliant 365 days a year, by design.</p>
                         </CardContent>
                     </Card>
@@ -135,7 +136,7 @@ export default function AboutLandingPage() {
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
                                 <Scale className="h-6 w-6" />
                             </div>
-                            <h3 className="font-bold text-xl uppercase tracking-tighter">Ethical Ethics</h3>
+                            <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Ethical Ethics</h3>
                             <p className="text-sm text-muted-foreground leading-relaxed">Price locks, easy exits, and community dividends. We treat our members as partners, not targets.</p>
                         </CardContent>
                     </Card>
@@ -144,7 +145,7 @@ export default function AboutLandingPage() {
         </section>
 
         {/* Community Proof */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white text-black">
             <div className="container px-4 max-w-4xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                     <div className="aspect-square relative rounded-3xl overflow-hidden shadow-2xl border-8 border-slate-50">

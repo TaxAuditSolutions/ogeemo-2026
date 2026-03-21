@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
+import { cn } from '@/lib/utils';
 
 export default function PricingPage() {
   return (
@@ -399,7 +400,7 @@ export default function PricingPage() {
                 Ready to take back control of your finances? Start your 30-day free trial and experience software built for you.
             </p>
             <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-2xl">
+              <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
                 <Link href="/register">Start Your Free Trial</Link>
               </Button>
             </div>

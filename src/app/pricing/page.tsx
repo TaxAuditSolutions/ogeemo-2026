@@ -9,24 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
 import { 
     CheckCircle2, 
-    ShieldCheck, 
-    Zap, 
-    Scale, 
     AlertCircle, 
     Check, 
-    Target, 
-    HeartHandshake, 
-    Info, 
-    XCircle,
-    Users,
-    Vote,
-    Unlock,
-    Gift,
-    Briefcase,
-    FileDigit,
-    Clock,
-    Bot,
-    FolderSync
+    Zap, 
+    Users, 
+    Vote, 
+    Unlock, 
+    Gift, 
+    Scale,
+    XCircle
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -72,7 +63,6 @@ export default function PricingPage() {
             </div>
           </div>
           
-          {/* Subtle background nodes */}
           <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
               <ImagePlaceholder id="pitch-strategy" className="object-cover" />
           </div>
@@ -98,7 +88,7 @@ export default function PricingPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                {/* Pillar 1: Base Membership - THE COLLECTIVE */}
+                {/* Pillar 1: Base Membership */}
                 <Card className="relative overflow-hidden border-2 bg-white flex flex-col hover:border-primary/50 transition-colors">
                     <CardHeader className="bg-slate-50 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
@@ -142,7 +132,7 @@ export default function PricingPage() {
                     </CardFooter>
                 </Card>
 
-                {/* Pillar 2: Full Service - THE ORCHESTRATOR */}
+                {/* Pillar 2: Full Service - THE FULL OGEEMO */}
                 <Card className="relative overflow-hidden border-2 border-primary shadow-xl bg-white flex flex-col scale-105 z-10">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
                         Total Orchestration
@@ -151,7 +141,7 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <Zap className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl font-headline">The Orchestrator Node</CardTitle>
+                        <CardTitle className="text-2xl font-headline">The Full Ogeemo</CardTitle>
                         <CardDescription>Total Business Management Suite</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">

@@ -101,7 +101,7 @@ export default function PricingPage() {
                         <CardDescription>Full Power for Solopreneurs & Freelancers</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-bold text-slate-900">$15</span>
+                                <span className="text-4xl font-bold text-slate-900">$20</span>
                                 <span className="text-muted-foreground">/month</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -18,7 +17,8 @@ import {
     Globe,
     Users,
     HeartHandshake,
-    Scale
+    Scale,
+    Zap
 } from 'lucide-react';
 
 export default function AboutLandingPage() {
@@ -74,7 +74,7 @@ export default function AboutLandingPage() {
                   Ogeemo wasn't conceived in a Silicon Valley boardroom. It was forged by entrepreneurs tired of the "Corporate Trap"—fragmented tools, endless upsells, and a total lack of empathy for the small business owner.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  We realized that we were spending 40% of our time just managing our tools instead of running our businesses. We built Ogeemo to be the single, unified engine we always wanted.
+                  We realized that we were spending 40% of our time just managing our tools instead of running our businesses. We built Ogeemo to be the single, unified engine we always wanted—accessible to everyone without gating.
                 </p>
                 <div className="flex items-center gap-6 pt-4">
                     <div className="text-center space-y-2">
@@ -116,10 +116,10 @@ export default function AboutLandingPage() {
                     <Card className="text-center p-8 border-primary/10 bg-white shadow-xl hover:shadow-2xl transition-all">
                         <CardContent className="pt-6 space-y-4">
                             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
-                                <HeartHandshake className="h-6 w-6" />
+                                <Zap className="h-6 w-6" />
                             </div>
-                            <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Radical Unity</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">No more app-juggling. Every node of your business is natively connected in one high-fidelity environment.</p>
+                            <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">No Feature Gating</h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">We don't hold your tools hostage. Every member gets the full Ogeemo engine, from Payroll to AI, regardless of their plan.</p>
                         </CardContent>
                     </Card>
                     <Card className="text-center p-8 border-primary/10 bg-white shadow-xl hover:shadow-2xl transition-all">

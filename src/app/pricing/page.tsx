@@ -17,7 +17,10 @@ import {
     Unlock, 
     Gift, 
     Scale,
-    XCircle
+    XCircle,
+    User,
+    Users2,
+    ShieldCheck
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -49,7 +52,7 @@ export default function PricingPage() {
                     "Accounting shouldn’t be a hostage situation."
                 </p>
                 <p>
-                    At Ogeemo, we’ve ditched the "Corporate Greed" playbook. We operate on a Membership Model because we believe you should be a part of a community, not just a line item on a spreadsheet.
+                    At Ogeemo, we don't hold your growth hostage. We believe that to be a member of this collective, you deserve the absolute full power of our engine from day one. No feature paywalls. Ever.
                 </p>
             </div>
 
@@ -77,96 +80,93 @@ export default function PricingPage() {
             </div>
         </section>
 
-        {/* Simplified Pricing Pillars */}
+        {/* Unified Membership Pillars */}
         <section className="py-24 bg-slate-50 border-y text-black">
           <div className="container px-4">
             <div className="text-center mb-16 space-y-4">
-                <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900">One Membership. No Surprises.</h2>
+                <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900">One Membership. The Full Ogeemo.</h2>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto italic">
-                    "Hate QuickBooks? Good. Try Ogeemo. You will love it."
+                    "We don't gate features. We scale with your success."
                 </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                {/* Pillar 1: Base Membership */}
+                {/* Individual Membership */}
                 <Card className="relative overflow-hidden border-2 bg-white flex flex-col hover:border-primary/50 transition-colors">
                     <CardHeader className="bg-slate-50 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
-                            <Users className="h-6 w-6" />
+                            <User className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl font-headline">Membership</CardTitle>
-                        <CardDescription>Entry into the Ogeemo Community</CardDescription>
+                        <CardTitle className="text-2xl font-headline">Solo Membership</CardTitle>
+                        <CardDescription>Full Power for Solopreneurs & Freelancers</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-slate-900">$15</span>
                                 <span className="text-muted-foreground">/month</span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2 font-medium">
-                                Covers the base "Cost of Existence" and community support.
+                            <p className="text-xs text-primary font-bold mt-2">
+                                Includes The Full Ogeemo Suite.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "Access to the Ogeemo Community Forums",
-                                "Full High-Fidelity Knowledge Base",
-                                "Direct Line to Ogeemo Founders",
-                                "Daily Automated Disaster Backups",
-                                "Encrypted Personal Master Mind Node",
-                                "Peer-to-Peer Strategic Networking",
-                                "Eligibility for the Community Dividend",
-                                "Voting Rights on the Product Roadmap"
+                                "The Full BKS Ledger & Audit Shield",
+                                "Professional Invoicing & Accounts Payable",
+                                "Integrated Payroll & Tax Remittances",
+                                "AI Dispatch Terminal & Global Search",
+                                "GDrive Dual-Mirror Document Manager",
+                                "Project Forge & Live Time Mastery",
+                                "Entry into the Ogeemo Collective",
+                                "Vote on the Community Roadmap"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                                    <span>{item}</span>
+                                    <span className="font-medium">{item}</span>
                                 </li>
                             ))}
                         </ul>
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t p-6">
                         <Button asChild variant="outline" className="w-full font-bold">
-                            <Link href="/register">Join the Collective</Link>
+                            <Link href="/register">Start Solo</Link>
                         </Button>
                     </CardFooter>
                 </Card>
 
-                {/* Pillar 2: Full Service - THE FULL OGEEMO */}
+                {/* Team Membership */}
                 <Card className="relative overflow-hidden border-2 border-primary shadow-xl bg-white flex flex-col scale-105 z-10">
                     <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
-                        Total Orchestration
+                        Collaborative Growth
                     </div>
                     <CardHeader className="bg-primary/5 border-b pb-8">
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
-                            <Zap className="h-6 w-6" />
+                            <Users2 className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl font-headline">The Full Ogeemo</CardTitle>
-                        <CardDescription>Total Business Management Suite</CardDescription>
+                        <CardTitle className="text-2xl font-headline">Team Membership</CardTitle>
+                        <CardDescription>Total Orchestration for Growing Teams</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-primary">$30</span>
-                                <span className="text-muted-foreground">/month (Includes membership)</span>
+                                <span className="text-muted-foreground">/month</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">
-                                Unlocks every tool in the Spider Web. No upsells.
+                                The Full Ogeemo + Team Architecture.
                             </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-4 flex-1">
                         <ul className="space-y-3">
                             {[
-                                "Includes All Collective Access",
-                                "BKS General Ledger (Audit-Ready)",
-                                "Professional Invoicing & A/R Tracking",
-                                "Accounts Payable & Bill Management",
-                                "Integrated Payroll & Remittance Engine",
-                                "AI Dispatch Terminal & Global Search",
-                                "Neural Financial Data Ingestion (OCR)",
-                                "Project Forge & Strategic Kanban Boards",
-                                "Unified Relationship Hub (CRM)",
-                                "Dual-Mirror GDrive Document Manager",
-                                "High-Fidelity Time Logs & Live Timer"
+                                "Includes All Solo Member Features",
+                                "Unlimited Team User Nodes",
+                                "Managed Authority Levels (Admin/Editor)",
+                                "Team-Wide Project Synchronization",
+                                "Staff & Sub-Contractor Management",
+                                "Bulk Payroll Processing for Teams",
+                                "Priority Community Support Access",
+                                "Shared High-Fidelity Knowledge Base"
                             ].map((item) => (
                                 <li key={item} className="flex gap-3 text-sm">
                                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
@@ -177,7 +177,7 @@ export default function PricingPage() {
                     </CardContent>
                     <CardFooter className="bg-primary/5 border-t p-6">
                         <Button asChild className="w-full font-bold h-12 text-lg shadow-lg">
-                            <Link href="/register">Activate Total Command</Link>
+                            <Link href="/register">Scale My Team</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -199,7 +199,7 @@ export default function PricingPage() {
                         <TableHeader>
                             <TableRow className="bg-slate-900 hover:bg-slate-900">
                                 <TableHead className="text-white font-bold h-16 w-1/3">Operational Capability</TableHead>
-                                <TableHead className="text-white font-bold h-16 text-center bg-primary/20">Ogeemo (Full Node)</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center bg-primary/20">Ogeemo Membership</TableHead>
                                 <TableHead className="text-white font-bold h-16 text-center">Big Accounting (QB/Xero)</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -207,23 +207,23 @@ export default function PricingPage() {
                             {[
                                 { 
                                     name: "Integrated Payroll", 
-                                    ogeemo: "INCLUDED", 
+                                    ogeemo: "INCLUDED (Standard)", 
                                     ogeemoIcon: Check, 
                                     corp: "UPSELL (+$40/mo+)", 
                                     corpIcon: XCircle 
                                 },
                                 { 
-                                    name: "BKS General Ledger", 
+                                    name: "Inventory Control", 
                                     ogeemo: "INCLUDED", 
                                     ogeemoIcon: Check, 
-                                    corp: "INCLUDED", 
-                                    corpIcon: Check 
+                                    corp: "PREMIUM TIER ONLY", 
+                                    corpIcon: AlertCircle 
                                 },
                                 { 
                                     name: "GDrive Document Mirror", 
                                     ogeemo: "NATIVE", 
                                     ogeemoIcon: Check, 
-                                    corp: "NO (Manual Upload Only)", 
+                                    corp: "NO (Manual Only)", 
                                     corpIcon: XCircle 
                                 },
                                 { 
@@ -237,14 +237,7 @@ export default function PricingPage() {
                                     name: "Project Kanban Boards", 
                                     ogeemo: "INCLUDED", 
                                     ogeemoIcon: Check, 
-                                    corp: "UPSELL (Premium Tier)", 
-                                    corpIcon: XCircle 
-                                },
-                                { 
-                                    name: "CRM Relationship Hub", 
-                                    ogeemo: "INCLUDED", 
-                                    ogeemoIcon: Check, 
-                                    corp: "NO (Requires Integration)", 
+                                    corp: "UPSELL (Plus Tier)", 
                                     corpIcon: XCircle 
                                 },
                                 { 
@@ -303,7 +296,7 @@ export default function PricingPage() {
                                 },
                                 { 
                                     name: "Feature Access", 
-                                    ogeemo: "One simple tier. No paywalls for features you need.", 
+                                    ogeemo: "Full GDrive, Payroll, and AI included at every level.", 
                                     corp: "Nickel-and-diming: Pay more to unlock basic tools." 
                                 },
                                 { 

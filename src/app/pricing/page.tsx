@@ -60,7 +60,7 @@ export default function PricingPage() {
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
                     <Link href="/register">Join the Community</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/20 hover:bg-white/10 text-white">
+                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/40 hover:bg-white/10 text-white bg-transparent hover:text-white transition-all">
                     <Link href="#ethics-comparison">Compare Our Ethics</Link>
                 </Button>
             </div>

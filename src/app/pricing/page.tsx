@@ -21,7 +21,12 @@ import {
     Users,
     Vote,
     Unlock,
-    Gift
+    Gift,
+    Briefcase,
+    FileDigit,
+    Clock,
+    Bot,
+    FolderSync
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -178,15 +183,107 @@ export default function PricingPage() {
           </div>
         </section>
 
+        {/* Feature & Value Comparison Matrix */}
+        <section className="py-24 bg-white">
+            <div className="container px-4 max-w-6xl mx-auto space-y-12">
+                <div className="text-center space-y-4">
+                    <Badge variant="outline" className="border-primary text-primary">Competitive Value</Badge>
+                    <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900 uppercase tracking-tight">The Feature Parity Gap</h2>
+                    <p className="text-muted-foreground text-lg max-w-3xl mx-auto">Compare Ogeemo against the "Big Accounting" giants. We don't hide critical business functions behind expensive paywalls.</p>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border-2 border-slate-900 shadow-2xl">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-slate-900 hover:bg-slate-900">
+                                <TableHead className="text-white font-bold h-16 w-1/3">Operational Capability</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center bg-primary/20">Ogeemo (Full Node)</TableHead>
+                                <TableHead className="text-white font-bold h-16 text-center">Big Accounting (QB/Xero)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {[
+                                { 
+                                    name: "Integrated Payroll", 
+                                    ogeemo: "INCLUDED", 
+                                    ogeemoIcon: Check, 
+                                    corp: "UPSELL (+$40/mo+)", 
+                                    corpIcon: XCircle 
+                                },
+                                { 
+                                    name: "BKS General Ledger", 
+                                    ogeemo: "INCLUDED", 
+                                    ogeemoIcon: Check, 
+                                    corp: "INCLUDED", 
+                                    corpIcon: Check 
+                                },
+                                { 
+                                    name: "GDrive Document Mirror", 
+                                    ogeemo: "NATIVE", 
+                                    ogeemoIcon: Check, 
+                                    corp: "NO (Manual Upload Only)", 
+                                    corpIcon: XCircle 
+                                },
+                                { 
+                                    name: "AI Dispatch Terminal", 
+                                    ogeemo: "INCLUDED", 
+                                    ogeemoIcon: Check, 
+                                    corp: "NO", 
+                                    corpIcon: XCircle 
+                                },
+                                { 
+                                    name: "Project Kanban Boards", 
+                                    ogeemo: "INCLUDED", 
+                                    ogeemoIcon: Check, 
+                                    corp: "UPSELL (Premium Tier)", 
+                                    corpIcon: XCircle 
+                                },
+                                { 
+                                    name: "CRM Relationship Hub", 
+                                    ogeemo: "INCLUDED", 
+                                    ogeemoIcon: Check, 
+                                    corp: "NO (Requires Integration)", 
+                                    corpIcon: XCircle 
+                                },
+                                { 
+                                    name: "Temporal Scheduler", 
+                                    ogeemo: "HIGH-FIDELITY", 
+                                    ogeemoIcon: Check, 
+                                    corp: "BASIC", 
+                                    corpIcon: AlertCircle 
+                                }
+                            ].map((row, i) => (
+                                <TableRow key={i} className={i % 2 === 0 ? "bg-slate-50/50" : ""}>
+                                    <TableCell className="font-bold py-6 text-slate-900">{row.name}</TableCell>
+                                    <TableCell className="py-6 bg-primary/5 border-x">
+                                        <div className="flex flex-col items-center text-center gap-2">
+                                            <row.ogeemoIcon className="h-5 w-5 text-primary" />
+                                            <span className="text-sm font-black text-primary px-4 uppercase">{row.ogeemo}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="py-6">
+                                        <div className="flex flex-col items-center text-center gap-2">
+                                            <row.corpIcon className={cn("h-5 w-5", row.corpIcon === Check ? "text-green-600" : row.corpIcon === AlertCircle ? "text-amber-500" : "text-destructive")} />
+                                            <span className="text-sm text-slate-500 px-4 font-semibold">{row.corp}</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        </section>
+
         {/* The Ethics Comparison Table */}
-        <section id="ethics-comparison" className="py-24 bg-white">
+        <section id="ethics-comparison" className="py-24 bg-slate-50 border-y">
             <div className="container px-4 max-w-6xl mx-auto">
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900 uppercase tracking-tight">The Ethics of Pricing</h2>
                     <p className="text-muted-foreground text-lg">Comparing "The Corporate Way" vs. "The Ogeemo Promise."</p>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border-2 border-slate-900 shadow-2xl">
+                <div className="overflow-x-auto rounded-2xl border-2 border-slate-900 shadow-2xl bg-white">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-900 hover:bg-slate-900">
@@ -251,7 +348,7 @@ export default function PricingPage() {
         </section>
 
         {/* Our Anti-Greed Promises */}
-        <section className="py-24 bg-slate-50 border-y">
+        <section className="py-24 bg-white">
             <div className="container px-4 max-w-5xl mx-auto space-y-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div className="space-y-4">

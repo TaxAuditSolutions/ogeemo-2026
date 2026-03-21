@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -39,9 +38,9 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
       
-      <main className="flex-1">
+      <main className="flex-1 text-black">
         {/* The Member's Manifesto Hero */}
-        <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden text-black">
+        <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden">
           <div className="container px-4 text-center max-w-4xl mx-auto space-y-8 relative z-10">
             <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
               The Ogeemo Member's Manifesto
@@ -105,7 +104,7 @@ export default function PricingPage() {
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                             <Users className="h-6 w-6" />
                         </div>
-                        <CardTitle className="text-2xl font-headline">The Collective Node</CardTitle>
+                        <CardTitle className="text-2xl font-headline">Membership</CardTitle>
                         <CardDescription>Entry into the Ogeemo Community</CardDescription>
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">

@@ -160,7 +160,7 @@ export default function PricingPage() {
                         <ul className="space-y-3">
                             {[
                                 "Includes All Solo Member Features",
-                                "Ten Team User Seats",
+                                "Up to Ten Team User Seats",
                                 "Managed Authority Levels (Admin/Editor)",
                                 "Team-Wide Project Synchronization",
                                 "Staff & Sub-Contractor Management",

@@ -74,9 +74,6 @@ interface AddLineItemDialogProps {
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
 }
 
-/**
- * Helper to format a string or number with thousands separators (commas).
- */
 const formatNumberWithCommas = (value: string | number) => {
   if (value === undefined || value === null || value === "") return "";
   const sValue = String(value).replace(/,/g, "");
@@ -278,7 +275,6 @@ export function AddLineItemDialog({
         <ScrollArea className="flex-1 bg-white">
             <div className="max-w-4xl mx-auto w-full py-12 px-6 space-y-10">
                 
-                {/* 1. Category Line Item */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
@@ -370,7 +366,6 @@ export function AddLineItemDialog({
                     </div>
                 </div>
 
-                {/* 2. Subject Description (Public) */}
                 <div className="space-y-4">
                     <Label htmlFor="description" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
                         <MessageSquare className="h-4 w-4" /> 2. Subject Description (Visible on Invoice)
@@ -384,7 +379,6 @@ export function AddLineItemDialog({
                     />
                 </div>
 
-                {/* 3. Operational Memo (Private) */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="internalNotes" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
@@ -403,7 +397,6 @@ export function AddLineItemDialog({
                     />
                 </div>
 
-                {/* 4. Quantities & Vitals */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-6">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">

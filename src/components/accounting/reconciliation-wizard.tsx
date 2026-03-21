@@ -86,6 +86,12 @@ import { Input } from '@/components/ui/input';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CustomCalendar } from '@/components/ui/custom-calendar';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -93,8 +99,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 interface BankTransaction {
     id: string;
@@ -175,7 +179,6 @@ export function ReconciliationWizard({
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isStartFilterOpen, setIsStartFilterOpen] = useState(false);
     const [isEndFilterOpen, setIsEndFilterOpen] = useState(false);
-    const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
 
     const { toast } = useToast();
     const { user } = useAuth();
@@ -489,7 +492,7 @@ export function ReconciliationWizard({
                                         </Card>
                                         <Card className="bg-green-50/50 border-green-100 py-2 px-4 border-2 shadow-none">
                                             <p className="text-[9px] uppercase font-bold text-green-600 tracking-widest mb-0.5 flex items-center gap-1">
-                                                <TrendingUp className="h-3 w-3" /> Credits
+                                                <TrendingUp className="h-3 w-3" /> Total Credits
                                             </p>
                                             <p className="font-mono font-bold text-green-600 text-lg">{formatCurrency(stats.totalCredits)}</p>
                                         </Card>
@@ -592,7 +595,7 @@ export function ReconciliationWizard({
                                             <TableHead className="w-32">Date</TableHead>
                                             <TableHead>Counterparty / Memo</TableHead>
                                             <TableHead className="text-right w-32">Amount</TableHead>
-                                            <TableHead className="text-center w-48">Status Node</TableHead>
+                                            <TableHead className="text-center w-48">Status node</TableHead>
                                             <TableHead>Orchestration Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -686,7 +689,7 @@ export function ReconciliationWizard({
                     <div className="hidden sm:flex items-center gap-4">
                         {step === 'ledger' && (
                             <Button variant="ghost" size="lg" onClick={resetWizard} className="font-bold text-sm uppercase tracking-widest">
-                                <RefreshCw className="mr-2 h-4 w-4" /> Reset Ingestion Hub
+                                <RefreshCw className="mr-2 h-4 w-4" /> Reset Hub
                             </Button>
                         )}
                     </div>

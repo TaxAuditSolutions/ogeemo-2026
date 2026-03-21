@@ -124,9 +124,6 @@ interface TransactionDialogProps {
     transactionToEdit?: any | null;
 }
 
-/**
- * Helper to format a string or number with thousands separators (commas).
- */
 const formatNumberWithCommas = (value: string | number) => {
   if (value === undefined || value === null || value === "") return "";
   const sValue = String(value).replace(/,/g, "");
@@ -900,7 +897,7 @@ export function TransactionDialog({
                 onTaxTypesChange={() => onSuccess()}
             />
 
-            <AlertDialog open={!!accountToDelete} onOpenChange={() => setAccountToDelete(null)}>
+            <AlertDialog open={!!accountToDelete} onOpenChange={setAccountToDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

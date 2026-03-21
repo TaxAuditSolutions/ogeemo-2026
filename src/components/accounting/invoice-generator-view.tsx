@@ -134,7 +134,7 @@ const InvoiceDocument = ({
             </div>
         </section>
         <section className="mt-16 pt-8 border-t border-dashed border-gray-300">
-            <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Additional Terms & Explanation</h4>
+            <h4 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Terms & Explanation</h4>
             <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">{notes}</p>
             {attachReport && (
                 <div className="mt-4 p-3 border rounded bg-muted/10 flex items-center justify-between">

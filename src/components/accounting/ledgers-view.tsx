@@ -101,7 +101,7 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";

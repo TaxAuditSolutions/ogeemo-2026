@@ -534,7 +534,7 @@ export function BankStatementsView() {
                 </header>
 
                 <div className="max-w-4xl mx-auto space-y-6">
-                    <Card className="shadow-lg border-primary/10 border-black">
+                    <Card className="shadow-lg border-primary/10">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Connected Accounts</CardTitle>

@@ -50,7 +50,9 @@ import {
     ArrowUpDown,
     ArrowUpZA,
     ArrowDownAZ,
-    BookOpen
+    BookOpen,
+    CreditCard,
+    Wallet
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +139,7 @@ const initialBankTransactions: BankTransaction[] = [
 const emptyAccountForm = {
     name: '',
     bankName: '',
+    type: 'Bank' as InternalAccount['type'],
     businessType: 'Business' as "Business" | "Personal",
     institutionNumber: '',
     transitNumber: '',
@@ -277,6 +280,7 @@ export function BankStatementsView() {
           setAccountForm({
               name: account.name,
               bankName: account.bankName || '',
+              type: account.type || 'Bank',
               businessType: account.businessType || 'Business',
               institutionNumber: account.institutionNumber || '',
               transitNumber: account.transitNumber || '',
@@ -291,8 +295,11 @@ export function BankStatementsView() {
 
   const handleSaveAccount = async () => {
       if (!user) return;
-      if (!accountForm.name || !accountForm.bankName || !accountForm.institutionNumber || !accountForm.transitNumber || !accountForm.accountNumber) {
-          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all identification fields.' });
+      
+      const isBankOrCard = accountForm.type === 'Bank' || accountForm.type === 'Credit Card';
+      
+      if (!accountForm.name || (isBankOrCard && !accountForm.bankName) || (accountForm.type === 'Bank' && (!accountForm.institutionNumber || !accountForm.transitNumber || !accountForm.accountNumber))) {
+          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all identification fields for this account type.' });
           return;
       }
       
@@ -301,12 +308,17 @@ export function BankStatementsView() {
               name: accountForm.name,
               bankName: accountForm.bankName,
               businessType: accountForm.businessType,
-              institutionNumber: accountForm.institutionNumber,
-              transitNumber: accountForm.transitNumber,
-              accountNumber: accountForm.accountNumber,
-              type: 'Bank',
+              type: accountForm.type,
               userId: user.uid,
           };
+
+          if (accountForm.type === 'Bank') {
+              accountData.institutionNumber = accountForm.institutionNumber;
+              accountData.transitNumber = accountForm.transitNumber;
+              accountData.accountNumber = accountForm.accountNumber;
+          } else if (accountForm.type === 'Credit Card') {
+              accountData.accountNumber = accountForm.accountNumber; // Used for card number / last 4
+          }
 
           if (editingAccount) {
               await updateInternalAccount(editingAccount.id, accountData);
@@ -418,9 +430,26 @@ export function BankStatementsView() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                        <Label>Account Type</Label>
+                        <Select value={accountForm.type} onValueChange={(v: any) => setAccountForm(p => ({...p, type: v}))}>
+                            <SelectTrigger className="h-11">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Bank">Bank Account</SelectItem>
+                                <SelectItem value="Credit Card">Credit Card</SelectItem>
+                                <SelectItem value="Cash">Cash / Petty Cash Fund</SelectItem>
+                                <SelectItem value="Other">Other Asset/Liability</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2"><Label>Account Nickname</Label><Input value={accountForm.name} onChange={e => setAccountForm(p => ({...p, name: e.target.value}))} placeholder="e.g., Primary Chequing" /></div>
-                        <div className="space-y-2"><Label>Bank Name</Label><Input value={accountForm.bankName} onChange={e => setAccountForm(p => ({...p, bankName: e.target.value}))} /></div>
+                        {(accountForm.type === 'Bank' || accountForm.type === 'Credit Card') && (
+                            <div className="space-y-2"><Label>{accountForm.type === 'Bank' ? 'Bank Name' : 'Card Issuer'}</Label><Input value={accountForm.bankName} onChange={e => setAccountForm(p => ({...p, bankName: e.target.value}))} /></div>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -434,12 +463,24 @@ export function BankStatementsView() {
                             </Select>
                         </div>
                     </div>
-                    <Separator />
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label>Inst. #</Label><Input value={accountForm.institutionNumber} onChange={e => setAccountForm(p => ({...p, institutionNumber: e.target.value}))} /></div>
-                        <div className="space-y-2"><Label>Transit #</Label><Input value={accountForm.transitNumber} onChange={e => setAccountForm(p => ({...p, transitNumber: e.target.value}))} /></div>
-                        <div className="space-y-2"><Label>Account #</Label><Input value={accountForm.accountNumber} onChange={e => setAccountForm(p => ({...p, accountNumber: e.target.value}))} /></div>
-                    </div>
+                    
+                    {accountForm.type === 'Bank' && (
+                        <React.Fragment>
+                            <Separator />
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2"><Label>Inst. #</Label><Input value={accountForm.institutionNumber} onChange={e => setAccountForm(p => ({...p, institutionNumber: e.target.value}))} /></div>
+                                <div className="space-y-2"><Label>Transit #</Label><Input value={accountForm.transitNumber} onChange={e => setAccountForm(p => ({...p, transitNumber: e.target.value}))} /></div>
+                                <div className="space-y-2"><Label>Account #</Label><Input value={accountForm.accountNumber} onChange={e => setAccountForm(p => ({...p, accountNumber: e.target.value}))} /></div>
+                            </div>
+                        </React.Fragment>
+                    )}
+
+                    {accountForm.type === 'Credit Card' && (
+                        <div className="space-y-2">
+                            <Label>Card Number (Last 4 digits)</Label>
+                            <Input value={accountForm.accountNumber} onChange={e => setAccountForm(p => ({...p, accountNumber: e.target.value}))} placeholder="e.g., 4242" />
+                        </div>
+                    )}
                 </div>
                 <DialogFooter className="p-6 border-t bg-muted/10">
                     <Button variant="ghost" onClick={() => setIsAccountDialogOpen(false)}>Cancel</Button>
@@ -488,7 +529,7 @@ export function BankStatementsView() {
                         <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Bank Accounts</h1>
                     </div>
                     <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
-                        Select a bank account to download and review a statement
+                        Select an account to download and review a statement
                     </p>
                 </header>
 
@@ -514,46 +555,55 @@ export function BankStatementsView() {
                             </div>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {accounts.map(account => (
-                                <Card 
-                                    key={account.id} 
-                                    className="group border-muted hover:border-primary hover:shadow-md transition-all relative overflow-hidden"
-                                >
-                                    <CardContent className="p-6 flex justify-between items-center cursor-pointer" onClick={() => handleSelectAccount(account.id)}>
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <Landmark className="h-5 w-5 text-primary" />
-                                                <h3 className="font-bold text-lg">{account.name}</h3>
+                            {accounts.map(account => {
+                                const Icon = account.type === 'Credit Card' ? CreditCard : account.type === 'Cash' ? Wallet : Landmark;
+                                return (
+                                    <Card 
+                                        key={account.id} 
+                                        className="group border-muted hover:border-primary hover:shadow-md transition-all relative overflow-hidden"
+                                    >
+                                        <CardContent className="p-6 flex justify-between items-center cursor-pointer" onClick={() => handleSelectAccount(account.id)}>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <Icon className="h-5 w-5 text-primary" />
+                                                    <h3 className="font-bold text-lg">{account.name}</h3>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {account.bankName} 
+                                                    {account.accountNumber ? ` • Ending in: ${account.accountNumber.slice(-4)}` : ''}
+                                                </p>
+                                                <div className="flex gap-1.5 mt-1">
+                                                    <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-widest">{account.type}</Badge>
+                                                    <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[9px] uppercase font-bold tracking-widest">{account.businessType || 'N/A'}</Badge>
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">{account.bankName} • Ending in: {account.accountNumber?.slice(-4)}</p>
-                                            <Badge variant={account.businessType === 'Business' ? 'default' : 'secondary'} className="text-[10px] uppercase">{account.businessType || 'N/A'}</Badge>
+                                            <div className="text-right space-y-1">
+                                                <p className="text-[10px] uppercase font-black text-primary transition-opacity flex items-center gap-1 justify-end">
+                                                    View Activity <ArrowRight className="h-3 w-3" />
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                        <div className="absolute top-2 right-2 transition-opacity">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleOpenAccountDialog(account)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onSelect={() => { setAccountToDelete(account); setIsDeleteAlertOpen(true); }} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
-                                        <div className="text-right space-y-1">
-                                            <p className="text-[10px] uppercase font-black text-primary transition-opacity flex items-center gap-1 justify-end">
-                                                View Activity <ArrowRight className="h-3 w-3" />
-                                            </p>
-                                        </div>
-                                    </CardContent>
-                                    <div className="absolute top-2 right-2 transition-opacity">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleOpenAccountDialog(account)}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => { setAccountToDelete(account); setIsDeleteAlertOpen(true); }} className="text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Account
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </Card>
-                            ))}
+                                    </Card>
+                                );
+                            })}
                             {accounts.length === 0 && !isLoadingData && (
                                 <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl opacity-40">
                                     <Landmark className="h-12 w-12 mx-auto mb-2" />
@@ -573,7 +623,7 @@ export function BankStatementsView() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Review external bank transactions directly in Ogeemo. These records provide the physical world proof for your audit trail.
+                                    Review external bank and credit card transactions directly in Ogeemo. These records provide the physical world proof for your audit trail.
                                 </p>
                             </CardContent>
                         </Card>
@@ -610,7 +660,7 @@ export function BankStatementsView() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
+    <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-screen">
         <AccountingPageHeader pageTitle="Bank Statement" />
         
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
@@ -619,9 +669,10 @@ export function BankStatementsView() {
                     <ChevronLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
                 <div className="text-left">
-                    <h1 className="text-3xl font-bold font-headline text-primary leading-none uppercase tracking-tight">Bank Statement</h1>
+                    <h1 className="text-3xl font-bold font-headline text-primary leading-none uppercase tracking-tight">Statement Review</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        {selectedAccount?.name} • {selectedAccount?.bankName} • Ending in: {selectedAccount?.accountNumber?.slice(-4)}
+                        {selectedAccount?.name} • {selectedAccount?.bankName} 
+                        {selectedAccount?.accountNumber ? ` • Ending in: ${selectedAccount.accountNumber.slice(-4)}` : ''}
                     </p>
                 </div>
             </div>

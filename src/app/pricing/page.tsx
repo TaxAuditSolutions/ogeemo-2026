@@ -60,7 +60,7 @@ export default function PricingPage() {
         {/* Single Tier Bold Card */}
         <section className="py-24 bg-slate-50 border-y text-black">
           <div className="container px-4">
-            <Card className="max-w-xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform">
+            <Card className="max-w-2xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform">
                 <CardHeader className="bg-primary text-primary-foreground text-center py-12">
                     <h2 className="text-3xl font-headline uppercase tracking-tight">Circle Membership</h2>
                     <div className="mt-4 flex flex-col items-center">
@@ -76,14 +76,21 @@ export default function PricingPage() {
                         <h3 className="font-bold text-lg uppercase tracking-widest text-primary flex items-center gap-2">
                             <Zap className="h-5 w-5" /> The Full Ogeemo Suite
                         </h3>
-                        <ul className="grid grid-cols-1 gap-3">
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                             {[
                                 "BKS Ledger & Audit Shield",
                                 "Neural AI Ingestion Terminal",
-                                "Integrated Payroll & Tax Remittance",
+                                "Integrated Payroll & Remittances",
                                 "GDrive Dual-Mirror Management",
-                                "Project Forge & Live Time Tracking",
-                                "Unified Relationship CRM",
+                                "Project Forge & Kanban Boards",
+                                "Live Time Tracking Hub",
+                                "Unified Relationship CRM & Leads",
+                                "Inventory Manager & POS",
+                                "Capital Asset Management (CCA)",
+                                "Advanced AI Search & Dispatch",
+                                "Hytexercise Wellness Manager",
+                                "Data Portability & Secure Backups",
+                                "High-Fidelity Invoicing & Reports",
                                 "Direct Access to the Mentor Team",
                                 "Voting Power on the Roadmap"
                             ].map((item) => (

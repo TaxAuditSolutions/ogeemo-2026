@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, deleteDoc, where, writeBatch } from 'firebase/firestore';
@@ -99,7 +98,8 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.role = data.role || 'Apprentice'; // Default to Apprentice
+        // Mandatory KISS Defaults: All new signups are Apprentices with Price Lock enabled.
+        dataWithTimestamp.role = data.role || 'Apprentice'; 
         dataWithTimestamp.is_mentor_certified = data.is_mentor_certified ?? false;
         dataWithTimestamp.mentor_shield_issued_date = data.mentor_shield_issued_date ?? null;
         dataWithTimestamp.price_lock_status = data.price_lock_status ?? true;

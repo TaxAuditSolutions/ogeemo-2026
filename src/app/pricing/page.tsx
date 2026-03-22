@@ -7,15 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
 import { 
-    CheckCircle2, 
-    ShieldCheck,
-    Users,
-    Vote,
-    Unlock,
-    Gift,
-    Scale,
     Check,
     Zap,
+    Scale,
+    ShieldCheck,
     ArrowRight
 } from 'lucide-react';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
@@ -51,6 +46,9 @@ export default function PricingPage() {
             <div className="pt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
                     <Link href="/register">Join the Movement</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl font-bold bg-transparent border-white text-white hover:bg-white/10">
+                    <Link href="/about">Compare Our Ethics</Link>
                 </Button>
             </div>
           </div>

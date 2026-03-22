@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -96,7 +95,7 @@ export default function WelcomePage() {
                         </div>
                         <div>
                             <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">Direct Mentor Access</h4>
-                            <p className="text-sm text-muted-foreground">As an Apprentice, you have direct line access to Dan White and our team of Certified Mentors for operational guidance.</p>
+                            <p className="text-sm text-muted-foreground">As an Apprentice, you have direct line access to <strong>Dan White</strong> and our team of Certified Mentors for operational guidance and mediation.</p>
                         </div>
                     </div>
                     <div className="flex gap-4 items-start">
@@ -105,13 +104,13 @@ export default function WelcomePage() {
                         </div>
                         <div>
                             <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">The Mentor's Seal</h4>
-                            <p className="text-sm text-muted-foreground">Your progression path from Apprentice to Certified Mentor is now active. Master the BKS Ledger to earn your Seal.</p>
+                            <p className="text-sm text-muted-foreground">Your progression path is active. Master the BKS Ledger and our core protocols to earn your Seal and join the guidance team.</p>
                         </div>
                     </div>
                 </div>
                 
                 <div className="bg-muted/30 p-4 rounded-xl border border-dashed text-center">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status: Apprentice Active</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status: Apprentice Node Active</p>
                 </div>
 
                 <Button onClick={handleDismissWelcome} size="lg" className="w-full h-14 text-lg font-bold shadow-lg">

@@ -68,7 +68,10 @@ export default function PricingPage() {
                             <span className="text-6xl font-bold font-mono">${MEMBERSHIP_FEE}.00</span>
                             <span className="text-primary-foreground/80">/month (Total)</span>
                         </div>
-                        <p className="mt-4 font-bold uppercase tracking-[0.2em] text-sm opacity-90">Locked for life • No Traps</p>
+                        <div className="mt-4 space-y-1">
+                            <p className="font-bold uppercase tracking-[0.2em] text-sm opacity-90">Locked for life • No Traps</p>
+                            <p className="text-xs font-medium opacity-80 italic">Includes 5 users. Additional users are $5.00 each.</p>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="pt-10 space-y-6">

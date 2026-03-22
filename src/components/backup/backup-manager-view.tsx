@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { LoaderCircle, Database, Users, CheckCircle, XCircle, Info, ExternalLink, ShieldCheck } from 'lucide-react';
+import { LoaderCircle, Database, Users, CheckCircle, XCircle, Info, ExternalLink, ShieldCheck, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startFirestoreBackup, startAuthBackup } from '@/services/backup-service';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,6 +17,10 @@ interface BackupTask {
     message: string;
 }
 
+/**
+ * @fileOverview High-Fidelity Backup & Data Portability node.
+ * Implements the "Anti-Greed" policy: members always retain free access to their data.
+ */
 export function BackupManagerView() {
     const [backupTypes, setBackupTypes] = useState<string[]>(['firestore', 'auth']);
     const [firestoreStatus, setFirestoreStatus] = useState<BackupTask>({ status: 'idle', message: '' });
@@ -94,24 +98,24 @@ export function BackupManagerView() {
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Backup Manager</h1>
-                <p className="text-muted-foreground">managed exports for disaster recovery.</p>
+                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-tight">Backup & Portability</h1>
+                <p className="text-muted-foreground">Managed exports for disaster recovery and membership freedom.</p>
             </header>
 
             <div className="w-full max-w-2xl space-y-6">
                 <Alert className="bg-primary/5 border-primary/20">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle>Proper System Backups</AlertTitle>
+                    <AlertTitle>Data Portability Mandate</AlertTitle>
                     <AlertDescription className="text-xs space-y-2">
-                        <p>These are **not** placeholders. They trigger server-side managed export operations that save your data to a secure Google Cloud Storage bucket.</p>
-                        <p><strong>Note on Restoration:</strong> For security reasons, "Restore" is a manual process. If you need to roll back data, you must use the Google Cloud Console or CLI to import these files back into your project.</p>
+                        <p>Ogeemo operates on an <strong>"Ethical Exit"</strong> policy. You own your evidence. Exports are managed server-side and saved to your secure cloud bucket.</p>
+                        <p className="font-bold text-primary">Your data remains accessible and free to export even if your subscription is terminated.</p>
                     </AlertDescription>
                 </Alert>
 
-                <Card className="shadow-lg">
+                <Card className="shadow-lg border-primary/10">
                     <CardHeader>
-                        <CardTitle>Trigger Point-in-Time Export</CardTitle>
-                        <CardDescription>Select services to export to your storage bucket.</CardDescription>
+                        <CardTitle>Export My Operational Data</CardTitle>
+                        <CardDescription>Trigger a point-in-time export of your entire business web.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -123,8 +127,8 @@ export function BackupManagerView() {
                             <Label htmlFor="firestore" className="flex-1 flex items-center gap-2 text-base cursor-pointer">
                                 <Database className="h-5 w-5 text-primary" />
                                 <div>
-                                    <p className="font-semibold">Firestore Database</p>
-                                    <p className="text-xs text-muted-foreground">Managed export of all collections and documents.</p>
+                                    <p className="font-semibold">BKS Firestore Registry</p>
+                                    <p className="text-xs text-muted-foreground">Export all ledgers, contacts, and project nodes.</p>
                                 </div>
                             </Label>
                         </div>
@@ -137,8 +141,8 @@ export function BackupManagerView() {
                             <Label htmlFor="auth" className="flex-1 flex items-center gap-2 text-base cursor-pointer">
                                 <Users className="h-5 w-5 text-primary" />
                                 <div>
-                                    <p className="font-semibold">Authentication Users</p>
-                                    <p className="text-xs text-muted-foreground">JSON export of all user accounts and metadata.</p>
+                                    <p className="font-semibold">Authentication Nodes</p>
+                                    <p className="text-xs text-muted-foreground">Export system identity metadata.</p>
                                 </div>
                             </Label>
                         </div>
@@ -162,31 +166,31 @@ export function BackupManagerView() {
                         )}
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4 border-t pt-6 bg-muted/10">
-                        <Button onClick={handleStartBackup} disabled={isRunning} className="w-full h-12 text-lg font-bold">
+                        <Button onClick={handleStartBackup} disabled={isRunning} className="w-full h-14 text-lg font-bold shadow-lg">
                             {isRunning ? (
                                 <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
-                            ) : null}
-                            {isRunning ? 'Backups in Progress...' : 'Start Managed Backup'}
+                            ) : <Download className="mr-2 h-5 w-5" />}
+                            {isRunning ? 'Orchestrating Export...' : 'Execute Export Mandate'}
                         </Button>
-                        <p className="text-[10px] text-center text-muted-foreground">
-                            Backups are saved to: <code className="bg-muted px-1 rounded">gs://[project-id]-backups/</code>
+                        <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
+                            Destination Node: <code className="bg-muted px-1 rounded">gs://[project]-backups/</code>
                         </p>
                     </CardFooter>
                 </Card>
 
-                <Card>
+                <Card className="bg-muted/30 border-dashed">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <Info className="h-4 w-4" /> Disaster Recovery Help
+                            <Info className="h-4 w-4" /> Portability Instructions
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="text-xs text-muted-foreground space-y-2">
-                        <p>To view your backups or perform a restore:</p>
+                        <p>Ogeemo uses standard JSON and CSV formats for maximum portability. To restore your evidence to a third-party system:</p>
                         <ol className="list-decimal pl-4 space-y-1">
-                            <li>Go to the <strong>Google Cloud Console</strong>.</li>
-                            <li>Navigate to <strong>Cloud Storage</strong> &gt; <strong>Buckets</strong>.</li>
-                            <li>Open the <code>-backups</code> bucket to download your data.</li>
-                            <li>To restore Firestore, use the <code>gcloud firestore import</code> command pointing to the generated folder.</li>
+                            <li>Trigger the export mandate above.</li>
+                            <li>Access your secure <code>-backups</code> bucket in the Google Cloud Console.</li>
+                            <li>Download the resulting <code>.json</code> or <code>.csv</code> payloads.</li>
+                            <li>These files are formatted for immediate ingestion by most professional accounting and CRM software.</li>
                         </ol>
                     </CardContent>
                 </Card>
@@ -194,5 +198,3 @@ export function BackupManagerView() {
         </div>
     );
 }
-
-    

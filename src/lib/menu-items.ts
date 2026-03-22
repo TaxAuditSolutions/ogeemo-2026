@@ -38,6 +38,7 @@ import {
   UserCog,
   DollarSign,
   ClipboardList,
+  Award
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -57,6 +58,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
   { href: "/philosophy/record-keeping", label: "Record Keeping Credo", icon: Scale },
   { href: "/about", label: "About Ogeemo", icon: Globe },
+  { href: "/support/mentor-mediation", label: "Mentor Mediation", icon: Scale },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
   { href: "/action-manager/trash", label: "Trash", icon: Trash2 },
   { href: "/a-z-sort", label: "A-Z Sort", icon: ArrowDownAZ },

@@ -6,7 +6,6 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
-import type { SidebarViewType } from '@/context/sidebar-view-context';
 import { ensureSystemFolders } from './contact-folder-service';
 import { addContact, updateContact, getContacts } from './contact-service';
 
@@ -20,7 +19,7 @@ function getFunctionsService() {
     return functions;
 }
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'none';
+export type UserRole = 'Apprentice' | 'Mentor_Apprentice' | 'Certified_Mentor' | 'admin';
 
 export interface UserProfile {
     id: string;
@@ -33,6 +32,9 @@ export interface UserProfile {
     createdAt?: any;
     updatedAt?: any;
     notes?: string;
+    is_mentor_certified?: boolean;
+    mentor_shield_issued_date?: any;
+    price_lock_status?: boolean;
 }
 
 const PROFILES_COLLECTION = 'users';
@@ -97,7 +99,10 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        dataWithTimestamp.role = data.role || 'viewer';
+        dataWithTimestamp.role = data.role || 'Apprentice'; // Default to Apprentice
+        dataWithTimestamp.is_mentor_certified = data.is_mentor_certified ?? false;
+        dataWithTimestamp.mentor_shield_issued_date = data.mentor_shield_issued_date ?? null;
+        dataWithTimestamp.price_lock_status = data.price_lock_status ?? true;
         await setDoc(docRef, dataWithTimestamp);
     }
 }

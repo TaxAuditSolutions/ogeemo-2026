@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -16,201 +17,204 @@ service cloud.firestore {
       return request.auth != null && data != null && data.role == 'admin';
     }
 
-    function isEditor() {
+    function isMentor() {
       let data = getUserData();
-      return request.auth != null && data != null && (data.role == 'editor' || data.role == 'admin');
+      return request.auth != null && data != null && (data.role == 'Certified_Mentor' || data.role == 'Mentor_Apprentice' || data.role == 'admin');
     }
 
-    function isViewer() {
+    function isApprentice() {
       let data = getUserData();
-      return request.auth != null && data != null && (data.role == 'viewer' || data.role == 'editor' || data.role == 'admin');
+      return request.auth != null && data != null;
     }
 
     match /users/{userId} {
       allow read: if request.auth != null;
-      // Allow any authenticated user to create their own initial profile
       allow create: if request.auth != null && request.auth.uid == userId;
-      // Admins can create other users' profiles
       allow create: if isAdmin();
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 
+    match /mentor_reviews/{reviewId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin() || isOwner(resource.data.requester_id);
+      allow update, delete: if isAdmin();
+    }
+
     match /contactFolders/{folderId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /contacts/{contactId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /clientAccounts/{accountId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /invoices/{invoiceId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /invoiceLineItems/{itemId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /serviceItems/{itemId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /taxTypes/{typeId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /incomeTransactions/{transactionId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /expenseTransactions/{transactionId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /payableBills/{billId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /payrollRuns/{runId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
 
       match /details/{detailId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
       }
     }
 
     match /payrollRemittances/{remittanceId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /assets/{assetId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /equityTransactions/{transactionId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /companies/{companyId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /expenseCategories/{categoryId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /incomeCategories/{categoryId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
-    // ... remaining rules match the above for brevity but are fully included in the file ...
     match /industries/{industryId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /loans/{loanId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /leads/{leadId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /projectTemplates/{templateId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /inventoryItems/{itemId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /inventoryLogs/{logId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
 
     match /suppliers/{supplierId} {
-      allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow read: if isApprentice();
+      allow create, update, delete: if isMentor();
     }
     
     match /projects/{projectId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
     
     match /tasks/{taskId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
     
     match /ideas/{ideaId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
     
     match /fileManagerFolders/{folderId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
 
     match /files/{fileId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
     
     match /crmActions/{actionId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
     
     match /payrollWorkers/{workerId} {
-        allow read: if isViewer();
-        allow create, update, delete: if isEditor();
+        allow read: if isApprentice();
+        allow create, update, delete: if isMentor();
     }
 
     match /leaveRequests/{leaveRequestId} {
-      allow create: if isEditor() || isOwner(request.resource.data.workerId);
-      allow read: if isViewer() || isOwner(resource.data.workerId);
-      allow update: if isEditor();
-      allow delete: if isEditor() || isOwner(resource.data.workerId);
+      allow create: if isMentor() || isOwner(request.resource.data.workerId);
+      allow read: if isApprentice() || isOwner(resource.data.workerId);
+      allow update: if isMentor();
+      allow delete: if isMentor() || isOwner(resource.data.workerId);
     }
 
     match /timeLogs/{timeLogId} {
-      allow create: if isEditor() || isOwner(request.resource.data.workerId);
-      allow read: if isViewer() || isOwner(resource.data.workerId);
-      allow update, delete: if isEditor() || isOwner(resource.data.workerId);
+      allow create: if isMentor() || isOwner(request.resource.data.workerId);
+      allow read: if isApprentice() || isOwner(resource.data.workerId);
+      allow update, delete: if isMentor() || isOwner(resource.data.workerId);
       
       match /locations/{locationId} {
-        allow read: if isViewer() || isOwner(resource.data.workerId);
-        allow create: if isEditor() || isOwner(request.resource.data.workerId);
+        allow read: if isApprentice() || isOwner(resource.data.workerId);
+        allow create: if isMentor() || isOwner(request.resource.data.workerId);
       }
     }
 
@@ -246,7 +250,7 @@ service cloud.firestore {
     
     match /feedback/{feedbackId} {
       allow read: if isAdmin();
-      allow create: if isViewer();
+      allow create: if isApprentice();
       allow update, delete: if isAdmin();
     }
 

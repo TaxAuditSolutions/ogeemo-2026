@@ -11,8 +11,26 @@
         "photoURL": { "type": "string", "format": "uri" },
         "employeeNumber": { "type": "string", "description": "Unique identifier for the user (User ID)." },
         "notes": { "type": "string", "description": "General notes about the user." },
-        "role": { "type": "string", "enum": ["admin", "editor", "viewer", "none"], "description": "User authority level: admin (Full), editor (Read/Edit), viewer (Read Only), none (No Access)." }
+        "role": { "type": "string", "enum": ["Apprentice", "Mentor_Apprentice", "Certified_Mentor", "admin"], "description": "Membership status: Apprentice (Default), Mentor_Apprentice, Certified_Mentor, or admin." },
+        "is_mentor_certified": { "type": "boolean", "default": false },
+        "mentor_shield_issued_date": { "type": "string", "format": "date-time", "nullable": true },
+        "price_lock_status": { "type": "boolean", "default": true },
+        "contactId": { "type": "string" }
       }
+    },
+    "MentorReview": {
+      "title": "Mentor Review",
+      "description": "A mediation node for resolving community disputes regarding mentor guidance.",
+      "type": "object",
+      "properties": {
+        "requester_id": { "type": "string" },
+        "target_mentor_id": { "type": "string" },
+        "dispute_description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "resolved", "dismissed"], "default": "pending" },
+        "resolution_notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["requester_id", "target_mentor_id", "dispute_description"]
     },
     "Contact": {
         "title": "Contact",
@@ -50,82 +68,6 @@
             "notes": { "type": "string" }
         },
         "required": ["name", "userId", "folderId"]
-    },
-    "ContactFolder": {
-        "title": "Contact Folder",
-        "description": "Hierarchical organization for identities.",
-        "type": "object",
-        "properties": {
-            "name": { "type": "string" },
-            "parentId": { "type": "string" },
-            "userId": { "type": "string" },
-            "isSystem": { "type": "boolean", "description": "Flag for protected structural folders (Clients, Workers, etc.)" }
-        },
-        "required": ["name", "userId"]
-    },
-    "InternalAccount": {
-        "title": "Internal Account",
-        "description": "Represents a bank account, credit card, or cash fund belonging to the business.",
-        "type": "object",
-        "properties": {
-            "name": { "type": "string" },
-            "type": { "type": "string", "enum": ["Bank", "Credit Card", "Cash", "Other"] },
-            "userId": { "type": "string" }
-        },
-        "required": ["name", "type", "userId"]
-    },
-    "Invoice": {
-        "title": "Invoice",
-        "description": "Represents an invoice for a client.",
-        "type": "object",
-        "properties": {
-            "invoiceNumber": { "type": "string" },
-            "businessNumber": { "type": "string" },
-            "companyName": { "type": "string" },
-            "contactId": { "type": "string" },
-            "supplierId": { "type": "string" },
-            "originalAmount": { "type": "number" },
-            "amountPaid": { "type": "number" },
-            "dueDate": { "type": "string", "format": "date-time" },
-            "invoiceDate": { "type": "string", "format": "date-time" },
-            "status": { "type": "string", "enum": ["outstanding", "paid", "partially_paid", "overdue"] },
-            "notes": { "type": "string" },
-            "taxType": { "type": "string" },
-            "userId": { "type": "string" }
-        },
-        "required": ["invoiceNumber", "companyName", "contactId", "originalAmount", "amountPaid", "dueDate", "invoiceDate", "status", "userId"]
-    },
-    "IncomeTransaction": {
-        "title": "Income Transaction",
-        "description": "Records an income transaction in the General Ledger.",
-        "type": "object",
-        "properties": {
-            "date": { "type": "string", "format": "date" },
-            "company": { "type": "string" },
-            "description": { "type": "string" },
-            "totalAmount": { "type": "number" },
-            "incomeCategory": { "type": "string" },
-            "depositedTo": { "type": "string" },
-            "paymentMethod": { "type": "string" },
-            "userId": { "type": "string" }
-        },
-        "required": ["date", "company", "totalAmount", "incomeCategory", "userId"]
-    },
-    "ExpenseTransaction": {
-        "title": "Expense Transaction",
-        "description": "Records an expense transaction in the General Ledger.",
-        "type": "object",
-        "properties": {
-            "date": { "type": "string", "format": "date" },
-            "company": { "type": "string" },
-            "description": { "type": "string" },
-            "totalAmount": { "type": "number" },
-            "category": { "type": "string" },
-            "paidFrom": { "type": "string" },
-            "paymentMethod": { "type": "string" },
-            "userId": { "type": "string" }
-        },
-        "required": ["date", "company", "totalAmount", "category", "userId"]
     }
   },
   "auth": {
@@ -136,25 +78,9 @@
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Authority registry."
     },
-    "/contacts/{contactId}": {
-        "schema": { "$ref": "#/entities/Contact" },
-        "description": "Unified identity registry."
-    },
-    "/contactFolders/{folderId}": {
-        "schema": { "$ref": "#/entities/ContactFolder" },
-        "description": "Identity hierarchy."
-    },
-    "/invoices/{invoiceId}": {
-        "schema": { "$ref": "#/entities/Invoice" },
-        "description": "A/R records."
-    },
-    "/incomeTransactions/{transactionId}": {
-        "schema": { "$ref": "#/entities/IncomeTransaction" },
-        "description": "Income ledger."
-    },
-    "/expenseTransactions/{transactionId}": {
-        "schema": { "$ref": "#/entities/ExpenseTransaction" },
-        "description": "Expense ledger."
+    "/mentor_reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/MentorReview" },
+      "description": "Mediation registry."
     }
   }
 }

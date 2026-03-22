@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { TermsDialog } from '@/components/auth/terms-dialog';
 import { updateUserProfile } from '@/services/user-profile-service';
+import { MEMBERSHIP_FEE } from '@/lib/constants';
 
 const registerSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -58,17 +59,19 @@ export default function RegisterPage() {
         
         await updateProfile(user, { displayName: formData.name });
         
-        // The default role for new sign-ups is now set to 'editor' (Read/Edit) 
-        // to prevent unauthorized administrative escalation.
+        // --- High-Fidelity Apprentice Provisioning ---
         await updateUserProfile(user.uid, formData.email, {
             displayName: formData.name,
-            role: 'editor', 
+            role: 'Apprentice', // Mandated default
             companyName: formData.businessName,
+            is_mentor_certified: false,
+            mentor_shield_issued_date: null,
+            price_lock_status: true, // Hard-coded at $25.00 level
         });
 
         toast({
-            title: "Welcome to Ogeemo!",
-            description: "Your account has been created successfully.",
+            title: "Welcome Home to Ogeemo!",
+            description: `Your account has been created. Monthly membership: $${MEMBERSHIP_FEE}.00`,
         });
         
     } catch (error: any) {
@@ -94,9 +97,9 @@ export default function RegisterPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <UserPlus className="h-8 w-8 text-primary" />
         </div>
-        <CardTitle className="text-2xl font-headline font-semibold">Create Your Ogeemo Account</CardTitle>
+        <CardTitle className="text-2xl font-headline font-semibold">Join the Ogeemo Circle</CardTitle>
         <CardDescription>
-            Enter your information below to create your account. <span className="font-bold text-primary block mt-1">First 30 days is free!</span>
+            One Membership. One Community. <span className="font-bold text-primary block mt-1">Starting at ${MEMBERSHIP_FEE}.00 / Month</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +113,7 @@ export default function RegisterPage() {
                     By creating an account, you agree to our <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>.
                 </p>
                 <div className="bg-primary/5 border border-primary/20 rounded-md p-3 text-center mb-4">
-                    <p className="text-sm font-semibold text-primary">No credit card required to start your free trial.</p>
+                    <p className="text-sm font-semibold text-primary">No tiers. No traps. Locked for life.</p>
                 </div>
                 <Button type="submit" className="w-full">
                     Create Account
@@ -120,7 +123,7 @@ export default function RegisterPage() {
       </CardContent>
        <CardFooter className="justify-center text-sm">
         <p>
-            Already have an account?{' '}
+            Already a member?{' '}
             <Link href="/login" className="font-medium text-primary hover:underline">
                 Sign in
             </Link>

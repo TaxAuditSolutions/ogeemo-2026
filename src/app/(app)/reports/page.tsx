@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -23,15 +22,18 @@ import {
     Briefcase,
     Activity,
     Users,
-    X
+    X,
+    Database,
+    ShieldCheck
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ReportCardProps {
     title: string;
     description: string;
     icon: React.ElementType;
     href: string;
-    category: 'Operations' | 'Finance' | 'Intelligence';
+    category: 'Operations' | 'Finance' | 'Intelligence' | 'Freedom';
 }
 
 const ReportCard = ({ title, description, icon: Icon, href, category }: ReportCardProps) => (
@@ -51,7 +53,7 @@ const ReportCard = ({ title, description, icon: Icon, href, category }: ReportCa
         <CardFooter className="mt-auto pt-0">
             <Button asChild variant="ghost" className="w-full justify-between hover:bg-primary/5 hover:text-primary p-0 h-auto font-bold uppercase text-[10px] tracking-widest">
                 <Link href={href}>
-                    Generate Report
+                    {category === 'Freedom' ? 'Access Data' : 'Generate Report'}
                     <ArrowRight className="h-3 w-3" />
                 </Link>
             </Button>
@@ -68,8 +70,6 @@ const Badge = ({ children, variant, className }: any) => (
         {children}
     </div>
 );
-
-import { cn } from '@/lib/utils';
 
 export default function ReportsHubPage() {
     return (
@@ -165,6 +165,23 @@ export default function ReportsHubPage() {
                             icon={Search}
                             href="/reports/search"
                             category="Intelligence"
+                        />
+                    </div>
+                </section>
+
+                {/* Data Portability Mandate Section */}
+                <section className="space-y-6">
+                    <div className="flex items-center gap-2 border-b pb-2 border-primary/20">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
+                        <h2 className="text-xl font-bold uppercase tracking-widest text-primary/80">Data Portability (Anti-Greed)</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <ReportCard 
+                            title="Export My Data"
+                            description="Absolute ownership of your evidence. Download your full BKS ledger and vault at any time."
+                            icon={Database}
+                            href="/backup"
+                            category="Freedom"
                         />
                     </div>
                 </section>

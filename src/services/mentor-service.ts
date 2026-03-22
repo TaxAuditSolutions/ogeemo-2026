@@ -1,4 +1,3 @@
-
 'use client';
 
 /**
@@ -46,4 +45,7 @@ export async function submitMentorReview(data: Omit<MentorReview, 'status' | 'cr
         }
         throw error;
     });
+    
+    // Note: In a production node, a Cloud Function would trigger an email 
+    // notification to Dan White and the Lead Mentor Team upon document creation.
 }

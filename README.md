@@ -3,15 +3,34 @@
 ## Current Project Status: **Operational - V1.2 (Community Edition)**
 
 ### Recent Orchestrations:
-- **Branding Sync**: Synchronized all header and logo nodes to the **High-Fidelity Black** aesthetic for ecosystem-wide consistency.
-- **Pricing V2 (The Collective Node)**: Implemented the "Anti-Greed" pricing structure. 
-    - **Solo Membership**: $20/mo (Includes Full Ogeemo).
-    - **Team Membership**: $30/mo (Includes Full Ogeemo + Up to Ten Team User Seats).
-- **Member's Manifesto**: Integrated the Ogeemo Creed into the pricing funnel to establish ethical moats.
-- **Capability Matrix**: Restored the competitive parity table to demonstrate superior value vs legacy giants.
-
-### System Notice:
-- **Sunset Protocol**: The platform provider has issued a sunset notice for March 22, 2027. The Ogeemo roadmap includes a migration node to **Google AI Studio / Google Antigravity** within this 12-month window to ensure zero service interruption for our collective.
+- **Membership Refinement**: Implemented the "Scale, Not Features" model. Everyone gets the Full Ogeemo; price scales with team size.
+- **Pricing Node**: Updated Solo Membership to $20/mo and Team Membership to $30/mo (up to Ten seats).
+- **Branding Sync**: High-Fidelity Black aesthetic applied across all primary headers and logos.
+- **Capability Matrix**: Restored competitive parity table vs. legacy giants.
 
 ---
-*Page last updated Mar 19, 2026 12:45 AM EST*
+
+## 🚀 Platform Evolution Roadmap (2026-2027)
+
+The platform provider has issued a sunset notice for **March 22, 2027**. Given the complexity of the Ogeemo Spider Web, we have established the following migration strategy:
+
+### Migration Risk Assessment
+
+| Aspect | Status | Strategy |
+| :--- | :--- | :--- |
+| **BKS Accounting** | High Complexity | Stabilize all ledger logic *before* export to ensure data integrity. |
+| **AI Dispatch** | Rapid Evolution | Stay in Studio to leverage integrated Genkit testing for as long as possible. |
+| **Security Rules** | Critical | Finalize the "Audit Shield" rules here; export them as a primary security manifest. |
+
+### Timeline:
+1.  **Mar 2026 - Sept 2026**: **The Forge Phase**. Finalize all core modules (Payroll, A/R, A/P, AI Ingestion) within the Studio.
+2.  **Oct 2026 - Dec 2026**: **The Decoupling Phase**. Prepare the codebase for standalone Next.js deployment.
+3.  **Jan 2027 - Mar 2027**: **The Pivot**. Migration to Google AI Studio / Google Antigravity. Zero service interruption for the collective.
+
+### Benefits of our 12-Month Runway:
+- **Stability**: No rushing complex accounting logic.
+- **Cost Control**: Leverage the Studio's free prototyping tier until the commercial engine is ready.
+- **Fidelity**: Use this time to build the "Black Box of Evidence" to its highest standard.
+
+---
+*Page last updated Mar 19, 2026 1:15 AM EST*

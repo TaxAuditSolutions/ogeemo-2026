@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SiteHeader } from "@/components/landing/header";
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { MEMBERSHIP_FEE } from '@/lib/constants';
+import { Separator } from '@/components/ui/separator';
 
 export default function PricingPage() {
   return (

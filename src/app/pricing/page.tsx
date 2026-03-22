@@ -60,7 +60,7 @@ export default function PricingPage() {
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
                     <Link href="/register">Join the Community</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/40 hover:bg-white/10 text-white bg-transparent hover:text-white transition-all">
+                <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl border-white/40 hover:bg-white/10 text-white bg-transparent hover:text-white transition-all shadow-none">
                     <Link href="#ethics-comparison">Compare Our Ethics</Link>
                 </Button>
             </div>
@@ -86,7 +86,7 @@ export default function PricingPage() {
             <div className="text-center mb-16 space-y-4">
                 <h2 className="text-3xl md:text-5xl font-bold font-headline text-slate-900">One Membership. The Full Ogeemo.</h2>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto italic">
-                    "We don't gate features. We scale with your success."
+                    "We don't gate features. We scale with your impact."
                 </p>
             </div>
 
@@ -149,7 +149,7 @@ export default function PricingPage() {
                         <div className="mt-4 flex flex-col">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-primary">$30</span>
-                                <span className="text-muted-foreground">/month</span>
+                                <span className="text-muted-foreground">/month (Includes membership)</span>
                             </div>
                             <p className="text-xs text-primary font-bold mt-2">
                                 The Full Ogeemo + Team Architecture.

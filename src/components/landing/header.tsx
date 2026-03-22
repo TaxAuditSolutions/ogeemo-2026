@@ -23,7 +23,7 @@ export function SiteHeader() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 flex">
           <Link href="/about" className="flex items-center" aria-label="Go to About Page">
-            <Logo />
+            <Logo className="text-black" />
           </Link>
         </div>
         <nav className="flex flex-1 items-center space-x-1">

@@ -77,9 +77,9 @@ export default function DocumentManagerInstructionsPage() {
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-9">
                                         <p>Go to your <a href="https://drive.google.com/drive/my-drive" target="_blank" className="text-primary underline">Google Drive</a>.</p>
                                         <ol>
-                                            <li>Click <strong>(+ New)</strong> > <strong>New Folder</strong>.</li>
+                                            <li>Click <strong>(+ New)</strong> &rarr; <strong>New Folder</strong>.</li>
                                             <li>Name it <strong>"Ogeemo"</strong> and click Create.</li>
-                                            <li>Open this folder so your path reads: <code>My Drive > Ogeemo</code>.</li>
+                                            <li>Open this folder so your path reads: <code>My Drive &rarr; Ogeemo</code>.</li>
                                         </ol>
                                     </div>
                                 </AccordionContent>
@@ -121,7 +121,7 @@ export default function DocumentManagerInstructionsPage() {
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-9">
                                         <p>Now, link each folder in Ogeemo to its mirror in GDrive:</p>
                                         <ol>
-                                            <li><strong>In GDrive:</strong> Right-click a folder > <strong>Share</strong> > <strong>Copy Link</strong>.</li>
+                                            <li><strong>In GDrive:</strong> Right-click a folder &rarr; <strong>Share</strong> &rarr; <strong>Copy Link</strong>.</li>
                                             <li><strong>In Ogeemo:</strong> Click the 3-dot menu <MoreVertical className="inline h-3 w-3"/> next to the matching folder.</li>
                                             <li>Select <strong>"Link Google Drive Folder"</strong> and paste the link.</li>
                                         </ol>

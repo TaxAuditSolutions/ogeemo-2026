@@ -14,11 +14,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Bot, Search, Settings } from 'lucide-react';
+import { LayoutDashboard, Bot, Search, Settings, BrainCircuit } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 
-export default function AppLayout({ children }: { children: React.Node }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <DndProviderWrapper>
@@ -52,52 +52,34 @@ export default function AppLayout({ children }: { children: React.Node }) {
                    </Link>
                  </div>
 
-                 {/* Center Column: Intelligence Nodes */}
-                 <div className="flex items-center justify-center gap-2">
+                  {/* Center Column: Intelligence Nodes */}
+                  <div className="flex items-center justify-center gap-4">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
+                          <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-primary shadow-sm hover:shadow-primary/20 hover:scale-105 transition-all border border-primary/20">
                             <Link href="/ai-dispatch">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                    <span className="font-bold uppercase text-xs">AI Dispatch</span>
-                                </div>
+                                <BrainCircuit className="h-5 w-5" />
+                                <span className="sr-only">Ogeemo AI</span>
                             </Link>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Open Ogeemo AI Dispatch</p>
+                        <TooltipContent side="bottom" className="font-headline font-bold uppercase text-[10px] tracking-widest">
+                          Ogeemo Dispatch
                         </TooltipContent>
                       </Tooltip>
                       
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
-                            <Link href="/reports/search">
-                              <Search className="h-5 w-5" />
-                              <span className="sr-only">Search</span>
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Global Search</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button asChild className="h-9 px-4 bg-card text-card-foreground hover:bg-card/90">
+                          <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-muted-foreground shadow-sm hover:text-primary hover:shadow-primary/10 hover:scale-105 transition-all border border-muted/20">
                             <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">
-                                <div className="flex items-center gap-2">
-                                    <Bot className="h-4 w-4" />
-                                    <span className="font-bold">Gemini AI</span>
-                                </div>
+                                <Bot className="h-5 w-5" />
+                                <span className="sr-only">Google Gemini</span>
                             </a>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Open Gemini AI</p>
+                        <TooltipContent side="bottom" className="font-headline font-bold uppercase text-[10px] tracking-widest">
+                          Google AI
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

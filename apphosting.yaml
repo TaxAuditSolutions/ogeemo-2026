@@ -10,5 +10,7 @@ run:
 secretEnvironmentVariables:
   - key: FIREBASE_SERVICE_ACCOUNT_KEY
     secret: firebase-service-account-key
+  - key: GEMINI_API_KEY
+    secret: gemini-api-key
 # Pin to a specific version of Node.js
 runtime: nodejs20

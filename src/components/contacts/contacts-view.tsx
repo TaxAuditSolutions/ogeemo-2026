@@ -53,6 +53,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -349,7 +350,7 @@ export function ContactsView() {
             toast({ title: "Contact Moved" });
         } catch (error: any) { toast({ variant: "destructive", title: "Move Failed", description: error.message }); }
     } else {
-        if (item.parentId === newFolderId) return;
+        if ('type' in item && item.type === 'folder' && item.parentId === newFolderId) return;
         const folder = folders.find(f => f.id === item.id);
         if (folder?.isSystem) { toast({ variant: 'destructive', title: 'Protected Folder', description: 'System folders cannot be moved.' }); return; }
         try {
@@ -525,7 +526,7 @@ export function ContactsView() {
       
       {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
-      <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
+      <AlertDialog open={!!folderToDelete} onOpenChange={(open) => !open && setFolderToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Delete Folder?</AlertDialogTitle>
@@ -537,7 +538,7 @@ export function ContactsView() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={!!contactToDelete} onOpenChange={setContactToDelete}>
+      <AlertDialog open={!!contactToDelete} onOpenChange={(open) => !open && setContactToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Delete Contact?</AlertDialogTitle>

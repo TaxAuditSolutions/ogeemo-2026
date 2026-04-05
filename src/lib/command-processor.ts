@@ -208,6 +208,7 @@ export function processCommand(input: string): CommandResult {
         }
     }
 
+    /* 
     // Search: "Find", "Search", "Lookup"
     if (['find', 'search', 'lookup'].includes(verb) && remaining) {
         const query = cleanParam(remaining);
@@ -219,6 +220,7 @@ export function processCommand(input: string): CommandResult {
             category: 'Intelligence'
         };
     }
+    */
 
     // Live State: "Track", "Time", "Start"
     if (['track', 'time', 'start'].includes(verb) && remaining) {

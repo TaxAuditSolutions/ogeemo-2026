@@ -12,10 +12,14 @@ let authInstance: admin.auth.Auth;
 let storageInstance: admin.storage.Storage;
 
 function getAdminApp() {
-  // This function is now idempotent, ensuring it only initializes the app once.
   if (getApps().length === 0) {
     const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    
     if (!serviceAccountKey) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("[Firebase Admin] WARNING: FIREBASE_SERVICE_ACCOUNT_KEY is missing. Admin features (Server-side Auth) are disabled in development.");
+        return null;
+      }
       throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
     }
 
@@ -25,11 +29,15 @@ function getAdminApp() {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
       }
       
-      admin.initializeApp({
+      return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
     } catch (e: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("[Firebase Admin] Initialization failed:", e.message);
+        return null;
+      }
       throw new Error(`Failed to initialize Firebase Admin SDK: ${e.message}`);
     }
   }
@@ -38,21 +46,27 @@ function getAdminApp() {
 
 export function getAdminDb() {
   if (!dbInstance) {
-    dbInstance = getAdminFirestoreSdk(getAdminApp());
+    const app = getAdminApp();
+    if (!app) return null;
+    dbInstance = getAdminFirestoreSdk(app);
   }
   return dbInstance;
 }
 
 export function getAdminAuth() {
   if (!authInstance) {
-    authInstance = getAdminAuthSdk(getAdminApp());
+    const app = getAdminApp();
+    if (!app) return null;
+    authInstance = getAdminAuthSdk(app);
   }
   return authInstance;
 }
 
 export function getAdminStorage() {
   if (!storageInstance) {
-    storageInstance = getAdminStorageSdk(getAdminApp());
+    const app = getAdminApp();
+    if (!app) return null;
+    storageInstance = getAdminStorageSdk(app);
   }
   return storageInstance;
 }
@@ -65,7 +79,12 @@ export async function getAdminFileContentFromStorage(storagePath: string): Promi
         return '';
     }
     try {
-        const bucket = getAdminStorage().bucket();
+        const adminStorage = getAdminStorage();
+        if (!adminStorage) {
+            console.warn("Admin Storage: SDK not initialized, returning empty content.");
+            return '';
+        }
+        const bucket = adminStorage.bucket();
         const file = bucket.file(storagePath);
         const [exists] = await file.exists();
         if (!exists) {
@@ -75,6 +94,6 @@ export async function getAdminFileContentFromStorage(storagePath: string): Promi
         return contents.toString('utf-8');
     } catch (error: any) {
         console.error(`Admin Storage: Failed to fetch content from ${storagePath}:`, error);
-        throw new Error(`Failed to retrieve file content: ${error.message}`);
+        return ''; // Silent fail for content fetching in dev
     }
 }

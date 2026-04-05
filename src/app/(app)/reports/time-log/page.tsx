@@ -100,7 +100,8 @@ function WorkerTimeLogReportContent() {
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
     
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isStartFilterOpen, setIsStartFilterOpen] = useState(false);
     const [isEndFilterOpen, setIsEndFilterOpen] = useState(false);
 
@@ -194,9 +195,9 @@ function WorkerTimeLogReportContent() {
             combined = combined.filter(e => e.workerId === selectedWorkerId);
         }
 
-        if (dateRange?.from) {
-            const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-            combined = combined.filter(e => isWithinInterval(e.startTime, { start: startOfDay(dateRange.from!), end: rangeEnd }));
+        if (startDate) {
+            const rangeEnd = endDate ? endOfDay(endDate) : endOfDay(startDate);
+            combined = combined.filter(e => isWithinInterval(e.startTime, { start: startOfDay(startDate), end: rangeEnd }));
         }
 
         if (sortConfig) {
@@ -222,7 +223,7 @@ function WorkerTimeLogReportContent() {
         }
 
         return combined;
-    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, dateRange, user, adminName, sortConfig]);
+    }, [timeLogs, tasks, workers, contacts, selectedWorkerId, startDate, endDate, user, adminName, sortConfig]);
 
     const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
     const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
@@ -354,7 +355,7 @@ function WorkerTimeLogReportContent() {
                                     </PopoverContent>
                                 </Popover>
                            </div>
-                           <Button variant="outline" className="bg-white" onClick={() => { setSelectedWorkerId(null); setDateRange(undefined); }} disabled={!selectedWorkerId && !dateRange}>
+                           <Button variant="outline" className="bg-white" onClick={() => { setSelectedWorkerId(null); setStartDate(undefined); setEndDate(undefined); }} disabled={!selectedWorkerId && !startDate && !endDate}>
                                 <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                             </Button>
                         </div>

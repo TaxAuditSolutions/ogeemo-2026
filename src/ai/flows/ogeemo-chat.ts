@@ -329,7 +329,7 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     try {
         const result = await ai.generate({
-          model: 'googleai/gemini-2.5-flash',
+          model: 'googleai/gemini-2.0-flash',
           messages: scrubbedMessages,
           tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
           context: { userId, localContext },

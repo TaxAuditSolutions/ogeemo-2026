@@ -20,6 +20,10 @@ export async function getCurrentUserId(): Promise<string | null> {
     }
 
     const adminAuth = getAdminAuth();
+    if (!adminAuth) {
+        console.warn("Auth Action: Admin SDK not initialized. Returning unauthenticated state.");
+        return null;
+    }
     
     // Signature verification only (checkRevoked: false) for maximum performance 
     // and resilience in development/prototyping environments.

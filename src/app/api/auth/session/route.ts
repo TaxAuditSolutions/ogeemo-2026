@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
         
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const adminAuth = getAdminAuth();
+        if (!adminAuth) {
+            console.warn("[Auth API] Admin Auth not initialized. Sessions are disabled.");
+            return NextResponse.json({ error: 'Auth service unavailable in development' }, { status: 401 });
+        }
         const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
         
         const options = {

@@ -1,6 +1,7 @@
 'use client';
 
-import { MoreVertical, Plus, LoaderCircle, Trash2, Pencil, KeyRound } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, Pencil, KeyRound, Info } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,7 +114,12 @@ export function UserListView() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="space-y-1">
-              <CardTitle>Authenticated Users</CardTitle>
+              <CardTitle className="flex items-center">
+                Authenticated Users 
+                <Link href="/user-manager/instructions">
+                    <Info className="h-4 w-4 ml-2 text-muted-foreground hover:text-primary transition-colors" />
+                </Link>
+              </CardTitle>
               <CardDescription>
                 Review and manage all user profile nodes.
               </CardDescription>

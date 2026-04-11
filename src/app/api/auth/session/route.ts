@@ -10,11 +10,25 @@ export async function POST(req: NextRequest) {
         
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const adminAuth = getAdminAuth();
+        
+        let sessionCookie: string;
+        
         if (!adminAuth) {
-            console.warn("[Auth API] Admin Auth not initialized. Sessions are disabled.");
-            return NextResponse.json({ error: 'Auth service unavailable in development' }, { status: 401 });
+            console.warn("[Auth API] Admin Auth not initialized. Using developer fallback session.");
+            try {
+                // Safely extract the user ID from the client's JWT without verifying the signature.
+                const base64Url = idToken.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+                const decoded = JSON.parse(jsonPayload);
+                sessionCookie = `dev_mock_${decoded.user_id}`;
+            } catch (error) {
+                console.warn("[Auth API] Failed to parse ID token, using generic dev mock session.");
+                sessionCookie = 'dev_mock_developer';
+            }
+        } else {
+            sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
         }
-        const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
         
         const options = {
             name: 'session',

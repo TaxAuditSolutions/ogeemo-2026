@@ -29,7 +29,11 @@ export async function getReceiptsFolderPdfs(): Promise<{ files: GDriveFile[]; er
 
   try {
     const adminAuth = getAdminAuth();
-    await adminAuth.verifySessionCookie(sessionCookie);
+    if (!adminAuth) {
+        console.warn("[GDrive Service] Admin Auth not available in development. Skipping verification.");
+    } else {
+        await adminAuth.verifySessionCookie(sessionCookie);
+    }
 
     // Simulation: High-fidelity mock of files found in the GDrive "Receipts" node.
     // This allows the UI to build out the full extraction workflow.

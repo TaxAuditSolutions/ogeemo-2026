@@ -19,7 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
-import { getUserProfile } from '@/services/user-profile-service';
+import { getUserProfile } from '@/core/user-profile-service';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },

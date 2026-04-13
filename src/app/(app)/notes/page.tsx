@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LoaderCircle, Plus, MoreVertical, Edit, Trash2, FileText, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getFiles, deleteFiles, updateFile, type FileItem } from '@/services/file-service';
-import { getFolders, type FolderItem } from '@/services/file-manager-folders';
+import { getFiles, deleteFiles, updateFile, type FileItem } from '@/core/file-service';
+import { getFolders, type FolderItem } from '@/core/file-manager-folders';
 import { format } from 'date-fns';
 import {
   DropdownMenu,

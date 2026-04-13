@@ -5,7 +5,7 @@ import { createContext, useState, useContext, ReactNode, useEffect, useCallback 
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseServices } from '@/firebase';
-import { getUserProfile, updateUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile } from '@/core/user-profile-service';
 
 interface AuthContextType {
   user: User | null;

@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers, updateUserProfile, type UserProfile, type UserRole, deleteUserProfile } from '@/services/user-profile-service';
+import { getUsers, updateUserProfile, type UserProfile, type UserRole, deleteUserProfile } from '@/core/user-profile-service';
 import { AddUserDialog } from '@/components/data/add-user-dialog';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { cn } from '@/lib/utils';

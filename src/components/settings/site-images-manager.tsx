@@ -21,7 +21,7 @@ import { LoaderCircle, Image as ImageIcon, Upload, Save, Edit, Trash2 } from 'lu
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { uploadSiteImageClient, deleteSiteImageClient } from '@/services/file-service';
+import { uploadSiteImageClient, deleteSiteImageClient } from '@/core/file-service';
 
 export function SiteImagesManager() {
   const { images, isLoading: isLoadingImages, loadImages } = useSiteImages();

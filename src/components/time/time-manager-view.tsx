@@ -39,7 +39,7 @@ import { type Contact } from '@/services/contact-service';
 import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
 import { getContacts } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/core/accounting-service';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -75,7 +75,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Checkbox } from '@/components/ui/checkbox';

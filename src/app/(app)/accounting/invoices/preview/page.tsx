@@ -9,7 +9,7 @@ import { Logo } from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
 import { Printer, ArrowLeft, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import type { UserProfile } from '@/services/user-profile-service';
+import type { UserProfile } from '@/core/user-profile-service';
 
 const INVOICE_PREVIEW_KEY = 'invoicePreviewData';
 

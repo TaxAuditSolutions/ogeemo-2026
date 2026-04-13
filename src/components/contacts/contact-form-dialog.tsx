@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { type Contact } from '@/services/contact-service';
 import { type FolderData } from '@/services/contact-folder-service';
-import { type Company } from '@/services/accounting-service';
+import { type Company } from '@/core/accounting-service';
 import { type Industry } from '@/services/industry-service';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addContact, updateContact } from '@/services/contact-service';

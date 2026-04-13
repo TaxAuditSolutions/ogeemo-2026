@@ -32,7 +32,7 @@ import { useAuth } from '@/context/auth-context';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import firebaseConfig from '@/lib/config';
-import { updateUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { updateUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

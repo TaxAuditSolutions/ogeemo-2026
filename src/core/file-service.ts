@@ -20,7 +20,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { getFirebaseServices } from '@/firebase';
 import type { FileItem as FileItemType, FolderItem } from '@/data/files';
-import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/services/file-manager-folders';
+import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/core/file-manager-folders';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
 

@@ -42,7 +42,7 @@ import { AddUserDialog } from "./add-user-dialog";
 import { ChangePasswordDialog } from "./change-password-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getUsers, deleteUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUsers, deleteUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { format } from "date-fns";
 
 export function UserListView() {

@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getAdminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/core/firebase-admin';
 
 /**
  * Retrieves the current authenticated user's UID from the session cookie.

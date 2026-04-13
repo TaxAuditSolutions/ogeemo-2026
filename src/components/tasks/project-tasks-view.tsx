@@ -47,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getProjects, getTasksForProject, addProject, updateTask, updateTaskPositions, deleteTask, getProjectById, type Project, type ProjectStep, type TaskStatus } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
-import { archiveTaskAsFile } from '@/services/file-service';
+import { archiveTaskAsFile } from '@/core/file-service';
 import { TaskColumn } from './TaskColumn';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';

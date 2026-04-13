@@ -68,7 +68,7 @@ import {
     type IncomeCategory,
     type ExpenseCategory,
     type TaxType
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { format, isValid, differenceInDays, parse, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

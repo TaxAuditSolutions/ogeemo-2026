@@ -35,7 +35,7 @@ import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useAuth } from '@/context/auth-context';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { 

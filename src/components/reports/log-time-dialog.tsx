@@ -31,7 +31,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { CustomCalendar } from '../ui/custom-calendar';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 
 interface LogTimeDialogProps {

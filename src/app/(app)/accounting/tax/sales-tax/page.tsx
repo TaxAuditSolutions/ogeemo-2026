@@ -13,7 +13,7 @@ import { Calendar as CalendarIcon, LoaderCircle, FileDigit, FilterX } from 'luci
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getIncomeTransactions, getExpenseTransactions, addExpenseTransaction, type IncomeTransaction, type ExpenseTransaction } from '@/services/accounting-service';
+import { getIncomeTransactions, getExpenseTransactions, addExpenseTransaction, type IncomeTransaction, type ExpenseTransaction } from '@/core/accounting-service';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';

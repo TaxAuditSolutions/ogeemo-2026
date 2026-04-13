@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { getContacts, updateContact } from '@/services/contact-service';
-import { getFiles, updateFile } from '@/services/file-service';
+import { getFiles, updateFile } from '@/core/file-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoaderCircle } from 'lucide-react';

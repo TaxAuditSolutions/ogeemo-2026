@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getUserProfile, updateUserProfile, type PlanningRitual } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile, type PlanningRitual } from '@/core/user-profile-service';
 import { addMinutes, format, eachDayOfInterval, getDay, set, addDays, isWeekend, parseISO } from 'date-fns';
 import { LoaderCircle, Save, ArrowLeft, BrainCircuit, Calendar as CalendarIcon, X, Info } from 'lucide-react';
 import { addTask, deleteRitualTasks } from '@/services/project-service';

@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
 import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
-import { archiveTaskAsFile } from '@/services/file-service';
+import { archiveTaskAsFile } from '@/core/file-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';

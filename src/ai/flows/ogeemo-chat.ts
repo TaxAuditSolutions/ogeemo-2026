@@ -5,7 +5,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/core/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
 import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { getContacts } from '@/services/contact-service';

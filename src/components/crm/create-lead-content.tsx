@@ -16,7 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { type Contact, getContacts, getContactById, addContact, updateContact } from '@/services/contact-service';
 import { ensureSystemFolders, addFolder, type FolderData } from '@/services/contact-folder-service';
-import { type Company, getCompanies } from '@/services/accounting-service';
+import { type Company, getCompanies } from '@/core/accounting-service';
 import { type Industry, getIndustries } from '@/services/industry-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';

@@ -32,7 +32,7 @@ import { getFolders as getContactFolders, type FolderData } from '@/services/con
 import { addProject, type Project, type Event as TaskEvent } from '@/services/project-service';
 import ContactFormDialog from "../contacts/contact-form-dialog";
 import { NewTaskDialog } from '../tasks/NewTaskDialog';
-import { getCompanies, type Company } from "@/services/accounting-service";
+import { getCompanies, type Company } from "@/core/accounting-service";
 import { getIndustries, type Industry } from "@/services/industry-service";
 import { Label } from "@/components/ui/label";
 

@@ -51,7 +51,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getInventoryItems, type Item as InventoryItem, processSaleTransaction } from '@/services/inventory-service';
-import { getTaxTypes, type TaxType } from '@/services/accounting-service';
+import { getTaxTypes, type TaxType } from '@/core/accounting-service';
 import { ManageTaxTypesDialog } from '@/components/accounting/manage-tax-types-dialog';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';

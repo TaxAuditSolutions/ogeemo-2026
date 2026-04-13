@@ -88,7 +88,7 @@ import {
     type Company,
     type TaxType,
     type InternalAccount
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { type Contact } from '@/services/contact-service';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 

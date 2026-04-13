@@ -18,7 +18,7 @@ import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { Contact } from '@/data/contacts';
-import { provisionWorkerDocumentNode } from './file-manager-folders';
+import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
 
 export type { Contact };
 

@@ -15,7 +15,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction } from '@/services/accounting-service';
+import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction } from '@/core/accounting-service';
 import { cn } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import type { DateRange } from 'react-day-picker';

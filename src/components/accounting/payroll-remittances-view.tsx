@@ -43,7 +43,7 @@ import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getRemittances, addRemittance, updateRemittance, deleteRemittance, type PayrollRemittance } from '@/services/payroll-service';
-import { addExpenseTransaction } from '@/services/accounting-service';
+import { addExpenseTransaction } from '@/core/accounting-service';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';

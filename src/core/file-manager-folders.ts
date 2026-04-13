@@ -17,7 +17,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { getFolders as getContactFolders } from './contact-folder-service';
+import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 
 export interface FolderItem {
   id: string;

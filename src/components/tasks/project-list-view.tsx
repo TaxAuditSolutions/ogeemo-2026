@@ -57,7 +57,7 @@ import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from "@/services/accounting-service";
+import { getCompanies, type Company } from "@/core/accounting-service";
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import MergeContactsDialog from '../contacts/MergeContactsDialog';

@@ -1,6 +1,6 @@
 'use server';
 
-import { getAdminDb, getAdminStorage } from '@/lib/firebase-admin';
+import { getAdminDb, getAdminStorage } from '@/core/firebase-admin';
 
 const DIALOG_SETTINGS_COLLECTION = 'dialogSettings';
 const FILES_COLLECTION = 'files';

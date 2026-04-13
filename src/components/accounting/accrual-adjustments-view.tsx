@@ -28,7 +28,7 @@ import {
   getPayableBills,
   type Invoice,
   type PayableBill,
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { format } from 'date-fns';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Separator } from '../ui/separator';

@@ -12,7 +12,7 @@ import { PreferencesCard } from "@/components/settings/preferences-card";
 import { VisualIdentityCard } from "@/components/settings/visual-identity-card";
 import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
-import { getUserProfile, updateUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";

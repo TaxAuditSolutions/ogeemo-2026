@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { type TaxType, addTaxType, updateTaxType, deleteTaxType } from '@/services/accounting-service';
+import { type TaxType, addTaxType, updateTaxType, deleteTaxType } from '@/core/accounting-service';
 import { useAuth } from '@/context/auth-context';
 import { ScrollArea } from '../ui/scroll-area';
 import { Plus, MoreVertical, Edit, Trash2, Check, Star } from 'lucide-react';

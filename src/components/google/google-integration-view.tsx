@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownAZ, ArrowUpZA, Save, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { getUserProfile, updateUserProfile } from "@/services/user-profile-service";
+import { getUserProfile, updateUserProfile } from "@/core/user-profile-service";
 import { DraggableAppButton } from "./DraggableAppButton";
 import Link from "next/link";
 import { allApps, type GoogleApp } from '@/lib/google-apps';

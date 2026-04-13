@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getIdeas, addIdea, deleteIdea, updateIdea } from '@/services/ideas-service';
+import { getIdeas, addIdea, deleteIdea, updateIdea } from '@/core/ideas-service';
 import { type Idea, type Project, type Event as TaskEvent } from '@/types/calendar-types';
-import { archiveIdeaAsFile } from '@/services/file-service';
+import { archiveIdeaAsFile } from '@/core/file-service';
 import { addProject, addTask } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';

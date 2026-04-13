@@ -48,7 +48,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import {
     getServiceItems, addServiceItem, updateServiceItem, deleteServiceItem, type ServiceItem, getTaxTypes, type TaxType,
-} from "@/services/accounting-service";
+} from "@/core/accounting-service";
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';

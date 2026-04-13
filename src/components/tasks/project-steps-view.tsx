@@ -54,7 +54,7 @@ import { type Event as TaskEvent } from '@/types/calendar-types';
 import { addMinutes } from 'date-fns';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { archiveTaskAsFile } from '@/services/file-service';
+import { archiveTaskAsFile } from '@/core/file-service';
 
 export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const [project, setProject] = useState<Project | null>(null);

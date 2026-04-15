@@ -3,7 +3,13 @@ import { getAdminAuth } from '@/core/firebase-admin';
 
 export async function POST(req: NextRequest) {
     try {
-        const { idToken } = await req.json();
+        const bodyText = await req.text();
+        if (!bodyText) {
+            return NextResponse.json({ error: 'Request body is empty.' }, { status: 400 });
+        }
+        
+        const { idToken } = JSON.parse(bodyText);
+        
         if (!idToken) {
             return NextResponse.json({ error: 'ID token is required.' }, { status: 400 });
         }

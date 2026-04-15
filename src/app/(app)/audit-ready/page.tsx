@@ -21,17 +21,41 @@ import {
     BookOpen
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 
 export default function AuditReadinessPage() {
   return (
     <div className="p-4 sm:p-6 space-y-8 max-w-5xl mx-auto">
       <AccountingPageHeader pageTitle="Audit Readiness" />
+
+      {/* Hero Section */}
+      <section className="relative w-full py-16 md:py-20 overflow-hidden bg-slate-950 text-white rounded-3xl shadow-xl mt-4">
+        <div className="container px-4 flex flex-col items-center text-center relative z-10">
+          <Badge className="mb-6 bg-primary text-primary-foreground hover:bg-primary px-6 py-2 rounded-full uppercase tracking-widest text-xs font-bold border-transparent">
+            Unmatched Compliance
+          </Badge>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-headline tracking-tighter mb-8 max-w-4xl leading-tight text-white">
+            Your Audit Shield. <br />
+            <span className="text-primary">Defensible Books</span> by Design.
+          </h1>
+
+          <div className="w-full max-w-4xl mx-auto aspect-[21/9] mb-10 rounded-xl overflow-hidden shadow-2xl border-4 border-slate-800 bg-slate-900 relative">
+              <ImagePlaceholder id="audit-shield-banner" className="object-cover" />
+          </div>
+
+          <p className="text-xl md:text-2xl text-slate-300 max-w-3xl leading-relaxed mx-auto italic font-medium">
+            "Don't just keep books—build a fortress of evidence."
+          </p>
+        </div>
+        <div className="absolute inset-0 bg-primary/5 opacity-50 mix-blend-overlay" />
+      </section>
       
-      <header className="text-center space-y-4">
+      <header className="text-center space-y-6 pt-12 border-t">
         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
             <ShieldCheck className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight uppercase">Audit Readiness</h1>
+        <h2 className="text-4xl font-bold font-headline text-primary tracking-tight uppercase">Audit Readiness</h2>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             "The power to audit is the power to destroy." – Expert perspective on maintaining a defensible business.
         </p>

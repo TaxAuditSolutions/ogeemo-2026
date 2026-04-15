@@ -17,7 +17,9 @@ import {
     Info, 
     User,
     Users,
-    Scale
+    Scale,
+    ChevronsUpDown,
+    Check
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';

@@ -1,4 +1,5 @@
 {
     "IDX.aI.enableInlineCompletion": false,
-    "IDX.aI.enableCodebaseIndexing": true
+    "IDX.aI.enableCodebaseIndexing": true,
+    "github.copilot.chat.switchAgent.enabled": true
 }

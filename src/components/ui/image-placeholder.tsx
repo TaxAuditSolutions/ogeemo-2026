@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { uploadSiteImageClient, updateSiteImageLink } from '@/services/file-service';
+import { uploadSiteImageClient, updateSiteImageLink } from '@/core/file-service';
 import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit, Check } from 'lucide-react';
 
 interface ImagePlaceholderProps {

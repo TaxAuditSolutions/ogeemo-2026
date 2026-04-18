@@ -76,7 +76,7 @@ import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, type
 import { getTimeLogs } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
-import { getUserProfile, getUsers } from '@/services/user-profile-service';
+import { getUserProfile, getUsers } from '@/core/user-profile-service';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 

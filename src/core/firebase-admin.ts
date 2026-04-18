@@ -20,7 +20,16 @@ function getAdminApp() {
         console.warn("[Firebase Admin] WARNING: FIREBASE_SERVICE_ACCOUNT_KEY is missing. Admin features (Server-side Auth) are disabled in development.");
         return null;
       }
-      throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
+      
+      // Fallback for Firebase Functions / Cloud Run (production)
+      // Provides Application Default Credentials automatically.
+      try {
+        return admin.initializeApp({
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        });
+      } catch (e: any) {
+        throw new Error(`Failed to initialize Firebase Admin SDK default: ${e.message}`);
+      }
     }
 
     try {

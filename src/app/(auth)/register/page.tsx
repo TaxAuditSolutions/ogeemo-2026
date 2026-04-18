@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { TermsDialog } from '@/components/auth/terms-dialog';
-import { updateUserProfile } from '@/services/user-profile-service';
+import { updateUserProfile } from '@/core/user-profile-service';
 import { MEMBERSHIP_FEE } from '@/lib/constants';
 
 const registerSchema = z.object({

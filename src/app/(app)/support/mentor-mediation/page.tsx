@@ -17,12 +17,14 @@ import {
     Info, 
     User,
     Users,
-    Scale
+    Scale,
+    ChevronsUpDown,
+    Check
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { submitMentorReview } from '@/services/mentor-service';
-import { getUsers, type UserProfile } from '@/services/user-profile-service';
+import { getUsers, type UserProfile } from '@/core/user-profile-service';
 import {
   Popover,
   PopoverContent,

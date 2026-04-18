@@ -4,7 +4,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getCurrentUserId } from '@/app/actions';
-import { getAdminStorage, getAdminDb } from '@/lib/firebase-admin';
+import { getAdminStorage, getAdminDb } from '@/core/firebase-admin';
 
 /**
  * @fileOverview Server actions for High-Fidelity OCR and Data Extraction.

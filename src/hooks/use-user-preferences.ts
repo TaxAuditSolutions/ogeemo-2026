@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { getUserProfile, updateUserProfile, UserProfile } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile, UserProfile } from '@/core/user-profile-service';
 
 /**
  * @fileOverview A global state singleton for user preferences.

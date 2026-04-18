@@ -41,8 +41,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type FileItem, type FolderItem } from '@/data/files';
 import { useToast } from '@/hooks/use-toast';
-import { getFolders, addFolder, updateFolder, deleteFolders, ensureDocumentSystemFolders } from '@/services/file-manager-folders';
-import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/services/file-service';
+import { getFolders, addFolder, updateFolder, deleteFolders, ensureDocumentSystemFolders } from '@/core/file-manager-folders';
+import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/core/file-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import {

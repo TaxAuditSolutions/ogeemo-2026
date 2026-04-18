@@ -17,8 +17,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { type UserProfile } from '@/services/user-profile-service';
-import { updateUserAuth } from '@/services/user-profile-service';
+import { type UserProfile } from '@/core/user-profile-service';
+import { updateUserAuth } from '@/core/user-profile-service';
 import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
 
 const passwordSchema = z.object({

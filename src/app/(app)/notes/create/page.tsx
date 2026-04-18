@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { LoaderCircle, Save, ArrowLeft, FolderPlus, Check, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { addFileRecord } from '@/services/file-service';
-import { getFolders, addFolder, type FolderItem } from '@/services/file-manager-folders';
+import { addFileRecord } from '@/core/file-service';
+import { getFolders, addFolder, type FolderItem } from '@/core/file-manager-folders';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronsUpDown } from "lucide-react";

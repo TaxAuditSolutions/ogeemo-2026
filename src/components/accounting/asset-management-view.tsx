@@ -40,7 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/context/auth-context";
-import { getAssets, addAsset, updateAsset, deleteAsset, type Asset } from "@/services/accounting-service";
+import { getAssets, addAsset, updateAsset, deleteAsset, type Asset } from "@/core/accounting-service";
 import { cn } from "@/lib/utils";
 
 

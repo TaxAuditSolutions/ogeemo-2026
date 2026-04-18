@@ -38,7 +38,7 @@ import {
   type Asset,
   type Loan,
   type EquityTransaction,
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { getRemittances, type PayrollRemittance } from '@/services/payroll-service';
 import { MatchbookLoanSummaryDialog } from './MatchbookLoanSummaryDialog';
 import { Separator } from '../ui/separator';

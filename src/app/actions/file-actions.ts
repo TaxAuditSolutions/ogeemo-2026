@@ -1,7 +1,7 @@
 // src/app/actions/file-actions.ts
 'use server';
 
-import { getAdminFileContentFromStorage, getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { getAdminFileContentFromStorage, getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { cookies } from 'next/headers';
 
 /**

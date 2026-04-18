@@ -18,7 +18,7 @@ export default function Home() {
       if (user) {
         router.replace('/welcome');
       } else {
-        router.replace('/about');
+        router.replace('/login');
       }
     }
   }, [user, isLoading, router]);

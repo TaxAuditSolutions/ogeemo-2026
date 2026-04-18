@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UserListView } from '@/components/data/data-view';
 import { useAuth } from '@/context/auth-context';
-import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { LoaderCircle, ShieldAlert, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

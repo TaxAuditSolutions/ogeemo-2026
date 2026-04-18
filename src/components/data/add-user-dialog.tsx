@@ -32,7 +32,7 @@ import { useAuth } from '@/context/auth-context';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import firebaseConfig from '@/lib/config';
-import { updateUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { updateUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -253,20 +253,20 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 )}
 
                 <Form {...formMethods}>
-                    <form id="add-user-form" onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
+                    <form id="add-user-form" onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8" autoComplete="off">
                         <div className="space-y-6">
                             <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 border-b pb-2">
                                 {userToEdit ? "User Details" : "2. Identity Credentials"}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={formMethods.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Legal Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="John Doe" {...field} className="h-11" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={formMethods.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity <span className="text-destructive">*</span></FormLabel><FormControl><Input type="email" placeholder="email@example.com" {...field} readOnly={!!userToEdit} className={cn("h-11", userToEdit && "bg-muted/50")} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={formMethods.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Legal Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="John Doe" {...field} className="h-11" autoComplete="off" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={formMethods.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity <span className="text-destructive">*</span></FormLabel><FormControl><Input type="email" placeholder="email@example.com" {...field} readOnly={!!userToEdit} className={cn("h-11", userToEdit && "bg-muted/50")} autoComplete="off" /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={formMethods.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g. 1001" {...field} className="h-11" /></FormControl><FormMessage /></FormItem> )} />
                                 {!userToEdit && (
                                     <FormField control={formMethods.control} name="password" render={({ field }) => (
-                                        <FormItem><FormLabel>Access Password <span className="text-destructive">*</span></FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} className="h-11" /><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormDescription className="text-xs">Minimum 6 characters for cloud security.</FormDescription><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Access Password <span className="text-destructive">*</span></FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} className="h-11" autoComplete="new-password" /><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormDescription className="text-xs">Minimum 6 characters for cloud security.</FormDescription><FormMessage /></FormItem>
                                     )} />
                                 )}
                             </div>

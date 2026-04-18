@@ -64,7 +64,7 @@ import {
     type IncomeCategory,
     getTaxTypes,
     type TaxType
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';

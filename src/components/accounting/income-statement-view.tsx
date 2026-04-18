@@ -18,7 +18,7 @@ import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInter
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
 import { useAuth } from '@/context/auth-context';
-import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/services/accounting-service';
+import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/core/accounting-service';
 import { T2125FormDisplay } from './income-statement-form-display';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { useToast } from '@/hooks/use-toast';

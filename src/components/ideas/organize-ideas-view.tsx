@@ -18,11 +18,11 @@ import {
 import EditIdeaDialog from './edit-idea-dialog';
 import IdeaBoardInstructionsDialog from './idea-board-instructions-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { archiveIdeaAsFile } from '@/services/file-service';
+import { archiveIdeaAsFile } from '@/core/file-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { getIdeas, addIdea as saveIdea, updateIdea as updateIdeaInDb, deleteIdea as deleteIdeaFromDb, updateIdeaPositions } from '@/services/ideas-service';
+import { getIdeas, addIdea as saveIdea, updateIdea as updateIdeaInDb, deleteIdea as deleteIdeaFromDb, updateIdeaPositions } from '@/core/ideas-service';
 import { type Idea, type Project, type Event as TaskEvent } from '@/types/calendar-types';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { getContacts, type Contact } from '@/services/contact-service';

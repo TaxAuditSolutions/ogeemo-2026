@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '../logo';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/context/auth-context';
-import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
+import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { cn } from '@/lib/utils';

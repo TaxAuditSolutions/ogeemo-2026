@@ -1,6 +1,6 @@
 'use server';
 
-import { getAdminDb, getAdminStorage } from '@/lib/firebase-admin';
+import { getAdminDb, getAdminStorage } from '@/core/firebase-admin';
 
 const DIALOG_SETTINGS_COLLECTION = 'dialogSettings';
 const FILES_COLLECTION = 'files';
@@ -8,6 +8,11 @@ const FILES_COLLECTION = 'files';
 export async function getVisionariesDialogImageUrl(userId: string): Promise<string | null> {
     const db = getAdminDb();
     const storage = getAdminStorage();
+    
+    if (!db || !storage) {
+        console.warn("[Dialog Service] Admin SDK not available. Returning null.");
+        return null;
+    }
     
     // The document ID is now user-specific to support multiple users.
     const settingsDocRef = db.collection(DIALOG_SETTINGS_COLLECTION).doc(userId);
@@ -53,6 +58,10 @@ export async function getVisionariesDialogImageUrl(userId: string): Promise<stri
 
 export async function setVisionariesDialogImage(userId: string, imageId: string): Promise<void> {
     const db = getAdminDb();
+    if (!db) {
+        console.warn("[Dialog Service] Admin SDK not available. Cannot set image.");
+        return;
+    }
     
     // The document ID is user-specific.
     const settingsDocRef = db.collection(DIALOG_SETTINGS_COLLECTION).doc(userId);

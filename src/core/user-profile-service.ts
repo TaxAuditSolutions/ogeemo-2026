@@ -5,8 +5,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
-import { ensureSystemFolders } from './contact-folder-service';
-import { addContact, updateContact, getContacts } from './contact-service';
+import { ensureSystemFolders } from '@/services/contact-folder-service';
+import { addContact, updateContact, getContacts } from '@/services/contact-service';
 
 function getDb() {
     const { db } = getFirebaseServices();

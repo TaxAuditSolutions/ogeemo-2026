@@ -48,7 +48,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
-import { getEquityTransactions, addEquityTransaction, updateEquityTransaction, deleteEquityTransaction, type EquityTransaction } from "@/services/accounting-service";
+import { getEquityTransactions, addEquityTransaction, updateEquityTransaction, deleteEquityTransaction, type EquityTransaction } from "@/core/accounting-service";
 import { format, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CustomCalendar } from "../ui/custom-calendar";

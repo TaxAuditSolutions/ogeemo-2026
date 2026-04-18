@@ -37,7 +37,7 @@ import {
   ShieldAlert,
   Archive,
 } from 'lucide-react';
-import type { IncomeCategory, ExpenseCategory } from '@/services/accounting-service';
+import type { IncomeCategory, ExpenseCategory } from '@/core/accounting-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 

@@ -50,7 +50,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/auth-context";
-import { getLoans, addLoan, updateLoan, deleteLoan, type Loan } from "@/services/accounting-service";
+import { getLoans, addLoan, updateLoan, deleteLoan, type Loan } from "@/core/accounting-service";
 import { cn } from "@/lib/utils";
 
 const formatCurrency = (amount: number) => {

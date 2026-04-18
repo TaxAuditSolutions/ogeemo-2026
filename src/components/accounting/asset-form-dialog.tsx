@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from "date-fns";
-import type { Asset, DepreciationEntry } from "@/services/accounting-service";
+import type { Asset, DepreciationEntry } from "@/core/accounting-service";
 import { PlusCircle, Trash2, Info, Save } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";

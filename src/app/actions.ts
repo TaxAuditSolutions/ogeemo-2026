@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getAdminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/core/firebase-admin';
 
 /**
  * Retrieves the current authenticated user's UID from the session cookie.
@@ -21,6 +21,10 @@ export async function getCurrentUserId(): Promise<string | null> {
 
     const adminAuth = getAdminAuth();
     if (!adminAuth) {
+        if (sessionCookie.startsWith('dev_mock_')) {
+            console.warn("Auth Action: Admin SDK not initialized. Using dev mock session.");
+            return sessionCookie.replace('dev_mock_', '');
+        }
         console.warn("Auth Action: Admin SDK not initialized. Returning unauthenticated state.");
         return null;
     }

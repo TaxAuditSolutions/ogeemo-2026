@@ -40,7 +40,7 @@ import {
     type PayableBill,
     type Asset,
     type Loan
-} from '@/services/accounting-service';
+} from '@/core/accounting-service';
 import { cn } from '@/lib/utils';
 
 interface FinancialDiscoveryDialogProps {

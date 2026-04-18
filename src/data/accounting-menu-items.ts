@@ -29,7 +29,6 @@ import type { MenuItem } from '@/lib/menu-items';
 
 export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting", icon: Landmark, label: "Accounting Hub" },
-    { href: "/accounting/audit-readiness", icon: ShieldCheck, label: "Audit Readiness" },
     { href: "/accounting/invoices/create", icon: FileDigit, label: "Create Invoice" },
     { href: "/accounting/accounts-receivable", icon: FileOutput, label: "Accounts Receivable" },
     { href: "/accounting/service-items", icon: ListPlus, label: "Products & Services" },

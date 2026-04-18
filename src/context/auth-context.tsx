@@ -5,7 +5,7 @@ import { createContext, useState, useContext, ReactNode, useEffect, useCallback 
 import { usePathname, useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseServices } from '@/firebase';
-import { getUserProfile, updateUserProfile } from '@/services/user-profile-service';
+import { getUserProfile, updateUserProfile } from '@/core/user-profile-service';
 
 interface AuthContextType {
   user: User | null;
@@ -48,11 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth: firebaseAuth } = getFirebaseServices();
 
   useEffect(() => {
+    // Hard fail-safe: if Firebase auth never responds, stop showing the loading screen
+    // after 10 seconds and let the routing logic redirect to /login.
+    const authTimeout = setTimeout(() => {
+        setIsAuthLoading(false);
+        console.warn("Auth: onAuthStateChanged did not fire within 10s. Forcing auth load complete.");
+    }, 10000);
+
     setPersistence(firebaseAuth, browserLocalPersistence).catch((error: any) => {
         console.error("Firebase persistence error:", error);
     });
 
     const unsubscribe = firebaseAuth.onAuthStateChanged(async (currentUser: User | null) => {
+      clearTimeout(authTimeout); // Auth responded — cancel the hard timeout
       setUser(currentUser);
       
       if (currentUser) {
@@ -60,28 +68,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token);
         const idToken = await currentUser.getIdToken();
         
-        // This creates the server-side session cookie. 
+        // This creates the server-side session cookie.
+        // A 5s timeout ensures a hanging call never blocks the login redirect.
         try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
             await fetch('/api/auth/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idToken }),
+                signal: controller.signal,
             });
+            clearTimeout(timeout);
         } catch (e) {
-            console.error("Auth: Failed to synchronize session cookie.", e);
+            console.warn("Auth: Session cookie sync failed or timed out.", e);
         }
 
         // --- High-Fidelity Profile Provisioning ---
         // Ensure that a Firestore profile exists for every authenticated user.
-        // This prevents "Permission Denied" errors when Security Rules attempt to look up authority levels.
+        // A 5s timeout prevents a Firestore hang from blocking the login redirect.
         try {
-            const profile = await getUserProfile(currentUser.uid);
+            const timeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Profile provisioning timed out')), 5000)
+            );
+            const profile = await Promise.race([getUserProfile(currentUser.uid), timeout]);
             if (!profile) {
                 console.log(`Auth Context: Provisioning new profile for ${currentUser.email}`);
-                await updateUserProfile(currentUser.uid, currentUser.email!, {
-                    displayName: currentUser.displayName || '',
-                    role: 'editor', // Default role
-                });
+                await Promise.race([
+                    updateUserProfile(currentUser.uid, currentUser.email!, {
+                        displayName: currentUser.displayName || '',
+                        role: 'editor', // Default role
+                    }),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error('Profile update timed out')), 5000)
+                    ),
+                ]);
             }
         } catch (error) {
             console.error("Auth Context: Failed to provision user profile.", error);

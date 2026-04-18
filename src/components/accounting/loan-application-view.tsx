@@ -20,8 +20,8 @@ import { LoaderCircle, FileText, Printer, ArrowLeft, Landmark } from 'lucide-rea
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getUserProfile, type UserProfile } from '@/services/user-profile-service';
-import { getAssets, getLoans, type Asset, type Loan } from '@/services/accounting-service';
+import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
+import { getAssets, getLoans, type Asset, type Loan } from '@/core/accounting-service';
 import { AccountingPageHeader } from './page-header';
 
 const formatCurrency = (amount: number | string) => {

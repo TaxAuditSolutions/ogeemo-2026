@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getUserProfile, type UserRole } from '@/services/user-profile-service';
+import { getUserProfile, type UserRole } from '@/core/user-profile-service';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 

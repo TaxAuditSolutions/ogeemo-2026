@@ -29,7 +29,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getInvoices, deleteInvoice, type Invoice } from '@/services/accounting-service';
+import { getInvoices, deleteInvoice, type Invoice } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { cn } from '@/lib/utils';

@@ -33,7 +33,7 @@ import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/services/accounting-service';
+import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';

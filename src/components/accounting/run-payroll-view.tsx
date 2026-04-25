@@ -97,8 +97,11 @@ const formatCurrency = (amount: number) => {
 const PayrollSuccessView = ({ onStartNew, startDate, endDate }: { onStartNew: () => void, startDate?: Date, endDate?: Date }) => {
     return (
         <div className="p-4 sm:p-6 flex items-center justify-center h-full">
-            <Card className="w-full max-w-2xl text-center">
-                <CardHeader>
+            <Card className="w-full max-w-2xl text-center relative">
+                <Button asChild variant="ghost" size="icon" className="absolute right-2 top-2 text-muted-foreground hover:bg-muted">
+                    <Link href="/accounting"><X className="h-5 w-5"/></Link>
+                </Button>
+                <CardHeader className="pt-10">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                         <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>

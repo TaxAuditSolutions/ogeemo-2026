@@ -11,11 +11,13 @@ const apiKey = rawKey?.replace(/^["']|["']$/g, '');
 if (!apiKey) {
     console.error("[AI Diagnostic] FATAL: GEMINI_API_KEY is not defined in the environment. Please check your .env files or Firebase Secrets.");
 } else {
-    console.log(`[AI Diagnostic] Genkit initialized with Key prefix: ${apiKey.substring(0, 4)}...`);
+    console.log(`[AI Diagnostic] Genkit initialized with Key prefix: ${apiKey.substring(0, 10)}... (Length: ${apiKey.length})`);
 }
 
 export const ai = genkit({
   plugins: [
-    googleAI({ apiKey: apiKey }),
+    googleAI({ 
+      apiKey: apiKey,
+    }),
   ],
 });

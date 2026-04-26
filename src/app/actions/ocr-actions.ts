@@ -2,6 +2,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
+import { gemini15Pro } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import { getCurrentUserId } from '@/app/actions';
 import { getAdminStorage, getAdminDb } from '@/core/firebase-admin';
@@ -70,7 +71,7 @@ export async function extractInvoiceData(fileId: string, isExternal: boolean = f
 
     // Process with Gemini 1.5 Pro (Neural Reasoning)
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-pro',
+      model: gemini15Pro,
       prompt: [
         {
           media: {

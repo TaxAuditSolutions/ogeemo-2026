@@ -4,6 +4,7 @@
  * This agent can answer questions about Ogeemo and execute operational commands via tools.
  */
 import { ai } from '@/ai/genkit';
+import { gemini15Flash } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import { getAdminDb } from '@/core/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
@@ -74,9 +75,13 @@ const searchContactsTool = ai.defineTool(
     if (!userId) return { success: false, contacts: [], message: "User not authenticated." };
 
     try {
-      const contacts = await getContacts(userId);
-      const term = input.searchTerm.toLowerCase();
+      const db = getAdminDb();
+      if (!db) throw new Error("Database not available.");
       
+      const snapshot = await db.collection('contacts').where('userId', '==', userId).get();
+      const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      const term = input.searchTerm.toLowerCase();
       const results = contacts.filter((c: any) => 
             c.name?.toLowerCase().includes(term) || 
             c.businessName?.toLowerCase().includes(term) ||
@@ -151,21 +156,27 @@ const searchGlobalTool = ai.defineTool(
     }
 
     try {
-      const [contacts, projects] = await Promise.all([
-        getContacts(userId),
-        getProjects(userId)
+      const db = getAdminDb();
+      if (!db) throw new Error("Database not available.");
+
+      const [contactsSnap, projectsSnap] = await Promise.all([
+        db.collection('contacts').where('userId', '==', userId).get(),
+        db.collection('projects').where('userId', '==', userId).get()
       ]);
+
+      const contacts = contactsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const projects = projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       const matchedMenus = allMenuItems.filter(i => i.label.toLowerCase().includes(term))
         .map(i => ({ type: 'Page', label: i.label, href: i.href }));
 
       const matchedContacts = contacts.filter((c: any) => 
         c.name?.toLowerCase().includes(term) || c.businessName?.toLowerCase().includes(term)
-      ).map(c => ({ type: 'Contact', label: c.name, details: c.email, href: '/contacts' }));
+      ).map((c: any) => ({ type: 'Contact', label: c.name, details: c.email, href: '/contacts' }));
 
       const matchedProjects = projects.filter((p: any) => 
         p.name?.toLowerCase().includes(term)
-      ).map(p => ({ type: 'Project', label: p.name, href: `/projects/${p.id}/tasks` }));
+      ).map((p: any) => ({ type: 'Project', label: p.name, href: `/projects/${p.id}/tasks` }));
 
       results = [...results, ...matchedMenus, ...matchedContacts, ...matchedProjects];
 
@@ -329,10 +340,9 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     try {
         const result = await ai.generate({
-          model: 'googleai/gemini-1.5-flash',
+          model: gemini15Flash,
           messages: scrubbedMessages,
           tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
-          context: { userId, localContext },
           system: finalSystemPrompt,
           config: { temperature: 0.1 },
         });

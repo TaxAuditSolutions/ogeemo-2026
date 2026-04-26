@@ -416,22 +416,12 @@ export function CashAccountingView() {
                         </p>
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <div className="flex-1 flex flex-col gap-2">
-                            <Button className="w-full h-12 text-lg font-bold shadow-lg" onClick={() => handleOpenDialog('in')}>
-                                <PlusCircle className="mr-2 h-5 w-5" /> Cash In
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setCategoryManageType('in'); setIsCategoryManageDialogOpen(true); }}>
-                                <Plus className="mr-1 h-3 w-3" /> Add Category
-                            </Button>
-                        </div>
-                        <div className="flex-1 flex flex-col gap-2">
-                            <Button variant="outline" className="w-full h-12 text-lg font-bold border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenDialog('out')}>
-                                <PlusCircle className="mr-2 h-5 w-5" /> Cash Out
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setCategoryManageType('out'); setIsCategoryManageDialogOpen(true); }}>
-                                <Plus className="mr-1 h-3 w-3" /> Add Category
-                            </Button>
-                        </div>
+                        <Button className="flex-1 h-12 text-lg font-bold shadow-lg" onClick={() => handleOpenDialog('in')}>
+                            <PlusCircle className="mr-2 h-5 w-5" /> Cash In
+                        </Button>
+                        <Button variant="outline" className="flex-1 h-12 text-lg font-bold border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenDialog('out')}>
+                            <PlusCircle className="mr-2 h-5 w-5" /> Cash Out
+                        </Button>
                     </div>
                 </Card>
             </div>
@@ -525,7 +515,7 @@ export function CashAccountingView() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-md text-black">
+                <DialogContent className="sm:max-w-4xl text-black">
                     <DialogHeader>
                         <div className="flex items-center gap-2 text-primary mb-1">
                             <HandCoins className="h-5 w-5" />
@@ -633,7 +623,21 @@ export function CashAccountingView() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Category Line Item</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Category Line Item</Label>
+                                <Button 
+                                    type="button"
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 px-4 text-xs font-bold uppercase tracking-wider text-primary border-primary hover:bg-primary/5 shadow-sm"
+                                    onClick={() => {
+                                        setCategoryManageType(formData.type === 'in' ? 'in' : 'out');
+                                        setIsCategoryManageDialogOpen(true);
+                                    }}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Add New Category
+                                </Button>
+                            </div>
                             <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" disabled={viewOnly} role="combobox" className="w-full justify-between font-normal h-10">

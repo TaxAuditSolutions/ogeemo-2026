@@ -602,9 +602,20 @@ export function TransactionDialog({
                                         name="category"
                                         render={({ field }) => (
                                             <FormItem className="space-y-2">
-                                                <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
-                                                    <FileSignature className="h-4 w-4" /> Category Line Item
-                                                </FormLabel>
+                                                <div className="flex items-center justify-between">
+                                                    <FormLabel className="text-sm uppercase font-bold text-primary flex items-center gap-2">
+                                                        <FileSignature className="h-4 w-4" /> Category Line Item
+                                                    </FormLabel>
+                                                    <Button 
+                                                        type="button" 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-4 text-xs font-bold uppercase tracking-wider text-primary border-primary hover:bg-primary/5 shadow-sm"
+                                                        onClick={() => handleCreateCategory(categorySearchValue)}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" /> Add New Category
+                                                    </Button>
+                                                </div>
                                                 <div className="flex gap-2">
                                                     <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                                         <PopoverTrigger asChild>
@@ -639,9 +650,6 @@ export function TransactionDialog({
                                                             </Command>
                                                         </PopoverContent>
                                                     </Popover>
-                                                    <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCreateCategory(categorySearchValue)} title="Create New Category">
-                                                        <Plus className="h-5 w-5" />
-                                                    </Button>
                                                 </div>
                                                 <FormMessage />
                                             </FormItem>

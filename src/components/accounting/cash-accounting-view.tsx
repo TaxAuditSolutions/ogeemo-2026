@@ -139,6 +139,12 @@ export function CashAccountingView() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [txToDelete, setTxToDelete] = useState<PettyCashTransaction | null>(null);
+    
+    // Category Management State
+    const [isCategoryManageDialogOpen, setIsCategoryManageDialogOpen] = useState(false);
+    const [categoryManageType, setCategoryManageType] = useState<'in' | 'out'>('out');
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryNumber, setNewCategoryNumber] = useState('');
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -250,6 +256,40 @@ export function CashAccountingView() {
             toast({ title: 'Category Created', description: `"${name}" has been added to your tax lines.` });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+    };
+
+    const handleQuickAddCategory = async () => {
+        if (!user || !newCategoryName.trim()) {
+            toast({ variant: 'destructive', title: 'Invalid Input', description: 'Category name is required.' });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            let newCat;
+            if (categoryManageType === 'in') {
+                newCat = await addIncomeCategory({ 
+                    name: newCategoryName.trim(), 
+                    userId: user.uid,
+                    categoryNumber: newCategoryNumber.trim() || undefined
+                });
+                setIncomeCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            } else {
+                newCat = await addExpenseCategory({ 
+                    name: newCategoryName.trim(), 
+                    userId: user.uid,
+                    categoryNumber: newCategoryNumber.trim() || undefined
+                });
+                setExpenseCategories(prev => [...prev, newCat].sort((a,b) => a.name.localeCompare(b.name)));
+            }
+            toast({ title: 'Category Created', description: `"${newCategoryName}" is now available for logging.` });
+            setIsCategoryManageDialogOpen(false);
+            setNewCategoryName('');
+            setNewCategoryNumber('');
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to create category', description: error.message });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -376,12 +416,22 @@ export function CashAccountingView() {
                         </p>
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <Button className="flex-1 h-12 text-lg font-bold shadow-lg" onClick={() => handleOpenDialog('in')}>
-                            <PlusCircle className="mr-2 h-5 w-5" /> Cash In (Revenue)
-                        </Button>
-                        <Button variant="outline" className="flex-1 h-12 text-lg font-bold border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenDialog('out')}>
-                            <PlusCircle className="mr-2 h-5 w-5" /> Cash Out (Expense)
-                        </Button>
+                        <div className="flex-1 flex flex-col gap-2">
+                            <Button className="w-full h-12 text-lg font-bold shadow-lg" onClick={() => handleOpenDialog('in')}>
+                                <PlusCircle className="mr-2 h-5 w-5" /> Cash In
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setCategoryManageType('in'); setIsCategoryManageDialogOpen(true); }}>
+                                <Plus className="mr-1 h-3 w-3" /> Add Category
+                            </Button>
+                        </div>
+                        <div className="flex-1 flex flex-col gap-2">
+                            <Button variant="outline" className="w-full h-12 text-lg font-bold border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenDialog('out')}>
+                                <PlusCircle className="mr-2 h-5 w-5" /> Cash Out
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setCategoryManageType('out'); setIsCategoryManageDialogOpen(true); }}>
+                                <Plus className="mr-1 h-3 w-3" /> Add Category
+                            </Button>
+                        </div>
                     </div>
                 </Card>
             </div>
@@ -587,14 +637,14 @@ export function CashAccountingView() {
                             <Popover open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" disabled={viewOnly} role="combobox" className="w-full justify-between font-normal h-10">
-                                        {formData.category ? (activeCategories.find(c => (c.categoryNumber || c.id) === formData.category)?.name || formData.category) : "Select category..."}
+                                        {formData.category ? (activeCategories.find(c => (c.categoryNumber || c.id) === formData.category)?.name || formData.category) : "Select Category or enter New category..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                     <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
                                         <CommandInput 
-                                            placeholder="Search categories..." 
+                                            placeholder="Search or type new category..." 
                                             value={categorySearchValue}
                                             onValueChange={setCategorySearchValue}
                                         />
@@ -640,6 +690,52 @@ export function CashAccountingView() {
                                 {editingTx ? 'Update Entry' : 'Log Cash Transaction'}
                             </Button>
                         )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCategoryManageDialogOpen} onOpenChange={setIsCategoryManageDialogOpen}>
+                <DialogContent className="sm:max-w-md text-black">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2 text-primary mb-1">
+                            <PlusCircle className="h-5 w-5" />
+                            <DialogTitle>Add {categoryManageType === 'in' ? 'Income' : 'Expense'} Category</DialogTitle>
+                        </div>
+                        <DialogDescription>
+                            Create a custom node for your BKS financial orchestration.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Category Name</Label>
+                            <Input 
+                                value={newCategoryName} 
+                                onChange={e => setNewCategoryName(e.target.value)} 
+                                placeholder="e.g., Office Supplies, Consulting Fees" 
+                                className="h-10 font-semibold"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Reference # (Optional)</Label>
+                            <Input 
+                                value={newCategoryNumber} 
+                                onChange={e => setNewCategoryNumber(e.target.value)} 
+                                placeholder="e.g., C-101" 
+                                className="h-10 font-mono"
+                            />
+                            <p className="text-[10px] text-muted-foreground italic">
+                                Leave blank to automatically assign the next available "C-" reference.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="bg-muted/10 -mx-6 -mb-6 p-6 rounded-b-lg">
+                        <Button variant="ghost" onClick={() => setIsCategoryManageDialogOpen(false)} disabled={isSubmitting}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleQuickAddCategory} disabled={isSubmitting} className="font-bold">
+                            {isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Category
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

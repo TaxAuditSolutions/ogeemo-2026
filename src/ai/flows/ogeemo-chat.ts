@@ -4,7 +4,7 @@
  * This agent can answer questions about Ogeemo and execute operational commands via tools.
  */
 import { ai } from '@/ai/genkit';
-import { gemini15Flash } from '@genkit-ai/googleai';
+import { gemini25Flash } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import { getAdminDb } from '@/core/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
@@ -340,7 +340,7 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     try {
         const result = await ai.generate({
-          model: gemini15Flash,
+          model: gemini25Flash,
           messages: scrubbedMessages,
           tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
           system: finalSystemPrompt,

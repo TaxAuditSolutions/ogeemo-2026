@@ -58,18 +58,7 @@ export async function POST(req: NextRequest) {
     }
     
   } catch (error: any) {
-    // DIAGNOSTIC LOGGING: Write the full error to a local file
-    try {
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = path.join(process.cwd(), 'temp-ai-debug.log');
-        const errorDetails = `[${new Date().toISOString()}] AI LOG Error: ${error.message}\nStack: ${error.stack}\n---\n`;
-        fs.appendFileSync(logPath, errorDetails);
-        console.log(`[AI Diagnostic] Detailed error written to: ${logPath}`);
-    } catch (logErr) {
-        console.error("Failed to write to diagnostic log:", logErr);
-    }
-
+    // Diagnostic logging to console (safe for both local and production)
     console.error("[Ogeemo Final Fix API Error]", error);
 
     return NextResponse.json({

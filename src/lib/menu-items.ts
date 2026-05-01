@@ -57,7 +57,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/master-mind", label: "Command Centre", icon: PlayCircle },
   { href: "/ai-dispatch", label: "AI Dispatch", icon: BrainCircuit },
   { href: "/philosophy/record-keeping", label: "Record Keeping Credo", icon: Scale },
-  { href: "http://localhost:9003/about", label: "Ogeemo Web", icon: Globe },
+  { href: "http://localhost:3000/about", label: "Ogeemo Web", icon: Globe },
   { href: "/accounting/audit-readiness", label: "Audit Ready", icon: ShieldCheck },
   { href: "/support/mentor-mediation", label: "Mentor Mediation", icon: Scale },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },

@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export default function AboutRedirect() {
-    redirect('/');
+import { AboutContent } from '@/components/landing/about-content';
+
+export default function AboutPage() {
+    return <AboutContent />;
 }

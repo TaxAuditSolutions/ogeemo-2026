@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "../logo";
 import { Button } from "../ui/button";
+import { useAuth } from "@/context/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,25 +15,30 @@ import { ChevronDown } from "lucide-react";
 
 export function SiteHeader() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
-  const handleLoginRedirect = () => {
-    router.push("/login");
+  const handleAction = () => {
+    if (user) {
+      router.push("/welcome");
+    } else {
+      router.push("/login");
+    }
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
+      <div className="container mx-auto px-4 flex h-16 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="flex items-center" aria-label="Go to Home Page">
             <Logo className="text-black" />
           </Link>
         </div>
-        <nav className="flex flex-1 items-center space-x-1">
-            <Button variant="link" asChild><Link href="/features">Features</Link></Button>
+        <nav className="flex flex-1 items-center space-x-1 overflow-x-auto no-scrollbar">
+            <Button variant="link" asChild className="shrink-0"><Link href="/features">Features</Link></Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="link">
+                <Button variant="link" className="shrink-0">
                   Solutions <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -47,16 +53,18 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="link" asChild><Link href="/command-centre-info">The Command Centre</Link></Button>
-            <Button variant="link" asChild><Link href="/">Members/Mentors</Link></Button>
-            <Button variant="link" asChild><Link href="/sarah">Sarah</Link></Button>
-            <Button variant="link" asChild><Link href="/pricing">Pricing</Link></Button>
-            <Button variant="link" asChild><Link href="/contact">Contact</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/command-centre-info">The Command Centre</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/">Members/Mentors</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/sarah">Sarah</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Pricing</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/contact">Contact</Link></Button>
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-            <Button onClick={handleLoginRedirect} className="font-bold bg-primary text-primary-foreground">
-                Login to Ogeemo Suite
-            </Button>
+        <div className="flex items-center justify-end space-x-4 ml-4">
+            {!isLoading && (
+              <Button onClick={handleAction} className="font-bold bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all">
+                  {user ? "Go to Ogeemo Suite" : "Login to Ogeemo Suite"}
+              </Button>
+            )}
         </div>
       </div>
     </header>

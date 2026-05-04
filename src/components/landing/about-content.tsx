@@ -42,9 +42,14 @@ export function AboutContent() {
                         One Command Centre. <br className="hidden sm:block" /> A Unified Community.
                     </h1>
                     
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                        Ogeemo was born in the trenches of real business. We're a community of freelancers, consultants, and small business owners taking back control from fragmented corporate software.
-                    </p>
+                    <div className="space-y-4">
+                        <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
+                            Welcome to the world of Ogeemo, where business management software unifies with a membership base.
+                        </p>
+                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                            Ogeemo was born in the trenches of real business. We're a collective of freelancers, consultants, and small business owners taking back control from fragmented corporate software.
+                        </p>
+                    </div>
 
                     <p className="text-lg font-medium italic text-primary/70 max-w-3xl leading-relaxed">
                         "We didn't build a utility; we built a digital nervous system for the modern visionary."

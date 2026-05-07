@@ -34,6 +34,8 @@ export interface UserProfile {
     is_mentor_certified?: boolean;
     mentor_shield_issued_date?: any;
     price_lock_status?: boolean;
+    is_founder?: boolean;
+    organizationId?: string;
 }
 
 const PROFILES_COLLECTION = 'users';
@@ -103,6 +105,8 @@ export async function updateUserProfile(
         dataWithTimestamp.is_mentor_certified = data.is_mentor_certified ?? false;
         dataWithTimestamp.mentor_shield_issued_date = data.mentor_shield_issued_date ?? null;
         dataWithTimestamp.price_lock_status = data.price_lock_status ?? true;
+        dataWithTimestamp.is_founder = data.is_founder ?? false;
+        dataWithTimestamp.organizationId = data.organizationId ?? null;
         await setDoc(docRef, dataWithTimestamp);
     }
 }

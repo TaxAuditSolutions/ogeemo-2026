@@ -53,7 +53,7 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="link" asChild className="shrink-0"><Link href="/command-centre-info">The Command Centre</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/empowerment">Empowerment</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/">Members/Mentors</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/sarah">Sarah</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Pricing</Link></Button>

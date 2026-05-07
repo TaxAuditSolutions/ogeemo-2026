@@ -38,18 +38,16 @@ export function AboutContent() {
                     <Badge className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
                         Built for Us, Not for Wall Street
                     </Badge>
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold font-headline text-primary tracking-tighter leading-tight">
-                        One Command Centre. <br className="hidden sm:block" /> A Unified Community.
+                    <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold font-headline text-primary tracking-tighter leading-none mb-4">
+                        Ogeemo.
                     </h1>
                     
-                    <div className="space-y-4">
-                        <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
-                            Welcome to the world of Ogeemo, where business management software unifies with a membership base.
-                        </p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
+                        One Command Centre. Total Empowerment.
+                    </p>
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
                             Ogeemo was born in the trenches of real business. We're a collective of freelancers, consultants, and small business owners taking back control from fragmented corporate software.
                         </p>
-                    </div>
 
                     <p className="text-lg font-medium italic text-primary/70 max-w-3xl leading-relaxed">
                         "We didn't build a utility; we built a digital nervous system for the modern visionary."

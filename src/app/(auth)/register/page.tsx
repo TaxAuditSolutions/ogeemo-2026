@@ -1,13 +1,13 @@
-
 "use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { UserPlus } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { UserPlus, Loader2 } from 'lucide-react';
 
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -15,79 +15,78 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { TermsDialog } from '@/components/auth/terms-dialog';
-import { updateUserProfile } from '@/core/user-profile-service';
+import { registerOrganization } from '@/app/actions/org-actions';
 import { MEMBERSHIP_FEE } from '@/lib/constants';
 
 const registerSchema = z.object({
+    orgName: z.string().min(2, { message: "Organization name must be at least 2 characters." }),
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
     email: z.string().email({ message: "Please enter a valid email." }),
-    password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-    businessName: z.string().optional(),
+    password: z.string().min(8, { message: "Password must be at least 8 characters." }),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const { auth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<RegisterFormData | null>(null);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", businessName: "" },
+    defaultValues: { orgName: "", name: "", email: "", password: "" },
   });
 
-  const handleInitialSubmit = (values: RegisterFormData) => {
-    setFormData(values);
-    setIsTermsDialogOpen(true);
-  };
-
-  const handleFinalSubmit = async () => {
-    if (!formData || !auth) return;
+  const onSubmit = async (data: RegisterFormData) => {
+    if (!auth) {
+        toast({ variant: "destructive", title: "Error", description: "Authentication service not initialized." });
+        return;
+    }
     
     setIsLoading(true);
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        const user = userCredential.user;
+        // 1. Call Server Action to register organization and create user
+        const result = await registerOrganization({
+            orgName: data.orgName,
+            email: data.email,
+            password: data.password,
+            name: data.name,
+        });
 
-        if (!user) {
-            throw new Error("User creation failed.");
+        if (result.success) {
+            // 2. Immediately sign in the user via Firebase Auth client SDK
+            const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+            
+            // 3. 🌟 CRITICAL STEP: Mint the Server-Side Session Cookie
+            const idToken = await userCredential.user.getIdToken();
+            const sessionResponse = await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+            });
+
+            if (!sessionResponse.ok) {
+                throw new Error("Failed to create secure session.");
+            }
+            
+            toast({
+                title: "Welcome Home to Ogeemo!",
+                description: `Organization "${data.orgName}" successfully created.`,
+            });
+            
+            // 4. Redirect to dashboard and refresh Server Components
+            router.push('/welcome');
+            router.refresh(); 
         }
-        
-        await updateProfile(user, { displayName: formData.name });
-        
-        // --- High-Fidelity Apprentice Provisioning ---
-        await updateUserProfile(user.uid, formData.email, {
-            displayName: formData.name,
-            role: 'Apprentice', // Mandated default
-            companyName: formData.businessName,
-            is_mentor_certified: false,
-            mentor_shield_issued_date: null,
-            price_lock_status: true, // Hard-coded at $25.00 level
-        });
-
-        toast({
-            title: "Welcome Home to Ogeemo!",
-            description: `Your account has been created. Monthly membership: $${MEMBERSHIP_FEE}.00`,
-        });
-        
     } catch (error: any) {
-        let description = "An unknown error occurred. Please try again.";
-        if (error.code === 'auth/email-already-in-use') {
-            description = "This email is already associated with an account.";
-        }
         toast({
             variant: "destructive",
             title: "Registration Failed",
-            description: description,
+            description: error.message || "An unknown error occurred. Please try again.",
         });
     } finally {
         setIsLoading(false);
-        setIsTermsDialogOpen(false);
-        setFormData(null);
     }
   }
 
@@ -104,19 +103,50 @@ export default function RegisterPage() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleInitialSubmit)} className="space-y-4">
-                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Your Name</FormLabel> <FormControl><Input placeholder="John Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input placeholder="name@example.com" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                <FormField control={form.control} name="businessName" render={({ field }) => ( <FormItem> <FormLabel>Business Name (Optional)</FormLabel> <FormControl><Input placeholder="Acme Inc." {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="orgName" render={({ field }) => ( 
+                    <FormItem> 
+                        <FormLabel>Organization Name</FormLabel> 
+                        <FormControl><Input placeholder="Acme Inc." {...field} disabled={isLoading} /></FormControl> 
+                        <FormMessage /> 
+                    </FormItem> 
+                )} />
+                <FormField control={form.control} name="name" render={({ field }) => ( 
+                    <FormItem> 
+                        <FormLabel>Your Name</FormLabel> 
+                        <FormControl><Input placeholder="John Doe" {...field} disabled={isLoading} /></FormControl> 
+                        <FormMessage /> 
+                    </FormItem> 
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => ( 
+                    <FormItem> 
+                        <FormLabel>Work Email</FormLabel> 
+                        <FormControl><Input placeholder="name@example.com" {...field} disabled={isLoading} /></FormControl> 
+                        <FormMessage /> 
+                    </FormItem> 
+                )} />
+                <FormField control={form.control} name="password" render={({ field }) => ( 
+                    <FormItem> 
+                        <FormLabel>Password</FormLabel> 
+                        <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading} /></FormControl> 
+                        <FormMessage /> 
+                    </FormItem> 
+                )} />
                 <p className="text-xs text-center text-muted-foreground pt-2">
                     By creating an account, you agree to our <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>.
                 </p>
                 <div className="bg-primary/5 border border-primary/20 rounded-md p-3 text-center mb-4">
                     <p className="text-sm font-semibold text-primary">No tiers. No traps. Locked for life.</p>
                 </div>
-                <Button type="submit" className="w-full">
-                    Create Account
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating Account...
+                        </>
+                    ) : (
+                        "Create Account"
+                    )}
                 </Button>
             </form>
         </Form>
@@ -129,13 +159,6 @@ export default function RegisterPage() {
             </Link>
         </p>
       </CardFooter>
-
-      <TermsDialog
-        isOpen={isTermsDialogOpen}
-        onOpenChange={setIsTermsDialogOpen}
-        onConfirm={handleFinalSubmit}
-        isSubmitting={isLoading}
-      />
     </>
   );
 }

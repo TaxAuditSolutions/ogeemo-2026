@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "ogeemo-firebase"
-  }
+    "default": "ogeemo-firebase",
+    "ogeemo-staging": "ogeemo-firebase"
+  },
+  "targets": {},
+  "etags": {}
 }

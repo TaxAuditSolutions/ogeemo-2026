@@ -7,321 +7,138 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // 1. Helper Functions for decoding Auth Token Claims
+    function isRightTenant(docOrgId) {
+      return isSignedIn() && request.auth.token.orgId == docOrgId;
     }
 
-    function getUserData() {
-      // Safely retrieve user data. get() returns null if the document does not exist.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function hasAccessLevel(level) {
+      return isSignedIn() && request.auth.token.accessLevel == level;
     }
 
-    function isAdmin() {
-      let data = getUserData();
-      return isSignedIn() && data != null && data.role == 'admin';
+    // Role helpers
+    function isOrgAdmin() {
+      return hasAccessLevel('org_admin');
     }
 
     function isEditor() {
-      let data = getUserData();
-      return isSignedIn() && data != null && (data.role == 'editor' || data.role == 'admin');
+      return hasAccessLevel('editor') || hasAccessLevel('org_admin');
     }
 
     function isViewer() {
-      let data = getUserData();
-      return isSignedIn() && data != null && (data.role == 'viewer' || data.role == 'editor' || data.role == 'admin');
+      return hasAccessLevel('viewer') || hasAccessLevel('editor') || hasAccessLevel('org_admin');
+    }
+
+    // 2. Data Protection & Role Enforcement functions
+    function canReadOrgDoc() {
+      return isViewer() && isRightTenant(resource.data.orgId);
     }
     
-    // Ownership check based on the 'userId' field common across data nodes
-    function ownsDoc() {
-      return isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
+    function canCreateOrgDoc() {
+      return isEditor() && isRightTenant(request.resource.data.orgId);
     }
     
-    // Creation check to ensure user assigns themselves as the owner
-    function assignsToSelf() {
-      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    function canUpdateOrgDoc() {
+      return isEditor() && isRightTenant(resource.data.orgId) && isRightTenant(request.resource.data.orgId);
+    }
+
+    function canDeleteOrgDoc() {
+      return isEditor() && isRightTenant(resource.data.orgId);
+    }
+
+    // ---------------------------------------------------------
+    // Core Tenant Configuration Collections
+    // ---------------------------------------------------------
+    
+    match /organizations/{orgId} {
+      allow read: if isRightTenant(orgId);
+      allow write: if isRightTenant(orgId) && isOrgAdmin();
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId) || isAdmin();
-      allow update, delete: if isOwner(userId) || isAdmin();
+      // Users can read their own profile, or any profile within their org
+      allow read: if isSignedIn() && (request.auth.uid == userId || canReadOrgDoc());
+      allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId);
+      allow update: if isSignedIn() && (request.auth.uid == userId || (isOrgAdmin() && isRightTenant(resource.data.orgId)));
+      allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId);
     }
 
-    match /contactFolders/{folderId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
+    // ---------------------------------------------------------
+    // Shared Business Collections
+    // ---------------------------------------------------------
+    
+    match /contactFolders/{folderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /contacts/{contactId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /clientAccounts/{accountId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /internalAccounts/{accountId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /invoices/{invoiceId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /invoiceLineItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /serviceItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /taxTypes/{typeId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /incomeTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /expenseTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /payableBills/{billId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /pettyCashTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    
+    match /payrollRuns/{runId} { 
+      allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); 
+      match /details/{detailId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     }
     
-    match /contacts/{contactId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
+    match /payrollRemittances/{remittanceId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /assets/{assetId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /equityTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /companies/{companyId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /expenseCategories/{categoryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /incomeCategories/{categoryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /industries/{industryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /loans/{loanId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /leads/{leadId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /projectTemplates/{templateId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /inventoryItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /inventoryLogs/{logId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /suppliers/{supplierId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /projects/{projectId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /tasks/{taskId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /ideas/{ideaId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /fileManagerFolders/{folderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /files/{fileId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /crmActions/{actionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /payrollWorkers/{workerId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /leaveRequests/{leaveRequestId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     
-    match /clientAccounts/{accountId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
+    match /timeLogs/{timeLogId} { 
+      allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); 
+      match /locations/{locationId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     }
 
-    match /internalAccounts/{accountId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
+    // ---------------------------------------------------------
+    // User Personal Preferences (No orgId needed)
+    // ---------------------------------------------------------
+    match /userActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /trashedActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /accountingQuickNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableAccountingNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /hrQuickNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableHrNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /dialogSettings/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     
-    match /invoices/{invoiceId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /invoiceLineItems/{itemId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /serviceItems/{itemId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /taxTypes/{typeId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /incomeTransactions/{transactionId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /expenseTransactions/{transactionId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /payableBills/{billId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /pettyCashTransactions/{transactionId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /payrollRuns/{runId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-
-      match /details/{detailId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-      }
-    }
-
-    match /payrollRemittances/{remittanceId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /assets/{assetId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /equityTransactions/{transactionId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /companies/{companyId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /expenseCategories/{categoryId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /incomeCategories/{categoryId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /industries/{industryId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /loans/{loanId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /leads/{leadId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /projectTemplates/{templateId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /inventoryItems/{itemId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /inventoryLogs/{logId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /suppliers/{supplierId} {
-      allow read: if ownsDoc() || isViewer();
-      allow create: if assignsToSelf() || isEditor();
-      allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /projects/{projectId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /tasks/{taskId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /ideas/{ideaId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /fileManagerFolders/{folderId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /files/{fileId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /crmActions/{actionId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-    
-    match /payrollWorkers/{workerId} {
-        allow read: if ownsDoc() || isViewer();
-        allow create: if assignsToSelf() || isEditor();
-        allow update, delete: if ownsDoc() || isEditor();
-    }
-
-    match /leaveRequests/{leaveRequestId} {
-      allow create: if assignsToSelfWorker() || isEditor();
-      allow read: if ownsWorkerRequest() || isViewer();
-      allow update: if ownsWorkerRequest() || isEditor();
-      allow delete: if ownsWorkerRequest() || isEditor();
-      
-      function assignsToSelfWorker() {
-        return isSignedIn() && request.resource.data.workerId == request.auth.uid;
-      }
-      function ownsWorkerRequest() {
-        return isSignedIn() && resource.data.workerId == request.auth.uid;
-      }
-    }
-
-    match /timeLogs/{timeLogId} {
-      allow create: if assignsToSelfWorker() || isEditor();
-      allow read: if ownsWorkerLog() || isViewer();
-      allow update, delete: if ownsWorkerLog() || isEditor();
-      
-      function assignsToSelfWorker() {
-        return isSignedIn() && request.resource.data.workerId == request.auth.uid;
-      }
-      function ownsWorkerLog() {
-        return isSignedIn() && resource.data.workerId == request.auth.uid;
-      }
-      
-      match /locations/{locationId} {
-        allow read: if ownsWorkerLog() || isViewer();
-        allow create: if assignsToSelfWorker() || isEditor();
-      }
-    }
-
-    match /userActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /trashedActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /accountingQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableAccountingNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /hrQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableHrNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /dialogSettings/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    
+    // ---------------------------------------------------------
+    // Public/System collections
+    // ---------------------------------------------------------
     match /siteImages/{imageId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isOrgAdmin();
     }
-    
     match /feedback/{feedbackId} {
-      allow read: if isAdmin();
+      allow read: if isOrgAdmin();
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow update, delete: if isOrgAdmin();
     }
-
     match /inquiries/{inquiryId} {
       allow create: if true;
-      allow read: if isAdmin();
+      allow read: if isOrgAdmin();
     }
   }
 }

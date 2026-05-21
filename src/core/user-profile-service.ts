@@ -18,14 +18,30 @@ function getFunctionsService() {
     return functions;
 }
 
-export type UserRole = 'Apprentice' | 'Mentor_Apprentice' | 'Certified_Mentor' | 'admin';
+export type AccessLevel = 'org_admin' | 'editor' | 'viewer';
+export type MentorshipRole = 'Apprentice' | 'Mentor_Apprentice' | 'Certified_Mentor';
+
+export interface Organization {
+    id: string;
+    name: string;
+    createdAt: any;
+    ownerUid: string;
+}
 
 export interface UserProfile {
     id: string;
     email: string;
     displayName?: string;
     employeeNumber?: string;
-    role?: UserRole;
+    
+    // Organization & Access
+    orgId?: string;
+    accessLevel?: AccessLevel;
+    
+    // Legacy / Business Logic Roles
+    role?: MentorshipRole; 
+    mentorshipRole?: MentorshipRole;
+    
     contactId?: string; // Linked ID in the Contact Hub
     preferences?: any;
     createdAt?: any;
@@ -41,9 +57,12 @@ const CONTACTS_COLLECTION = 'contacts';
 
 const docToUserProfile = (doc: any): UserProfile => ({ id: doc.id, ...doc.data() } as UserProfile);
 
-export async function getUsers(): Promise<UserProfile[]> {
+export async function getUsers(orgId?: string): Promise<UserProfile[]> {
   const db = getDb();
-  const q = query(collection(db, PROFILES_COLLECTION));
+  let q = query(collection(db, PROFILES_COLLECTION));
+  if (orgId) {
+      q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', orgId));
+  }
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToUserProfile);
 }

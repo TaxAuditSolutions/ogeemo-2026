@@ -16,14 +16,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getUserProfile, type UserRole } from '@/core/user-profile-service';
+import { getUserProfile, type MentorshipRole } from '@/core/user-profile-service';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
 export function UserNav() {
   const { user, logout } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [role, setRole] = useState<MentorshipRole | null>(null);
   const [isCertified, setIsCertified] = useState(false);
 
   useEffect(() => {
@@ -55,21 +55,19 @@ export function UserNav() {
     return 'U';
   };
 
-  const getRoleLabel = (r: UserRole | null) => {
+  const getRoleLabel = (r: MentorshipRole | null) => {
     switch (r) {
       case 'Certified_Mentor': return 'Certified Mentor';
       case 'Mentor_Apprentice': return 'Mentor Apprentice';
       case 'Apprentice': return 'Apprentice';
-      case 'admin': return 'Admin';
       default: return 'Member';
     }
   };
 
-  const getRoleIcon = (r: UserRole | null) => {
+  const getRoleIcon = (r: MentorshipRole | null) => {
     switch (r) {
       case 'Certified_Mentor': return <Award className="h-3 w-3 text-yellow-500 fill-yellow-500" />;
       case 'Mentor_Apprentice': return <ShieldCheck className="h-3 w-3 text-primary" />;
-      case 'admin': return <ShieldAlert className="h-3 w-3 text-destructive" />;
       default: return <Shield className="h-3 w-3 text-muted-foreground" />;
     }
   };

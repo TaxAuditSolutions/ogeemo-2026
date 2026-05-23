@@ -2,24 +2,24 @@
 'use client';
 
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  Timestamp,
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    doc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    Timestamp,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 
 export interface Industry {
-  id: string;
-  code: string;
-  description: string;
-  userId: string;
+    id: string;
+    code: string;
+    description: string;
+    userId: string;
 }
 
 const INDUSTRIES_COLLECTION = 'industries';
@@ -46,7 +46,7 @@ export async function getIndustries(userId: string): Promise<Industry[]> {
 
 export async function addIndustry(industryData: Omit<Industry, 'id'>): Promise<Industry> {
     const db = getDb();
-    
+
     let finalCode = industryData.code?.trim();
 
     // If no custom code is provided, generate one.

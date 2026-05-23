@@ -1,27 +1,28 @@
 
 'use client';
 
-import { 
-    collection, 
-    getDocs, 
-    doc, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    where, 
+import {
+    collection,
+    getDocs,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
     writeBatch,
-    Timestamp 
+    Timestamp
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 
 export interface FolderData {
-  id: string;
-  name: string;
-  parentId?: string | null;
-  userId: string;
-  createdAt: Date;
-  isSystem?: boolean;
+    id: string;
+    name: string;
+    parentId?: string | null;
+    userId: string;
+    orgId?: string;
+    createdAt: Date;
+    isSystem?: boolean;
 }
 
 const FOLDERS_COLLECTION = 'contactFolders';
@@ -32,29 +33,55 @@ function getDb() {
     return db;
 }
 
-const docToFolder = (doc: any): FolderData => ({ 
-    id: doc.id, 
+function getCurrentAuthContext() {
+    const { auth } = getFirebaseServices();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error('User must be logged in.');
+    }
+
+    return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const tokenResult = await currentUser.getIdTokenResult();
+    const orgId = tokenResult.claims.orgId;
+
+    if (typeof orgId !== 'string' || !orgId.trim()) {
+        throw new Error('Authenticated user is missing an orgId claim.');
+    }
+
+    return orgId;
+}
+
+const docToFolder = (doc: any): FolderData => ({
+    id: doc.id,
     ...doc.data(),
     createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
 } as FolderData);
 
 
 export async function getFolders(userId: string): Promise<FolderData[]> {
-  const db = getDb();
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFolder).sort((a,b) => a.name.localeCompare(b.name));
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToFolder).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addFolder(folderData: Omit<FolderData, 'id' | 'createdAt'>): Promise<FolderData> {
-  const db = getDb();
-  const dataToSave = {
-    ...folderData,
-    parentId: folderData.parentId || null,
-    createdAt: new Date(),
-  };
-  const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
-  return { id: docRef.id, ...dataToSave };
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const dataToSave = {
+        ...folderData,
+        orgId,
+        parentId: folderData.parentId || null,
+        createdAt: new Date(),
+    };
+    const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
+    return { id: docRef.id, ...dataToSave };
 }
 
 export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderData, 'id' | 'userId'>>): Promise<void> {
@@ -82,10 +109,11 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
  */
 export async function ensureSystemFolders(userId: string): Promise<FolderData[]> {
     const db = getDb();
-    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId));
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
-    
+
     // Mandated System Taxonomy
     const systemFoldersConfig = [
         { name: 'Admin', parent: null },
@@ -107,13 +135,13 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     for (const config of systemFoldersConfig) {
         // Find ALL folders matching this name (case-insensitive)
         const matches = currentFolders.filter(f => f.name.toLowerCase() === config.name.toLowerCase());
-        
+
         let masterFolder: FolderData;
 
         if (matches.length > 0) {
             // Pick the first one as the master record
             masterFolder = matches[0];
-            
+
             // Ensure it is marked as a system folder
             if (!masterFolder.isSystem) {
                 batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
@@ -126,7 +154,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
                 const duplicates = matches.slice(1);
                 for (const dupe of duplicates) {
                     // Reassign all contacts in the duplicate folder to the master folder
-                    const contactsQuery = query(collection(db, CONTACTS_COLLECTION), where("userId", "==", userId), where("folderId", "==", dupe.id));
+                    const contactsQuery = query(collection(db, CONTACTS_COLLECTION), where("orgId", "==", orgId), where("folderId", "==", dupe.id));
                     const contactsSnapshot = await getDocs(contactsQuery);
                     contactsSnapshot.forEach(contactDoc => {
                         batch.update(contactDoc.ref, { folderId: masterFolder.id });
@@ -134,7 +162,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
 
                     // Delete the duplicate folder record
                     batch.delete(doc(db, FOLDERS_COLLECTION, dupe.id));
-                    
+
                     // Remove from our local tracking list
                     const index = currentFolders.findIndex(f => f.id === dupe.id);
                     if (index > -1) currentFolders.splice(index, 1);
@@ -153,6 +181,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
             const newFolder = {
                 name: config.name,
                 userId,
+                orgId,
                 parentId,
                 isSystem: true,
                 createdAt: new Date(),

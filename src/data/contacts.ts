@@ -1,6 +1,11 @@
 
 export interface Contact {
   id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   name: string;
   email?: string;
   birthDate?: string;
@@ -32,7 +37,7 @@ export interface Contact {
   documentFolderId?: string; // The linked folder in Document Manager
   status?: string; // CRM Status
   keywords?: string[];
-  
+
   // HR & Payroll Specialized Metadata (Integrated from deprecated collection)
   sin?: string;
   workerType?: 'employee' | 'contractor';

@@ -1,16 +1,16 @@
 'use client';
 
 import {
-  collection,
-  getDocs,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  writeBatch,
-  Timestamp,
+    collection,
+    getDocs,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    writeBatch,
+    Timestamp,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
@@ -38,8 +38,8 @@ function getDb() {
 
 const docToWorker = (doc: any): Worker => {
     const data = doc.data();
-    return { 
-        id: doc.id, 
+    return {
+        id: doc.id,
         ...data,
         payRate: Number(data.payRate) || 0,
     } as Worker;
@@ -51,55 +51,55 @@ const docToWorker = (doc: any): Worker => {
  * Scoped strictly to the current user to prevent 'IN' comparison limit errors.
  */
 export async function getWorkers(userId: string): Promise<Worker[]> {
-  const db = getDb();
-  
-  if (!userId || typeof userId !== 'string') return [];
+    const db = getDb();
 
-  try {
-    // 1. Resolve the mandated system folder IDs for THIS user only
-    const foldersRef = collection(db, FOLDERS_COLLECTION);
-    const foldersQuery = query(foldersRef, where("userId", "==", userId));
+    if (!userId || typeof userId !== 'string') return [];
 
-    const foldersSnapshot = await getDocs(foldersQuery);
-    const userFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
-    
-    // Find the specific worker-related nodes within the user's taxonomy
-    const workerFolderIds = userFolders
-        .filter(f => f.isSystem && (
-            f.name.toLowerCase() === 'employees' || 
-            f.name.toLowerCase() === 'contractors' || 
-            f.name.toLowerCase() === 'workers'
-        ))
-        .map(f => f.id);
+    try {
+        // 1. Resolve the mandated system folder IDs for THIS user only
+        const foldersRef = collection(db, FOLDERS_COLLECTION);
+        const foldersQuery = query(foldersRef, where("userId", "==", userId));
 
-    // If no folders found, return empty set to avoid invalid IN query
-    if (workerFolderIds.length === 0) return [];
+        const foldersSnapshot = await getDocs(foldersQuery);
+        const userFolders = foldersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
-    // 2. Query contacts strictly based on their folder assignment and user ownership
-    const contactsRef = collection(db, CONTACTS_COLLECTION);
-    // Note: 'in' queries are limited to 30 items. We are scoping strictly to worker folders.
-    const q = query(
-        contactsRef, 
-        where("userId", "==", userId),
-        where("folderId", "in", workerFolderIds.slice(0, 30))
-    );
-    
-    const snapshot = await getDocs(q);
-    // Explicitly filter for presence of worker metadata to be defensive
-    return snapshot.docs
-        .map(docToWorker)
-        .filter(w => w.workerType !== null && w.workerType !== undefined)
-        .sort((a,b) => a.name.localeCompare(b.name));
+        // Find the specific worker-related nodes within the user's taxonomy
+        const workerFolderIds = userFolders
+            .filter(f => f.isSystem && (
+                f.name.toLowerCase() === 'employees' ||
+                f.name.toLowerCase() === 'contractors' ||
+                f.name.toLowerCase() === 'workers'
+            ))
+            .map(f => f.id);
 
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: CONTACTS_COLLECTION,
-            operation: 'list',
-        } satisfies SecurityRuleContext));
+        // If no folders found, return empty set to avoid invalid IN query
+        if (workerFolderIds.length === 0) return [];
+
+        // 2. Query contacts strictly based on their folder assignment and user ownership
+        const contactsRef = collection(db, CONTACTS_COLLECTION);
+        // Note: 'in' queries are limited to 30 items. We are scoping strictly to worker folders.
+        const q = query(
+            contactsRef,
+            where("userId", "==", userId),
+            where("folderId", "in", workerFolderIds.slice(0, 30))
+        );
+
+        const snapshot = await getDocs(q);
+        // Explicitly filter for presence of worker metadata to be defensive
+        return snapshot.docs
+            .map(docToWorker)
+            .filter(w => w.workerType !== null && w.workerType !== undefined)
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: CONTACTS_COLLECTION,
+                operation: 'list',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
     }
-    throw error;
-  }
 }
 
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
@@ -136,7 +136,7 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
     const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const timeLogsSnapshot = await getDocs(timeLogsQuery);
     timeLogsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
-    
+
     const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('workerId', '==', sourceWorkerId));
     const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
     leaveRequestsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
@@ -146,14 +146,14 @@ export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: strin
 }
 
 export interface PayrollRemittance {
-  id: string;
-  payPeriodStart: string;
-  payPeriodEnd: string;
-  dueDate: string;
-  amount: number;
-  status: 'Due' | 'Paid';
-  paidDate?: string;
-  userId: string;
+    id: string;
+    payPeriodStart: string;
+    payPeriodEnd: string;
+    dueDate: string;
+    amount: number;
+    status: 'Due' | 'Paid';
+    paidDate?: string;
+    userId: string;
 }
 
 export async function getRemittances(userId: string): Promise<PayrollRemittance[]> {
@@ -162,7 +162,7 @@ export async function getRemittances(userId: string): Promise<PayrollRemittance[
     const q = query(collection(db, REMITTANCES_COLLECTION), where("userId", "==", userId));
     try {
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a,b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
     } catch (error: any) {
         if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -208,7 +208,7 @@ export async function savePayrollRun(data: any): Promise<void> {
     data.details.forEach((detail: any) => {
         const detailRef = doc(collection(db, PAYROLL_RUNS_COLLECTION, runRef.id, 'details'));
         batch.set(detailRef, { ...detail, runId: runRef.id, userId: data.userId });
-        
+
         const expenseRef = doc(collection(db, 'expenseTransactions'));
         batch.set(expenseRef, {
             userId: data.userId,

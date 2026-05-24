@@ -4,7 +4,11 @@ export interface FolderItem {
   name: string;
   type: 'folder';
   parentId: string | null;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
+  updatedAt?: Date;
   userId?: string;
 }
 
@@ -13,6 +17,11 @@ export interface FileItem {
   name: string;
   type: 'file' | string;
   size: number;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   modifiedAt: Date;
   folderId: string;
   userId?: string;

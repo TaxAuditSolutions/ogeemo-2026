@@ -1,16 +1,16 @@
 
 'use client';
 
-import { 
-    getFirestore, 
-    collection, 
-    getDocs, 
-    doc, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    where, 
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
     writeBatch,
     Timestamp,
     setDoc,
@@ -20,14 +20,18 @@ import { getFirebaseServices } from '@/firebase';
 import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 
 export interface FolderItem {
-  id: string;
-  name: string;
-  type: 'folder';
-  parentId: string | null;
-  userId: string;
-  createdAt: Date;
-  isSystem?: boolean;
-  driveLink?: string;
+    id: string;
+    name: string;
+    type: 'folder';
+    parentId: string | null;
+    userId: string;
+    orgId?: string;
+    createdBy?: string;
+    updatedBy?: string;
+    createdAt: Date;
+    updatedAt?: Date;
+    isSystem?: boolean;
+    driveLink?: string;
 }
 
 const FOLDERS_COLLECTION = 'fileManagerFolders';
@@ -38,36 +42,81 @@ function getDb() {
     return db;
 }
 
-const docToFolder = (doc: any): FolderItem => ({ 
-    id: doc.id, 
+function getCurrentAuthContext() {
+    const { auth } = getFirebaseServices();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error('User must be logged in.');
+    }
+
+    return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const tokenResult = await currentUser.getIdTokenResult(true);
+    const claimedOrgId = tokenResult.claims.orgId;
+
+    if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+        return claimedOrgId;
+    }
+
+    const db = getDb();
+    const userProfileRef = doc(db, 'users', currentUser.uid);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const profileOrgId = userProfileSnap.data()?.orgId;
+
+    if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+        return profileOrgId;
+    }
+
+    throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
+const docToFolder = (doc: any): FolderItem => ({
+    id: doc.id,
     type: 'folder',
     ...doc.data(),
     createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
+    updatedAt: (doc.data().updatedAt as Timestamp)?.toDate() || doc.data().updatedAt,
 } as FolderItem);
 
 
 export async function getFolders(userId: string): Promise<FolderItem[]> {
-  const db = getDb();
-  const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFolder);
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToFolder);
 }
 
 export async function addFolder(folderData: Omit<FolderItem, 'id' | 'createdAt' | 'type'>): Promise<FolderItem> {
-  const db = getDb();
-  const dataToSave = {
-    ...folderData,
-    parentId: folderData.parentId || null,
-    createdAt: new Date(),
-  };
-  const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
-  return { id: docRef.id, type: 'folder', ...dataToSave };
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const dataToSave = {
+        ...folderData,
+        orgId,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
+        parentId: folderData.parentId || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+    const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), dataToSave);
+    return { id: docRef.id, type: 'folder', ...dataToSave };
 }
 
 export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderItem, 'id' | 'userId' | 'type'>>): Promise<void> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
     const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
-    await updateDoc(folderRef, folderData);
+    await updateDoc(folderRef, {
+        ...folderData,
+        updatedBy: currentUser.uid,
+        updatedAt: new Date(),
+    });
 }
 
 export async function deleteFolders(folderIds: string[]): Promise<void> {
@@ -89,10 +138,12 @@ export async function deleteFolders(folderIds: string[]): Promise<void> {
  */
 export async function ensureDocumentSystemFolders(userId: string): Promise<FolderItem[]> {
     const db = getDb();
-    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId));
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId));
     const snapshot = await getDocs(q);
     const existing = snapshot.docs.map(docToFolder);
-    
+
     // Unified High-Fidelity Taxonomy
     const systemFoldersConfig = [
         { name: "Workers", parent: null },
@@ -123,25 +174,25 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
 
     for (const config of systemFoldersConfig) {
         // Find folders by current name or legacy name
-        const matches = currentFolders.filter(f => 
+        const matches = currentFolders.filter(f =>
             f.name.toLowerCase() === config.name.toLowerCase() ||
             Object.keys(legacyMap).some(old => f.name.toLowerCase() === old && legacyMap[old] === config.name)
         );
-        
+
         let masterFolder: FolderItem;
 
         if (matches.length > 0) {
             masterFolder = matches[0];
-            
+
             // Rename if it was a legacy name
             if (masterFolder.name.toLowerCase() !== config.name.toLowerCase()) {
-                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { name: config.name });
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { name: config.name, updatedBy: currentUser.uid, updatedAt: new Date() });
                 masterFolder.name = config.name;
                 hasChanges = true;
             }
 
             if (!masterFolder.isSystem) {
-                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true });
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { isSystem: true, updatedBy: currentUser.uid, updatedAt: new Date() });
                 masterFolder.isSystem = true;
                 hasChanges = true;
             }
@@ -150,7 +201,7 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
             if (matches.length > 1) {
                 const duplicates = matches.slice(1);
                 for (const dupe of duplicates) {
-                    const filesQuery = query(collection(db, FILES_COLLECTION), where("userId", "==", userId), where("folderId", "==", dupe.id));
+                    const filesQuery = query(collection(db, FILES_COLLECTION), where("orgId", "==", orgId), where("folderId", "==", dupe.id));
                     const filesSnapshot = await getDocs(filesQuery);
                     filesSnapshot.forEach(fileDoc => {
                         batch.update(fileDoc.ref, { folderId: masterFolder.id });
@@ -167,9 +218,13 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
             const newFolder: any = {
                 name: config.name,
                 userId,
+                orgId,
                 parentId: null,
                 isSystem: true,
                 createdAt: new Date(),
+                updatedAt: new Date(),
+                createdBy: currentUser.uid,
+                updatedBy: currentUser.uid,
             };
             batch.set(docRef, newFolder);
             masterFolder = { id: docRef.id, type: 'folder', ...newFolder };
@@ -181,7 +236,7 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
         if (config.parent) {
             const parentMatch = currentFolders.find(f => f.name.toLowerCase() === config.parent!.toLowerCase());
             if (parentMatch && masterFolder.parentId !== parentMatch.id) {
-                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { parentId: parentMatch.id });
+                batch.update(doc(db, FOLDERS_COLLECTION, masterFolder.id), { parentId: parentMatch.id, updatedBy: currentUser.uid, updatedAt: new Date() });
                 masterFolder.parentId = parentMatch.id;
                 hasChanges = true;
             }
@@ -197,12 +252,14 @@ export async function ensureDocumentSystemFolders(userId: string): Promise<Folde
 
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     const db = getDb();
-    const q = query(collection(db, FOLDERS_COLLECTION), where("userId", "==", userId), where("name", "==", folderName));
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId), where("name", "==", folderName));
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
         return docToFolder(snapshot.docs[0]);
     }
-    const newFolderData = { name: folderName, userId, parentId: null, createdAt: new Date() };
+    const newFolderData = { name: folderName, userId, orgId, parentId: null, createdAt: new Date(), updatedAt: new Date(), createdBy: currentUser.uid, updatedBy: currentUser.uid };
     const docRef = await addDoc(collection(db, FOLDERS_COLLECTION), newFolderData);
     return { id: docRef.id, type: 'folder', ...newFolderData };
 }
@@ -214,7 +271,9 @@ export async function findOrCreateFileFolder(userId: string, folderName: string)
  */
 export async function provisionWorkerDocumentNode(userId: string, contactName: string, contactFolderId: string): Promise<string | null> {
     const db = getDb();
-    
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+
     // 1. Get the name of the Contact Hub folder to determine the role
     const contactFolders = await getContactFolders(userId);
     const targetContactFolder = contactFolders.find(f => f.id === contactFolderId);
@@ -235,17 +294,20 @@ export async function provisionWorkerDocumentNode(userId: string, contactName: s
     // 3. Create or find the individual worker folder
     const q = query(
         collection(db, FOLDERS_COLLECTION),
-        where("userId", "==", userId),
+        where("orgId", "==", orgId),
         where("parentId", "==", typeFolder.id),
         where("name", "==", contactName)
     );
     const snapshot = await getDocs(q);
-    
+
     if (snapshot.empty) {
         const newFolder = await addFolder({
             name: contactName,
             userId,
+            orgId,
             parentId: typeFolder.id,
+            createdBy: currentUser.uid,
+            updatedBy: currentUser.uid,
         });
         return newFolder.id;
     }

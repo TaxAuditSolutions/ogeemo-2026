@@ -659,7 +659,8 @@ const docToIncome = (doc: any): IncomeTransaction => ({ id: doc.id, ...doc.data(
 
 export async function getIncomeTransactions(userId: string): Promise<IncomeTransaction[]> {
   const db = getDb();
-  const q = query(collection(db, INCOME_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, INCOME_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToIncome).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -739,7 +740,8 @@ const docToExpense = (doc: any): ExpenseTransaction => ({ id: doc.id, ...doc.dat
 
 export async function getExpenseTransactions(userId: string): Promise<ExpenseTransaction[]> {
   const db = getDb();
-  const q = query(collection(db, EXPENSE_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, EXPENSE_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToExpense).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -821,7 +823,8 @@ const docToPayableBill = (doc: any): PayableBill => {
 
 export async function getPayableBills(userId: string): Promise<PayableBill[]> {
   const db = getDb();
-  const q = query(collection(db, PAYABLES_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, PAYABLES_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToPayableBill).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
@@ -926,7 +929,8 @@ const docToPettyCash = (doc: any): PettyCashTransaction => ({ id: doc.id, ...doc
 
 export async function getPettyCashTransactions(userId: string): Promise<PettyCashTransaction[]> {
   const db = getDb();
-  const q = query(collection(db, PETTY_CASH_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, PETTY_CASH_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToPettyCash).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -1064,7 +1068,8 @@ const docToAsset = (doc: any): Asset => {
 
 export async function getAssets(userId: string): Promise<Asset[]> {
   const db = getDb();
-  const q = query(collection(db, ASSETS_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, ASSETS_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToAsset).sort((a, b) => a.name.localeCompare(b.name));
@@ -1137,7 +1142,8 @@ const docToEquityTransaction = (doc: any): EquityTransaction => ({ id: doc.id, .
 
 export async function getEquityTransactions(userId: string): Promise<EquityTransaction[]> {
   const db = getDb();
-  const q = query(collection(db, EQUITY_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, EQUITY_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToEquityTransaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -1213,7 +1219,8 @@ const docToLoan = (doc: any): Loan => ({ id: doc.id, ...doc.data() } as Loan);
 
 export async function getLoans(userId: string): Promise<Loan[]> {
   const db = getDb();
-  const q = query(collection(db, LOANS_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, LOANS_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToLoan).sort((a, b) => a.counterparty.localeCompare(b.counterparty));
@@ -1792,7 +1799,8 @@ export async function mergeCategories(userId: string, sourceId: string, targetCa
   if (!sourceSnap.exists()) return;
   const sourceData = sourceSnap.data();
 
-  const q = query(collection(db, transactionCol), where("userId", "==", userId), where(categoryField, "==", sourceData.categoryNumber));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, transactionCol), where("orgId", "==", orgId), where(categoryField, "==", sourceData.categoryNumber));
   const snapshot = await getDocs(q);
 
   snapshot.forEach(tDoc => {
@@ -1819,7 +1827,8 @@ export async function deleteExpenseCategories(ids: string[]): Promise<void> {
 
 export async function getInternalAccounts(userId: string): Promise<InternalAccount[]> {
   const db = getDb();
-  const q = query(collection(db, INTERNAL_ACCOUNT_COLLECTION), where("userId", "==", userId));
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, INTERNAL_ACCOUNT_COLLECTION), where("orgId", "==", orgId));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InternalAccount)).sort((a, b) => a.name.localeCompare(b.name));

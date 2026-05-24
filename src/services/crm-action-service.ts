@@ -2,7 +2,6 @@
 'use client';
 
 import {
-  getFirestore,
   collection,
   getDocs,
   doc,
@@ -12,6 +11,7 @@ import {
   query,
   where,
   writeBatch,
+  getDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 
@@ -22,7 +22,12 @@ export interface Action {
   status: 'To Do' | 'In Progress' | 'Done';
   position: number;
   leadName: string;
-  userId: string;
+  userId?: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const CRM_ACTIONS_COLLECTION = 'crmActions';
@@ -32,27 +37,61 @@ function getDb() {
   return db;
 }
 
+function getCurrentAuthContext() {
+  const { auth } = getFirebaseServices();
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) {
+    throw new Error('User must be logged in.');
+  }
+
+  return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+  const currentUser = getCurrentAuthContext();
+  const tokenResult = await currentUser.getIdTokenResult(true);
+  const claimedOrgId = tokenResult.claims.orgId;
+
+  if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+    return claimedOrgId;
+  }
+
+  const db = getDb();
+  const userProfileRef = doc(db, 'users', currentUser.uid);
+  const userProfileSnap = await getDoc(userProfileRef);
+  const profileOrgId = userProfileSnap.data()?.orgId;
+
+  if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+    return profileOrgId;
+  }
+
+  throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
 const docToAction = (doc: any): Action => ({
   id: doc.id,
   ...doc.data(),
 } as Action);
 
-export async function getAllCrmActions(userId: string): Promise<Action[]> {
+export async function getAllCrmActions(_userId?: string): Promise<Action[]> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const q = query(
     collection(db, CRM_ACTIONS_COLLECTION),
-    where('userId', '==', userId)
+    where('orgId', '==', orgId)
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToAction);
 }
 
 
-export async function getActionsForLead(userId: string, leadName: string): Promise<Action[]> {
+export async function getActionsForLead(_userId: string, leadName: string): Promise<Action[]> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const q = query(
     collection(db, CRM_ACTIONS_COLLECTION),
-    where('userId', '==', userId),
+    where('orgId', '==', orgId),
     where('leadName', '==', leadName)
   );
   const snapshot = await getDocs(q);
@@ -60,30 +99,75 @@ export async function getActionsForLead(userId: string, leadName: string): Promi
 }
 
 export async function addAction(data: Omit<Action, 'id'>): Promise<Action> {
-    const db = getDb();
-    const collectionRef = collection(db, CRM_ACTIONS_COLLECTION);
-    const docRef = await addDoc(collectionRef, data);
-    return { id: docRef.id, ...data };
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+  const now = new Date();
+  const dataToSave = {
+    ...data,
+    orgId,
+    createdBy: currentUser.uid,
+    updatedBy: currentUser.uid,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const collectionRef = collection(db, CRM_ACTIONS_COLLECTION);
+  const docRef = await addDoc(collectionRef, dataToSave);
+  return { id: docRef.id, ...dataToSave };
 }
 
 export async function updateAction(id: string, data: Partial<Omit<Action, 'id' | 'userId'>>): Promise<void> {
-    const db = getDb();
-    const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
-    await updateDoc(docRef, data);
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+  const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
+  const currentSnap = await getDoc(docRef);
+
+  if (!currentSnap.exists() || currentSnap.data()?.orgId !== orgId) {
+    throw new Error('Action not found in your organization.');
+  }
+
+  await updateDoc(docRef, {
+    ...data,
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  });
 }
 
 export async function deleteAction(id: string): Promise<void> {
-    const db = getDb();
-    const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
-    await deleteDoc(docRef);
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const docRef = doc(db, CRM_ACTIONS_COLLECTION, id);
+  const currentSnap = await getDoc(docRef);
+
+  if (!currentSnap.exists() || currentSnap.data()?.orgId !== orgId) {
+    throw new Error('Action not found in your organization.');
+  }
+
+  await deleteDoc(docRef);
 }
 
 export async function updateActionPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {
-    const db = getDb();
-    const batch = writeBatch(db);
-    updates.forEach(update => {
-        const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);
-        batch.update(docRef, { position: update.position, status: update.status });
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+  const batch = writeBatch(db);
+
+  for (const update of updates) {
+    const docRef = doc(db, CRM_ACTIONS_COLLECTION, update.id);
+    const currentSnap = await getDoc(docRef);
+
+    if (!currentSnap.exists() || currentSnap.data()?.orgId !== orgId) {
+      continue;
+    }
+
+    batch.update(docRef, {
+      position: update.position,
+      status: update.status,
+      updatedBy: currentUser.uid,
+      updatedAt: new Date(),
     });
-    await batch.commit();
+  }
+
+  await batch.commit();
 }

@@ -302,13 +302,8 @@ export function ContactsView() {
       const fetchedIndustries = await getIndustries(user.uid);
       setCustomIndustries(fetchedIndustries);
 
-      try {
-        const fetchedWorkers = await getWorkers(user.uid);
-        setWorkersForSelection(fetchedWorkers);
-      } catch (error: any) {
-        console.warn('Contacts bootstrap: worker load failed, defaulting to empty workers.', error);
-        setWorkersForSelection([]);
-      }
+      const fetchedWorkers = await getWorkers(user.uid);
+      setWorkersForSelection(fetchedWorkers);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {

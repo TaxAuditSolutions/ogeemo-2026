@@ -13,6 +13,38 @@ function getDb() {
     return db;
 }
 
+function getCurrentAuthContext() {
+    const { auth } = getFirebaseServices();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error('User must be logged in.');
+    }
+
+    return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const tokenResult = await currentUser.getIdTokenResult(true);
+    const claimedOrgId = tokenResult.claims.orgId;
+
+    if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+        return claimedOrgId;
+    }
+
+    const db = getDb();
+    const userProfileRef = doc(db, 'users', currentUser.uid);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const profileOrgId = userProfileSnap.data()?.orgId;
+
+    if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+        return profileOrgId;
+    }
+
+    throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
 function getFunctionsService() {
     const { functions } = getFirebaseServices();
     return functions;
@@ -60,10 +92,8 @@ const docToUserProfile = (doc: any): UserProfile => ({ id: doc.id, ...doc.data()
 
 export async function getUsers(orgId?: string): Promise<UserProfile[]> {
     const db = getDb();
-    let q = query(collection(db, PROFILES_COLLECTION));
-    if (orgId) {
-        q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', orgId));
-    }
+    const resolvedOrgId = orgId || await getCurrentOrgId();
+    const q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', resolvedOrgId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToUserProfile);
 }

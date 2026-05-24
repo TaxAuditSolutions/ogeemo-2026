@@ -532,7 +532,7 @@ export function ReconciliationWizard({
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Start Date</Label>
                                         <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                                             <PopoverTrigger asChild>
-                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white border-black/20", !startDate && "text-muted-foreground")}>
+                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white", !startDate && "text-muted-foreground")}>
                                                     <CalendarIcon className="mr-2 h-3 w-3 opacity-50" />
                                                     {startDate ? format(startDate, "PP") : <span>Beginning</span>}
                                                 </Button>
@@ -547,7 +547,7 @@ export function ReconciliationWizard({
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">End Date</Label>
                                         <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                                             <PopoverTrigger asChild>
-                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white border-black/20", !endDate && "text-muted-foreground")} disabled={!startDate}>
+                                                <Button variant="outline" className={cn("w-40 justify-start text-left font-normal px-3 h-10 text-xs bg-white", !endDate && "text-muted-foreground")} disabled={!startDate}>
                                                     <CalendarIcon className="mr-2 h-3 w-3 opacity-50" />
                                                     {endDate ? format(endDate, "PP") : <span>End</span>}
                                                 </Button>

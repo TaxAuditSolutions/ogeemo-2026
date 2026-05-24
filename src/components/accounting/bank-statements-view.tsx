@@ -699,7 +699,7 @@ export function BankStatementsView() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Search names, amounts, or rationale..." 
-                        className="h-11 pl-10 bg-white border-black/20 focus-visible:ring-primary shadow-sm"
+                        className="h-11 pl-10 bg-white focus-visible:ring-primary shadow-sm"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />

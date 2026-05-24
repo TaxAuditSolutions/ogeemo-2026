@@ -580,7 +580,7 @@ export function LedgersView() {
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Start Date</Label>
                     <Popover open={isStartFilterOpen} onOpenChange={setIsStartFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !startDate && "text-muted-foreground")}>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !startDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                 {startDate ? format(startDate, "PPP") : <span>Beginning of time</span>}
                             </Button>
@@ -594,7 +594,7 @@ export function LedgersView() {
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">End Date</Label>
                     <Popover open={isEndFilterOpen} onOpenChange={setIsEndFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white border-black/20", !endDate && "text-muted-foreground")}>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left font-normal px-4 text-sm bg-white", !endDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                 {endDate ? format(endDate, "PPP") : <span>End of time</span>}
                             </Button>
@@ -604,7 +604,7 @@ export function LedgersView() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <Button variant="outline" className="bg-white border-black/20" onClick={clearFilters} disabled={!startDate && !endDate && !showDuplicatesOnly}>
+                <Button variant="outline" className="bg-white" onClick={clearFilters} disabled={!startDate && !endDate && !showDuplicatesOnly}>
                     <FilterX className="mr-2 h-4 w-4" /> Clear Filters
                 </Button>
             </CardContent>

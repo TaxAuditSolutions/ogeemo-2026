@@ -14,6 +14,11 @@ export interface TimeSession {
 
 export interface Event {
   id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   title: string;
   description?: string;
   start?: Date;
@@ -43,12 +48,16 @@ export type ProjectUrgency = 'urgent' | 'important' | 'optional';
 
 export interface Project {
   id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   name: string;
   description?: string;
   clientId?: string | null;
   contactId?: string | null;
   userId: string;
-  createdAt: Date;
   steps?: Partial<ProjectStep>[];
   status?: ProjectStatus;
   importance?: ProjectImportance;
@@ -60,29 +69,29 @@ export interface Project {
 }
 
 export interface ProjectStep {
-    id: string;
-    title: string;
-    description?: string;
-    durationMinutes?: number;
-    isBillable: boolean;
-    connectToCalendar: boolean;
-    startTime: Date | null;
-    isCompleted: boolean;
+  id: string;
+  title: string;
+  description?: string;
+  durationMinutes?: number;
+  isBillable: boolean;
+  connectToCalendar: boolean;
+  startTime: Date | null;
+  isCompleted: boolean;
 }
 
 export interface ProjectTemplate {
-    id: string;
-    name: string;
-    description: string;
-    tasks: Omit<Event, 'id' | 'projectId' | 'userId'>[];
-    userId: string;
+  id: string;
+  name: string;
+  description: string;
+  tasks: Omit<Event, 'id' | 'projectId' | 'userId'>[];
+  userId: string;
 }
 
 export interface ProjectFolder {
-    id: string;
-    name: string;
-    parentId?: string | null;
-    userId: string;
+  id: string;
+  name: string;
+  parentId?: string | null;
+  userId: string;
 }
 
 export interface ActionChipData {
@@ -94,11 +103,15 @@ export interface ActionChipData {
 }
 
 export interface Idea {
-    id: string;
-    title: string;
-    description?: string;
-    status: 'Yes' | 'No' | 'Maybe';
-    position: number;
-    userId: string;
-    createdAt: Date;
+  id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  title: string;
+  description?: string;
+  status: 'Yes' | 'No' | 'Maybe';
+  position: number;
+  userId: string;
 }

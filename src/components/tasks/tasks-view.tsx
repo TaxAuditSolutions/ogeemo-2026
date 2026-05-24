@@ -33,9 +33,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getTasksForUser, addProject, updateTask, deleteTask, deleteTodos, updateTodosStatus } from '@/services/project-service';
+import { getTasksForUser, addProject, updateTask, updateTaskPositions, deleteTask, deleteTodos } from '@/services/project-service';
+import { updateTodosStatus } from '@/services/todo-service';
 import { getProjects } from '@/services/project-service';
-import { type Event as TaskEvent, type TaskStatus, type Project } from '@/types/calendar-types';
+import { type Event as TaskEvent, type TaskStatus, type Project, type ProjectStep } from '@/types/calendar-types';
 import { archiveTaskAsFile } from '@/core/file-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
@@ -56,7 +57,7 @@ export function ToDoListView() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [taskToConvert, setTaskToConvert] = useState<TaskEvent | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  
+
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>('all');
   const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
@@ -73,11 +74,10 @@ export function ToDoListView() {
     }
     setIsLoading(true);
     try {
-      const [userTasks, userProjects, userContacts] = await Promise.all([
-        getTasksForUser(user.uid),
-        getProjects(user.uid),
-        getContacts(user.uid),
-      ]);
+      const userTasks = await getTasksForUser(user.uid);
+      const userProjects = await getProjects(user.uid).catch(() => []);
+      const userContacts = await getContacts(user.uid).catch(() => []);
+
       setTasks(userTasks.filter(task => !task.ritualType));
       setProjects(userProjects);
       setContacts(userContacts);
@@ -96,7 +96,7 @@ export function ToDoListView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-  
+
   const filteredTasks = useMemo(() => {
     if (selectedProjectId === 'all') return tasks;
     if (selectedProjectId === 'unassigned') return tasks.filter(t => !t.projectId || t.projectId === 'inbox');
@@ -112,15 +112,16 @@ export function ToDoListView() {
     };
   }, [filteredTasks]);
 
-  const onDropTask = useCallback(async (item: TaskEvent, newStatus: TaskStatus) => {
+  const onDropTask = useCallback(async (item: TaskEvent | Partial<ProjectStep>, newStatus: TaskStatus) => {
+    if (!('status' in item) || !item.id) return;
     if (item.status === newStatus) return;
     const originalTasks = [...tasks];
     setTasks(prev => prev.map(t => t.id === item.id ? { ...t, status: newStatus } : t));
     try {
-        await updateTask(item.id, { status: newStatus });
+      await updateTask(item.id, { status: newStatus });
     } catch (error) {
-        setTasks(originalTasks);
-        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
+      setTasks(originalTasks);
+      toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not move the task.' });
     }
   }, [tasks, toast]);
 
@@ -135,18 +136,18 @@ export function ToDoListView() {
     const newTasks = [...tasks];
     const [draggedItem] = newTasks.splice(dragIndex, 1);
     newTasks.splice(hoverIndex, 0, draggedItem);
-    
+
     const tasksInColumn = newTasks.filter(t => t.status === dragTask.status);
     const updates = tasksInColumn.map((task, index) => ({
-        id: task.id,
-        position: index,
-        status: task.status,
+      id: task.id,
+      position: index,
+      status: task.status,
     }));
-    
+
     setTasks(newTasks);
     await updateTaskPositions(updates);
   }, [tasks]);
-  
+
   const handleAddTask = (initialData: Partial<TaskEvent> = {}) => {
     setTaskToEdit(null);
     setInitialDialogData(initialData);
@@ -157,7 +158,7 @@ export function ToDoListView() {
     loadData();
     setIsNewTaskDialogOpen(false);
   };
-  
+
   const handleEditTask = (task: TaskEvent) => {
     setTaskToEdit(task);
     setIsNewTaskDialogOpen(true);
@@ -167,7 +168,7 @@ export function ToDoListView() {
     const task = tasks.find(t => t.id === taskId);
     if (task) setTaskToDelete(task);
   };
-  
+
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
     try {
@@ -190,20 +191,20 @@ export function ToDoListView() {
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
     if (!user) return;
     try {
-        const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
-        if (taskToConvert) {
-          await deleteTask(taskToConvert.id);
-        }
-        toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
-        loadData(); // Refresh both projects and todos
+      const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
+      if (taskToConvert) {
+        await deleteTask(taskToConvert.id);
+      }
+      toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
+      loadData(); // Refresh both projects and todos
     } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to create project", description: error.message });
+      toast({ variant: "destructive", title: "Failed to create project", description: error.message });
     } finally {
-        setIsNewProjectDialogOpen(false);
-        setTaskToConvert(null);
+      setIsNewProjectDialogOpen(false);
+      setTaskToConvert(null);
     }
   };
-  
+
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {
@@ -216,15 +217,29 @@ export function ToDoListView() {
     }
   };
 
+  const handleAddToTodoList = async (task: TaskEvent) => {
+    try {
+      await updateTask(task.id, {
+        projectId: null,
+        status: 'todo',
+        isTodoItem: true,
+      });
+      toast({ title: 'Added to To-Do List' });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to add to To-Do List', description: error.message });
+    }
+  };
+
   const handleToggleSelect = (taskId: string, event?: React.MouseEvent) => {
     event?.stopPropagation();
     setSelectedTaskIds(prev =>
-        prev.includes(taskId)
-            ? prev.filter(id => id !== taskId)
-            : [...prev, taskId]
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
     );
   };
-  
+
   const handleToggleSelectAll = (status: TaskStatus) => {
     const columnTasks = tasksByStatus[status];
     const columnTaskIds = columnTasks.map(t => t.id);
@@ -243,7 +258,7 @@ export function ToDoListView() {
       setIsBulkDeleteAlertOpen(true);
     }
   };
-  
+
   const handleConfirmBulkDelete = async () => {
     try {
       await deleteTodos(selectedTaskIds);
@@ -263,7 +278,7 @@ export function ToDoListView() {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     onDropTask(task, newStatus);
   };
-  
+
   const projectOptions = [{ id: 'all', name: 'All Tasks' }, { id: 'unassigned', name: 'To-Do List / Unassigned' }, ...projects];
 
   if (isLoading) {
@@ -280,48 +295,48 @@ export function ToDoListView() {
         <header className="text-center mb-6 relative w-full max-w-7xl">
           <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
           <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
-           <div className="mt-4">
-                <ProjectManagementHeader />
-            </div>
-            <div className="absolute top-0 right-0">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/welcome"><X className="h-5 w-5"/></Link>
-                </Button>
-            </div>
+          <div className="mt-4">
+            <ProjectManagementHeader />
+          </div>
+          <div className="absolute top-0 right-0">
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/welcome"><X className="h-5 w-5" /></Link>
+            </Button>
+          </div>
         </header>
 
         <div className="w-full max-w-7xl flex-1 space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
-                <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-64 justify-between">
-                            {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select a project..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projectOptions.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
-                    </PopoverContent>
-                </Popover>
-                 {selectedTaskIds.length > 0 && (
-                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                        <Trash2 className="mr-2 h-4 w-4"/> Delete ({selectedTaskIds.length})
-                    </Button>
-                )}
+              <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-64 justify-between">
+                    {projectOptions.find(p => p.id === selectedProjectId)?.name || "Select a project..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command><CommandInput placeholder="Search projects..." /><CommandList><CommandEmpty>No project found.</CommandEmpty><CommandGroup>{projectOptions.map(p => (<CommandItem key={p.id} value={p.name} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")} />{p.name}</CommandItem>))}</CommandGroup></CommandList></Command>
+                </PopoverContent>
+              </Popover>
+              {selectedTaskIds.length > 0 && (
+                <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedTaskIds.length})
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleAddTask({isTodoItem: true, projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId})}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                </Button>
+              <Button variant="outline" onClick={() => handleAddTask({ isTodoItem: true, projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId })}>
+                <Plus className="mr-2 h-4 w-4" /> Add Task
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <TaskColumn 
-              status="todo" 
+            <TaskColumn
+              status="todo"
               tasks={tasksByStatus.todo}
               onAddTask={() => handleAddTask({ status: 'todo' })}
-              onDropTask={onDropTask} 
+              onDropTask={onDropTask}
               onMoveCard={onMoveCard}
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
@@ -331,11 +346,12 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onAddToTodoList={handleAddToTodoList}
             />
-             <TaskColumn 
-              status="inProgress" 
+            <TaskColumn
+              status="inProgress"
               tasks={tasksByStatus.inProgress}
-              onDropTask={onDropTask} 
+              onDropTask={onDropTask}
               onMoveCard={onMoveCard}
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
@@ -345,11 +361,12 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onAddToTodoList={handleAddToTodoList}
             />
-             <TaskColumn 
-              status="done" 
+            <TaskColumn
+              status="done"
               tasks={tasksByStatus.done}
-              onDropTask={onDropTask} 
+              onDropTask={onDropTask}
               onMoveCard={onMoveCard}
               onTaskDelete={handleDeleteTask}
               onToggleComplete={handleToggleComplete}
@@ -359,6 +376,7 @@ export function ToDoListView() {
               onToggleSelect={handleToggleSelect}
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
+              onAddToTodoList={handleAddToTodoList}
             />
           </div>
         </div>
@@ -366,10 +384,10 @@ export function ToDoListView() {
       <CreateTaskDialog
         isOpen={isNewTaskDialogOpen}
         onOpenChange={(open) => {
-            setIsNewTaskDialogOpen(open);
-            if (!open) {
-                setTaskToEdit(null);
-            }
+          setIsNewTaskDialogOpen(open);
+          if (!open) {
+            setTaskToEdit(null);
+          }
         }}
         onTaskCreate={handleTaskSaved}
         onTaskUpdate={handleTaskSaved}
@@ -377,7 +395,7 @@ export function ToDoListView() {
         projects={projects}
         initialData={initialDialogData}
       />
-      
+
       <NewTaskDialog
         isOpen={isNewProjectDialogOpen}
         onOpenChange={setIsNewProjectDialogOpen}
@@ -387,34 +405,34 @@ export function ToDoListView() {
         projectToEdit={null}
         initialData={initialDialogData}
       />
-      
+
       <AlertDialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete {selectedTaskIds.length} task(s). This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {selectedTaskIds.length} task(s). This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>

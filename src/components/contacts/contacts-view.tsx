@@ -296,21 +296,11 @@ export function ContactsView() {
         setFolders([]);
       }
 
-      try {
-        const fetchedCompanies = await getCompanies(user.uid);
-        setCompanies(fetchedCompanies);
-      } catch (error: any) {
-        console.warn('Contacts bootstrap: company load failed, defaulting to empty companies.', error);
-        setCompanies([]);
-      }
+      const fetchedCompanies = await getCompanies(user.uid);
+      setCompanies(fetchedCompanies);
 
-      try {
-        const fetchedIndustries = await getIndustries(user.uid);
-        setCustomIndustries(fetchedIndustries);
-      } catch (error: any) {
-        console.warn('Contacts bootstrap: industry load failed, defaulting to empty industries.', error);
-        setCustomIndustries([]);
-      }
+      const fetchedIndustries = await getIndustries(user.uid);
+      setCustomIndustries(fetchedIndustries);
 
       try {
         const fetchedWorkers = await getWorkers(user.uid);

@@ -33,15 +33,16 @@ export interface UserProfile {
     email: string;
     displayName?: string;
     employeeNumber?: string;
-    
+    businessNumber?: string;
+
     // Organization & Access
     orgId?: string;
     accessLevel?: AccessLevel;
-    
+
     // Legacy / Business Logic Roles
-    role?: MentorshipRole; 
+    role?: MentorshipRole;
     mentorshipRole?: MentorshipRole;
-    
+
     contactId?: string; // Linked ID in the Contact Hub
     preferences?: any;
     createdAt?: any;
@@ -58,13 +59,13 @@ const CONTACTS_COLLECTION = 'contacts';
 const docToUserProfile = (doc: any): UserProfile => ({ id: doc.id, ...doc.data() } as UserProfile);
 
 export async function getUsers(orgId?: string): Promise<UserProfile[]> {
-  const db = getDb();
-  let q = query(collection(db, PROFILES_COLLECTION));
-  if (orgId) {
-      q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', orgId));
-  }
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToUserProfile);
+    const db = getDb();
+    let q = query(collection(db, PROFILES_COLLECTION));
+    if (orgId) {
+        q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', orgId));
+    }
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToUserProfile);
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
@@ -79,14 +80,14 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
  * Every user must have a searchable identity in the Contact Hub.
  */
 export async function updateUserProfile(
-    userId: string, 
+    userId: string,
     email: string,
     data: Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<void> {
     const db = getDb();
     const docRef = doc(db, PROFILES_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
-    
+
     const dataWithTimestamp: { [key: string]: any } = { ...data, updatedAt: serverTimestamp() };
 
     // 1. Ensure the user exists in the Contact Hub (SSoT)
@@ -117,8 +118,11 @@ export async function updateUserProfile(
     } else {
         dataWithTimestamp.email = email.toLowerCase();
         dataWithTimestamp.createdAt = serverTimestamp();
-        // Mandatory KISS Defaults: All new signups are Apprentices with Price Lock enabled.
-        dataWithTimestamp.role = data.role || 'Apprentice'; 
+        // Access control is now enforced exclusively by accessLevel.
+        dataWithTimestamp.accessLevel = data.accessLevel || 'viewer';
+        // Keep legacy mentorship fields for compatibility only.
+        dataWithTimestamp.role = data.role || data.mentorshipRole || 'Apprentice';
+        dataWithTimestamp.mentorshipRole = data.mentorshipRole || data.role || 'Apprentice';
         dataWithTimestamp.is_mentor_certified = data.is_mentor_certified ?? false;
         dataWithTimestamp.mentor_shield_issued_date = data.mentor_shield_issued_date ?? null;
         dataWithTimestamp.price_lock_status = data.price_lock_status ?? true;

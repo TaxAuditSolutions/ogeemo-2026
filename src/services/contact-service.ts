@@ -45,13 +45,22 @@ function getCurrentAuthContext() {
 async function getCurrentOrgId(): Promise<string> {
     const currentUser = getCurrentAuthContext();
     const tokenResult = await currentUser.getIdTokenResult();
-    const orgId = tokenResult.claims.orgId;
+    const claimedOrgId = tokenResult.claims.orgId;
 
-    if (typeof orgId !== 'string' || !orgId.trim()) {
-        throw new Error('Authenticated user is missing an orgId claim.');
+    if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+        return claimedOrgId;
     }
 
-    return orgId;
+    const db = getDb();
+    const userProfileRef = doc(db, 'users', currentUser.uid);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const profileOrgId = userProfileSnap.data()?.orgId;
+
+    if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+        return profileOrgId;
+    }
+
+    throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
 }
 
 function cloneDateWithToDate(value: Date): Date {

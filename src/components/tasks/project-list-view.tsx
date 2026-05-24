@@ -50,7 +50,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, type ProjectStatus, deleteProjects, addProjectTemplate } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, deleteProjects, addProjectTemplate } from '@/services/project-service';
 import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
@@ -59,7 +59,7 @@ import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from "@/core/accounting-service";
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { type Event as TaskEvent } from '@/types/calendar-types';
+import { type Event as TaskEvent, type ProjectStatus } from '@/types/calendar-types';
 import MergeContactsDialog from '../contacts/MergeContactsDialog';
 
 const statusDisplayMap: Record<ProjectStatus, string> = {
@@ -76,7 +76,7 @@ export function ProjectListView() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
-  
+
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -90,70 +90,72 @@ export function ProjectListView() {
 
   const loadData = useCallback(async () => {
     if (!user) {
-        setIsLoading(false);
-        return;
+      setIsLoading(false);
+      return;
     }
     setIsLoading(true);
     try {
-        const [fetchedProjects, fetchedContacts, fetchedFolders, fetchedCompanies, fetchedIndustries] = await Promise.all([
-            getProjects(user.uid),
-            getContacts(user.uid),
-            getContactFolders(user.uid),
-            getCompanies(user.uid),
-            getIndustries(user.uid),
-        ]);
-        setProjects(fetchedProjects);
-        setContacts(fetchedContacts);
-        setContactFolders(fetchedFolders);
-        setCompanies(fetchedCompanies);
-        setCustomIndustries(fetchedIndustries);
+      const [fetchedProjects, fetchedContacts] = await Promise.all([
+        getProjects(user.uid),
+        getContacts(user.uid),
+      ]);
+
+      const fetchedFolders = await getContactFolders(user.uid).catch(() => []);
+      const fetchedCompanies = await getCompanies(user.uid).catch(() => []);
+      const fetchedIndustries = await getIndustries(user.uid).catch(() => []);
+
+      setProjects(fetchedProjects);
+      setContacts(fetchedContacts);
+      setContactFolders(fetchedFolders);
+      setCompanies(fetchedCompanies);
+      setCustomIndustries(fetchedIndustries);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }, [user, toast]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
-  
+
   const handleToggleSelect = (projectId: string) => {
-    setSelectedProjectIds(prev => 
-        prev.includes(projectId) 
-        ? prev.filter(id => id !== projectId) 
+    setSelectedProjectIds(prev =>
+      prev.includes(projectId)
+        ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
     );
   };
-  
+
   const handleDeleteSelected = () => {
     if (selectedProjectIds.length > 0) {
       setIsBulkDeleteAlertOpen(true);
     }
   };
-  
+
   const handleConfirmBulkDelete = async () => {
     if (!user || selectedProjectIds.length === 0) return;
     try {
-        await deleteProjects(selectedProjectIds);
-        toast({ title: `${selectedProjectIds.length} project(s) deleted.`});
-        setSelectedProjectIds([]);
-        loadData();
+      await deleteProjects(selectedProjectIds);
+      toast({ title: `${selectedProjectIds.length} project(s) deleted.` });
+      setSelectedProjectIds([]);
+      loadData();
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Bulk delete failed', description: error.message });
     } finally {
-        setIsBulkDeleteAlertOpen(false);
+      setIsBulkDeleteAlertOpen(false);
     }
   };
-  
+
   const handleDelete = (project: Project) => {
     setProjectToDelete(project);
   };
 
   const handleConfirmDelete = async () => {
-    if (!projectToDelete) return;
+    if (!projectToDelete || !user) return;
     try {
-      const tasksToDelete = await getTasksForProject(projectToDelete.id);
+      const tasksToDelete = await getTasksForProject(user.uid, projectToDelete.id);
       await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
       setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
       toast({ title: 'Project Deleted' });
@@ -165,24 +167,24 @@ export function ProjectListView() {
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      if (isEditing) {
-          setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-      } else {
-          setContacts(prev => [savedContact, ...prev]);
-      }
-      setIsContactFormOpen(false);
+    if (isEditing) {
+      setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+    } else {
+      setContacts(prev => [savedContact, ...prev]);
+    }
+    setIsContactFormOpen(false);
   };
-  
+
   const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
     try {
-        await mergeContacts(sourceContactId, masterContactId);
-        setContacts(prev => prev.filter(c => c.id !== sourceContactId));
-        toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
+      await mergeContacts(sourceContactId, masterContactId);
+      setContacts(prev => prev.filter(c => c.id !== sourceContactId));
+      toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
     } finally {
-        setIsMergeDialogOpen(false);
-        setContactToMerge(null);
+      setIsMergeDialogOpen(false);
+      setContactToMerge(null);
     }
   };
 
@@ -193,6 +195,7 @@ export function ProjectListView() {
         name: `${project.name} Template`,
         description: project.description || `Template based on project: ${project.name}`,
         steps: project.steps || [],
+        tasks: [],
         userId: user.uid,
       };
       await addProjectTemplate(templateData);
@@ -230,29 +233,29 @@ export function ProjectListView() {
           <div className="mt-4">
             <ProjectManagementHeader />
           </div>
-           <div className="absolute top-0 right-0">
-             <Button asChild variant="ghost" size="icon">
-                <Link href="/action-manager" aria-label="Close">
-                    <X className="h-5 w-5" />
-                </Link>
+          <div className="absolute top-0 right-0">
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/action-manager" aria-label="Close">
+                <X className="h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </header>
-        
+
         <Card>
           <CardHeader className="flex flex-row justify-between items-center">
             <CardTitle>Master Project Register</CardTitle>
             <div className="flex items-center gap-2">
-                {selectedProjectIds.length > 0 && (
-                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                        <Trash2 className="mr-2 h-4 w-4"/> Delete Selected
-                    </Button>
-                )}
-                 <Button asChild>
-                    <Link href="/projects/create">
-                        <Plus className="mr-2 h-4 w-4" /> Create New Project
-                    </Link>
-                 </Button>
+              {selectedProjectIds.length > 0 && (
+                <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
+                </Button>
+              )}
+              <Button asChild>
+                <Link href="/projects/create">
+                  <Plus className="mr-2 h-4 w-4" /> Create New Project
+                </Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -261,17 +264,17 @@ export function ProjectListView() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12 text-center">
-                        <Checkbox 
-                            onCheckedChange={() => {
-                                if (selectedProjectIds.length === projects.length) {
-                                    setSelectedProjectIds([]);
-                                } else {
-                                    setSelectedProjectIds(projects.map(p => p.id));
-                                }
-                            }}
-                            checked={projects.length > 0 && selectedProjectIds.length === projects.length}
-                            aria-label="Select all projects"
-                        />
+                      <Checkbox
+                        onCheckedChange={() => {
+                          if (selectedProjectIds.length === projects.length) {
+                            setSelectedProjectIds([]);
+                          } else {
+                            setSelectedProjectIds(projects.map(p => p.id));
+                          }
+                        }}
+                        checked={projects.length > 0 && selectedProjectIds.length === projects.length}
+                        aria-label="Select all projects"
+                      />
                     </TableHead>
                     <TableHead>Project Name</TableHead>
                     <TableHead>Contact (Client/Lead)</TableHead>
@@ -282,63 +285,63 @@ export function ProjectListView() {
                 <TableBody>
                   {projects.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                           No projects found. Use the button above to start your first project.
-                        </TableCell>
+                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                        No projects found. Use the button above to start your first project.
+                      </TableCell>
                     </TableRow>
                   ) : (
-                  projects.map(p => {
-                    const contact = contacts.find(c => c.id === p.contactId);
-                    return (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-center">
-                            <Checkbox 
-                                onCheckedChange={() => handleToggleSelect(p.id)}
-                                checked={selectedProjectIds.includes(p.id)}
-                                aria-label={`Select project ${p.name}`}
+                    projects.map(p => {
+                      const contact = contacts.find(c => c.id === p.contactId);
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              onCheckedChange={() => handleToggleSelect(p.id)}
+                              checked={selectedProjectIds.includes(p.id)}
+                              aria-label={`Select project ${p.name}`}
                             />
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          <Link href={`/projects/${p.id}/tasks`} className="hover:underline">
-                            {p.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{contact?.name || 'Unassigned'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{statusDisplayMap[p.status || 'planning']}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/projects/${p.id}/tasks`}>
-                                  <ListChecks className="mr-2 h-4 w-4" /> Go to Project Board
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/project-plan?projectId=${p.id}`}>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <Link href={`/projects/${p.id}/tasks`} className="hover:underline">
+                              {p.name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>{contact?.name || 'Unassigned'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{statusDisplayMap[p.status || 'planning']}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/projects/${p.id}/tasks`}>
+                                    <ListChecks className="mr-2 h-4 w-4" /> Go to Project Board
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/project-plan?projectId=${p.id}`}>
                                     <Route className="mr-2 h-4 w-4" /> Open Project Planner
-                                </Link>
-                              </DropdownMenuItem>
-                               <DropdownMenuItem asChild>
-                                <Link href={`/projects/${p.id}/edit`}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Edit Project Details
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleCreateTemplate(p)}>
-                                <FilePlus2 className="mr-2 h-4 w-4" /> Save as Template
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Project</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/projects/${p.id}/edit`}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Edit Project Details
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleCreateTemplate(p)}>
+                                  <FilePlus2 className="mr-2 h-4 w-4" /> Save as Template
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDelete(p)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete Project</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -346,7 +349,7 @@ export function ProjectListView() {
           </CardContent>
         </Card>
       </div>
-      
+
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -362,21 +365,21 @@ export function ProjectListView() {
 
       <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle>
-                <AlertDialogDescription>
-                    You are about to delete {selectedProjectIds.length} projects. All associated task boards and timelines will be destroyed. This is a permanent action.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                    Delete All Selected
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to delete {selectedProjectIds.length} projects. All associated task boards and timelines will be destroyed. This is a permanent action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete All Selected
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       <ContactFormDialog
         isOpen={isContactFormOpen}
         onOpenChange={setIsContactFormOpen}

@@ -52,7 +52,7 @@ export default function EditProjectPage() {
   const params = useParams();
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
-  
+
   const projectId = params.projectId as string;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -73,19 +73,14 @@ export default function EditProjectPage() {
 
   const loadDataForContactDialog = useCallback(async () => {
     if (!user) return;
-    try {
-        const [foldersData, companiesData, industriesData] = await Promise.all([
-            getContactFolders(user.uid),
-            getCompanies(user.uid),
-            getIndustries(user.uid),
-        ]);
-        setContactFolders(foldersData);
-        setCompanies(companiesData);
-        setCustomIndustries(industriesData);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to load support data for contacts.' });
-    }
-  }, [user, toast]);
+    const foldersData = await getContactFolders(user.uid).catch(() => []);
+    const companiesData = await getCompanies(user.uid).catch(() => []);
+    const industriesData = await getIndustries(user.uid).catch(() => []);
+
+    setContactFolders(foldersData);
+    setCompanies(companiesData);
+    setCustomIndustries(industriesData);
+  }, [user]);
 
   const loadProjectAndContacts = useCallback(async () => {
     if (isAuthLoading || !user || !projectId) {
@@ -94,16 +89,16 @@ export default function EditProjectPage() {
       }
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const [projectData, contactsData] = await Promise.all([
         getProjectById(projectId),
         getContacts(user.uid),
       ]);
-      
+
       setContacts(contactsData);
-      
+
       if (projectData) {
         setProjectName(projectData.name);
         setDescription(projectData.description || '');
@@ -132,32 +127,32 @@ export default function EditProjectPage() {
 
     setIsSaving(true);
     try {
-        await updateProject(projectId, {
-            name: projectName,
-            description: description,
-            contactId: selectedContactId,
-        });
-        toast({ title: 'Project Updated', description: `"${projectName}" has been updated.` });
-        router.push('/projects/all');
+      await updateProject(projectId, {
+        name: projectName,
+        description: description,
+        contactId: selectedContactId,
+      });
+      toast({ title: 'Project Updated', description: `"${projectName}" has been updated.` });
+      router.push('/projects/all');
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-      setContacts(prev => {
-          const existing = prev.find(c => c.id === savedContact.id);
-          if (existing) {
-              return prev.map(c => c.id === savedContact.id ? savedContact : c);
-          }
-          return [...prev, savedContact];
-      });
-      setSelectedContactId(savedContact.id);
-      setIsContactFormOpen(false);
+    setContacts(prev => {
+      const existing = prev.find(c => c.id === savedContact.id);
+      if (existing) {
+        return prev.map(c => c.id === savedContact.id ? savedContact : c);
+      }
+      return [...prev, savedContact];
+    });
+    setSelectedContactId(savedContact.id);
+    setIsContactFormOpen(false);
   };
-  
+
   const selectedContact = contacts.find(c => c.id === selectedContactId);
 
   if (isLoading) {
@@ -172,23 +167,23 @@ export default function EditProjectPage() {
     <>
       <div className="p-6 h-full flex flex-col items-center">
         <header className="w-full max-w-lg text-center relative mb-6">
-            <h1 className="text-2xl font-bold font-headline text-primary">Edit Project Details</h1>
-            <div className="absolute top-0 right-0">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/projects/all" aria-label="Close">
-                        <X className="h-5 w-5" />
-                    </Link>
-                </Button>
-            </div>
+          <h1 className="text-2xl font-bold font-headline text-primary">Edit Project Details</h1>
+          <div className="absolute top-0 right-0">
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/projects/all" aria-label="Close">
+                <X className="h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
         </header>
 
         <div className="p-8 border-2 border-dashed rounded-lg w-full max-w-lg">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="project-name">Project Name</Label>
-              <Input 
-                id="project-name" 
-                placeholder="Enter project name..." 
+              <Input
+                id="project-name"
+                placeholder="Enter project name..."
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
               />
@@ -205,21 +200,21 @@ export default function EditProjectPage() {
             <div className="space-y-2">
               <Label>Client (Optional)</Label>
               <div className="flex gap-2">
-                 <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between"><span className="truncate">{selectedContact?.name || "Select or search..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup><CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")} />-- No Client --</CommandItem>{contacts.map((contact) => ( <CommandItem key={contact.id} value={contact.name} onSelect={() => { setSelectedContactId(contact.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />{contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+                <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between"><span className="truncate">{selectedContact?.name || "Select or search..."}</span><ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Search contacts..." /><CommandList><CommandEmpty>No contact found.</CommandEmpty><CommandGroup><CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", !selectedContactId ? "opacity-100" : "opacity-0")} />-- No Client --</CommandItem>{contacts.map((contact) => (<CommandItem key={contact.id} value={contact.name} onSelect={() => { setSelectedContactId(contact.id); setIsContactPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />{contact.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
                 <Button type="button" variant="outline" onClick={() => setIsContactFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> New</Button>
               </div>
             </div>
             <div className="pt-4 flex justify-between">
-                <Button variant="outline" asChild>
-                    <Link href="/projects/all">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
-                    </Link>
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                </Button>
+              <Button variant="outline" asChild>
+                <Link href="/projects/all">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
+                </Link>
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>

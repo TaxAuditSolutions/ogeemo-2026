@@ -1,262 +1,165 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function profileOrgId() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgId
+        : null;
     }
 
-    function isAdmin() {
-      let data = getUserData();
-      return request.auth != null && data != null && data.role == 'admin';
+    function profileAccessLevel() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accessLevel
+        : null;
     }
 
-    function isMentor() {
-      let data = getUserData();
-      return request.auth != null && data != null && (data.role == 'Certified_Mentor' || data.role == 'Mentor_Apprentice' || data.role == 'admin');
+    function currentOrgId() {
+      return isSignedIn() && request.auth.token.orgId != null
+        ? request.auth.token.orgId
+        : profileOrgId();
     }
 
-    function isApprentice() {
-      let data = getUserData();
-      return request.auth != null && data != null;
+    // 1. Helper Functions for decoding Auth Token Claims
+    function isRightTenant(docOrgId) {
+      return isSignedIn() && currentOrgId() == docOrgId;
+    }
+
+    function hasAccessLevel(level) {
+      return isSignedIn() && (
+        request.auth.token.accessLevel == level ||
+        profileAccessLevel() == level
+      );
+    }
+
+    // Role helpers
+    function isOrgAdmin() {
+      return hasAccessLevel('org_admin');
+    }
+
+    function isEditor() {
+      return hasAccessLevel('editor') || hasAccessLevel('org_admin');
+    }
+
+    function isViewer() {
+      return hasAccessLevel('viewer') || hasAccessLevel('editor') || hasAccessLevel('org_admin');
+    }
+
+    // 2. Data Protection & Role Enforcement functions
+    function canReadOrgDoc() {
+      return isViewer() && isRightTenant(resource.data.orgId);
+    }
+    
+    function canCreateOrgDoc() {
+      return isEditor() && isRightTenant(request.resource.data.orgId);
+    }
+    
+    function canUpdateOrgDoc() {
+      return isEditor() && isRightTenant(resource.data.orgId) && isRightTenant(request.resource.data.orgId);
+    }
+
+    function canDeleteOrgDoc() {
+      return isEditor() && isRightTenant(resource.data.orgId);
+    }
+
+    // ---------------------------------------------------------
+    // Core Tenant Configuration Collections
+    // ---------------------------------------------------------
+    
+    match /organizations/{orgId} {
+      allow read: if isRightTenant(orgId);
+      allow write: if isRightTenant(orgId) && isOrgAdmin();
     }
 
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow create: if isAdmin();
-      allow update, delete: if isOwner(userId) || isAdmin();
+      // Users can read their own profile, or any profile within their org
+      allow read: if isSignedIn() && (request.auth.uid == userId || canReadOrgDoc());
+      allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId);
+      allow update: if isSignedIn() && (request.auth.uid == userId || (isOrgAdmin() && isRightTenant(resource.data.orgId)));
+      allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId);
     }
 
-    match /mentor_reviews/{reviewId} {
-      allow create: if request.auth != null;
-      allow read: if isAdmin() || isOwner(resource.data.requester_id);
-      allow update, delete: if isAdmin();
+    // ---------------------------------------------------------
+    // Shared Business Collections
+    // ---------------------------------------------------------
+    
+    match /contactFolders/{folderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /contacts/{contactId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /clientAccounts/{accountId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /internalAccounts/{accountId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /invoices/{invoiceId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /invoiceLineItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /serviceItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /taxTypes/{typeId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /incomeTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /expenseTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /payableBills/{billId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /pettyCashTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    
+    match /payrollRuns/{runId} { 
+      allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); 
+      match /details/{detailId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    }
+    
+    match /payrollRemittances/{remittanceId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /assets/{assetId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /equityTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /companies/{companyId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /expenseCategories/{categoryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /incomeCategories/{categoryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /industries/{industryId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /loans/{loanId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /leads/{leadId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /projectTemplates/{templateId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /inventoryItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /inventoryLogs/{logId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /suppliers/{supplierId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /projects/{projectId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /tasks/{taskId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /ideas/{ideaId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /fileManagerFolders/{folderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /files/{fileId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /crmActions/{actionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /payrollWorkers/{workerId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /leaveRequests/{leaveRequestId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    
+    match /timeLogs/{timeLogId} { 
+      allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); 
+      match /locations/{locationId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     }
 
-    match /contactFolders/{folderId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
+    // ---------------------------------------------------------
+    // User Personal Preferences (No orgId needed)
+    // ---------------------------------------------------------
+    match /userActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /trashedActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /accountingQuickNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableAccountingNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /hrQuickNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /availableHrNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /dialogSettings/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     
-    match /contacts/{contactId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /clientAccounts/{accountId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /invoices/{invoiceId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /invoiceLineItems/{itemId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /serviceItems/{itemId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /taxTypes/{typeId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /incomeTransactions/{transactionId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /expenseTransactions/{transactionId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /payableBills/{billId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /payrollRuns/{runId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-
-      match /details/{detailId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-      }
-    }
-
-    match /payrollRemittances/{remittanceId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /assets/{assetId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /equityTransactions/{transactionId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /companies/{companyId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /expenseCategories/{categoryId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /incomeCategories/{categoryId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /industries/{industryId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /loans/{loanId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /leads/{leadId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /projectTemplates/{templateId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /inventoryItems/{itemId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /inventoryLogs/{logId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-
-    match /suppliers/{supplierId} {
-      allow read: if isApprentice();
-      allow create, update, delete: if isMentor();
-    }
-    
-    match /projects/{projectId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-    
-    match /tasks/{taskId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-    
-    match /ideas/{ideaId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-    
-    match /fileManagerFolders/{folderId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-
-    match /files/{fileId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-    
-    match /crmActions/{actionId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-    
-    match /payrollWorkers/{workerId} {
-        allow read: if isApprentice();
-        allow create, update, delete: if isMentor();
-    }
-
-    match /leaveRequests/{leaveRequestId} {
-      allow create: if isMentor() || isOwner(request.resource.data.workerId);
-      allow read: if isApprentice() || isOwner(resource.data.workerId);
-      allow update: if isMentor();
-      allow delete: if isMentor() || isOwner(resource.data.workerId);
-    }
-
-    match /timeLogs/{timeLogId} {
-      allow create: if isMentor() || isOwner(request.resource.data.workerId);
-      allow read: if isApprentice() || isOwner(resource.data.workerId);
-      allow update, delete: if isMentor() || isOwner(resource.data.workerId);
-      
-      match /locations/{locationId} {
-        allow read: if isApprentice() || isOwner(resource.data.workerId);
-        allow create: if isMentor() || isOwner(request.resource.data.workerId);
-      }
-    }
-
-    match /userActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /trashedActionChips/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /accountingQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableAccountingNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /hrQuickNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /availableHrNavItems/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    match /dialogSettings/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    
+    // ---------------------------------------------------------
+    // Public/System collections
+    // ---------------------------------------------------------
     match /siteImages/{imageId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isOrgAdmin();
     }
-    
     match /feedback/{feedbackId} {
-      allow read: if isAdmin();
-      allow create: if isApprentice();
-      allow update, delete: if isAdmin();
+      allow read: if isOrgAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isOrgAdmin();
     }
-
     match /inquiries/{inquiryId} {
       allow create: if true;
-      allow read: if isAdmin();
+      allow read: if isOrgAdmin();
     }
   }
 }

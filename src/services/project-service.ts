@@ -2,19 +2,18 @@
 'use client';
 
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  writeBatch,
-  Timestamp,
-  setDoc,
+    collection,
+    getDocs,
+    getDoc,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    writeBatch,
+    Timestamp,
+    setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Project, type Event as TaskEvent, type ProjectTemplate, type TaskStatus, type ProjectStep, type ActionChipData } from '@/types/calendar-types';
@@ -41,15 +40,15 @@ const HR_QUICK_NAV_ITEMS_COLLECTION = 'hrQuickNavItems';
 const AVAILABLE_HR_NAV_ITEMS_COLLECTION = 'availableHrNavItems';
 
 const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
-  { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
-  { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
-  { label: 'Projects', icon: Briefcase, href: '/projects/all' },
-  { label: 'Command Centre', icon: BrainCircuit, href: '/master-mind'},
+    { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
+    { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
+    { label: 'Projects', icon: Briefcase, href: '/projects/all' },
+    { label: 'Command Centre', icon: BrainCircuit, href: '/master-mind' },
 ];
 
 const iconMap: { [key: string]: LucideIcon } = {
-  Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
-  FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ArrowDownAZ, ArrowUpZA
+    Mail, Briefcase, ListTodo, Calendar, Clock, Contact, Beaker, Calculator, Folder, Wand2, MessageSquare, HardHat, Contact2, Share2, Users2, PackageSearch, Megaphone, Landmark, DatabaseBackup, BarChart3, HeartPulse, Bell, Bug, Database, FilePlus2, LogOut, Settings, Lightbulb, Info, BrainCircuit, GitMerge, Pencil, ListChecks, FilePenLine, Route, LinkIcon,
+    FileDigit, FileOutput, ListPlus, TrendingUp, TrendingDown, BookText, ShieldCheck, WalletCards, UserPlus, Banknote, Percent, FileSignature, FileInput, Activity, Wrench, Users, ArrowDownAZ, ArrowUpZA
 };
 
 function getDb() {
@@ -57,62 +56,119 @@ function getDb() {
     return db;
 }
 
+function getCurrentAuthContext() {
+    const { auth } = getFirebaseServices();
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        throw new Error('User must be logged in.');
+    }
+    return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const tokenResult = await currentUser.getIdTokenResult();
+    const claimedOrgId = tokenResult.claims.orgId;
+    if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+        return claimedOrgId;
+    }
+
+    const db = getDb();
+    const userProfileRef = doc(db, 'users', currentUser.uid);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const profileOrgId = userProfileSnap.data()?.orgId;
+    if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+        return profileOrgId;
+    }
+
+    throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
+function toClientDate(value: any): Date | undefined {
+    if (!value) return undefined;
+    if (value instanceof Timestamp) return value.toDate();
+    if (value instanceof Date) return value;
+    if (typeof value?.toDate === 'function') return value.toDate();
+    return undefined;
+}
+
+function toFirestoreDateValue(value: any): Date | null {
+    if (value === null) return null;
+    if (!value) return null;
+    if (value instanceof Timestamp) return value.toDate();
+    if (value instanceof Date) return value;
+    if (typeof value === 'string') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+}
+
 const docToProject = (doc: any): Project => {
-  const data = doc.data();
-  if (!data) throw new Error("Document data is missing.");
-  return {
-    id: doc.id,
-    name: data.name,
-    description: data.description || '',
-    clientId: data.clientId || null,
-    contactId: data.contactId || null,
-    userId: data.userId,
-    createdAt: (data.createdAt as Timestamp)?.toDate ? (data.createdAt as Timestamp).toDate() : new Date(),
-    steps: (data.steps || []).map((step: any) => ({
-        ...step,
-        startTime: (step.startTime as Timestamp)?.toDate ? (step.startTime as Timestamp).toDate() : null,
-    })),
-    status: data.status || 'planning',
-    urgency: data.urgency || 'important',
-    importance: data.importance || 'B',
-    projectManagerId: data.projectManagerId || null,
-    startDate: (data.startDate as Timestamp)?.toDate ? (data.startDate as Timestamp).toDate() : null,
-    endDate: (data.endDate as Timestamp)?.toDate ? (data.endDate as Timestamp).toDate() : null,
-    projectValue: data.projectValue || null,
-  };
+    const data = doc.data();
+    if (!data) throw new Error("Document data is missing.");
+    return {
+        id: doc.id,
+        orgId: data.orgId,
+        createdBy: data.createdBy,
+        updatedBy: data.updatedBy,
+        name: data.name,
+        description: data.description || '',
+        clientId: data.clientId || null,
+        contactId: data.contactId || null,
+        userId: data.userId,
+        createdAt: toClientDate(data.createdAt),
+        updatedAt: toClientDate(data.updatedAt),
+        steps: (data.steps || []).map((step: any) => ({
+            ...step,
+            startTime: toClientDate(step.startTime) || null,
+        })),
+        status: data.status || 'planning',
+        urgency: data.urgency || 'important',
+        importance: data.importance || 'B',
+        projectManagerId: data.projectManagerId || null,
+        startDate: toClientDate(data.startDate) || null,
+        endDate: toClientDate(data.endDate) || null,
+        projectValue: data.projectValue || null,
+    };
 };
 
 const docToTask = (doc: any): TaskEvent => {
-  const data = doc.data();
-  if (!data) throw new Error("Document data is missing.");
-  return {
-    id: doc.id,
-    title: data.title,
-    description: data.description || '',
-    start: (data.start as Timestamp)?.toDate(),
-    end: (data.end as Timestamp)?.toDate(),
-    status: data.status || 'todo',
-    position: data.position || 0,
-    projectId: data.projectId || null,
-    stepId: data.stepId || null,
-    userId: data.userId,
-    attendees: data.attendees,
-    contactId: data.contactId || null,
-    workerId: data.workerId || null,
-    isScheduled: data.isScheduled || false,
-    isTodoItem: data.isTodoItem || false,
-    duration: data.duration,
-    isBillable: data.isBillable,
-    billableRate: data.billableRate,
-    sessions: (data.sessions || []).map((session: any) => ({
-        ...session,
-        startTime: (session.startTime as Timestamp)?.toDate() || new Date(),
-        endTime: (session.endTime as Timestamp)?.toDate() || new Date(),
-    })),
-    urgency: data.urgency,
-    importance: data.importance,
-    ritualType: data.ritualType,
-  };
+    const data = doc.data();
+    if (!data) throw new Error("Document data is missing.");
+    return {
+        id: doc.id,
+        orgId: data.orgId,
+        createdBy: data.createdBy,
+        updatedBy: data.updatedBy,
+        createdAt: toClientDate(data.createdAt),
+        updatedAt: toClientDate(data.updatedAt),
+        title: data.title,
+        description: data.description || '',
+        start: toClientDate(data.start),
+        end: toClientDate(data.end),
+        status: data.status || 'todo',
+        position: data.position || 0,
+        projectId: data.projectId || null,
+        stepId: data.stepId || null,
+        userId: data.userId,
+        attendees: data.attendees,
+        contactId: data.contactId || null,
+        workerId: data.workerId || null,
+        isScheduled: data.isScheduled || false,
+        isTodoItem: data.isTodoItem || false,
+        duration: data.duration,
+        isBillable: data.isBillable,
+        billableRate: data.billableRate,
+        sessions: (data.sessions || []).map((session: any) => ({
+            ...session,
+            startTime: toClientDate(session.startTime) || new Date(),
+            endTime: toClientDate(session.endTime) || new Date(),
+        })),
+        urgency: data.urgency,
+        importance: data.importance,
+        ritualType: data.ritualType,
+    };
 };
 
 const docToTemplate = (doc: any): ProjectTemplate => ({ id: doc.id, ...doc.data() } as ProjectTemplate);
@@ -130,9 +186,9 @@ const docToActionChip = (doc: any): ActionChipData => {
 async function updateChipsInCollection(userId: string, collectionName: string, chips: ActionChipData[]): Promise<void> {
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
-    
+
     const validChips = (chips || []).filter(c => c && typeof c === 'object' && c.id);
-    
+
     const serializedChips = validChips.map(chip => {
         const iconSource = chip.icon as any;
         const iconName = iconSource?.displayName || iconSource?.name || 'Wand2';
@@ -159,11 +215,13 @@ export async function getChipsFromCollection(userId: string, collectionName: str
 }
 
 export async function getProjects(userId: string): Promise<Project[]> {
-  const db = getDb();
-  if (!userId || typeof userId !== 'string') return [];
-  const q = query(collection(db, PROJECTS_COLLECTION), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToProject).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, PROJECTS_COLLECTION), where("orgId", "==", orgId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs
+        .map(docToProject)
+        .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
@@ -172,18 +230,25 @@ export async function getProjectById(projectId: string): Promise<Project | null>
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     const projectSnap = await getDoc(projectRef);
     if (projectSnap.exists()) {
-        return docToProject(projectSnap);
+        const project = docToProject(projectSnap);
+        return project.orgId === await getCurrentOrgId() ? project : null;
     }
     return null;
 }
 
 export async function addProject(projectData: Omit<Project, 'id'>): Promise<Project> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
     const dataToSave = {
         ...projectData,
+        orgId,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
         createdAt: projectData.createdAt || new Date(),
-        startDate: projectData.startDate || null,
-        endDate: projectData.endDate || null,
+        updatedAt: new Date(),
+        startDate: toFirestoreDateValue(projectData.startDate),
+        endDate: toFirestoreDateValue(projectData.endDate),
         contactId: projectData.contactId || null,
         description: projectData.description || '',
         status: projectData.status || 'planning',
@@ -194,34 +259,64 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
         steps: projectData.steps || [],
     };
     const docRef = await addDoc(collection(db, PROJECTS_COLLECTION), dataToSave);
-    return { id: docRef.id, ...dataToSave };
+    return docToProject({ id: docRef.id, data: () => dataToSave });
 }
 
 export async function updateProject(projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
-    await updateDoc(projectRef, projectData);
+    const currentSnap = await getDoc(projectRef);
+    if (!currentSnap.exists()) return;
+    if (currentSnap.data().orgId !== orgId) return;
+
+    const updatedData: any = {
+        ...projectData,
+        orgId,
+        updatedBy: currentUser.uid,
+        updatedAt: new Date(),
+    };
+    if ('startDate' in updatedData) {
+        updatedData.startDate = toFirestoreDateValue(updatedData.startDate);
+    }
+    if ('endDate' in updatedData) {
+        updatedData.endDate = toFirestoreDateValue(updatedData.endDate);
+    }
+
+    await updateDoc(projectRef, updatedData);
 }
 
 export async function deleteProject(projectId: string, taskIds: string[]): Promise<void> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const batch = writeBatch(db);
+    const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
+    const projectSnap = await getDoc(projectRef);
+    if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) return;
+
+    const tasksSnapshot = await getDocs(query(collection(db, TASKS_COLLECTION), where('orgId', '==', orgId), where('projectId', '==', projectId)));
+    tasksSnapshot.forEach(taskDoc => batch.delete(taskDoc.ref));
+
     taskIds.forEach(taskId => {
         const taskRef = doc(db, TASKS_COLLECTION, taskId);
         batch.delete(taskRef);
     });
-    const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
+
     batch.delete(projectRef);
     await batch.commit();
 }
 
 export async function deleteProjects(projectIds: string[]): Promise<void> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const batch = writeBatch(db);
     for (const projectId of projectIds) {
         const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) continue;
         batch.delete(projectRef);
-        const tasksQuery = query(collection(db, TASKS_COLLECTION), where("projectId", "==", projectId));
+        const tasksQuery = query(collection(db, TASKS_COLLECTION), where("orgId", "==", orgId), where("projectId", "==", projectId));
         const tasksSnapshot = await getDocs(tasksQuery);
         tasksSnapshot.forEach(taskDoc => {
             batch.delete(taskDoc.ref);
@@ -236,31 +331,28 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
  * @param projectId The target project ID.
  */
 export async function getTasksForProject(userId: string | undefined, projectId: string): Promise<TaskEvent[]> {
-  const db = getDb();
-  const collectionRef = collection(db, TASKS_COLLECTION);
-  let q;
-  if (projectId === 'inbox' || !projectId) {
-      q = (userId && typeof userId === 'string') 
-        ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", null)) 
-        : query(collectionRef, where("projectId", "==", null));
-  } else {
-      q = (userId && typeof userId === 'string') 
-        ? query(collectionRef, where("userId", "==", userId), where("projectId", "==", projectId)) 
-        : query(collectionRef, where("projectId", "==", projectId));
-  }
-  
-  try {
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToTask);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: TASKS_COLLECTION,
-            operation: 'list',
-        } satisfies SecurityRuleContext));
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const collectionRef = collection(db, TASKS_COLLECTION);
+    let q;
+    if (projectId === 'inbox' || !projectId) {
+        q = query(collectionRef, where('orgId', '==', orgId), where("projectId", "==", null));
+    } else {
+        q = query(collectionRef, where('orgId', '==', orgId), where("projectId", "==", projectId));
     }
-    throw error;
-  }
+
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(docToTask);
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: TASKS_COLLECTION,
+                operation: 'list',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
+    }
 }
 
 export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
@@ -268,7 +360,8 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
     if (taskSnap.exists()) {
-        return docToTask(taskSnap);
+        const task = docToTask(taskSnap);
+        return task.orgId === await getCurrentOrgId() ? task : null;
     }
     return null;
 }
@@ -279,13 +372,10 @@ export async function getTaskById(taskId: string): Promise<TaskEvent | null> {
  */
 export async function getTasksForUser(userId?: string): Promise<TaskEvent[]> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const collectionRef = collection(db, TASKS_COLLECTION);
-    
-    // Scoping check: defend against 'undefined' in where()
-    const q = (userId && typeof userId === 'string') 
-        ? query(collectionRef, where("userId", "==", userId)) 
-        : collectionRef;
-    
+    const q = query(collectionRef, where('orgId', '==', orgId));
+
     try {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(docToTask);
@@ -302,10 +392,17 @@ export async function getTasksForUser(userId?: string): Promise<TaskEvent[]> {
 
 export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEvent> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
     const dataToSave = {
         ...taskData,
-        start: taskData.start || null,
-        end: taskData.end || null,
+        orgId,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
+        createdAt: taskData.createdAt || new Date(),
+        updatedAt: new Date(),
+        start: toFirestoreDateValue(taskData.start),
+        end: toFirestoreDateValue(taskData.end),
         isScheduled: taskData.isScheduled || false,
     };
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), dataToSave);
@@ -327,20 +424,33 @@ export async function addTask(taskData: Omit<TaskEvent, 'id'>): Promise<TaskEven
                 const updatedSteps = [...(projectData.steps || []), newStep];
                 await updateDoc(projectRef, { steps: updatedSteps });
                 await updateDoc(docRef, { stepId: stepId });
-                return { ...dataToSave, id: newTaskId, stepId: stepId };
+                return docToTask({ id: newTaskId, data: () => ({ ...dataToSave, stepId }) });
             }
         }
     }
-    return { ...dataToSave, id: newTaskId };
+    return docToTask({ id: newTaskId, data: () => dataToSave });
 }
 
 export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEvent, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists() || taskSnap.data().orgId !== orgId) return;
     const dataToUpdate = { ...taskData };
     if ('projectId' in dataToUpdate && dataToUpdate.projectId === undefined) {
         dataToUpdate.projectId = null;
     }
+    if ('start' in dataToUpdate) {
+        (dataToUpdate as any).start = toFirestoreDateValue((dataToUpdate as any).start);
+    }
+    if ('end' in dataToUpdate) {
+        (dataToUpdate as any).end = toFirestoreDateValue((dataToUpdate as any).end);
+    }
+    (dataToUpdate as any).orgId = orgId;
+    (dataToUpdate as any).updatedBy = currentUser.uid;
+    (dataToUpdate as any).updatedAt = new Date();
     await updateDoc(taskRef, dataToUpdate);
 }
 
@@ -356,10 +466,12 @@ export async function updateTaskPositions(tasksToUpdate: { id: string; position:
 
 export async function deleteTask(taskId: string): Promise<void> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
     if (taskSnap.exists()) {
         const taskData = docToTask(taskSnap);
+        if (taskData.orgId !== orgId) return;
         if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
             const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
             const projectSnap = await getDoc(projectRef);
@@ -376,37 +488,64 @@ export async function deleteTask(taskId: string): Promise<void> {
 export async function deleteTodos(todoIds: string[]): Promise<void> {
     if (todoIds.length === 0) return;
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const batch = writeBatch(db);
-    todoIds.forEach(id => {
+    for (const id of todoIds) {
         const docRef = doc(db, TASKS_COLLECTION, id);
-        batch.delete(docRef);
-    });
+        const snap = await getDoc(docRef);
+        if (snap.exists() && snap.data().orgId === orgId) {
+            batch.delete(docRef);
+        }
+    }
     await batch.commit();
 }
 
-export async function getProjectTemplates(userId: string): Promise<ProjectTemplate[]> {
+export async function getProjectTemplates(_userId: string): Promise<ProjectTemplate[]> {
     const db = getDb();
-    if (!userId || typeof userId !== 'string') return [];
-    const q = query(collection(db, TEMPLATES_COLLECTION), where("userId", "==", userId));
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, TEMPLATES_COLLECTION), where('orgId', '==', orgId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docToTemplate);
 }
 
 export async function addProjectTemplate(templateData: Omit<ProjectTemplate, 'id'>): Promise<ProjectTemplate> {
     const db = getDb();
-    const docRef = await addDoc(collection(db, TEMPLATES_COLLECTION), templateData);
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
+    const dataToSave = {
+        ...templateData,
+        orgId,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+    const docRef = await addDoc(collection(db, TEMPLATES_COLLECTION), dataToSave);
     return { id: docRef.id, ...templateData };
 }
 
 export async function updateProjectTemplate(templateId: string, templateData: Partial<Omit<ProjectTemplate, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
+    const currentUser = getCurrentAuthContext();
+    const orgId = await getCurrentOrgId();
     const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
-    await updateDoc(templateRef, templateData);
+    const templateSnap = await getDoc(templateRef);
+    if (!templateSnap.exists() || templateSnap.data().orgId !== orgId) return;
+
+    await updateDoc(templateRef, {
+        ...templateData,
+        orgId,
+        updatedBy: currentUser.uid,
+        updatedAt: new Date(),
+    });
 }
 
 export async function deleteProjectTemplate(templateId: string): Promise<void> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const templateRef = doc(db, TEMPLATES_COLLECTION, templateId);
+    const templateSnap = await getDoc(templateRef);
+    if (!templateSnap.exists() || templateSnap.data().orgId !== orgId) return;
     await deleteDoc(templateRef);
 }
 
@@ -421,7 +560,7 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
-    
+
     if (!docSnap.exists()) {
         const defaultSourceMap: Record<string, any[]> = {
             dashboard: defaultChips,
@@ -430,8 +569,8 @@ export async function getActionChips(userId: string, type: string = 'dashboard')
         };
         const defaultSource = defaultSourceMap[type] || defaultChips;
         return defaultSource.map((c) => ({
-            ...c, 
-            id: `default-${typeof c.href === 'string' ? c.href : (c.href as any).pathname}`, 
+            ...c,
+            id: `default-${typeof c.href === 'string' ? c.href : (c.href as any).pathname}`,
             userId
         })) as ActionChipData[];
     }
@@ -448,11 +587,11 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
     const userActionChips = await getActionChips(userId, type);
     const usedHrefs = new Set(userActionChips.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
-    
+
     const db = getDb();
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
-    
+
     // Helper to get defaults not in used list
     const getDefaultsNotUsed = (type: string, used: Set<string>) => {
         const defaultSourceMap: Record<string, any[]> = {
@@ -467,24 +606,24 @@ export async function getAvailableActionChips(userId: string, type: string = 'da
     };
 
     const defaultsNotUsed = getDefaultsNotUsed(type, usedHrefs);
-    
+
     if (!docSnap.exists()) {
         return defaultsNotUsed as ActionChipData[];
     }
-    
+
     const customAvailable = await getChipsFromCollection(userId, collectionName);
     const filteredCustomAvailable = customAvailable.filter(item => !usedHrefs.has(typeof item.href === 'string' ? item.href : (item.href as any).pathname));
-    
+
     const combined = [...filteredCustomAvailable];
     const customHrefs = new Set(filteredCustomAvailable.map(c => typeof c.href === 'string' ? c.href : (c.href as any).pathname));
-    
+
     defaultsNotUsed.forEach(item => {
         if (!customHrefs.has(item.href)) {
             combined.push(item as any);
         }
     });
-    
-    return combined.sort((a,b) => a.label.localeCompare(b.label));
+
+    return combined.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export async function updateActionChips(userId: string, chips: ActionChipData[], type: string = 'dashboard'): Promise<void> {
@@ -514,14 +653,14 @@ export async function addActionChip(data: Omit<ActionChipData, 'id'>, type: stri
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
     const collectionName = collectionNameMap[type] || AVAILABLE_ACTION_CHIPS_COLLECTION;
-    
+
     const currentAvailable = await getChipsFromCollection(data.userId, collectionName);
-    
+
     const newChip: ActionChipData = {
         ...data,
         id: `custom-${Date.now()}`
     };
-    
+
     await updateChipsInCollection(data.userId, collectionName, [...currentAvailable, newChip]);
     return newChip;
 }
@@ -537,7 +676,7 @@ export async function trashActionChips(userId: string, chips: ActionChipData[], 
         accounting: AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION,
         hr: AVAILABLE_HR_NAV_ITEMS_COLLECTION,
     };
-    
+
     const collectionName = collectionNameMap[type] || ACTION_CHIPS_COLLECTION;
     const availableCollectionName = availableCollectionNameMap[type] || AVAILABLE_ACCOUNTING_NAV_ITEMS_COLLECTION;
 
@@ -548,7 +687,7 @@ export async function trashActionChips(userId: string, chips: ActionChipData[], 
     ]);
 
     const chipIdsToTrash = new Set(chips.map(c => c.id));
-    
+
     const newChips = currentChips.filter(c => !chipIdsToTrash.has(c.id));
     const newAvailable = currentAvailable.filter(c => !chipIdsToTrash.has(c.id));
     const newTrashed = [...currentTrashed, ...chips];
@@ -570,7 +709,7 @@ export async function restoreActionChips(userId: string, chips: ActionChipData[]
     const currentTrashed = await getChipsFromCollection(userId, TRASHED_ACTION_CHIPS_COLLECTION);
 
     const chipIdsToRestore = new Set(chips.map(c => c.id));
-    
+
     const newAvailable = [...currentAvailable, ...chips];
     const newTrashed = currentTrashed.filter(c => !chipIdsToRestore.has(c.id));
 
@@ -627,10 +766,10 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
 
 export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
     const db = getDb();
-    if (!userId) return;
+    const orgId = await getCurrentOrgId();
     const q = query(
         collection(db, TASKS_COLLECTION),
-        where("userId", "==", userId),
+        where("orgId", "==", orgId),
         where("ritualType", "==", ritualType)
     );
     const snapshot = await getDocs(q);

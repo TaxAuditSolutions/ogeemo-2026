@@ -42,8 +42,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers, updateUserProfile, type UserProfile, type UserRole, deleteUserProfile } from '@/core/user-profile-service';
+import { getUsers, updateUserProfile, type UserProfile, type AccessLevel, deleteUserProfile } from '@/core/user-profile-service';
 import { AddUserDialog } from '@/components/data/add-user-dialog';
+import { InviteUserDialog } from '@/components/settings/invite-user-dialog';
 import { ChangePasswordDialog } from '@/components/data/change-password-dialog';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,7 @@ export function TeamManagementCard() {
   
   // Dialog State
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [userForPasswordChange, setUserForPasswordChange] = useState<UserProfile | null>(null);
@@ -65,10 +67,15 @@ export function TeamManagementCard() {
     if (!user) return;
     setIsLoading(true);
     try {
-      const allUsers = await getUsers();
-      setUsers(allUsers);
-      const myProfile = allUsers.find(u => u.id === user.uid) || null;
+      const myProfile = await import('@/core/user-profile-service').then(m => m.getUserProfile(user.uid));
       setCurrentUserProfile(myProfile);
+
+      if (myProfile?.orgId) {
+          const orgUsers = await getUsers(myProfile.orgId);
+          setUsers(orgUsers);
+      } else {
+          setUsers([]);
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Load Failed', description: error.message });
     } finally {
@@ -80,14 +87,14 @@ export function TeamManagementCard() {
     loadTeam();
   }, [loadTeam]);
 
-  const handleRoleChange = async (userId: string, email: string, newRole: UserRole) => {
+  const handleRoleChange = async (userId: string, email: string, newRole: AccessLevel | 'none') => {
     if (!user) return;
     
     // Optimistic UI update
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, accessLevel: newRole === 'none' ? undefined : newRole } : u));
 
     try {
-      await updateUserProfile(userId, email, { role: newRole });
+      await updateUserProfile(userId, email, { accessLevel: newRole === 'none' ? undefined : newRole });
       toast({ title: 'Authority Updated', description: `User access level changed to ${newRole}.` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -117,9 +124,9 @@ export function TeamManagementCard() {
       }
   };
 
-  const getRoleIcon = (role?: UserRole) => {
+  const getRoleIcon = (role?: AccessLevel | 'none') => {
     switch (role) {
-      case 'admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
+      case 'org_admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
       case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
       case 'none': return <UserX className="h-4 w-4 text-destructive" />;
@@ -127,9 +134,9 @@ export function TeamManagementCard() {
     }
   };
 
-  const getRoleLabel = (role?: UserRole) => {
+  const getRoleLabel = (role?: AccessLevel | 'none') => {
     switch (role) {
-      case 'admin': return 'Admin (Full)';
+      case 'org_admin': return 'Admin (Full)';
       case 'editor': return 'Read/Edit';
       case 'viewer': return 'Read Only';
       case 'none': return 'No Access';
@@ -138,7 +145,8 @@ export function TeamManagementCard() {
   };
 
   // Resilient access check: If the user is the only one in the list, or we have an admin profile, allow management.
-  const canManageTeam = currentUserProfile?.role === 'admin' || users.length === 1;
+  const canManageTeam = currentUserProfile?.accessLevel === 'org_admin' || users.length === 0;
+  const canInvite = canManageTeam || currentUserProfile?.accessLevel === 'editor';
 
   return (
     <>
@@ -148,9 +156,9 @@ export function TeamManagementCard() {
           <CardTitle>Team & Authority</CardTitle>
           <CardDescription>Manage user access levels across the Spider Web.</CardDescription>
         </div>
-        {canManageTeam && (
-          <Button size="sm" onClick={() => { setUserToEdit(null); setIsAddUserOpen(true); }}>
-            <UserPlus className="mr-2 h-4 w-4" /> Add User
+        {canInvite && (
+          <Button size="sm" onClick={() => setIsInviteUserOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" /> Invite User
           </Button>
         )}
       </CardHeader>
@@ -178,12 +186,12 @@ export function TeamManagementCard() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {getRoleIcon(teamUser.role)}
+                        {getRoleIcon(teamUser.accessLevel || 'none')}
                         <span className={cn(
                             "text-sm font-medium",
-                            teamUser.role === 'none' && "text-destructive font-bold"
+                            !teamUser.accessLevel && "text-destructive font-bold"
                         )}>
-                            {getRoleLabel(teamUser.role)}
+                            {getRoleLabel(teamUser.accessLevel || 'none')}
                         </span>
                         {teamUser.id === user?.uid && (
                             <Badge variant="secondary" className="text-[10px] uppercase ml-2 bg-primary/10 text-primary border-primary/20">You</Badge>
@@ -212,7 +220,7 @@ export function TeamManagementCard() {
                                 <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Assign Role</DropdownMenuLabel>
-                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'admin')}>
+                                    <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'org_admin')}>
                                     <ShieldAlert className="mr-2 h-4 w-4 text-destructive" /> Admin (Full Access)
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleRoleChange(teamUser.id, teamUser.email, 'editor')}>
@@ -251,6 +259,13 @@ export function TeamManagementCard() {
         }} 
         onUserAdded={loadTeam} 
         userToEdit={userToEdit} 
+    />
+
+    <InviteUserDialog
+        isOpen={isInviteUserOpen}
+        onOpenChange={setIsInviteUserOpen}
+        onUserInvited={loadTeam}
+        currentUserProfile={currentUserProfile}
     />
 
     <ChangePasswordDialog

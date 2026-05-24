@@ -5,33 +5,33 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,13 +41,13 @@ import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, FileDigit, P
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { 
-    getInvoices, 
-    type Invoice, 
-    postInvoicePayment, 
-    getCompanies, 
-    type Company, 
-    getIncomeCategories, 
+import {
+    getInvoices,
+    type Invoice,
+    postInvoicePayment,
+    getCompanies,
+    type Company,
+    getIncomeCategories,
     type IncomeCategory,
     getExpenseCategories,
     type ExpenseCategory,
@@ -77,13 +77,13 @@ export function AccountsReceivablePageView() {
     const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
     const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     // Dialog Controllers
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-    
+
     // Payment form state
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -101,16 +101,16 @@ export function AccountsReceivablePageView() {
         }
         setIsLoading(true);
         try {
-            const [allInvoices, fetchedCompanies, fetchedIncomeCategories, fetchedExpenseCategories, fetchedContacts, fetchedFolders, fetchedIndustries, fetchedTaxTypes] = await Promise.all([
+            const [allInvoices, fetchedCompanies, fetchedIncomeCategories, fetchedExpenseCategories, fetchedTaxTypes] = await Promise.all([
                 getInvoices(user.uid),
                 getCompanies(user.uid),
                 getIncomeCategories(user.uid),
                 getExpenseCategories(user.uid),
-                getContacts(), // Synchronized Directory
-                getContactFolders(user.uid),
-                getIndustries(user.uid),
                 getTaxTypes(user.uid)
             ]);
+            const fetchedContacts = await getContacts().catch(() => []); // Synchronized Directory (auxiliary)
+            const fetchedFolders = await getContactFolders(user.uid).catch(() => []);
+            const fetchedIndustries = await getIndustries(user.uid).catch(() => []);
             setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
             setCompanies(fetchedCompanies);
             setIncomeCategories(fetchedIncomeCategories);
@@ -139,7 +139,7 @@ export function AccountsReceivablePageView() {
 
     const handlePostPayment = async () => {
         if (!user || !selectedInvoice) return;
-        
+
         const amount = parseFloat(paymentAmount);
         if (isNaN(amount) || amount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive amount.' });
@@ -243,7 +243,7 @@ export function AccountsReceivablePageView() {
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenPaymentDialog(inv)}>
-                                                        <Landmark className="mr-2 h-4 w-4"/> Post Payment
+                                                        <Landmark className="mr-2 h-4 w-4" /> Post Payment
                                                     </Button>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
@@ -324,7 +324,7 @@ export function AccountsReceivablePageView() {
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handlePostPayment} disabled={isSaving}>
-                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                             Post to GL
                         </Button>
                     </DialogFooter>

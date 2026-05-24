@@ -1,16 +1,16 @@
 
 'use client';
 
-import { 
-    getFirestore, 
-    collection, 
-    getDocs, 
-    doc, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    where, 
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
     writeBatch,
     Timestamp,
     getDoc,
@@ -36,12 +36,54 @@ function getFunctionsService() {
     return functions;
 }
 
+function getCurrentAuthContext() {
+    const { auth } = getFirebaseServices();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error('User must be logged in.');
+    }
+
+    return currentUser;
+}
+
+async function getCurrentOrgId(): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const tokenResult = await currentUser.getIdTokenResult(true);
+    const claimedOrgId = tokenResult.claims.orgId;
+
+    if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
+        return claimedOrgId;
+    }
+
+    const db = getDb();
+    const userProfileRef = doc(db, 'users', currentUser.uid);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const profileOrgId = userProfileSnap.data()?.orgId;
+
+    if (typeof profileOrgId === 'string' && profileOrgId.trim()) {
+        return profileOrgId;
+    }
+
+    throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
+function toDate(value: unknown): Date | undefined {
+    if (value instanceof Date) return value;
+    if (value && typeof value === 'object' && 'toDate' in value && typeof (value as Timestamp).toDate === 'function') {
+        return (value as Timestamp).toDate();
+    }
+    return undefined;
+}
+
 // Re-export FileItem type so it can be used by consumers
 export type FileItem = FileItemType;
 
-const docToFile = (doc: any): FileItem => ({ 
-    id: doc.id, 
+const docToFile = (doc: any): FileItem => ({
+    id: doc.id,
     ...doc.data(),
+    createdAt: toDate(doc.data().createdAt) ?? doc.data().createdAt,
+    updatedAt: toDate(doc.data().updatedAt) ?? doc.data().updatedAt,
     modifiedAt: (doc.data().modifiedAt as Timestamp)?.toDate() || new Date(),
 } as FileItem);
 
@@ -58,42 +100,51 @@ const generateKeywords = (name: string): string[] => {
 
 // --- File functions ---
 export async function getFiles(userId?: string): Promise<FileItem[]> {
-  const db = getDb();
-  const q = userId ? query(collection(db, FILES_COLLECTION), where("userId", "==", userId)) : collection(db, FILES_COLLECTION);
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFile);
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, FILES_COLLECTION), where("orgId", "==", orgId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToFile);
 }
 
 export async function getFileById(fileId: string): Promise<FileItem | null> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const fileRef = doc(db, FILES_COLLECTION, fileId);
     const fileSnap = await getDoc(fileRef);
     if (!fileSnap.exists()) {
         return null;
     }
+    if (fileSnap.data()?.orgId !== orgId) {
+        return null;
+    }
     const fileData = docToFile(fileSnap);
-    
+
     // Server action handles content fetching securely
     const { content, error } = await fetchFileContent(fileId);
     if (error) {
         console.warn(`Could not fetch content for file ${fileId}: ${error}`);
         return fileData; // Return metadata even if content fails
     }
-    
+
     return { ...fileData, content };
 }
 
 
 export async function getFilesForFolder(userId: string, folderId: string): Promise<FileItem[]> {
-  const db = getDb();
-  const q = query(collection(db, FILES_COLLECTION), where("userId", "==", userId), where("folderId", "==", folderId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToFile);
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const q = query(collection(db, FILES_COLLECTION), where("orgId", "==", orgId), where("folderId", "==", folderId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToFile);
 }
 
 export async function addFileRecord(fileData: Omit<FileItem, 'id'>): Promise<FileItem> {
     const db = getDb();
-    const dataWithKeywords = { ...fileData, keywords: generateKeywords(fileData.name) };
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const now = new Date();
+    const dataWithKeywords = { ...fileData, orgId, createdBy: currentUser.uid, updatedBy: currentUser.uid, createdAt: fileData.createdAt ?? now, updatedAt: now, modifiedAt: fileData.modifiedAt ?? now, keywords: generateKeywords(fileData.name) };
     const docRef = await addDoc(collection(db, FILES_COLLECTION), dataWithKeywords);
     return { id: docRef.id, ...dataWithKeywords };
 }
@@ -101,18 +152,25 @@ export async function addFileRecord(fileData: Omit<FileItem, 'id'>): Promise<Fil
 export async function updateFile(fileId: string, data: Partial<Omit<FileItem, 'id' | 'userId' | 'content'>> & { content?: string, keywords?: string[] }): Promise<void> {
     const db = getDb();
     const fileRef = doc(db, FILES_COLLECTION, fileId);
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const snapshot = await getDoc(fileRef);
 
-    const metadataToUpdate: {[key: string]: any} = { ...data };
-    
+    if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
+        throw new Error('File not found for the current organization.');
+    }
+
+    const metadataToUpdate: { [key: string]: any } = { ...data, updatedBy: currentUser.uid, updatedAt: new Date() };
+
     if (data.name && !data.keywords) {
         metadataToUpdate.keywords = generateKeywords(data.name);
     }
-    
+
     metadataToUpdate.modifiedAt = new Date();
     delete metadataToUpdate.content;
-    
+
     if (Object.keys(metadataToUpdate).length > 0) {
-      await updateDoc(fileRef, metadataToUpdate);
+        await updateDoc(fileRef, metadataToUpdate);
     }
 }
 
@@ -150,7 +208,7 @@ export async function saveEmailForContact(userId: string, contactName: string, e
         userId: userId,
         storagePath: '', // Will be set by backend if content is saved
     };
-    
+
     return addFileRecord(newFileRecord);
 }
 
@@ -166,9 +224,14 @@ export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promis
 
 export async function deleteFiles(fileIds: string[]): Promise<void> {
     const db = getDb();
+    const orgId = await getCurrentOrgId();
     const batch = writeBatch(db);
     for (const fileId of fileIds) {
         const fileRef = doc(db, FILES_COLLECTION, fileId);
+        const snapshot = await getDoc(fileRef);
+        if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
+            continue;
+        }
         batch.delete(fileRef);
     }
     await batch.commit();
@@ -192,7 +255,7 @@ export async function uploadSiteImageClient(file: File, imageId: string, hint: s
 
     const storagePath = `siteimages/${imageId}/${file.name}`;
     const storageRef = ref(storage, storagePath);
-    
+
     // Upload file
     await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(storageRef);
@@ -232,10 +295,10 @@ export async function deleteSiteImageClient(data: { imageId: string; storagePath
             const storageRef = ref(storage, storagePath);
             await deleteObject(storageRef);
         } catch (error: any) {
-             if (error.code !== 'storage/object-not-found') {
-                 console.error("Error deleting file from storage:", error);
-                 // We continue to delete the firestore doc even if storage delete fails (unless it's a permission error that implies we shouldn't)
-             }
+            if (error.code !== 'storage/object-not-found') {
+                console.error("Error deleting file from storage:", error);
+                // We continue to delete the firestore doc even if storage delete fails (unless it's a permission error that implies we shouldn't)
+            }
         }
     }
 

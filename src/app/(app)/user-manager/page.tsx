@@ -38,7 +38,7 @@ export default function UserManagerPage() {
         );
     }
 
-    if (!userProfile || userProfile.role !== 'admin') {
+    if (!userProfile || userProfile.accessLevel !== 'org_admin') {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center gap-6 p-8 text-center animate-in fade-in zoom-in duration-300">
                 <div className="rounded-full bg-destructive/10 p-6">

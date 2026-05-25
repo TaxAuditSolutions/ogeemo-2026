@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 const THEME_PRESETS = [
     {
         name: "Classic Ogeemo",
-        colors: { primary: '#1E8E86', background: '#ffffff', sidebar: '#1e293b', header: '#3DD5C0', border: '#e2e8f0' }
+        colors: { primary: '#1E8E86', background: '#ffffff', sidebar: '#1e293b', header: '#3DD5C0', border: '#8b5d38' }
     },
     {
         name: "Deep Slate Ops",

@@ -23,7 +23,7 @@ const defaultPreferences: UserProfile['preferences'] = {
         background: '#ffffff',
         sidebar: '#1e293b',
         header: '#3DD5C0',
-        border: '#0000ff',
+        border: '#8b5d38',
     },
     planningRituals: {
         daily: { time: '17:00', duration: 25, repeatEnabled: false, repeatCount: 5 },
@@ -52,11 +52,20 @@ export function useUserPreferences() {
         try {
             const profile = await getUserProfile(userId);
             if (profile?.preferences) {
+                const loadedThemeColors = { ...defaultPreferences?.themeColors, ...(profile.preferences.themeColors || {}) };
+                let needsUpdate = false;
+
+                // Migrate legacy blue color from Firestore to the new default medium brown color
+                if (loadedThemeColors.border === '#0000ff') {
+                    loadedThemeColors.border = '#8b5d38';
+                    needsUpdate = true;
+                }
+
                 // Merge loaded preferences with defaults
                 globalPrefs = {
                     ...defaultPreferences,
                     ...profile.preferences,
-                    themeColors: { ...defaultPreferences?.themeColors, ...(profile.preferences.themeColors || {}) },
+                    themeColors: loadedThemeColors,
                     planningRituals: {
                         ...defaultPreferences?.planningRituals,
                         ...(profile.preferences.planningRituals || {}),
@@ -64,6 +73,10 @@ export function useUserPreferences() {
                         weekly: { ...defaultPreferences?.planningRituals?.weekly, ...(profile.preferences.planningRituals?.weekly || {}) },
                     }
                 };
+
+                if (needsUpdate) {
+                    await updateUserProfile(userId, profile.email || '', { preferences: globalPrefs });
+                }
             }
         } catch (error) {
             console.error("useUserPreferences: Load failed", error);

@@ -14,8 +14,17 @@ export interface SiteImage {
 export function useSiteImages() {
     const [images, setImages] = useState<Record<string, SiteImage>>({});
     const [isLoading, setIsLoading] = useState(true);
+    const [services, setServices] = useState<any>(null);
     const { toast } = useToast();
-    const services = getFirebaseServices();
+
+    useEffect(() => {
+        try {
+            setServices(getFirebaseServices());
+        } catch (error) {
+            console.warn('Site images: Firebase services unavailable during prerender or build.', error);
+            setIsLoading(false);
+        }
+    }, []);
 
     const loadImages = useCallback(() => {
         if (!services) {

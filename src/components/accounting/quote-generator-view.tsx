@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getQuoteById, getLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, getTaxTypes, type TaxType, type QuoteLineItem, type QuoteStatus, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/core/accounting-service';
+import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, getTaxTypes, type TaxType, type QuoteLineItem, type QuoteStatus, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -194,7 +194,7 @@ export function QuoteGeneratorView() {
     try {
       const [quoteData, lineItemsData] = await Promise.all([
         getQuoteById(quoteId),
-        getLineItemsForQuote(user.uid, quoteId),
+        getQuoteLineItemsForQuote(user.uid, quoteId),
       ]);
 
       if (!quoteData) {

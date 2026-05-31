@@ -176,6 +176,16 @@ export function processCommand(input: string): CommandResult {
             };
         }
 
+        if (normalizedParam.includes('quote')) {
+            return {
+                type: 'action',
+                target: '/accounting/quotes/create',
+                message: 'Action: [New Quote]',
+                description: "Opening quote generator.",
+                category: 'Finances'
+            };
+        }
+
         if (normalizedParam.includes('invoice')) {
             return {
                 type: 'action',

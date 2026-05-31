@@ -679,7 +679,7 @@ export function InvoiceGeneratorView() {
 
                             <div className="p-4 border-2 border-dashed rounded-xl bg-primary/5 space-y-4">
                                 <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                    <ClipboardList className="h-4 w-4" /> Evidence Orchestration
+                                    <ClipboardList className="h-4 w-4" /> Work Coverage Summary
                                 </h4>
                                 <div className="flex items-center gap-6">
                                     <Label className="font-semibold">Attach Work Activity Evidence Report?</Label>
@@ -695,7 +695,7 @@ export function InvoiceGeneratorView() {
                                     </RadioGroup>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground italic">
-                                    This will include a high-fidelity summary of all billable sessions and tasks linked to this client for the invoice period.
+                                    This will include a high-fidelity summary of the amount of work covered by this invoice, based on billable sessions and tasks linked to this client for the invoice period.
                                 </p>
                             </div>
 

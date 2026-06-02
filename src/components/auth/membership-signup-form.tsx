@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { LoaderCircle, UserPlus, Users, Building2, ShieldCheck, Zap } from "lucide-react";
+import { LoaderCircle, UserPlus, Users, Building2, ShieldCheck, Zap, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -40,6 +40,7 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
     },
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const seatCount = form.watch("seatCount");
   const [totalPrice, setTotalPrice] = useState(25);
 
@@ -86,7 +87,24 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                 <FormItem>
                   <FormLabel className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Secure Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" {...field} disabled={isLoading} />
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        className="h-12 w-full pr-11 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" 
+                        {...field} 
+                        disabled={isLoading} 
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

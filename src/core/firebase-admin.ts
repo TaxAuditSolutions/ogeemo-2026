@@ -33,7 +33,13 @@ function getAdminApp() {
     }
 
     try {
-      const serviceAccount = JSON.parse(serviceAccountKey);
+      let cleanKey = serviceAccountKey.trim();
+      if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
+        cleanKey = cleanKey.slice(1, -1);
+      } else if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
+        cleanKey = cleanKey.slice(1, -1);
+      }
+      const serviceAccount = JSON.parse(cleanKey);
       if (serviceAccount.private_key) {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
       }

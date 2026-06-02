@@ -1,7 +1,22 @@
 'use client';
-/**
- * @fileOverview Minimal stub to save space.
- */
+import { useEffect, useState } from 'react';
+import { getFirebaseServices } from '@/firebase';
+
 export default function AuthTestRedirectPage() {
-  return null;
+  const [result, setResult] = useState<string>('Loading...');
+  
+  useEffect(() => {
+    try {
+      const services = getFirebaseServices();
+      setResult(JSON.stringify({
+        hasApp: !!services?.app,
+        hasAuth: !!services?.auth,
+        hasDb: !!services?.db
+      }, null, 2));
+    } catch(e: any) {
+      setResult('Error: ' + e.message);
+    }
+  }, []);
+
+  return <pre id="result">{result}</pre>;
 }

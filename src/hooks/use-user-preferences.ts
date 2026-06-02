@@ -23,7 +23,7 @@ const defaultPreferences: UserProfile['preferences'] = {
         background: '#ffffff',
         sidebar: '#1e293b',
         header: '#3DD5C0',
-        border: '#e2e8f0',
+        border: '#0000ff',
     },
     planningRituals: {
         daily: { time: '17:00', duration: 25, repeatEnabled: false, repeatCount: 5 },

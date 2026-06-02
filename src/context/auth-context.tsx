@@ -47,13 +47,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [firebaseAuth, setFirebaseAuth] = useState<Auth | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
 
-  const { auth: firebaseAuth } = getFirebaseServices();
+  useEffect(() => {
+    try {
+      const { auth } = getFirebaseServices();
+      setFirebaseAuth(auth);
+    } catch (error) {
+      console.warn('Auth Context: Firebase services unavailable during prerender or build.', error);
+      setIsAuthLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    if (!firebaseAuth) {
+      return;
+    }
+
     // Hard fail-safe: if Firebase auth never responds, stop showing the loading screen
     // after 10 seconds and let the routing logic redirect to /login.
     const authTimeout = setTimeout(() => {
@@ -62,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 10000);
 
     setPersistence(firebaseAuth, browserLocalPersistence).catch((error: any) => {
-      console.error("Firebase persistence error:", error);
+      console.error('Firebase persistence error:', error);
     });
 
     const unsubscribe = firebaseAuth.onAuthStateChanged(async (currentUser: User | null) => {
@@ -172,6 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthLoading, pathname, router]);
 
   const signInWithGoogle = useCallback(async () => {
+    if (!firebaseAuth) {
+      throw new Error('Firebase auth has not been initialized yet.');
+    }
+
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file');
     provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
@@ -202,7 +219,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => { });
-    await signOut(firebaseAuth);
+    if (firebaseAuth) {
+      await signOut(firebaseAuth);
+    }
     setUser(null);
     setAccessToken(null);
     setAccessLevel(null);

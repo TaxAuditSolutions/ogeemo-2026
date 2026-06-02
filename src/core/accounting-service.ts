@@ -185,6 +185,50 @@ export interface InvoiceLineItem {
   userId: string;
 }
 
+export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'converted';
+
+export interface QuoteLineItem {
+  id?: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  quoteId: string;
+  description: string;
+  internalNotes?: string;
+  categoryNumber?: string;
+  quantity: number;
+  price: number;
+  totalAmount?: number;
+  preTaxAmount?: number;
+  taxAmount?: number;
+  taxType?: string;
+  taxRate?: number;
+  userId: string;
+}
+
+export interface Quote {
+  id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  quoteNumber: string;
+  businessNumber?: string;
+  companyName: string;
+  contactId: string;
+  supplierId?: string | null;
+  totalAmount: number;
+  quoteDate: Date;
+  expirationDate: Date;
+  status: QuoteStatus;
+  notes: string;
+  taxType: string;
+  userId: string;
+}
+
 export interface Invoice {
   id: string;
   orgId?: string;
@@ -223,6 +267,8 @@ export interface ServiceItem {
 
 const INVOICES_COLLECTION = 'invoices';
 const LINE_ITEMS_COLLECTION = 'invoiceLineItems';
+const QUOTES_COLLECTION = 'quotes';
+const QUOTE_LINE_ITEMS_COLLECTION = 'quoteLineItems';
 const INCOME_COLLECTION = 'incomeTransactions';
 const EXPENSE_COLLECTION = 'expenseTransactions';
 const PAYABLES_COLLECTION = 'payableBills';
@@ -286,6 +332,55 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
     taxRate: data.taxRate || 0,
     userId: data.userId,
   } as InvoiceLineItem;
+};
+
+const docToQuoteLineItem = (doc: any): QuoteLineItem => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    orgId: data.orgId,
+    createdBy: data.createdBy,
+    updatedBy: data.updatedBy,
+    createdAt: toClientDate(data.createdAt),
+    updatedAt: toClientDate(data.updatedAt),
+    quoteId: data.quoteId,
+    description: data.description,
+    internalNotes: data.internalNotes || '',
+    categoryNumber: data.categoryNumber || '',
+    quantity: data.quantity,
+    price: data.price,
+    totalAmount: data.totalAmount,
+    preTaxAmount: data.preTaxAmount,
+    taxAmount: data.taxAmount,
+    taxType: data.taxType || '',
+    taxRate: data.taxRate || 0,
+    userId: data.userId,
+  } as QuoteLineItem;
+};
+
+const docToQuote = (doc: any): Quote => {
+  const data = doc.data();
+  if (!data) throw new Error("Document data is missing.");
+  return {
+    id: doc.id,
+    orgId: data.orgId,
+    createdBy: data.createdBy,
+    updatedBy: data.updatedBy,
+    quoteNumber: data.quoteNumber,
+    businessNumber: data.businessNumber,
+    companyName: data.companyName,
+    contactId: data.contactId,
+    supplierId: data.supplierId || null,
+    totalAmount: data.totalAmount,
+    quoteDate: toClientDate(data.quoteDate) || new Date(),
+    expirationDate: toClientDate(data.expirationDate) || new Date(),
+    status: data.status,
+    notes: data.notes,
+    taxType: data.taxType,
+    userId: data.userId,
+    createdAt: toClientDate(data.createdAt),
+    updatedAt: toClientDate(data.updatedAt),
+  } as Quote;
 };
 
 const docToServiceItem = (doc: any): ServiceItem => {
@@ -358,6 +453,279 @@ export async function getLineItemsForInvoice(_userId: string, invoiceId: string)
     }
     throw error;
   }
+}
+
+export async function getQuoteLineItemsForQuote(_userId: string, quoteId: string): Promise<QuoteLineItem[]> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const q = query(
+    collection(db, QUOTE_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where("quoteId", "==", quoteId)
+  );
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToQuoteLineItem);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: QUOTE_LINE_ITEMS_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function getQuotes(_userId: string): Promise<Quote[]> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, QUOTES_COLLECTION), where('orgId', '==', orgId));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToQuote).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: QUOTES_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function getQuoteById(quoteId: string): Promise<Quote | null> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const docRef = doc(db, QUOTES_COLLECTION, quoteId);
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const quote = docToQuote(docSnap);
+      return quote.orgId === orgId ? quote : null;
+    }
+    return null;
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'get',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function addQuoteWithLineItems(
+  quoteData: Omit<Quote, 'id' | 'createdAt'>,
+  lineItems: Omit<QuoteLineItem, 'quoteId' | 'id' | 'userId'>[]
+): Promise<Quote> {
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+  const batch = writeBatch(db);
+
+  const quoteRef = doc(collection(db, QUOTES_COLLECTION));
+  const quotePayload = {
+    ...quoteData,
+    orgId,
+    createdBy: currentUser.uid,
+    updatedBy: currentUser.uid,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    quoteDate: toFirestoreDateValue(quoteData.quoteDate),
+    expirationDate: toFirestoreDateValue(quoteData.expirationDate),
+  };
+  batch.set(quoteRef, quotePayload);
+
+  lineItems.forEach(item => {
+    const itemRef = doc(collection(db, QUOTE_LINE_ITEMS_COLLECTION));
+    batch.set(itemRef, {
+      ...item,
+      quoteId: quoteRef.id,
+      userId: quoteData.userId,
+      orgId,
+      createdBy: currentUser.uid,
+      updatedBy: currentUser.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'write',
+        requestResourceData: { quoteData, lineItems },
+      }));
+    }
+    throw error;
+  });
+
+  return docToQuote({ id: quoteRef.id, data: () => quotePayload });
+}
+
+export async function updateQuoteWithLineItems(
+  quoteId: string,
+  quoteData: Partial<Omit<Quote, 'id' | 'userId'>>,
+  lineItems: Omit<QuoteLineItem, 'id' | 'quoteId' | 'userId'>[],
+  userId: string
+): Promise<void> {
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+
+  const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+  const quoteSnap = await getDoc(quoteRef);
+  if (!quoteSnap.exists() || quoteSnap.data().orgId !== orgId) return;
+
+  const existingItemsQuery = query(
+    collection(db, QUOTE_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where('quoteId', '==', quoteId)
+  );
+  const existingItemsSnapshot = await getDocs(existingItemsQuery);
+
+  const batch = writeBatch(db);
+
+  batch.update(quoteRef, {
+    ...quoteData,
+    orgId,
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+    quoteDate: 'quoteDate' in quoteData ? toFirestoreDateValue((quoteData as any).quoteDate) : quoteSnap.data().quoteDate,
+    expirationDate: 'expirationDate' in quoteData ? toFirestoreDateValue((quoteData as any).expirationDate) : quoteSnap.data().expirationDate,
+  });
+
+  existingItemsSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+
+  lineItems.forEach(item => {
+    const itemRef = doc(collection(db, QUOTE_LINE_ITEMS_COLLECTION));
+    batch.set(itemRef, {
+      ...item,
+      quoteId,
+      userId,
+      orgId,
+      createdBy: currentUser.uid,
+      updatedBy: currentUser.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'write',
+        requestResourceData: { quoteData, lineItems },
+      }));
+    }
+    throw error;
+  });
+}
+
+export async function updateQuoteStatus(quoteId: string, status: QuoteStatus, userId: string): Promise<void> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+  const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+  const quoteSnap = await getDoc(quoteRef);
+  if (!quoteSnap.exists() || quoteSnap.data().orgId !== orgId) return;
+
+  await updateDoc(quoteRef, {
+    status,
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  });
+}
+
+export async function deleteQuote(userId: string, quoteId: string): Promise<void> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+
+  const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+  const quoteSnap = await getDoc(quoteRef);
+  if (!quoteSnap.exists() || quoteSnap.data().orgId !== orgId) return;
+
+  const lineItemsQuery = query(
+    collection(db, QUOTE_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where('quoteId', '==', quoteId)
+  );
+  const lineItemsSnapshot = await getDocs(lineItemsQuery);
+
+  const batch = writeBatch(db);
+  batch.delete(quoteRef);
+  lineItemsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'delete',
+      }));
+    }
+    throw error;
+  });
+}
+
+export async function convertQuoteToInvoice(quoteId: string, userId: string): Promise<Invoice> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+
+  const quote = await getQuoteById(quoteId);
+  if (!quote) throw new Error('Quote not found.');
+
+  const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
+  const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+
+  const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+  const now = new Date();
+  const dueDate = new Date(now);
+  dueDate.setDate(dueDate.getDate() + 14);
+
+  const invoiceData = {
+    invoiceNumber,
+    businessNumber: quote.businessNumber,
+    companyName: quote.companyName,
+    contactId: quote.contactId,
+    supplierId: quote.supplierId,
+    originalAmount: quote.totalAmount,
+    amountPaid: 0,
+    dueDate,
+    invoiceDate: now,
+    status: 'outstanding' as const,
+    notes: quote.notes || `Converted from quote ${quote.quoteNumber}`,
+    taxType: quote.taxType,
+    userId,
+  };
+
+  const invoiceLineItems = lineItems.map(item => ({
+    description: item.description,
+    internalNotes: item.internalNotes,
+    categoryNumber: item.categoryNumber,
+    quantity: item.quantity,
+    price: item.price,
+    totalAmount: item.totalAmount,
+    preTaxAmount: item.preTaxAmount,
+    taxAmount: item.taxAmount,
+    taxType: item.taxType,
+    taxRate: item.taxRate,
+  }));
+
+  const invoice = await addInvoiceWithLineItems(invoiceData, invoiceLineItems);
+  await updateDoc(quoteRef, {
+    status: 'converted',
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  });
+  return invoice;
 }
 
 

@@ -15,7 +15,7 @@ import { addMinutes, format, eachDayOfInterval, getDay, set, addDays, isWeekend,
 import { LoaderCircle, Save, ArrowLeft, BrainCircuit, Calendar as CalendarIcon, X, Info } from 'lucide-react';
 import { addTask, deleteRitualTasks } from '@/services/project-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -227,7 +227,7 @@ export default function PlanningRitualsPage() {
                                         {date ? format(date, "PPP") : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={handleDailyDateSelect} initialFocus /></PopoverContent>
+                                <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={date} onSelect={handleDailyDateSelect} initialFocus /></PopoverContent>
                             </Popover>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -247,10 +247,10 @@ export default function PlanningRitualsPage() {
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2"><Label>From</Label>
-                                <Popover open={isWeeklyStartPickerOpen} onOpenChange={setIsWeeklyStartPickerOpen}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{weeklyStartDate ? format(weeklyStartDate, "PP") : "Start"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={weeklyStartDate} onSelect={d => { setWeeklyStartDate(d); setIsWeeklyStartPickerOpen(false); }} initialFocus /></PopoverContent></Popover>
+                                <Popover open={isWeeklyStartPickerOpen} onOpenChange={setIsWeeklyStartPickerOpen}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{weeklyStartDate ? format(weeklyStartDate, "PP") : "Start"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={weeklyStartDate} onSelect={d => { setWeeklyStartDate(d); setIsWeeklyStartPickerOpen(false); }} initialFocus /></PopoverContent></Popover>
                             </div>
                             <div className="space-y-2"><Label>To</Label>
-                                <Popover open={isWeeklyEndPickerOpen} onOpenChange={setIsWeeklyEndPickerOpen}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{weeklyEndDate ? format(weeklyEndDate, "PP") : "End"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={weeklyEndDate} onSelect={d => { setWeeklyEndDate(d); setIsWeeklyEndPickerOpen(false); }} initialFocus /></PopoverContent></Popover>
+                                <Popover open={isWeeklyEndPickerOpen} onOpenChange={setIsWeeklyEndPickerOpen}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{weeklyEndDate ? format(weeklyEndDate, "PP") : "End"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={weeklyEndDate} onSelect={d => { setWeeklyEndDate(d); setIsWeeklyEndPickerOpen(false); }} initialFocus /></PopoverContent></Popover>
                             </div>
                         </div>
                         <div className="space-y-2"><Label>Day</Label><Select value={weeklyRitual.day} onValueChange={v => setWeeklyRitual(p => ({ ...p, day: v as DayOfWeek }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{daysOfWeek.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>

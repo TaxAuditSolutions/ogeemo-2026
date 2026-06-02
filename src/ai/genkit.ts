@@ -9,15 +9,13 @@ const rawKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_
 const apiKey = rawKey?.replace(/^["']|["']$/g, '');
 
 if (!apiKey) {
-    console.error("[AI Diagnostic] FATAL: GEMINI_API_KEY is not defined in the environment. Please check your .env files or Firebase Secrets.");
+    console.warn("[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.");
 } else {
     console.log(`[AI Diagnostic] Genkit initialized with Key prefix: ${apiKey.substring(0, 10)}... (Length: ${apiKey.length})`);
 }
 
 export const ai = genkit({
   plugins: [
-    googleAI({ 
-      apiKey: apiKey,
-    }),
+    ...(apiKey ? [googleAI({ apiKey })] : []),
   ],
 });

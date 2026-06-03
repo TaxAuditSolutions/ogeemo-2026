@@ -264,9 +264,9 @@ export function AddLineItemDialog({
           <div className="flex flex-col items-center gap-2 text-primary">
             <PlusCircle className="h-10 w-10" />
             <div className="text-center">
-                <DialogTitle className="text-3xl font-headline uppercase tracking-tight">Line Item Orchestration</DialogTitle>
+                <DialogTitle className="text-3xl font-headline uppercase tracking-tight">SELECT LINE ITEM</DialogTitle>
                 <DialogDescription className="text-base">
-                    Define operational and accounting nodes for this invoice.
+                     Add Category and Description
                 </DialogDescription>
             </div>
           </div>

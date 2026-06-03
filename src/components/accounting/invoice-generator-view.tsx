@@ -623,7 +623,10 @@ export function InvoiceGeneratorView() {
                                 </div>
                             </div>
                             <div>
-                                <Label>Line Items</Label>
+                                <div className="flex flex-col gap-1 mb-4">
+                                    <Label className="text-base font-semibold">Line Items</Label>
+                                    <p className="text-sm text-muted-foreground">Line item selection</p>
+                                </div>
                                 <div className="border rounded-md mt-2">
                                     <Table>
                                         <TableHeader>

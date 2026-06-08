@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, getTaxTypes, type TaxType, type QuoteLineItem, type QuoteStatus, getCompanies, type Company, getExpenseCategories, type ExpenseCategory } from '@/core/accounting-service';
+import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, getTaxTypes, type TaxType, type QuoteLineItem, type QuoteStatus, getCompanies, type Company } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -160,7 +160,6 @@ export function QuoteGeneratorView() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -242,12 +241,10 @@ export function QuoteGeneratorView() {
         const [
           fetchedCompanies,
           fetchedServiceItems,
-          fetchedExpenseCategories,
           fetchedTaxTypes,
         ] = await Promise.all([
           getCompanies(user.uid),
           getServiceItems(user.uid),
-          getExpenseCategories(user.uid),
           getTaxTypes(user.uid),
         ]);
 
@@ -259,7 +256,6 @@ export function QuoteGeneratorView() {
         setCompanies(fetchedCompanies);
         setContacts(fetchedContacts);
         setServiceItems(fetchedServiceItems);
-        setExpenseCategories(fetchedExpenseCategories);
         setContactFolders(fetchedFolders);
         setTaxTypes(fetchedTaxTypes);
         setUserProfile(profile);
@@ -783,7 +779,6 @@ export function QuoteGeneratorView() {
         itemToEdit={itemToEdit}
         onSave={handleSaveLineItem}
         serviceItems={serviceItems}
-        expenseCategories={expenseCategories}
         onSaveRepeatable={handleSaveRepeatableItem}
         taxTypes={taxTypes}
         onTaxTypesChange={setTaxTypes}

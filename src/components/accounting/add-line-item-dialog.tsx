@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type ServiceItem, type TaxType, type ExpenseCategory } from '@/core/accounting-service';
+import { type ServiceItem, type TaxType } from '@/core/accounting-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
@@ -68,7 +68,6 @@ interface AddLineItemDialogProps {
   itemToEdit: LineItem | null;
   onSave: (newItem: LineItem) => void;
   serviceItems: ServiceItem[];
-  expenseCategories: ExpenseCategory[];
   onSaveRepeatable: (item: Omit<ServiceItem, 'id' | 'userId'>) => void;
   taxTypes: TaxType[];
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
@@ -88,7 +87,6 @@ export function AddLineItemDialog({
   itemToEdit,
   onSave,
   serviceItems,
-  expenseCategories,
   onSaveRepeatable,
   taxTypes,
   onTaxTypesChange,
@@ -119,15 +117,7 @@ export function AddLineItemDialog({
     });
   }, [serviceItems]);
 
-  const uniqueExpenseCategories = useMemo(() => {
-    const seen = new Set<string>();
-    return expenseCategories.filter(cat => {
-        const key = cat.categoryNumber || cat.name;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-  }, [expenseCategories]);
+
 
   const { subtotal, taxAmount, lineTotal } = useMemo(() => {
     const qty = Number(quantity) || 0;
@@ -235,12 +225,7 @@ export function AddLineItemDialog({
     toast({ title: "Item Loaded", description: `Populated details for "${item.description}"` });
   };
 
-  const handleSelectCategory = (cat: ExpenseCategory) => {
-      setCategoryNumber(cat.categoryNumber || cat.id);
-      if (!description) setDescription(cat.name);
-      setIsSearchOpen(false);
-      toast({ title: "Category Selected", description: `"${cat.name}" set as accounting line.` });
-  };
+
 
   const handleSetDefaultTaxRate = () => {
       const rate = parseFloat(String(taxRate));
@@ -254,7 +239,6 @@ export function AddLineItemDialog({
   };
 
   const filteredServiceItems = uniqueServiceItems.filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredCategories = uniqueExpenseCategories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <>
@@ -278,18 +262,18 @@ export function AddLineItemDialog({
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <FileSignature className="h-4 w-4" /> 1. Category Line Item (BKS Audit)
+                            <Briefcase className="h-4 w-4" /> 1. Product or Service
                         </Label>
                         <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-10 text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10 border-primary/20">
-                                    <Search className="mr-2 h-4 w-4" /> Select or create category
+                                    <Search className="mr-2 h-4 w-4" /> Select or create product/service
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[500px] p-0 shadow-2xl" align="end">
                                 <Command shouldFilter={false}>
                                     <CommandInput 
-                                        placeholder="Search unique items or categories..." 
+                                        placeholder="Search products and services..." 
                                         value={searchQuery}
                                         onValueChange={setSearchQuery}
                                         className="h-12"
@@ -297,7 +281,7 @@ export function AddLineItemDialog({
                                     <CommandList className="max-h-[500px]">
                                         <CommandEmpty>
                                             <div className="p-4 space-y-2">
-                                                <p className="text-sm text-muted-foreground">No library match for "{searchQuery}"</p>
+                                                <p className="text-sm text-muted-foreground">No products/services match "{searchQuery}"</p>
                                                 {searchQuery.trim() && (
                                                     <Button variant="outline" className="w-full justify-start text-primary" onClick={() => { setDescription(searchQuery); setIsSearchOpen(false); }}>
                                                         <Plus className="mr-2 h-4 w-4" /> Use "{searchQuery}" as description
@@ -307,7 +291,7 @@ export function AddLineItemDialog({
                                         </CommandEmpty>
                                         
                                         {filteredServiceItems.length > 0 && (
-                                            <CommandGroup heading="Professional Services Library">
+                                            <CommandGroup heading="Products & Services Library">
                                                 {filteredServiceItems.map(item => (
                                                     <CommandItem
                                                         key={item.id}
@@ -326,29 +310,6 @@ export function AddLineItemDialog({
                                                 ))}
                                             </CommandGroup>
                                         )}
-
-                                        {filteredCategories.length > 0 && (
-                                            <>
-                                                <Separator />
-                                                <CommandGroup heading="Expense Categories (BKS Audit Lines)">
-                                                    {filteredCategories.map(cat => (
-                                                        <CommandItem
-                                                            key={cat.id}
-                                                            value={cat.name}
-                                                            onSelect={() => handleSelectCategory(cat)}
-                                                            className="cursor-pointer py-3"
-                                                        >
-                                                            <FileSignature className="mr-3 h-5 w-5 text-muted-foreground" />
-                                                            <div className="flex flex-col flex-1">
-                                                                <span className="font-bold text-sm">{cat.name}</span>
-                                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">CRA Line {cat.categoryNumber}</span>
-                                                            </div>
-                                                            {categoryNumber === (cat.categoryNumber || cat.id) && <Check className="h-5 w-5 text-primary ml-auto" />}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </>
-                                        )}
                                     </CommandList>
                                 </Command>
                             </PopoverContent>
@@ -356,13 +317,8 @@ export function AddLineItemDialog({
                     </div>
                     <div className="p-4 border-2 rounded-xl bg-muted/30 flex items-center justify-between">
                         <span className="text-lg font-semibold">
-                            {categoryNumber ? (uniqueExpenseCategories.find(c => (c.categoryNumber || c.id) === categoryNumber)?.name || categoryNumber) : 'No category selected'}
+                            {description || 'No product/service selected yet'}
                         </span>
-                        {categoryNumber && (
-                            <Badge variant="outline" className="font-mono text-primary border-primary/20">
-                                Line {categoryNumber}
-                            </Badge>
-                        )}
                     </div>
                 </div>
 

@@ -182,6 +182,7 @@ export interface InvoiceLineItem {
   taxAmount?: number;
   taxType?: string;
   taxRate?: number;
+  itemType?: 'service' | 'product';
   userId: string;
 }
 
@@ -205,6 +206,7 @@ export interface QuoteLineItem {
   taxAmount?: number;
   taxType?: string;
   taxRate?: number;
+  itemType?: 'service' | 'product';
   userId: string;
 }
 
@@ -262,6 +264,7 @@ export interface ServiceItem {
   price: number;
   taxType?: string;
   taxRate?: number;
+  itemType?: 'service' | 'product';
   userId: string;
 }
 
@@ -330,6 +333,7 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
     taxAmount: data.taxAmount,
     taxType: data.taxType || '',
     taxRate: data.taxRate || 0,
+    itemType: data.itemType,
     userId: data.userId,
   } as InvoiceLineItem;
 };
@@ -354,6 +358,7 @@ const docToQuoteLineItem = (doc: any): QuoteLineItem => {
     taxAmount: data.taxAmount,
     taxType: data.taxType || '',
     taxRate: data.taxRate || 0,
+    itemType: data.itemType,
     userId: data.userId,
   } as QuoteLineItem;
 };
@@ -717,6 +722,7 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
     taxAmount: item.taxAmount,
     taxType: item.taxType,
     taxRate: item.taxRate,
+    itemType: item.itemType,
   }));
 
   const invoice = await addInvoiceWithLineItems(invoiceData, invoiceLineItems);

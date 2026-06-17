@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
+import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { AddLineItemDialog } from './add-line-item-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { getUserProfile } from '@/core/user-profile-service';
 import type { UserProfile } from '@/core/user-profile-service';
@@ -37,6 +36,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+import { AddLineItemDialog } from './add-line-item-dialog';
 
 interface LocalLineItem {
     id: string;
@@ -47,6 +49,7 @@ interface LocalLineItem {
     price: number;
     taxType?: string;
     taxRate?: number;
+    serviceItemId?: string;
 }
 
 const formatCurrency = (amount: number) => {
@@ -183,9 +186,9 @@ export function InvoiceGeneratorView() {
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
-    const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
     const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
     const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+    const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
 
     const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
@@ -211,7 +214,7 @@ export function InvoiceGeneratorView() {
             setSelectedContactId(invoiceData.contactId);
             setSelectedSupplierId(invoiceData.supplierId || null);
 
-            const mappedLineItems = lineItemsData.map(item => ({
+            const mappedLineItems = lineItemsData.map((item: any) => ({
                 id: item.id || `item_${Math.random()}`,
                 description: item.description,
                 internalNotes: item.internalNotes || '',
@@ -220,6 +223,7 @@ export function InvoiceGeneratorView() {
                 price: item.price,
                 taxType: item.taxType,
                 taxRate: item.taxRate,
+                serviceItemId: item.serviceItemId,
             }));
             setLineItems(mappedLineItems);
 
@@ -266,7 +270,6 @@ export function InvoiceGeneratorView() {
                 if (invoiceId) {
                     setInvoiceToEditId(invoiceId);
                     await loadInvoiceForEditing(invoiceId);
-                    return;
                 }
 
                 const contactIdParam = searchParams.get('contactId');
@@ -291,22 +294,77 @@ export function InvoiceGeneratorView() {
         }
     }, [selectedContactId, contacts, userProfile]);
 
-    const handleOpenAddItemDialog = (item: LocalLineItem | null) => {
+    // Sync draft line items with library
+    useEffect(() => {
+        // invoices technically don't have 'draft' state in this implementation, but we can assume editing = draft if it hasn't been paid
+        if (lineItems.length > 0 && serviceItems.length > 0) {
+            setLineItems(prev => {
+                let changed = false;
+                const newItems = prev.map(item => {
+                    if (item.serviceItemId) {
+                        const libItem = serviceItems.find(s => s.id === item.serviceItemId);
+                        if (libItem && (libItem.price !== item.price || libItem.description !== item.description || libItem.taxType !== item.taxType)) {
+                            changed = true;
+                            return {
+                                ...item,
+                                description: libItem.description,
+                                price: libItem.price,
+                                taxType: libItem.taxType || '',
+                                taxRate: libItem.taxRate || 0,
+                            };
+                        }
+                    }
+                    return item;
+                });
+                return changed ? newItems : prev;
+            });
+        }
+    }, [serviceItems]); // Run once when service items load
+
+    const handleOpenEditDialog = (item: LocalLineItem) => {
         setItemToEdit(item);
         setIsAddLineItemDialogOpen(true);
     };
 
-    const handleDeleteItem = (id: string) => {
-        setLineItems(prev => prev.filter(item => item.id !== id));
-    };
-
-    const handleSaveLineItem = (newItem: LocalLineItem) => {
+    const handleSaveLineItemFromDialog = (newItem: any) => {
         if (itemToEdit) {
             setLineItems(prev => prev.map(item => item.id === itemToEdit.id ? { ...newItem, id: itemToEdit.id } : item));
             setItemToEdit(null);
-        } else {
-            setLineItems(prev => [...prev, newItem]);
         }
+    };
+
+    const handleAddEmptyLineItem = () => {
+        setLineItems(prev => [
+            ...prev,
+            {
+                id: `item_${Date.now()}`,
+                description: '',
+                quantity: 1,
+                price: 0,
+                taxType: 'None',
+                taxRate: 0,
+            }
+        ]);
+    };
+
+    const handleUpdateLineItem = (id: string, field: keyof LocalLineItem, value: any) => {
+        setLineItems(prev => prev.map(item => {
+            if (item.id !== id) return item;
+            const updated = { ...item, [field]: value };
+            if (field === 'taxType') {
+                const selectedTax = taxTypes.find(t => t.id === value || t.name === value);
+                if (selectedTax) {
+                    updated.taxRate = selectedTax.rate;
+                } else if (value === 'None' || value === '') {
+                    updated.taxRate = 0;
+                }
+            }
+            return updated;
+        }));
+    };
+
+    const handleDeleteItem = (id: string) => {
+        setLineItems(prev => prev.filter(item => item.id !== id));
     };
 
     const handleAddTimeLogEntries = (entries: TaskEvent[]) => {
@@ -325,12 +383,15 @@ export function InvoiceGeneratorView() {
         toast({ title: `${newItems.length} time entries added to invoice.` });
     };
 
-    const handleSaveRepeatableItem = async (item: Omit<ServiceItem, 'id' | 'userId'>) => {
+    const handleSaveRepeatableItem = async (item: Omit<ServiceItem, 'id' | 'userId'>, lineItemId?: string) => {
         if (!user) return;
         try {
             const newServiceItem = await addServiceItem({ ...item, userId: user.uid });
             setServiceItems(prev => [newServiceItem, ...prev]);
-            toast({ title: "Repeatable Item Saved" });
+            if (lineItemId) {
+                handleUpdateLineItem(lineItemId, 'serviceItemId', newServiceItem.id);
+            }
+            toast({ title: "Saved to Library and Linked" });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to save item", description: error.message });
         }
@@ -380,6 +441,22 @@ export function InvoiceGeneratorView() {
         const itemsToSave = lineItems.map(({ id, ...rest }) => ({ ...rest, userId: user.uid }));
 
         try {
+            // Sync items back to library
+            for (const item of lineItems) {
+                if (item.serviceItemId) {
+                    const original = serviceItems.find(s => s.id === item.serviceItemId);
+                    if (original && (original.description !== item.description || original.price !== item.price || original.taxType !== item.taxType)) {
+                        await updateServiceItem(item.serviceItemId, {
+                            description: item.description,
+                            price: item.price,
+                            taxType: item.taxType,
+                            taxRate: item.taxRate,
+                        });
+                        setServiceItems(prev => prev.map(s => s.id === item.serviceItemId ? { ...s, description: item.description, price: item.price, taxType: item.taxType, taxRate: item.taxRate } : s));
+                    }
+                }
+            }
+
             if (invoiceToEditId) {
                 await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
                 toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
@@ -475,9 +552,29 @@ export function InvoiceGeneratorView() {
                 </header>
 
                 <Card className="print:hidden shadow-lg border-primary/10">
-                    <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
-                        <CardTitle>Invoice Header</CardTitle>
-                        <div className="flex items-center gap-2">
+          <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
+            <div>
+              {selectedContact ? (
+                <div className="flex flex-col">
+                  <span className="font-bold text-xl text-primary">{selectedContact.businessName || selectedContact.name}</span>
+                  {selectedContact.businessName && selectedContact.name && selectedContact.name !== selectedContact.businessName && (
+                    <span className="text-sm font-medium text-muted-foreground">{selectedContact.name}</span>
+                  )}
+                  <span className="text-sm text-muted-foreground mt-1">
+                    {[selectedContact.streetAddress, selectedContact.city, selectedContact.provinceState].filter(Boolean).join(', ')}
+                  </span>
+                  <span className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
+                    {selectedContact.email && <span>📧 {selectedContact.email}</span>}
+                    {(selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone) && (
+                        <span>📞 {selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone}</span>
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <CardTitle>Invoice Header</CardTitle>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
                             <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
                                 {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 Save Invoice
@@ -619,60 +716,143 @@ export function InvoiceGeneratorView() {
                                 </div>
                             </div>
                             <div>
-                                <div className="flex flex-col gap-1 mb-4">
-                                    <Label className="text-base font-semibold">Line Items</Label>
-                                    <p className="text-sm text-muted-foreground">Line item selection</p>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Button variant="outline" size="sm" onClick={handleAddEmptyLineItem} className="font-semibold">
+                                        <Plus className="mr-2 h-4 w-4" /> Line Items
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => setIsTimeLogDialogOpen(true)} disabled={!selectedContactId} className="font-semibold">
+                                        <Clock className="mr-2 h-4 w-4" /> Add from Time Log
+                                    </Button>
                                 </div>
-                                <div className="border rounded-md mt-2">
-                                    <Table>
+                <datalist id="library-items">
+                  {serviceItems.map(s => (
+                    <option key={s.id} value={s.description}>
+                      {formatCurrency(s.price)}
+                    </option>
+                  ))}
+                </datalist>
+                <div className="border rounded-md overflow-x-auto">
+                  <Table className="min-w-[800px]">
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-2/5">Description</TableHead>
-                                                <TableHead className="text-center">Quantity</TableHead>
-                                                <TableHead className="text-right">Price</TableHead>
-                                                <TableHead className="text-right">Total</TableHead>
-                                                <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
+                        <TableHead className="w-[52%]">Description</TableHead>
+                        <TableHead className="w-[14%]">Tax</TableHead>
+                        <TableHead className="w-[8%] text-center">Qty</TableHead>
+                        <TableHead className="w-[12%] text-right">Price</TableHead>
+                        <TableHead className="w-[12%] text-right">Total</TableHead>
+                        <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {lineItems.map(item => (
                                                 <TableRow key={item.id}>
-                                                    <TableCell className="font-medium">
-                                                        <div className="flex flex-col">
-                                                            <span>{item.description}</span>
-                                                            {item.categoryNumber && (
-                                                                <Badge variant="outline" className="w-fit text-[10px] h-4 mt-1">
-                                                                    {expenseCategories.find(c => (c.categoryNumber || c.id) === item.categoryNumber)?.name || item.categoryNumber}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
+                                                    <TableCell className="p-2 align-top">
+                                                        <Input 
+                                                            list="library-items"
+                                                            className="w-full text-sm h-9" 
+                                                            placeholder="Type or select from library..." 
+                                                            value={item.description}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                handleUpdateLineItem(item.id, 'description', val);
+                                                                const service = serviceItems.find(s => s.description === val);
+                                                                if (service) {
+                                                                    handleUpdateLineItem(item.id, 'price', service.price);
+                                                                    handleUpdateLineItem(item.id, 'serviceItemId', service.id);
+                                                                    if (service.taxType) {
+                                                                        handleUpdateLineItem(item.id, 'taxType', service.taxType);
+                                                                    }
+                                                                } else {
+                                                                    handleUpdateLineItem(item.id, 'serviceItemId', '');
+                                                                }
+                                                            }}
+                                                        />
                                                     </TableCell>
-                                                    <TableCell className="text-center">{item.quantity}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
-                                                    <TableCell className="text-right font-mono">{formatCurrency(item.quantity * item.price)}</TableCell>
-                                                    <TableCell>
-                                                        <div className="flex justify-end">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenAddItemDialog(item)}><Edit className="h-4 w-4" /></Button>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteItem(item.id)}><Trash2 className="mr-2 h-4 w-4" /></Button>
+                                                    <TableCell className="p-2 align-top">
+                                                        <Select 
+                                                            value={item.taxType || "None"} 
+                                                            onValueChange={(val) => handleUpdateLineItem(item.id, 'taxType', val)}
+                                                        >
+                                                            <SelectTrigger className="h-9">
+                                                                <SelectValue placeholder="Tax..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="None">No Tax</SelectItem>
+                                                                {taxTypes.map(t => (
+                                                                    <SelectItem key={t.id} value={t.name}>
+                                                                        {t.name} ({t.rate}%)
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                    <TableCell className="p-2 align-top">
+                                                        <Input 
+                                                            type="number" 
+                                                            className="text-center h-9" 
+                                                            value={item.quantity} 
+                                                            onChange={(e) => handleUpdateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)} 
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2 align-top">
+                                                        <Input 
+                                                            type="number" 
+                                                            className="text-right h-9 font-mono" 
+                                                            value={item.price} 
+                                                            onChange={(e) => handleUpdateLineItem(item.id, 'price', parseFloat(e.target.value) || 0)} 
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2 align-top text-right font-mono font-bold pt-4">
+                                                        {formatCurrency(item.quantity * item.price)}
+                                                    </TableCell>
+                                                    <TableCell className="p-2 align-top">
+                                                        <div className="flex justify-end pt-1">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => toast({ title: "Line item saved to invoice" })}>
+                                                                        Save to Invoice
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => {
+                                                                        toast({ title: "Line item saved to invoice" });
+                                                                        handleAddEmptyLineItem();
+                                                                    }}>
+                                                                        Save and add a new line item
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem 
+                                                                        onClick={() => handleSaveRepeatableItem({
+                                                                            description: item.description,
+                                                                            price: item.price,
+                                                                            taxType: item.taxType || '',
+                                                                            taxRate: item.taxRate || 0,
+                                                                            itemType: 'service',
+                                                                        }, item.id)}
+                                                                    >
+                                                                        Save to Library
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
+                                                                        Edit Details
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteItem(item.id)}>
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
                                             {lineItems.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">No items added to this invoice yet.</TableCell>
+                                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">No items added to this invoice yet.</TableCell>
                                                 </TableRow>
                                             )}
                                         </TableBody>
                                     </Table>
-                                </div>
-                                <div className="mt-4 flex gap-2">
-                                    <Button variant="secondary" onClick={() => handleOpenAddItemDialog(null)}>
-                                        <Plus className="mr-2 h-4 w-4" /> Add Line Item
-                                    </Button>
-                                    <Button variant="secondary" onClick={() => setIsTimeLogDialogOpen(true)} disabled={!selectedContactId}>
-                                        <Clock className="mr-2 h-4 w-4" /> Add from Time Log
-                                    </Button>
                                 </div>
                             </div>
 
@@ -784,8 +964,8 @@ export function InvoiceGeneratorView() {
             <AddLineItemDialog
                 isOpen={isAddLineItemDialogOpen}
                 onOpenChange={setIsAddLineItemDialogOpen}
-                itemToEdit={itemToEdit}
-                onSave={handleSaveLineItem}
+                itemToEdit={itemToEdit as any}
+                onSave={handleSaveLineItemFromDialog as any}
                 serviceItems={serviceItems}
                 onSaveRepeatable={handleSaveRepeatableItem}
                 taxTypes={taxTypes}

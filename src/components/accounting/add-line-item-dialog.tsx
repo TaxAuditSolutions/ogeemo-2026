@@ -60,6 +60,7 @@ interface LineItem {
   totalAmount?: number;
   preTaxAmount?: number;
   taxAmount?: number;
+  itemType?: 'service' | 'product';
 }
 
 interface AddLineItemDialogProps {
@@ -99,6 +100,7 @@ export function AddLineItemDialog({
   const [taxType, setTaxType] = useState('None');
   const [taxRate, setTaxRate] = useState<number | ''>(0);
   const [saveAsRepeatable, setSaveAsRepeatable] = useState(false);
+  const [activeTab, setActiveTab] = useState<'service' | 'product'>('service');
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +148,7 @@ export function AddLineItemDialog({
             setPrice(String(itemToEdit.price));
             setTaxType(itemToEdit.taxType || 'None');
             setTaxRate(itemToEdit.taxRate || 0);
+            setActiveTab(itemToEdit.itemType || 'service');
         } else {
             setDescription('');
             setInternalNotes('');
@@ -171,7 +174,7 @@ export function AddLineItemDialog({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (keepOpen = false) => {
     const numQuantity = Number(quantity);
     const numPrice = Number(price.replace(/,/g, ''));
     
@@ -196,6 +199,7 @@ export function AddLineItemDialog({
         totalAmount: lineTotal,
         preTaxAmount: subtotal,
         taxAmount: taxAmount,
+        itemType: activeTab,
     };
     
     onSave(newItem);
@@ -206,10 +210,28 @@ export function AddLineItemDialog({
             price: newItem.price,
             taxType: newItem.taxType,
             taxRate: newItem.taxRate,
+            itemType: activeTab,
         });
     }
 
-    onOpenChange(false);
+    if (keepOpen) {
+        toast({ title: 'Item added', description: 'You can add another item.' });
+        setDescription('');
+        setInternalNotes('');
+        setCategoryNumber('');
+        setQuantity(1);
+        setPrice('');
+        setSaveAsRepeatable(false);
+    } else {
+        onOpenChange(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave(true);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -238,7 +260,11 @@ export function AddLineItemDialog({
       }
   };
 
-  const filteredServiceItems = uniqueServiceItems.filter(i => i.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredServiceItems = uniqueServiceItems.filter(i => {
+      const isMatchQuery = i.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const type = i.itemType || 'service'; // Default old items to service
+      return isMatchQuery && type === activeTab;
+  });
 
   return (
     <>
@@ -253,83 +279,89 @@ export function AddLineItemDialog({
                      Add Category and Description
                 </DialogDescription>
             </div>
+            
+            <div className="flex items-center gap-2 mt-4 bg-muted/20 p-1 rounded-full border border-primary/10">
+                <Button 
+                    variant={activeTab === 'service' ? 'default' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setActiveTab('service')}
+                    className={cn("rounded-full px-6 transition-all", activeTab === 'service' && "shadow-md")}
+                >
+                    Add Service
+                </Button>
+                <Button 
+                    variant={activeTab === 'product' ? 'default' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setActiveTab('product')}
+                    className={cn("rounded-full px-6 transition-all", activeTab === 'product' && "shadow-md")}
+                >
+                    Add Product
+                </Button>
+            </div>
           </div>
         </DialogHeader>
 
         <ScrollArea className="flex-1 bg-white">
             <div className="max-w-4xl mx-auto w-full py-12 px-6 space-y-10">
                 
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
+                {!itemToEdit && (
+                    <div className="space-y-4">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <Briefcase className="h-4 w-4" /> 1. Product or Service
+                            <Search className="h-4 w-4" /> 1. Search {activeTab === 'service' ? 'Services' : 'Products'} Library
                         </Label>
-                        <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-10 text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10 border-primary/20">
-                                    <Search className="mr-2 h-4 w-4" /> Select or create product/service
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[500px] p-0 shadow-2xl" align="end">
-                                <Command shouldFilter={false}>
-                                    <CommandInput 
-                                        placeholder="Search products and services..." 
-                                        value={searchQuery}
-                                        onValueChange={setSearchQuery}
-                                        className="h-12"
-                                    />
-                                    <CommandList className="max-h-[500px]">
+                        <div className="border-2 rounded-xl bg-white shadow-sm overflow-hidden border-primary/20 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+                            <Command shouldFilter={false} className="border-none">
+                                <CommandInput 
+                                    placeholder={`Search saved ${activeTab === 'service' ? 'services' : 'products'} to auto-fill details...`} 
+                                    value={searchQuery}
+                                    onValueChange={setSearchQuery}
+                                    className="h-14 text-lg border-none focus:ring-0"
+                                />
+                                {(searchQuery || filteredServiceItems.length > 0) && (
+                                    <CommandList className="max-h-[200px] border-t bg-muted/5">
                                         <CommandEmpty>
-                                            <div className="p-4 space-y-2">
-                                                <p className="text-sm text-muted-foreground">No products/services match "{searchQuery}"</p>
-                                                {searchQuery.trim() && (
-                                                    <Button variant="outline" className="w-full justify-start text-primary" onClick={() => { setDescription(searchQuery); setIsSearchOpen(false); }}>
-                                                        <Plus className="mr-2 h-4 w-4" /> Use "{searchQuery}" as description
-                                                    </Button>
-                                                )}
+                                            <div className="p-4 text-center">
+                                                <p className="text-sm text-muted-foreground">No matches found for "{searchQuery}"</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Fill out the details below to add a new {activeTab}.</p>
                                             </div>
                                         </CommandEmpty>
                                         
                                         {filteredServiceItems.length > 0 && (
-                                            <CommandGroup heading="Products & Services Library">
+                                            <CommandGroup heading="Available Items">
                                                 {filteredServiceItems.map(item => (
                                                     <CommandItem
                                                         key={item.id}
                                                         value={item.description}
                                                         onSelect={() => handleSelectServiceItem(item)}
-                                                        className="cursor-pointer py-3"
+                                                        className="cursor-pointer py-3 px-4 border-b last:border-0 hover:bg-primary/5"
                                                     >
                                                         <Briefcase className="mr-3 h-5 w-5 text-primary/60" />
                                                         <div className="flex flex-col flex-1">
                                                             <span className="font-bold text-sm">{item.description}</span>
-                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-1">
                                                                 Rate: {formatCurrency(item.price)} • Tax: {item.taxType || 'No Tax'}
                                                             </span>
                                                         </div>
+                                                        <Plus className="h-4 w-4 text-primary opacity-50" />
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>
                                         )}
                                     </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                                )}
+                            </Command>
+                        </div>
                     </div>
-                    <div className="p-4 border-2 rounded-xl bg-muted/30 flex items-center justify-between">
-                        <span className="text-lg font-semibold">
-                            {description || 'No product/service selected yet'}
-                        </span>
-                    </div>
-                </div>
+                )}
 
                 <div className="space-y-4">
-                    <Label htmlFor="description" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" /> 2. Subject Description (Visible on Invoice)
+                    <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" /> {itemToEdit ? '1.' : '2.'} {activeTab === 'service' ? 'Service Description' : 'Product Description'}
                     </Label>
                     <Textarea
                         id="description"
-                        placeholder="Clearly define the work performed or product provided for the client..."
-                        className="min-h-[120px] text-xl font-semibold focus-visible:ring-primary border-2"
+                        placeholder={`Clearly define the ${activeTab} provided for the client...`}
+                        className="min-h-[120px] text-xl font-semibold focus-visible:ring-primary border-2 shadow-sm"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
@@ -338,7 +370,7 @@ export function AddLineItemDialog({
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="internalNotes" className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <PlusCircle className="h-4 w-4" /> 3. Operational Memo (Internal Only)
+                            <PlusCircle className="h-4 w-4" /> {itemToEdit ? '2.' : '3.'} Operational Memo (Internal Only)
                         </Label>
                         <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 uppercase text-[10px] tracking-widest">
                             Internal - Hidden from Invoice
@@ -356,7 +388,7 @@ export function AddLineItemDialog({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-6">
                         <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                            <Calculator className="h-4 w-4" /> 4. Quantity & Rate
+                            <Calculator className="h-4 w-4" /> {itemToEdit ? '3.' : '4.'} Quantity & Rate
                         </Label>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -368,6 +400,7 @@ export function AddLineItemDialog({
                                     className="h-14 font-mono font-bold text-2xl text-center"
                                     value={quantity}
                                     onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+                                    onKeyDown={handleKeyDown}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -383,6 +416,7 @@ export function AddLineItemDialog({
                                             const val = e.target.value.replace(/,/g, '');
                                             if (val === '' || /^\d*\.?\d*$/.test(val)) setPrice(val);
                                         }}
+                                        onKeyDown={handleKeyDown}
                                     />
                                 </div>
                             </div>
@@ -420,7 +454,7 @@ export function AddLineItemDialog({
 
                 <div className="space-y-6">
                     <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                        <Percent className="h-4 w-4" /> 5. Tax Orchestration
+                        <Percent className="h-4 w-4" /> {itemToEdit ? '4.' : '5.'} Tax Orchestration
                     </Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 p-8 border rounded-3xl bg-muted/10">
                         <div className="space-y-3">
@@ -466,6 +500,7 @@ export function AddLineItemDialog({
                                     className="pr-12 h-12 font-mono text-xl bg-white"
                                     value={taxRate}
                                     onChange={(e) => setTaxRate(e.target.value === '' ? '' : Number(e.target.value))}
+                                    onKeyDown={handleKeyDown}
                                 />
                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg font-bold">%</span>
                             </div>
@@ -483,9 +518,9 @@ export function AddLineItemDialog({
                         />
                         <div className="grid gap-1 leading-none">
                             <Label htmlFor="save-repeatable" className="text-xl font-bold group-hover:text-primary transition-colors cursor-pointer">
-                                Commit to Professional Library
+                                Save to Products & Services Library
                             </Label>
-                            <p className="text-sm text-muted-foreground">Save this configuration as a reusable service node for future invoices.</p>
+                            <p className="text-sm text-muted-foreground">Save this configuration as a reusable {activeTab} for future invoices.</p>
                         </div>
                     </div>
                 )}
@@ -501,9 +536,14 @@ export function AddLineItemDialog({
           </div>
           <div className="flex gap-4 w-full sm:w-auto">
             <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)} className="h-14 px-10 text-lg">Cancel</Button>
-            <Button onClick={handleSave} className="h-14 px-16 font-bold shadow-2xl text-xl">
+            {!itemToEdit && (
+                <Button variant="outline" size="lg" onClick={() => handleSave(true)} className="h-14 px-6 text-lg">
+                    <Save className="mr-2 h-5 w-5" /> Save & Add Another
+                </Button>
+            )}
+            <Button onClick={() => handleSave(false)} className="h-14 px-16 font-bold shadow-2xl text-xl">
                 <Save className="mr-2 h-6 w-6" />
-                {itemToEdit ? 'Save Changes' : 'Append to Invoice'}
+                {itemToEdit ? 'Save Changes' : 'Update Quote'}
             </Button>
           </div>
         </DialogFooter>

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -67,6 +68,7 @@ const QuoteDocument = ({
   quoteDate,
   expirationDate,
   lineItems,
+  lineItemDetails,
   notes,
   userProfile,
   subtotal,
@@ -123,6 +125,11 @@ const QuoteDocument = ({
           )}
         </TableBody>
       </Table>
+      {lineItemDetails && (
+        <div className="mt-4 text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">
+          {lineItemDetails}
+        </div>
+      )}
     </section>
     <section className="flex justify-end mt-10">
       <div className="w-full max-w-sm space-y-3">
@@ -176,11 +183,13 @@ export function QuoteGeneratorView() {
   const [expirationDate, setExpirationDate] = useState<Date>(addDays(new Date(), 30));
   const [status, setStatus] = useState<QuoteStatus>('draft');
   const [notes, setNotes] = useState('Thank you for your interest in our services.');
+  const [lineItemDetails, setLineItemDetails] = useState('');
   const [attachReport, setAttachReport] = useState(false);
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState<LocalLineItem[]>([]);
+  const [quoteTemplates, setQuoteTemplates] = useState<any[]>([]);
 
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
@@ -210,6 +219,7 @@ export function QuoteGeneratorView() {
       setQuoteDate(new Date(quoteData.quoteDate));
       setExpirationDate(new Date(quoteData.expirationDate));
       setNotes(quoteData.notes);
+      if (quoteData.lineItemDetails) setLineItemDetails(quoteData.lineItemDetails);
       setStatus(quoteData.status);
       setSelectedContactId(quoteData.contactId);
       setSelectedSupplierId(quoteData.supplierId || null);
@@ -275,6 +285,19 @@ export function QuoteGeneratorView() {
         const contactIdParam = searchParams.get('contactId');
         if (contactIdParam) {
           setSelectedContactId(contactIdParam);
+        }
+
+        const rawTemplates = localStorage.getItem('quoteTemplates');
+        if (rawTemplates) {
+          setQuoteTemplates(JSON.parse(rawTemplates));
+        }
+
+        const templateToEditRaw = localStorage.getItem('editQuoteTemplate');
+        if (templateToEditRaw) {
+          const template = JSON.parse(templateToEditRaw);
+          setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+          if (template.notes) setNotes(template.notes);
+          localStorage.removeItem('editQuoteTemplate');
         }
 
       } catch (error: any) {
@@ -435,11 +458,16 @@ export function QuoteGeneratorView() {
       expirationDate,
       status,
       notes,
+      lineItemDetails,
       taxType: 'gst_hst',
       userId: user.uid,
     };
 
-    const itemsToSave = lineItems.map(({ id, ...rest }) => ({ ...rest, userId: user.uid }));
+    const itemsToSave = lineItems.map(({ id, ...rest }) => {
+      const payload: any = { ...rest, userId: user.uid };
+      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+      return payload;
+    });
 
     try {
       // Sync items back to library
@@ -467,13 +495,36 @@ export function QuoteGeneratorView() {
         toast({ title: 'Quote Saved', description: `Quote ${quoteNumber} has been created.` });
       }
       localStorage.removeItem(EDIT_QUOTE_ID_KEY);
-      router.push('/accounting/quotes');
+      window.location.href = '/accounting/quotes';
     } catch (error: any) {
       console.error('Save Quote Error:', error);
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveTemplate = () => {
+    const templateName = prompt("Enter a name for this template:");
+    if (!templateName) return;
+
+    const newTemplate = {
+      name: templateName,
+      items: lineItems,
+      notes,
+    };
+    
+    const updatedTemplates = [...quoteTemplates, newTemplate];
+    setQuoteTemplates(updatedTemplates);
+    localStorage.setItem('quoteTemplates', JSON.stringify(updatedTemplates));
+    toast({ title: 'Template Saved', description: `Quote template "${templateName}" saved.` });
+  };
+
+  const handleLoadTemplate = (template: any) => {
+    if (lineItems.length > 0 && !window.confirm("Loading a template will replace your current line items. Continue?")) return;
+    setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+    if (template.notes) setNotes(template.notes);
+    toast({ title: 'Template Loaded' });
   };
 
   const handleClearQuote = () => {
@@ -485,6 +536,7 @@ export function QuoteGeneratorView() {
     setExpirationDate(addDays(new Date(), 30));
     setStatus('draft');
     setNotes('Thank you for your interest in our services.');
+    setLineItemDetails('');
     setSelectedContactId(null);
     setSelectedSupplierId(null);
     setLineItems([]);
@@ -516,6 +568,7 @@ export function QuoteGeneratorView() {
     quoteDate,
     expirationDate,
     lineItems,
+    lineItemDetails,
     notes,
     userProfile,
     subtotal,
@@ -533,7 +586,28 @@ export function QuoteGeneratorView() {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Build a professional quote that can be converted into an invoice once accepted.
           </p>
-          <div className="absolute top-0 right-0">
+          <div className="absolute top-0 right-0 flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">Load Template</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {quoteTemplates.length > 0 ? quoteTemplates.map((t, idx) => (
+                  <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
+                    {t.name}
+                  </DropdownMenuItem>
+                )) : (
+                  <DropdownMenuItem disabled>No templates saved</DropdownMenuItem>
+                )}
+                <Separator className="my-1" />
+                <DropdownMenuItem asChild>
+                  <Link href="/accounting/quotes/templates">Manage Templates</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/accounting/quotes">Quote Library</Link>
+            </Button>
             <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
               <a className="cursor-pointer">
                 <X className="h-5 w-5" />
@@ -572,6 +646,9 @@ export function QuoteGeneratorView() {
                 Save Quote
               </Button>
               <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+              <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
+                <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
@@ -731,38 +808,76 @@ export function QuoteGeneratorView() {
                   <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[52%]">Description</TableHead>
+                        <TableHead className="w-[54%]">Description</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
                         <TableHead className="w-[8%] text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
-                        <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {lineItems.map(item => (
                         <TableRow key={item.id}>
                           <TableCell className="p-2 align-top">
-                            <Input 
-                              list="library-items"
-                              className="w-full text-sm h-9" 
-                              placeholder="Type or select from library..." 
-                              value={item.description}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                handleUpdateLineItem(item.id, 'description', val);
-                                const service = serviceItems.find(s => s.description === val);
-                                if (service) {
-                                  handleUpdateLineItem(item.id, 'price', service.price);
-                                  handleUpdateLineItem(item.id, 'serviceItemId', service.id);
-                                  if (service.taxType) {
-                                    handleUpdateLineItem(item.id, 'taxType', service.taxType);
+                            <div className="relative flex items-center">
+                              <Input 
+                                list="library-items"
+                                className="w-full text-sm h-9 pr-8 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
+                                placeholder="Type or select from library..." 
+                                value={item.description}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  handleUpdateLineItem(item.id, 'description', val);
+                                  const service = serviceItems.find(s => s.description === val);
+                                  if (service) {
+                                    handleUpdateLineItem(item.id, 'price', service.price);
+                                    handleUpdateLineItem(item.id, 'serviceItemId', service.id);
+                                    if (service.taxType) {
+                                      handleUpdateLineItem(item.id, 'taxType', service.taxType);
+                                    }
+                                  } else {
+                                    handleUpdateLineItem(item.id, 'serviceItemId', '');
                                   }
-                                } else {
-                                  handleUpdateLineItem(item.id, 'serviceItemId', '');
-                                }
-                              }}
-                            />
+                                }}
+                              />
+                              <div className="absolute right-0 top-0 h-9 flex items-center pr-1">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuItem onClick={() => toast({ title: "Line item saved to quote" })}>
+                                      Save to Quote
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {
+                                      toast({ title: "Line item saved to quote" });
+                                      handleAddEmptyLineItem();
+                                    }}>
+                                      Save and add a new line item
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleSaveRepeatableItem({
+                                        description: item.description,
+                                        price: item.price,
+                                        taxType: item.taxType || '',
+                                        taxRate: item.taxRate || 0,
+                                        itemType: item.itemType || 'service',
+                                      }, item.id)}
+                                    >
+                                      Save to Library
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
+                                      Edit Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteItem(item.id)}>
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
                           </TableCell>
                           <TableCell className="p-2 align-top">
                             <Select 
@@ -801,55 +916,21 @@ export function QuoteGeneratorView() {
                           <TableCell className="p-2 align-top text-right font-mono font-bold pt-4">
                             {formatCurrency(item.quantity * item.price)}
                           </TableCell>
-                          <TableCell className="p-2 align-top">
-                            <div className="flex justify-end pt-1">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => toast({ title: "Line item saved to quote" })}>
-                                    Save to Quote
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => {
-                                    toast({ title: "Line item saved to quote" });
-                                    handleAddEmptyLineItem();
-                                  }}>
-                                    Save and add a new line item
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleSaveRepeatableItem({
-                                      description: item.description,
-                                      price: item.price,
-                                      taxType: item.taxType || '',
-                                      taxRate: item.taxRate || 0,
-                                      itemType: item.itemType || 'service',
-                                    }, item.id)}
-                                  >
-                                    Save to Library
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
-                                    Edit Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteItem(item.id)}>
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))}
                       {lineItems.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">No items added to this quote yet.</TableCell>
+                          <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">No items added to this quote yet.</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
                 </div>
+              </div>
+
+              <div className="pt-2 border-t">
+                <Label htmlFor="lineItemDetails">Line Item Details</Label>
+                <Textarea id="lineItemDetails" value={lineItemDetails} onChange={e => setLineItemDetails(e.target.value)} rows={2} placeholder="Add extra details about the line items..." className="mt-2" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
@@ -891,9 +972,7 @@ export function QuoteGeneratorView() {
           </CardContent>
           <CardFooter className="justify-between border-t p-4">
             <Button variant="ghost" size="sm" onClick={handleClearQuote}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-            <Button onClick={() => handlePrint()} className="font-bold shadow-lg">
-              <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
-            </Button>
+            <Button variant="outline" size="sm" onClick={handleSaveTemplate}><Save className="mr-2 h-4 w-4" /> Save as a Template</Button>
           </CardFooter>
         </Card>
 

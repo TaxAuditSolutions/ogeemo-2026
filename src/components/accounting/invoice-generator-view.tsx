@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ const InvoiceDocument = ({
     invoiceDate,
     dueDate,
     lineItems,
+    lineItemDetails,
     notes,
     userProfile,
     subtotal,
@@ -124,6 +126,11 @@ const InvoiceDocument = ({
                     )}
                 </TableBody>
             </Table>
+            {lineItemDetails && (
+                <div className="mt-4 text-sm text-gray-600 whitespace-pre-wrap leading-relaxed italic">
+                    {lineItemDetails}
+                </div>
+            )}
         </section>
         <section className="flex justify-end mt-10">
             <div className="w-full max-w-sm space-y-3">
@@ -177,11 +184,13 @@ export function InvoiceGeneratorView() {
     const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
     const [paymentTermsDays, setPaymentTermsDays] = useState('14');
     const [notes, setNotes] = useState("Thank you for your business!");
+    const [lineItemDetails, setLineItemDetails] = useState('');
     const [attachReport, setAttachReport] = useState(false);
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
     const [lineItems, setLineItems] = useState<LocalLineItem[]>([]);
+    const [invoiceTemplates, setInvoiceTemplates] = useState<any[]>([]);
 
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
@@ -211,6 +220,7 @@ export function InvoiceGeneratorView() {
             setInvoiceDate(new Date(invoiceData.invoiceDate));
             setDueDate(new Date(invoiceData.dueDate));
             setNotes(invoiceData.notes);
+            if (invoiceData.lineItemDetails) setLineItemDetails(invoiceData.lineItemDetails);
             setSelectedContactId(invoiceData.contactId);
             setSelectedSupplierId(invoiceData.supplierId || null);
 
@@ -276,6 +286,20 @@ export function InvoiceGeneratorView() {
                 if (contactIdParam) {
                     setSelectedContactId(contactIdParam);
                 }
+
+                const rawTemplates = localStorage.getItem('invoiceTemplates');
+                if (rawTemplates) {
+                    setInvoiceTemplates(JSON.parse(rawTemplates));
+                }
+
+                const templateToEditRaw = localStorage.getItem('editInvoiceTemplate');
+                if (templateToEditRaw) {
+                    const template = JSON.parse(templateToEditRaw);
+                    setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+                    if (template.notes) setNotes(template.notes);
+                    localStorage.removeItem('editInvoiceTemplate');
+                }
+
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
             } finally {
@@ -434,11 +458,16 @@ export function InvoiceGeneratorView() {
             invoiceDate: invoiceDate,
             status: 'outstanding' as const,
             notes,
+            lineItemDetails,
             taxType: 'gst_hst',
             userId: user.uid,
         };
 
-        const itemsToSave = lineItems.map(({ id, ...rest }) => ({ ...rest, userId: user.uid }));
+        const itemsToSave = lineItems.map(({ id, ...rest }) => {
+            const payload: any = { ...rest, userId: user.uid };
+            Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+            return payload;
+        });
 
         try {
             // Sync items back to library
@@ -465,7 +494,7 @@ export function InvoiceGeneratorView() {
                 toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
             }
             localStorage.removeItem(EDIT_INVOICE_ID_KEY);
-            router.push('/accounting/accounts-receivable');
+            window.location.href = '/accounting/accounts-receivable';
 
         } catch (error: any) {
             console.error("Save Invoice Error:", error);
@@ -473,6 +502,29 @@ export function InvoiceGeneratorView() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleSaveTemplate = () => {
+        const templateName = prompt("Enter a name for this template:");
+        if (!templateName) return;
+
+        const newTemplate = {
+            name: templateName,
+            items: lineItems,
+            notes,
+        };
+        
+        const updatedTemplates = [...invoiceTemplates, newTemplate];
+        setInvoiceTemplates(updatedTemplates);
+        localStorage.setItem('invoiceTemplates', JSON.stringify(updatedTemplates));
+        toast({ title: 'Template Saved', description: `Invoice template "${templateName}" saved.` });
+    };
+
+    const handleLoadTemplate = (template: any) => {
+        if (lineItems.length > 0 && !window.confirm("Loading a template will replace your current line items. Continue?")) return;
+        setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+        if (template.notes) setNotes(template.notes);
+        toast({ title: 'Template Loaded' });
     };
 
     const handleClearInvoice = () => {
@@ -484,6 +536,7 @@ export function InvoiceGeneratorView() {
         setDueDate(addDays(new Date(), 14));
         setPaymentTermsDays('14');
         setNotes("Thank you for your business!");
+        setLineItemDetails('');
         setSelectedContactId(null);
         setSelectedSupplierId(null);
         setLineItems([]);
@@ -524,6 +577,7 @@ export function InvoiceGeneratorView() {
         invoiceDate,
         dueDate,
         lineItems,
+        lineItemDetails,
         notes,
         userProfile,
         subtotal,
@@ -532,16 +586,37 @@ export function InvoiceGeneratorView() {
         attachReport
     };
 
-    return (
-        <>
-            <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
-                <InvoicePageHeader pageTitle="Create Invoice" />
-                <header className="relative text-center print:hidden">
+  return (
+    <>
+      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
+        <InvoicePageHeader pageTitle="Create Invoice" />
+        <header className="relative text-center print:hidden">
                     <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Select contacts from your master list to generate a professional invoice.
                     </p>
-                    <div className="absolute top-0 right-0">
+                    <div className="absolute top-0 right-0 flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">Load Template</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {invoiceTemplates.length > 0 ? invoiceTemplates.map((t, idx) => (
+                                    <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
+                                        {t.name}
+                                    </DropdownMenuItem>
+                                )) : (
+                                    <DropdownMenuItem disabled>No templates saved</DropdownMenuItem>
+                                )}
+                                <Separator className="my-1" />
+                                <DropdownMenuItem asChild>
+                                    <Link href="/accounting/invoices/templates">Manage Templates</Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/accounting/accounts-receivable">Invoice Library</Link>
+                        </Button>
                         <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
                             <a className="cursor-pointer">
                                 <X className="h-5 w-5" />
@@ -574,12 +649,15 @@ export function InvoiceGeneratorView() {
                 <CardTitle>Invoice Header</CardTitle>
               )}
             </div>
-            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
                                 {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 Save Invoice
                             </Button>
                             <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                            <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
+                                <Printer className="mr-2 h-4 w-4" /> Print Invoice & Report
+                            </Button>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -735,39 +813,77 @@ export function InvoiceGeneratorView() {
                   <Table className="min-w-[800px]">
                                         <TableHeader>
                                             <TableRow>
-                        <TableHead className="w-[52%]">Description</TableHead>
+                        <TableHead className="w-[54%]">Description</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
                         <TableHead className="w-[8%] text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
-                        <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {lineItems.map(item => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell className="p-2 align-top">
-                                                        <Input 
-                                                            list="library-items"
-                                                            className="w-full text-sm h-9" 
-                                                            placeholder="Type or select from library..." 
-                                                            value={item.description}
-                                                            onChange={(e) => {
-                                                                const val = e.target.value;
-                                                                handleUpdateLineItem(item.id, 'description', val);
-                                                                const service = serviceItems.find(s => s.description === val);
-                                                                if (service) {
-                                                                    handleUpdateLineItem(item.id, 'price', service.price);
-                                                                    handleUpdateLineItem(item.id, 'serviceItemId', service.id);
-                                                                    if (service.taxType) {
-                                                                        handleUpdateLineItem(item.id, 'taxType', service.taxType);
-                                                                    }
-                                                                } else {
-                                                                    handleUpdateLineItem(item.id, 'serviceItemId', '');
-                                                                }
-                                                            }}
-                                                        />
-                                                    </TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lineItems.map(item => (
+                        <TableRow key={item.id}>
+                          <TableCell className="p-2 align-top">
+                            <div className="relative flex items-center">
+                              <Input 
+                                list="library-items"
+                                className="w-full text-sm h-9 pr-8 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
+                                placeholder="Type or select from library..." 
+                                value={item.description}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  handleUpdateLineItem(item.id, 'description', val);
+                                  const service = serviceItems.find(s => s.description === val);
+                                  if (service) {
+                                    handleUpdateLineItem(item.id, 'price', service.price);
+                                    handleUpdateLineItem(item.id, 'serviceItemId', service.id);
+                                    if (service.taxType) {
+                                      handleUpdateLineItem(item.id, 'taxType', service.taxType);
+                                    }
+                                  } else {
+                                    handleUpdateLineItem(item.id, 'serviceItemId', '');
+                                  }
+                                }}
+                              />
+                              <div className="absolute right-0 top-0 h-9 flex items-center pr-1">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuItem onClick={() => toast({ title: "Line item saved to invoice" })}>
+                                      Save to Invoice
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {
+                                      toast({ title: "Line item saved to invoice" });
+                                      handleAddEmptyLineItem();
+                                    }}>
+                                      Save and add a new line item
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleSaveRepeatableItem({
+                                        description: item.description,
+                                        price: item.price,
+                                        taxType: item.taxType || '',
+                                        taxRate: item.taxRate || 0,
+                                        itemType: 'service',
+                                      }, item.id)}
+                                    >
+                                      Save to Library
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
+                                      Edit Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteItem(item.id)}>
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </TableCell>
                                                     <TableCell className="p-2 align-top">
                                                         <Select 
                                                             value={item.taxType || "None"} 
@@ -802,58 +918,24 @@ export function InvoiceGeneratorView() {
                                                             onChange={(e) => handleUpdateLineItem(item.id, 'price', parseFloat(e.target.value) || 0)} 
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="p-2 align-top text-right font-mono font-bold pt-4">
-                                                        {formatCurrency(item.quantity * item.price)}
-                                                    </TableCell>
-                                                    <TableCell className="p-2 align-top">
-                                                        <div className="flex justify-end pt-1">
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                        <MoreHorizontal className="h-4 w-4" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuItem onClick={() => toast({ title: "Line item saved to invoice" })}>
-                                                                        Save to Invoice
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => {
-                                                                        toast({ title: "Line item saved to invoice" });
-                                                                        handleAddEmptyLineItem();
-                                                                    }}>
-                                                                        Save and add a new line item
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem 
-                                                                        onClick={() => handleSaveRepeatableItem({
-                                                                            description: item.description,
-                                                                            price: item.price,
-                                                                            taxType: item.taxType || '',
-                                                                            taxRate: item.taxRate || 0,
-                                                                            itemType: 'service',
-                                                                        }, item.id)}
-                                                                    >
-                                                                        Save to Library
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
-                                                                        Edit Details
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteItem(item.id)}>
-                                                                        Delete
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {lineItems.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">No items added to this invoice yet.</TableCell>
-                                                </TableRow>
-                                            )}
+                          <TableCell className="p-2 align-top text-right font-mono font-bold pt-4">
+                            {formatCurrency(item.quantity * item.price)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {lineItems.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">No items added to this invoice yet.</TableCell>
+                        </TableRow>
+                      )}
                                         </TableBody>
                                     </Table>
                                 </div>
+                            </div>
+
+                            <div className="pt-2 border-t">
+                                <Label htmlFor="lineItemDetails">Line Item Details</Label>
+                                <Textarea id="lineItemDetails" value={lineItemDetails} onChange={e => setLineItemDetails(e.target.value)} rows={2} placeholder="Add extra details about the line items..." className="mt-2" />
                             </div>
 
                             <div className="p-4 border-2 border-dashed rounded-xl bg-primary/5 space-y-4">
@@ -917,9 +999,7 @@ export function InvoiceGeneratorView() {
                     </CardContent>
                     <CardFooter className="justify-between border-t p-4">
                         <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                        <Button onClick={() => handlePrint()} className="font-bold shadow-lg">
-                            <Printer className="mr-2 h-4 w-4" /> Print Invoice & Report
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleSaveTemplate}><Save className="mr-2 h-4 w-4" /> Save as a Template</Button>
                     </CardFooter>
                 </Card>
 

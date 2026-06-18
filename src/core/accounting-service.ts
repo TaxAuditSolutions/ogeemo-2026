@@ -183,6 +183,7 @@ export interface InvoiceLineItem {
   taxType?: string;
   taxRate?: number;
   itemType?: 'service' | 'product';
+  serviceItemId?: string;
   userId: string;
 }
 
@@ -207,6 +208,7 @@ export interface QuoteLineItem {
   taxType?: string;
   taxRate?: number;
   itemType?: 'service' | 'product';
+  serviceItemId?: string;
   userId: string;
 }
 
@@ -227,6 +229,7 @@ export interface Quote {
   expirationDate: Date;
   status: QuoteStatus;
   notes: string;
+  lineItemDetails?: string;
   taxType: string;
   userId: string;
 }
@@ -249,6 +252,7 @@ export interface Invoice {
   invoiceDate: Date;
   status: 'outstanding' | 'paid' | 'partially_paid' | 'overdue';
   notes: string;
+  lineItemDetails?: string;
   taxType: string;
   userId: string;
 }
@@ -334,6 +338,7 @@ const docToLineItem = (doc: any): InvoiceLineItem => {
     taxType: data.taxType || '',
     taxRate: data.taxRate || 0,
     itemType: data.itemType,
+    serviceItemId: data.serviceItemId,
     userId: data.userId,
   } as InvoiceLineItem;
 };
@@ -359,6 +364,7 @@ const docToQuoteLineItem = (doc: any): QuoteLineItem => {
     taxType: data.taxType || '',
     taxRate: data.taxRate || 0,
     itemType: data.itemType,
+    serviceItemId: data.serviceItemId,
     userId: data.userId,
   } as QuoteLineItem;
 };
@@ -695,7 +701,7 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
   const dueDate = new Date(now);
   dueDate.setDate(dueDate.getDate() + 14);
 
-  const invoiceData = {
+  const invoiceData: any = {
     invoiceNumber,
     businessNumber: quote.businessNumber,
     companyName: quote.companyName,
@@ -707,25 +713,32 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
     invoiceDate: now,
     status: 'outstanding' as const,
     notes: quote.notes || `Converted from quote ${quote.quoteNumber}`,
+    lineItemDetails: quote.lineItemDetails,
     taxType: quote.taxType,
     userId,
   };
+  Object.keys(invoiceData).forEach(key => invoiceData[key] === undefined && delete invoiceData[key]);
 
-  const invoiceLineItems = lineItems.map(item => ({
-    description: item.description,
-    internalNotes: item.internalNotes,
-    categoryNumber: item.categoryNumber,
-    quantity: item.quantity,
-    price: item.price,
-    totalAmount: item.totalAmount,
-    preTaxAmount: item.preTaxAmount,
-    taxAmount: item.taxAmount,
-    taxType: item.taxType,
-    taxRate: item.taxRate,
-    itemType: item.itemType,
-  }));
+  const invoiceLineItems = lineItems.map(item => {
+    const payload: any = {
+      description: item.description,
+      internalNotes: item.internalNotes,
+      categoryNumber: item.categoryNumber,
+      quantity: item.quantity,
+      price: item.price,
+      totalAmount: item.totalAmount,
+      preTaxAmount: item.preTaxAmount,
+      taxAmount: item.taxAmount,
+      taxType: item.taxType,
+      taxRate: item.taxRate,
+      itemType: item.itemType,
+      serviceItemId: item.serviceItemId,
+    };
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    return payload;
+  });
 
-  const invoice = await addInvoiceWithLineItems(invoiceData, invoiceLineItems);
+  const invoice = await addInvoiceWithLineItems(invoiceData as any, invoiceLineItems);
   await updateDoc(quoteRef, {
     status: 'converted',
     updatedBy: currentUser.uid,

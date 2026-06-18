@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit } from 'lucide-react';
+import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getQuotes, type Quote, convertQuoteToInvoice, updateQuoteStatus } from '@/core/accounting-service';
+import { getQuotes, type Quote, convertQuoteToInvoice, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 
 const formatCurrency = (amount: number) => {
@@ -71,6 +71,34 @@ export function QuotesPageView() {
     }
   };
 
+  const handleUpdateStatus = async (quoteId: string, status: string) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await updateQuoteStatus(quoteId, status as any, user.uid);
+      toast({ title: 'Status Updated', description: `Quote status changed to ${status}.` });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteQuote = async (quoteId: string) => {
+    if (!user || !window.confirm("Are you sure you want to permanently delete this quote?")) return;
+    setIsSaving(true);
+    try {
+      await deleteQuote(user.uid, quoteId);
+      toast({ title: 'Quote Deleted', description: 'The quote has been permanently removed.' });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleConvertQuote = async (quoteId: string) => {
     if (!user) return;
     setIsSaving(true);
@@ -93,9 +121,9 @@ export function QuotesPageView() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <InvoicePageHeader pageTitle="Quotes" hubPath="/accounting/quotes" hubLabel="Quotes" />
+      <InvoicePageHeader pageTitle="Quotes List" hubPath="/accounting/quotes" hubLabel="Quotes" />
       <header className="text-center">
-        <h1 className="text-3xl font-bold font-headline text-primary">Quotes</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">Quotes List</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Track proposals and convert accepted quotes into invoices with one click.
         </p>
@@ -186,6 +214,18 @@ export function QuotesPageView() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleEditQuote(quote.id)}>
                               <Pencil className="mr-2 h-4 w-4" /> Edit Quote
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'draft')}>
+                              Mark as Draft
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'sent')}>
+                              Mark as Sent
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'declined')}>
+                              Mark as Declined
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteQuote(quote.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Quote
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

@@ -31,7 +31,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting", icon: Landmark, label: "Accounting Hub" },
     { href: "/accounting/invoices/create", icon: FileDigit, label: "Create Invoice" },
     { href: "/accounting/quotes/create", icon: FileSignature, label: "Create Quote" },
-    { href: "/accounting/quotes", icon: FileText, label: "Quotes List" },
+    { href: "/accounting/quotes", icon: FileText, label: "Quote Manager" },
     { href: "/accounting/accounts-receivable", icon: FileOutput, label: "Accounts Receivable" },
     { href: "/accounting/service-items", icon: ListPlus, label: "Products & Services" },
     { href: "/accounting/ledgers?tab=income", icon: TrendingUp, label: "Manage Income" },

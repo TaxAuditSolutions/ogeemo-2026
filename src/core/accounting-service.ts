@@ -187,7 +187,7 @@ export interface InvoiceLineItem {
   userId: string;
 }
 
-export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'converted';
+export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'invoiced';
 
 export interface QuoteLineItem {
   id?: string;
@@ -740,7 +740,7 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
 
   const invoice = await addInvoiceWithLineItems(invoiceData as any, invoiceLineItems);
   await updateDoc(quoteRef, {
-    status: 'converted',
+    status: 'invoiced',
     updatedBy: currentUser.uid,
     updatedAt: new Date(),
   });

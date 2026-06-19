@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { type ActionChipData } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { LoaderCircle, Wand2 } from 'lucide-react';
+import { allMenuItems } from '@/lib/menu-items';
 
 interface ActionChipMenuProps {
     chips: ActionChipData[];
@@ -40,8 +41,10 @@ export function ActionChipMenu({ chips, isLoading }: ActionChipMenuProps) {
     return (
         <div className="space-y-1">
             {chips.map(chip => {
-                const Icon = chip.icon || Wand2; // Use Wand2 as a fallback icon
                 const hrefValue = typeof chip.href === 'string' ? chip.href : chip.href?.pathname || '#';
+                const canonicalItem = allMenuItems.find(item => item.href === hrefValue);
+                const Icon = canonicalItem?.icon || chip.icon || Wand2; // Fallback to canonical, then stored, then default
+                const label = canonicalItem?.label || chip.label;
                 const isActive = pathname === hrefValue;
 
                 return (
@@ -58,7 +61,7 @@ export function ActionChipMenu({ chips, isLoading }: ActionChipMenuProps) {
                     >
                         <Link href={chip.href}>
                             <Icon className="h-4 w-4" />
-                            <span>{chip.label}</span>
+                            <span>{label}</span>
                         </Link>
                     </Button>
                 );

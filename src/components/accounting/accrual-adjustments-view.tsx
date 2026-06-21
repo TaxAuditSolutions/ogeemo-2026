@@ -19,7 +19,8 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, TrendingUp, TrendingDown, Printer, Scale, Info, FileDigit, FileInput } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { LoaderCircle, TrendingUp, TrendingDown, Printer, Scale, Info, FileDigit, FileInput, ArrowUpDown } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -42,6 +43,15 @@ export function AccrualAdjustmentsView() {
   const [unpaidInvoices, setUnpaidInvoices] = useState<Invoice[]>([]);
   const [unpaidBills, setUnpaidBills] = useState<PayableBill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [arSortField, setArSortField] = useState<keyof Invoice>('dueDate');
+  const [arSortDir, setArSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const [apSortField, setApSortField] = useState<keyof PayableBill>('dueDate');
+  const [apSortDir, setApSortDir] = useState<'asc' | 'desc'>('asc');
+
   const { user } = useAuth();
   const { toast } = useToast();
   const { handlePrint, contentRef } = useReactToPrint();
@@ -75,13 +85,83 @@ export function AccrualAdjustmentsView() {
     loadData();
   }, [user, toast]);
 
+  const filteredAR = useMemo(() => {
+    if (!searchQuery) return unpaidInvoices;
+    const lowerQuery = searchQuery.toLowerCase();
+    return unpaidInvoices.filter(inv => 
+      (inv.companyName || '').toLowerCase().includes(lowerQuery) ||
+      (inv.invoiceNumber || '').toLowerCase().includes(lowerQuery)
+    );
+  }, [unpaidInvoices, searchQuery]);
+
+  const filteredAP = useMemo(() => {
+    if (!searchQuery) return unpaidBills;
+    const lowerQuery = searchQuery.toLowerCase();
+    return unpaidBills.filter(bill => 
+      (bill.vendor || '').toLowerCase().includes(lowerQuery) ||
+      (bill.invoiceNumber || '').toLowerCase().includes(lowerQuery)
+    );
+  }, [unpaidBills, searchQuery]);
+
+  const handleSortAR = (field: keyof Invoice) => {
+    if (arSortField === field) {
+      setArSortDir(arSortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setArSortField(field);
+      setArSortDir('asc');
+    }
+  };
+
+  const handleSortAP = (field: keyof PayableBill) => {
+    if (apSortField === field) {
+      setApSortDir(apSortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setApSortField(field);
+      setApSortDir('asc');
+    }
+  };
+
+  const sortedAR = useMemo(() => {
+    return [...filteredAR].sort((a, b) => {
+      let aVal = a[arSortField];
+      let bVal = b[arSortField];
+      
+      if (aVal instanceof Date && bVal instanceof Date) {
+        return arSortDir === 'asc' ? aVal.getTime() - bVal.getTime() : bVal.getTime() - aVal.getTime();
+      }
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return arSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return 0;
+    });
+  }, [filteredAR, arSortField, arSortDir]);
+
+  const sortedAP = useMemo(() => {
+    return [...filteredAP].sort((a, b) => {
+      let aVal = a[apSortField];
+      let bVal = b[apSortField];
+      
+      if (apSortField === 'dueDate') {
+         aVal = new Date(a.dueDate).getTime();
+         bVal = new Date(b.dueDate).getTime();
+         return apSortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+      }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return apSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return 0;
+    });
+  }, [filteredAP, apSortField, apSortDir]);
+
   const totalReceivables = useMemo(() => {
-    return unpaidInvoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
-  }, [unpaidInvoices]);
+    return sortedAR.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
+  }, [sortedAR]);
 
   const totalPayables = useMemo(() => {
-    return unpaidBills.reduce((sum, bill) => sum + bill.totalAmount, 0);
-  }, [unpaidBills]);
+    return sortedAP.reduce((sum, bill) => sum + bill.totalAmount, 0);
+  }, [sortedAP]);
 
   const netAdjustment = totalReceivables - totalPayables;
 
@@ -98,6 +178,15 @@ export function AccrualAdjustmentsView() {
       </header>
 
       <div className="max-w-5xl mx-auto space-y-8" ref={contentRef}>
+        <div className="flex justify-end print:hidden mb-4">
+            <Input 
+              placeholder="Search by client/vendor or invoice #..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-80"
+            />
+        </div>
+
         {/* Print Header */}
         <div className="hidden print:block text-center mb-8 border-b pb-4">
             <h1 className="text-3xl font-bold">Ogeemo Accrual Adjustments</h1>
@@ -194,14 +283,20 @@ export function AccrualAdjustmentsView() {
                   <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Invoice #</TableHead>
-                            <TableHead>Due Date</TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAR('companyName')}>
+                              Client <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAR('invoiceNumber')}>
+                              Invoice # <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAR('dueDate')}>
+                              Due Date <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
                             <TableHead className="text-right">Balance Due</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {unpaidInvoices.length > 0 ? unpaidInvoices.map(inv => (
+                      {sortedAR.length > 0 ? sortedAR.map(inv => (
                         <TableRow key={inv.id}>
                           <TableCell className="font-medium">{inv.companyName}</TableCell>
                           <TableCell>{inv.invoiceNumber}</TableCell>
@@ -210,11 +305,11 @@ export function AccrualAdjustmentsView() {
                         </TableRow>
                       )) : (
                         <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No outstanding receivables found in the A/R Manager.</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No outstanding receivables found matching the criteria.</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
-                    {unpaidInvoices.length > 0 && (
+                    {sortedAR.length > 0 && (
                         <TableFooter>
                             <TableRow className="bg-primary/5">
                                 <TableCell colSpan={3} className="text-right font-bold uppercase text-[10px] tracking-widest">Subtotal A/R</TableCell>
@@ -244,14 +339,20 @@ export function AccrualAdjustmentsView() {
                   <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Vendor</TableHead>
-                            <TableHead>Invoice #</TableHead>
-                            <TableHead>Due Date</TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAP('vendor')}>
+                              Vendor <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAP('invoiceNumber')}>
+                              Invoice # <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSortAP('dueDate')}>
+                              Due Date <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+                            </TableHead>
                             <TableHead className="text-right">Amount Due</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {unpaidBills.length > 0 ? unpaidBills.map(bill => (
+                      {sortedAP.length > 0 ? sortedAP.map(bill => (
                         <TableRow key={bill.id}>
                           <TableCell className="font-medium">{bill.vendor}</TableCell>
                           <TableCell>{bill.invoiceNumber || 'N/A'}</TableCell>
@@ -260,11 +361,11 @@ export function AccrualAdjustmentsView() {
                         </TableRow>
                       )) : (
                         <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No outstanding payables found in the A/P Manager.</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">No outstanding payables found matching the criteria.</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
-                    {unpaidBills.length > 0 && (
+                    {sortedAP.length > 0 && (
                         <TableFooter>
                             <TableRow className="bg-destructive/5">
                                 <TableCell colSpan={3} className="text-right font-bold uppercase text-[10px] tracking-widest">Subtotal A/P</TableCell>

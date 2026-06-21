@@ -77,7 +77,8 @@ import {
     Zap,
     Layers,
     Scale,
-    Bot
+    Bot,
+    BookOpen
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -721,8 +722,88 @@ export function LedgersView() {
                         <Separator />
                         <section className="space-y-6">
                             <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><BookOpen className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">3. Ledger Architecture (The 3 Ledgers)</h3>
+                            </div>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    To ensure your records are impenetrable, Ogeemo separates your financial truth into three distinct views:
+                                </p>
+                                <ul className="space-y-4 my-6">
+                                    <li>
+                                        <strong>1. The Income Ledger:</strong> Records only incoming cash flow. Used specifically to track against your T2125 Part 3A categories and ensure you never under-report or double-count revenue.
+                                    </li>
+                                    <li>
+                                        <strong>2. The Expense Ledger:</strong> Your dedicated defense against tax audits. It records cash out and links directly to standard CRA expense categories, storing the physical rationale for every business deduction.
+                                    </li>
+                                    <li>
+                                        <strong>3. The BKS General Ledger:</strong> The master command center. It combines your Income and Expense ledgers into a single, unified chronological view. This is where you perform high-level analysis, verify net income, and perform sweeping batch operations.
+                                    </li>
+                                </ul>
+                                <p>
+                                    <strong>How to use them:</strong> Enter and categorize individual receipts in the Income and Expense ledgers. Use the General Ledger to run your weekly <strong>Duplicate Audit</strong> and verify your bottom line before closing the books.
+                                </p>
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><ScanSearch className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">4. The Duplicate Audit</h3>
+                            </div>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    The <strong>Duplicate Audit</strong> toggle acts as an automated error-checker for your ledger. When activated, the system scans through all your transactions looking for entries that have identical details (e.g., the same date, contact, and amount). 
+                                </p>
+                                <p>
+                                    It filters your ledger view to show <strong>only</strong> these potential duplicate transactions. This makes it incredibly easy to quickly spot double-entries (if you accidentally logged the same receipt twice or a bank sync imported an overlapping transaction) and delete the duplicate before it inflates your expenses or income artificially.
+                                </p>
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><BookOpen className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">5. The General Journal vs. BKS Ledgers</h3>
+                            </div>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    In traditional accounting, a <strong>General Journal</strong> is where chronological entries are first recorded using complex double-entry debits and credits, which are then posted to ledgers. 
+                                </p>
+                                <p>
+                                    In the Ogeemo BKS system, we eliminate this confusing abstraction. Your BKS Ledgers act as a direct, unified, and chronological diary of your business. If a mistake is made, you don't need to post complicated adjusting journal entries with reverse debits and credits—you simply edit or delete the incorrect entry directly. 
+                                </p>
+                                <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
+                                    Tax law does not mandate GAAP (Generally Accepted Accounting Principles) or complex double-entry methods for small businesses.
+                                </p>
+                                <p>
+                                    The law simply requires that you keep a <em>reasonable, logical, and accurate</em> set of books that proves your income and expenses. The BKS system is designed around this exact standard: focusing on simplicity, truth, and evidence, making it completely logical and easy for business owners to understand.
+                                </p>
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg"><Info className="h-5 w-5 text-primary" /></div>
+                                <h3 className="text-2xl font-bold">6. The Audit Rationale Column</h3>
+                            </div>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    You will notice an <strong>Audit Rationale</strong> column in your ledger. This is arguably the most critical piece of your defense. For a business expense to be legally deductible, or for incoming cash (such as a loan or a personal gift) to be deemed non-taxable, you must have a clear, documented rationale.
+                                </p>
+                                <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
+                                    In the absence of a recorded rationale, the Tax Man has the legal right to make their own assumptions.
+                                </p>
+                                <p>
+                                    When the auditor assumes the worst (e.g. assuming a deposit is taxable income, or an expense is personal), the burden of proof falls entirely on <em>you</em>, the taxpayer, to prove them wrong. By filling out the rationale for your entries as they happen, you eliminate ambiguity and shut down the auditor's ability to make assumptions against you.
+                                </p>
+                            </div>
+                        </section>
+                        <Separator />
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3">
                                 <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
-                                <h3 className="text-2xl font-bold">3. The Result: Total Defense</h3>
+                                <h3 className="text-2xl font-bold">7. The Result: Total Defense</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
@@ -759,7 +840,7 @@ export function LedgersView() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!transactionToDelete} onOpenChange={setTransactionToDelete} >
+        <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)} >
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>

@@ -308,9 +308,6 @@ export function HytexerciseView() {
                 <div key={ex.id} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start border-b pb-8 last:border-0 last:pb-0">
                   <div className="md:col-span-1 aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm">
                       <ImagePlaceholder id={ex.id} className="w-full h-full" />
-                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center pointer-events-none">
-                          <p className="text-white font-semibold text-sm drop-shadow-md">Image Placeholder</p>
-                      </div>
                   </div>
                   <div className="md:col-span-2 space-y-3">
                     <h3 className="text-xl font-bold text-primary">{ex.title}</h3>

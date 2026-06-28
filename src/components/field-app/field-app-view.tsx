@@ -16,6 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
 import { getWorkers, type Worker } from '@/services/payroll-service';
+import { getContactById } from '@/services/contact-service';
 import { cn } from '@/lib/utils';
 
 const formatTimeDisplay = (totalSeconds: number): string => {
@@ -66,7 +67,19 @@ export function FieldAppView() {
             setTodayLogs(logs.filter(l => isSameDay(new Date(l.startTime), new Date())));
 
             // Find matching worker record to get Worker ID Number
-            const match = allWorkers.find(w => w.email === user.email);
+            let match = allWorkers.find(w => w.email && user.email && w.email.toLowerCase() === user.email.toLowerCase());
+            if (!match && userProfile?.contactId) {
+                match = allWorkers.find(w => w.id === userProfile.contactId);
+            }
+            
+            // If still not found in workers (e.g. they are an admin in the Admin folder), fetch their contact record directly
+            if (!match && userProfile?.contactId) {
+                const contact = await getContactById(userProfile.contactId);
+                if (contact) {
+                    match = contact as Worker;
+                }
+            }
+
             if (match) {
                 setWorkerRecord(match);
             }
@@ -223,7 +236,7 @@ export function FieldAppView() {
                         <CardTitle className="text-xl">{profile?.displayName || user?.displayName || 'Worker'}</CardTitle>
                         <CardDescription className="flex flex-col gap-1">
                             <span>{user?.email}</span>
-                            <span className="font-bold text-primary">ID: {workerRecord?.workerIdNumber || profile?.employeeNumber || 'Not Assigned'}</span>
+                            <span className="font-bold text-primary">ID: {workerRecord?.employeeNumber || profile?.employeeNumber || 'Not Assigned'}</span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-4">

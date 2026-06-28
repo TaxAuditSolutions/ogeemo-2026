@@ -437,7 +437,7 @@ export function RunPayrollView() {
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="font-bold text-sm block truncate">{emp.name}</span>
                                                     <span className="text-[10px] text-muted-foreground block">
-                                                        ID: {emp.workerIdNumber || 'Not Assigned'} • {emp.payType}
+                                                        ID: {emp.employeeNumber || 'Not Assigned'} • {emp.payType}
                                                     </span>
                                                     <span className="text-[10px] font-medium text-primary flex items-center gap-1 mt-1">
                                                         <Clock className="h-2.5 w-2.5" />

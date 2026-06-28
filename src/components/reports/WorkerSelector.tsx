@@ -37,7 +37,7 @@ export function WorkerSelector({ workers, selectedWorkerId, onSelect, isLoading 
         <Button variant="outline" role="combobox" className="w-64 justify-between">
           <User className="mr-2 h-4 w-4" />
           <span className="truncate">
-            {selectedWorker ? `${selectedWorker.name} ${selectedWorker.workerIdNumber ? `(ID: ${selectedWorker.workerIdNumber})` : ''}` : "Select Worker..."}
+            {selectedWorker ? `${selectedWorker.name} ${selectedWorker.employeeNumber ? `(ID: ${selectedWorker.employeeNumber})` : ''}` : "Select Worker..."}
           </span>
           {isLoading ? (
             <LoaderCircle className="ml-2 h-4 w-4 shrink-0 animate-spin" />
@@ -69,7 +69,7 @@ export function WorkerSelector({ workers, selectedWorkerId, onSelect, isLoading 
                   />
                   <div className="flex flex-col">
                     <span>{worker.name}</span>
-                    {worker.workerIdNumber && <span className="text-[10px] text-muted-foreground">ID: {worker.workerIdNumber}</span>}
+                    {worker.employeeNumber && <span className="text-[10px] text-muted-foreground">ID: {worker.employeeNumber}</span>}
                   </div>
                 </CommandItem>
               ))}

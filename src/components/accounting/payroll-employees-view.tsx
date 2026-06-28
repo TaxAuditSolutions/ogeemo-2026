@@ -237,11 +237,11 @@ export function PayrollEmployeesView() {
                                         {emp.name}
                                     </button>
                                 </TableCell>
-                                <TableCell>{emp.workerIdNumber || 'N/A'}</TableCell>
+                                <TableCell>{emp.employeeNumber || 'N/A'}</TableCell>
                                 <TableCell><Badge variant={emp.workerType === 'employee' ? 'default' : 'secondary'}>{emp.workerType}</Badge></TableCell>
                                 <TableCell className="capitalize">{emp.payType}</TableCell>
                                 <TableCell className="text-right font-mono">
-                                    {emp.payRate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                    {emp.payRate?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || '$0.00'}
                                     {emp.payType === 'hourly' && ' / hr'}
                                 </TableCell>
                                 <TableCell className="text-right">

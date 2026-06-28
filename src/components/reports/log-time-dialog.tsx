@@ -247,11 +247,11 @@ export function LogTimeDialog({
                                                 <CommandEmpty>No worker found.</CommandEmpty>
                                                 <CommandGroup>
                                                     {workers.map(w => (
-                                                        <CommandItem key={w.id} value={`${w.name} ${w.workerIdNumber || ''}`} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                        <CommandItem key={w.id} value={`${w.name} ${w.employeeNumber || ''}`} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
                                                             <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
                                                             <div className="flex flex-col">
                                                                 <span className="font-semibold">{w.name}</span>
-                                                                {w.workerIdNumber && <span className="text-[10px] text-muted-foreground uppercase">ID: {w.workerIdNumber}</span>}
+                                                                {w.employeeNumber && <span className="text-[10px] text-muted-foreground uppercase">ID: {w.employeeNumber}</span>}
                                                             </div>
                                                         </CommandItem>
                                                     ))}

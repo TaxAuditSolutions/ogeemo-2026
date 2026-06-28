@@ -172,11 +172,16 @@ export function HytexerciseView() {
   return (
     <>
       <div className="p-4 sm:p-6 space-y-6">
-        <header className="text-center">
-          <h1 className="text-3xl font-bold font-headline text-primary">Hytexercise Wellness Manager</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Combat the effects of prolonged sitting and take charge of your well-being with guided, five-minute chair exercises every hour.
-          </p>
+        <header className="relative flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left border-b pb-4">
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">Hytexercise Wellness Manager</h1>
+            <p className="text-muted-foreground max-w-2xl mt-1">
+              Combat the effects of prolonged sitting and take charge of your well-being with guided, five-minute chair exercises every hour.
+            </p>
+          </div>
+          <Button size="lg" className="shadow-md whitespace-nowrap" onClick={() => setIsBreakActive(true)}>
+            <PlayCircle className="mr-2 h-5 w-5" /> Start Routine
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

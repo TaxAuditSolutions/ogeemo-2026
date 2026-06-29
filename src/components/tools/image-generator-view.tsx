@@ -30,6 +30,11 @@ export function ImageGeneratorView() {
           prompt: prompt.trim(),
           clientUserId: user.uid
       });
+      
+      if (!result) {
+          throw new Error("The AI service failed to return a response. Please check if your Gemini API key and 'imagen-3' model are properly configured.");
+      }
+      
       setGeneratedImageUrl(result.imageUrl);
       toast({ title: 'Image Generated Successfully!' });
     } catch (error: any) {

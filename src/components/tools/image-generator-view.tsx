@@ -32,11 +32,15 @@ export function ImageGeneratorView() {
       });
       
       if (!result) {
-          throw new Error("The AI service failed to return a response. Please check if your Gemini API key and 'imagen-3' model are properly configured.");
+          toast({ variant: 'destructive', title: 'Generation Failed', description: "The AI service failed to return a response. Please check your Gemini API key." });
+          setIsGenerating(false);
+          return;
       }
 
       if (result.error) {
-          throw new Error(result.error);
+          toast({ variant: 'destructive', title: 'Generation Failed', description: result.error });
+          setIsGenerating(false);
+          return;
       }
       
       setGeneratedImageUrl(result.imageUrl || null);

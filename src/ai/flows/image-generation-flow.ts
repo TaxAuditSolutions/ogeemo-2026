@@ -16,7 +16,8 @@ const GenerateImageInputSchema = z.object({
 type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
 const GenerateImageOutputSchema = z.object({
-  imageUrl: z.string().describe('The generated image as a data URI.'),
+  imageUrl: z.string().optional().describe('The generated image as a data URI.'),
+  error: z.string().optional().describe('An error message if generation fails.'),
 });
 type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
 
@@ -44,16 +45,21 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async (input) => {
-    const { media } = await ai.generate({
-      model: 'googleai/imagen-3',
-      prompt: input.prompt,
-    });
+    try {
+      const { media } = await ai.generate({
+        model: 'googleai/imagen-3',
+        prompt: input.prompt,
+      });
 
-    const imageUrl = media?.url;
-    if (!imageUrl) {
-        throw new Error("Image generation failed to return a URL.");
+      const imageUrl = media?.url;
+      if (!imageUrl) {
+          return { error: "Image generation failed to return a URL." };
+      }
+
+      return { imageUrl };
+    } catch (e: any) {
+      console.error("AI Generation Error:", e);
+      return { error: e.message || "An unexpected error occurred during image generation." };
     }
-
-    return { imageUrl };
   }
 );

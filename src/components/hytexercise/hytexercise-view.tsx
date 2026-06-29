@@ -26,7 +26,7 @@ import { useAuth } from '@/context/auth-context';
 import { logHytexerciseAction, getHytexerciseLogs, type HytexerciseLog } from '@/services/hytexercise-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
-import { Calendar as CalendarIcon, LoaderCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, LoaderCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -55,7 +55,8 @@ export function HytexerciseView() {
   const [isBreakActive, setIsBreakActive] = useState(false);
   const [logs, setLogs] = useState<HytexerciseLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const { user } = useAuth();
@@ -65,14 +66,14 @@ export function HytexerciseView() {
       if (!user) return;
       setIsLoadingLogs(true);
       try {
-          const data = await getHytexerciseLogs(user.uid, selectedDate, selectedDate);
+          const data = await getHytexerciseLogs(user.uid, startDate, endDate);
           setLogs(data);
       } catch (err) {
           console.error("Error loading logs:", err);
       } finally {
           setIsLoadingLogs(false);
       }
-  }, [user, selectedDate]);
+  }, [user, startDate, endDate]);
 
   useEffect(() => {
       loadLogs();
@@ -242,23 +243,48 @@ export function HytexerciseView() {
               </div>
               <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP") : <span>Filter by Date</span>}
+                    <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", (!startDate && !endDate) && "text-muted-foreground")}>
+                        <Filter className="mr-2 h-4 w-4" />
+                        {startDate && endDate 
+                            ? `${format(startDate, "MMM d")} - ${format(endDate, "MMM d")}`
+                            : startDate ? `From ${format(startDate, "MMM d")}`
+                            : endDate ? `Until ${format(endDate, "MMM d")}`
+                            : <span>Filter by Date Range</span>
+                        }
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <CustomCalendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => {
-                            setSelectedDate(date);
-                            setIsDatePickerOpen(false);
-                        }}
-                        initialFocus
-                    />
-                    <div className="p-3 border-t bg-muted/20 flex justify-end gap-2">
-                         <Button variant="ghost" size="sm" onClick={() => { setSelectedDate(undefined); setIsDatePickerOpen(false); }}>Clear Filter</Button>
+                <PopoverContent className="w-80 p-4" align="end">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Date Range</h4>
+                            <p className="text-sm text-muted-foreground">Select a start and end date.</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="startDate">Start</Label>
+                                <Input 
+                                    id="startDate" 
+                                    type="date" 
+                                    className="col-span-2 h-8"
+                                    value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
+                                    onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="endDate">End</Label>
+                                <Input 
+                                    id="endDate" 
+                                    type="date" 
+                                    className="col-span-2 h-8"
+                                    value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
+                                    onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-2">
+                             <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); setIsDatePickerOpen(false); }}>Clear Filters</Button>
+                             <Button size="sm" onClick={() => setIsDatePickerOpen(false)}>Apply</Button>
+                        </div>
                     </div>
                 </PopoverContent>
               </Popover>

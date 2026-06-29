@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
+import { logHytexerciseAction } from '@/services/hytexercise-service';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +54,7 @@ export function HytexerciseProvider({ children }: { children: React.ReactNode })
     const [isBreakAlertOpen, setIsBreakAlertOpen] = useState(false);
     const [customDelay, setCustomDelay] = useState(5);
 
+    const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     const pathname = usePathname();
@@ -161,6 +164,11 @@ export function HytexerciseProvider({ children }: { children: React.ReactNode })
             title: "Break Skipped",
             description: `Your next break reminder is scheduled in ${breakFrequency} minutes.`,
         });
+        
+        if (user) {
+            logHytexerciseAction(user.uid, 'skipped', breakDuration).catch(console.error);
+        }
+        
         setIsBreakAlertOpen(false);
         setTimer(breakFrequency);
     };

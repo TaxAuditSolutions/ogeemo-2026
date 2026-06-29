@@ -22,6 +22,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExercisePlayer, EXERCISES } from './exercise-player';
 import { ImagePlaceholder } from '../ui/image-placeholder';
 import { useHytexercise, HYTEXERCISE_STORAGE_KEY, type StoredState } from '@/context/hytexercise-context';
+import { useAuth } from '@/context/auth-context';
+import { logHytexerciseAction, getHytexerciseLogs, type HytexerciseLog } from '@/services/hytexercise-service';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CustomCalendar } from '@/components/ui/custom-calendar';
+import { Calendar as CalendarIcon, LoaderCircle, CheckCircle, XCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 
 const formatTime = (totalSeconds: number) => {
@@ -46,8 +53,30 @@ export function HytexerciseView() {
   } = useHytexercise();
   
   const [isBreakActive, setIsBreakActive] = useState(false);
+  const [logs, setLogs] = useState<HytexerciseLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  const loadLogs = useCallback(async () => {
+      if (!user) return;
+      setIsLoadingLogs(true);
+      try {
+          const data = await getHytexerciseLogs(user.uid, selectedDate, selectedDate);
+          setLogs(data);
+      } catch (err) {
+          console.error("Error loading logs:", err);
+      } finally {
+          setIsLoadingLogs(false);
+      }
+  }, [user, selectedDate]);
+
+  useEffect(() => {
+      loadLogs();
+  }, [loadLogs]);
 
   // If the user clicks "Start Break Now" from the global alert, they might be redirected here with `?startBreak=true`
   useEffect(() => {
@@ -65,9 +94,17 @@ export function HytexerciseView() {
       localStorage.removeItem(HYTEXERCISE_STORAGE_KEY);
   };
 
-  const handleFinishBreak = () => {
+  const handleFinishBreak = async () => {
       setIsBreakActive(false);
       
+      if (user) {
+          try {
+              await logHytexerciseAction(user.uid, 'completed', breakDuration);
+          } catch (e) {
+              console.error("Failed to log completion", e);
+          }
+      }
+
       // Automatically restart the timer for the next break
       const dueTimestamp = Date.now() + breakFrequency * 60 * 1000;
       const stateToStore: StoredState = {
@@ -198,14 +235,92 @@ export function HytexerciseView() {
           
           {/* My Progress Card */}
           <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5"/> My Progress</CardTitle>
-              <CardDescription>Track your consistency and see how you're doing over time.</CardDescription>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5"/> My Progress</CardTitle>
+                <CardDescription>Track your consistency and see how you're doing over time.</CardDescription>
+              </div>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : <span>Filter by Date</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <CustomCalendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                            setSelectedDate(date);
+                            setIsDatePickerOpen(false);
+                        }}
+                        initialFocus
+                    />
+                    <div className="p-3 border-t bg-muted/20 flex justify-end gap-2">
+                         <Button variant="ghost" size="sm" onClick={() => { setSelectedDate(undefined); setIsDatePickerOpen(false); }}>Clear Filter</Button>
+                    </div>
+                </PopoverContent>
+              </Popover>
             </CardHeader>
             <CardContent>
-              <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                  <p>Your activity report will be displayed here.</p>
-              </div>
+              {isLoadingLogs ? (
+                  <div className="flex justify-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                  <div className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="p-4 rounded-lg bg-muted/30 border text-center">
+                              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Routines Completed</p>
+                              <p className="text-3xl font-bold font-mono text-green-600">{logs.filter(l => l.action === 'completed').length}</p>
+                          </div>
+                          <div className="p-4 rounded-lg bg-muted/30 border text-center">
+                              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Time Exercised</p>
+                              <p className="text-3xl font-bold font-mono text-primary">
+                                  {logs.filter(l => l.action === 'completed').reduce((sum, l) => sum + l.durationMinutes, 0)} <span className="text-lg">min</span>
+                              </p>
+                          </div>
+                          <div className="p-4 rounded-lg bg-muted/30 border text-center">
+                              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Completion Rate</p>
+                              <p className="text-3xl font-bold font-mono text-blue-500">
+                                  {logs.length > 0 ? Math.round((logs.filter(l => l.action === 'completed').length / logs.length) * 100) : 0}%
+                              </p>
+                          </div>
+                      </div>
+                      
+                      {logs.length > 0 ? (
+                          <div className="border rounded-lg overflow-hidden">
+                              <table className="w-full text-sm text-left">
+                                  <thead className="bg-muted/50 border-b">
+                                      <tr>
+                                          <th className="p-3 font-semibold">Date & Time</th>
+                                          <th className="p-3 font-semibold">Action</th>
+                                          <th className="p-3 font-semibold text-right">Duration</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody className="divide-y">
+                                      {logs.map(log => (
+                                          <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                                              <td className="p-3 whitespace-nowrap">{format(log.timestamp, 'PP p')}</td>
+                                              <td className="p-3">
+                                                  {log.action === 'completed' ? (
+                                                      <span className="flex items-center gap-2 text-green-600 font-medium"><CheckCircle className="h-4 w-4"/> Completed</span>
+                                                  ) : (
+                                                      <span className="flex items-center gap-2 text-destructive font-medium"><XCircle className="h-4 w-4"/> Skipped</span>
+                                                  )}
+                                              </td>
+                                              <td className="p-3 text-right text-muted-foreground">{log.action === 'completed' ? `${log.durationMinutes} min` : '-'}</td>
+                                          </tr>
+                                      ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                      ) : (
+                          <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg bg-muted/10">
+                              <p>No exercise activity found for the selected period.</p>
+                          </div>
+                      )}
+                  </div>
+              )}
             </CardContent>
           </Card>
         </div>

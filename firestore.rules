@@ -138,6 +138,10 @@ service cloud.firestore {
     // ---------------------------------------------------------
     // User Personal Preferences (No orgId needed)
     // ---------------------------------------------------------
+    match /hytexerciseLogs/{logId} { 
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId; 
+      allow read, update, delete: if isSignedIn() && request.auth.uid == resource.data.userId; 
+    }
     match /userActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     match /availableActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     match /trashedActionChips/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }

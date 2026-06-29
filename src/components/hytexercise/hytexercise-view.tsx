@@ -21,6 +21,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExercisePlayer, EXERCISES } from './exercise-player';
 import { ImagePlaceholder } from '../ui/image-placeholder';
+import { useHytexercise, HYTEXERCISE_STORAGE_KEY, type StoredState } from '@/context/hytexercise-context';
 
 
 const formatTime = (totalSeconds: number) => {
@@ -30,139 +31,59 @@ const formatTime = (totalSeconds: number) => {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-const HYTEXERCISE_STORAGE_KEY = 'hytexerciseState';
-
-interface StoredState {
-    isActive: boolean;
-    breakDueTimestamp: number;
-    breakFrequency: number;
-    breakDuration: number;
-}
-
 export function HytexerciseView() {
-  const [isActive, setIsActive] = useState(false);
-  const [breakFrequency, setBreakFrequency] = useState(60);
-  const [breakDuration, setBreakDuration] = useState(5);
-  const [timeLeft, setTimeLeft] = useState(breakFrequency * 60);
-  const [isBreakAlertOpen, setIsBreakAlertOpen] = useState(false);
+  const {
+    isActive,
+    breakFrequency,
+    breakDuration,
+    timeLeft,
+    isBreakAlertOpen,
+    setIsBreakAlertOpen,
+    setIsActive,
+    setBreakFrequency,
+    setBreakDuration,
+    handleSaveSettings,
+  } = useHytexercise();
+  
   const [isBreakActive, setIsBreakActive] = useState(false);
-  const [customDelay, setCustomDelay] = useState(5);
 
   const { toast } = useToast();
 
-  const setTimer = useCallback((minutes: number) => {
-    const dueTimestamp = Date.now() + minutes * 60 * 1000;
-    const stateToStore: StoredState = {
-        isActive: true,
-        breakDueTimestamp: dueTimestamp,
-        breakFrequency,
-        breakDuration,
-    };
-    localStorage.setItem(HYTEXERCISE_STORAGE_KEY, JSON.stringify(stateToStore));
-    setTimeLeft(minutes * 60);
-  }, [breakFrequency, breakDuration]);
-
-  // Load state from localStorage on initial mount
+  // If the user clicks "Start Break Now" from the global alert, they might be redirected here with `?startBreak=true`
   useEffect(() => {
-    try {
-        const savedStateRaw = localStorage.getItem(HYTEXERCISE_STORAGE_KEY);
-        if (savedStateRaw) {
-            const savedState: StoredState = JSON.parse(savedStateRaw);
-            setIsActive(savedState.isActive);
-            setBreakFrequency(savedState.breakFrequency);
-            setBreakDuration(savedState.breakDuration);
-
-            if (savedState.isActive) {
-                const remainingSeconds = Math.round((savedState.breakDueTimestamp - Date.now()) / 1000);
-                if (remainingSeconds <= 0) {
-                    setIsBreakAlertOpen(true);
-                    setTimeLeft(0);
-                } else {
-                    setTimeLeft(remainingSeconds);
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Failed to load Hytexercise state:", error);
-        localStorage.removeItem(HYTEXERCISE_STORAGE_KEY);
-    }
+      if (typeof window !== 'undefined' && window.location.search.includes('startBreak=true')) {
+          setIsBreakActive(true);
+          const url = new URL(window.location.href);
+          url.searchParams.delete('startBreak');
+          window.history.replaceState({}, '', url);
+      }
   }, []);
 
-  // Main timer tick effect
-  useEffect(() => {
-    if (!isActive || isBreakAlertOpen || isBreakActive) {
-      return;
-    }
-
-    if (timeLeft <= 0) {
-      setIsBreakAlertOpen(true);
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [isActive, timeLeft, isBreakAlertOpen, isBreakActive]);
-
-  // Effect to handle toggling the timer on/off
-  useEffect(() => {
-    if (isActive) {
-        // If timer is activated, set it based on frequency, but only if it's not already running from a loaded state.
-        const savedStateRaw = localStorage.getItem(HYTEXERCISE_STORAGE_KEY);
-        if (!savedStateRaw) {
-            setTimer(breakFrequency);
-        }
-    } else {
-        // If timer is deactivated, clear storage.
-        localStorage.removeItem(HYTEXERCISE_STORAGE_KEY);
-    }
-  }, [isActive, breakFrequency, setTimer]);
-
-  const handleSaveSettings = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Your Hytexercise preferences have been updated.",
-    });
-    if (isActive) {
-        setTimer(breakFrequency);
-    } else {
-        setTimeLeft(breakFrequency * 60);
-    }
-  };
-  
-  const handleStartBreak = () => {
-    setIsBreakAlertOpen(false);
-    setIsBreakActive(true);
-    localStorage.removeItem(HYTEXERCISE_STORAGE_KEY);
-  };
-  
-  const handleDelayBreak = (delayMinutes: number) => {
-    toast({
-        title: "Break Delayed",
-        description: `Your break has been delayed by ${delayMinutes} minutes.`,
-    });
-    setIsBreakAlertOpen(false);
-    setTimer(delayMinutes);
-  }
-  
-  const handleCancelBreak = () => {
-    console.log(`Break canceled at ${new Date().toISOString()}. This event has been logged for reporting.`);
-    toast({
-        title: "Break Skipped",
-        description: `Your next break reminder is scheduled in ${breakFrequency} minutes.`,
-    });
-    setIsBreakAlertOpen(false);
-    setTimer(breakFrequency);
+  const handleStartRoutine = () => {
+      setIsBreakAlertOpen(false);
+      setIsBreakActive(true);
+      localStorage.removeItem(HYTEXERCISE_STORAGE_KEY);
   };
 
   const handleFinishBreak = () => {
       setIsBreakActive(false);
-      setTimer(breakFrequency);
+      
+      // Automatically restart the timer for the next break
+      const dueTimestamp = Date.now() + breakFrequency * 60 * 1000;
+      const stateToStore: StoredState = {
+          isActive: true,
+          breakDueTimestamp: dueTimestamp,
+          breakFrequency,
+          breakDuration,
+      };
+      localStorage.setItem(HYTEXERCISE_STORAGE_KEY, JSON.stringify(stateToStore));
+      
       toast({
           title: "Thanks for protecting your health",
       });
+      
+      // Force a reload so the context picks up the new localStorage value immediately
+      window.location.reload();
   };
   
   if (isBreakActive) {
@@ -179,7 +100,7 @@ export function HytexerciseView() {
               Combat the effects of prolonged sitting and take charge of your well-being with guided, five-minute chair exercises every hour.
             </p>
           </div>
-          <Button size="lg" className="shadow-md whitespace-nowrap" onClick={() => setIsBreakActive(true)}>
+          <Button size="lg" className="shadow-md whitespace-nowrap" onClick={handleStartRoutine}>
             <PlayCircle className="mr-2 h-5 w-5" /> Start Routine
           </Button>
         </header>
@@ -271,7 +192,7 @@ export function HytexerciseView() {
               ))}
             </CardContent>
             <CardFooter>
-              <Button size="lg" className="w-full" onClick={() => setIsBreakActive(true)}>Start Routine</Button>
+              <Button size="lg" className="w-full" onClick={handleStartRoutine}>Start Routine</Button>
             </CardFooter>
           </Card>
           
@@ -290,43 +211,6 @@ export function HytexerciseView() {
         </div>
       </div>
       
-      <AlertDialog open={isBreakAlertOpen} onOpenChange={setIsBreakAlertOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-3 text-2xl">
-                    <OctagonAlert className="h-8 w-8 text-destructive" />
-                    Time for a break!
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                    It's time for your scheduled {breakDuration}-minute exercise break. Take a moment to stretch and recharge.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4 space-y-2">
-              <Label htmlFor="delay-select">Or, delay your break by:</Label>
-              <Select
-                  defaultValue={String(customDelay)}
-                  onValueChange={(value) => setCustomDelay(Number(value))}
-              >
-                  <SelectTrigger id="delay-select">
-                      <SelectValue placeholder="Select delay time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="5">5 minutes</SelectItem>
-                      <SelectItem value="10">10 minutes</SelectItem>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="20">20 minutes</SelectItem>
-                  </SelectContent>
-              </Select>
-            </div>
-            <AlertDialogFooter className="sm:justify-between">
-              <Button variant="ghost" onClick={handleCancelBreak}>Cancel Break</Button>
-              <div className="flex flex-col-reverse sm:flex-row sm:gap-2">
-                <Button variant="outline" onClick={() => handleDelayBreak(customDelay)}>Delay Break</Button>
-                <AlertDialogAction onClick={handleStartBreak}>Start Break Now</AlertDialogAction>
-              </div>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { LayoutDashboard, Bot, Search, Settings, BrainCircuit } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
+import { HytexerciseProvider } from '@/context/hytexercise-context';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <DndProviderWrapper>
         <SidebarViewProvider>
           <ThemeOrchestrator />
+          <HytexerciseProvider>
           <div className="flex h-screen w-full bg-muted">
             {/* Sidebar */}
             <Sidebar className="hidden h-full w-[16rem] flex-col border-r bg-sidebar text-sidebar-foreground md:flex print:hidden">
@@ -110,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </main>
             </div>
           </div>
-          <ActiveTimerIndicator />
+          </HytexerciseProvider>
         </SidebarViewProvider>
       </DndProviderWrapper>
     </SidebarProvider>

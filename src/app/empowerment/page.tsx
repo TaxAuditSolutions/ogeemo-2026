@@ -228,11 +228,6 @@ export default function EmpowermentPage() {
                                 </Card>
                             ))}
                         </div>
-                        <div className="mt-8 text-center">
-                            <Button asChild variant="outline" className="font-bold border-primary text-primary hover:bg-primary/5">
-                                <Link href="/blog">View All Insights</Link>
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </div>

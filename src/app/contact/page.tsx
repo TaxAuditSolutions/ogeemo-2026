@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageSquare, MapPin, LoaderCircle, CheckCircle, ArrowRight, Zap } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { sendConnectionSignal } from "./actions";
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,16 +22,34 @@ export default function ContactPage() {
         e.preventDefault();
         setIsSubmitting(true);
         
-        // Simulating a successful submission for the marketing site
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
         
-        toast({
-            title: "Connection Initiated",
-            description: "Your signal has been received. Our concierge team will be in touch shortly.",
-        });
+        const data = {
+            firstName: formData.get('first-name') as string,
+            lastName: formData.get('last-name') as string,
+            email: formData.get('email') as string,
+            subject: formData.get('subject') as string,
+            message: formData.get('message') as string,
+        };
+
+        const result = await sendConnectionSignal(data);
         
-        setIsSuccess(true);
-        (e.target as HTMLFormElement).reset();
+        if (result.success) {
+            toast({
+                title: "Connection Initiated",
+                description: "Your signal has been sent to Dan White. Our concierge team will be in touch shortly.",
+            });
+            setIsSuccess(true);
+            form.reset();
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Failed to send",
+                description: result.error || "An unknown error occurred.",
+            });
+        }
+        
         setIsSubmitting(false);
     };
 

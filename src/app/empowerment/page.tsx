@@ -229,8 +229,8 @@ export default function EmpowermentPage() {
                             ))}
                         </div>
                         <div className="mt-8 text-center">
-                            <Button variant="outline" className="font-bold border-primary text-primary hover:bg-primary/5">
-                                View All Insights
+                            <Button asChild variant="outline" className="font-bold border-primary text-primary hover:bg-primary/5">
+                                <Link href="/blog">View All Insights</Link>
                             </Button>
                         </div>
                     </div>

@@ -15,6 +15,14 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { 
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
     ShieldCheck, 
     Zap, 
     Layers, 
@@ -32,7 +40,56 @@ import {
     FileText
 } from 'lucide-react';
 
+const INSIGHT_POSTS = [
+    { 
+        id: "growth",
+        title: "How Ogeemo Helps You Achieve Your Growth Goals", 
+        date: "April 18, 2026", 
+        cat: "Growth",
+        content: `
+            <p>Scaling a business requires more than just hard work—it requires a clear line of sight into your daily, weekly, and monthly objectives. Ogeemo's centralized dashboard acts as your growth command center.</p>
+            <p>By unifying your communications, task tracking, and financial ledgers, you eliminate the cognitive load of switching between apps. This unified "Spider Web" of data means you spend less time searching for information and more time acting on it.</p>
+            <p>When your foundational operations run smoothly, your team is empowered to focus on what truly matters: serving clients, acquiring new business, and scaling your organization's footprint.</p>
+        `
+    },
+    { 
+        id: "compliance",
+        title: "Tax Audit Prep Made Easy", 
+        date: "April 18, 2026", 
+        cat: "Compliance",
+        content: `
+            <p>For most businesses, the phrase "tax audit" triggers immediate anxiety. Scrambling to find two-year-old receipts, matching invoices to bank statements, and praying the numbers align is a nightmare no one should endure.</p>
+            <p>Ogeemo was built by Tax Audit Solutions (TAS) specifically to solve this problem. Every transaction logged in Ogeemo is automatically linked to its source document, creating an unbreakable chain of custody.</p>
+            <p>Because Ogeemo enforces compliance at the point of data entry, your business remains perpetually "audit-ready." If the CRA comes knocking, you don't panic—you simply export your impeccably structured ledger.</p>
+        `
+    },
+    { 
+        id: "strategy",
+        title: "Maximizing Efficiency Through Strategic Planning", 
+        date: "April 18, 2026", 
+        cat: "Strategy",
+        content: `
+            <p>Efficiency isn't about working faster; it's about eliminating the work that doesn't need to be done. Ogeemo's architecture forces a strategic approach to business management.</p>
+            <p>With features like the Idea Board and Master Mind workflows, Ogeemo allows you to capture inspiration instantly, park it safely, and retrieve it when the time is right. Nothing falls through the cracks.</p>
+            <p>By aligning your long-term strategy with daily Action Chips, you ensure that every micro-task your team completes rolls up into your macro-objectives.</p>
+        `
+    },
+    { 
+        id: "operations",
+        title: "Streamlined Operations for the Modern Office", 
+        date: "April 18, 2026", 
+        cat: "Operations",
+        content: `
+            <p>Operational drag—the time lost to administrative friction—is the silent killer of small businesses. Sending an email, logging a time entry, and updating an invoice often require three different software subscriptions.</p>
+            <p>Ogeemo collapses these disparate actions into single, seamless workflows. Need to bill a client? The time log is already connected to their Contact Hub profile, which instantly populates the Invoice Generator.</p>
+            <p>This streamlining doesn't just save minutes; it preserves momentum. Your team can operate in a state of flow, completely unburdened by administrative bottlenecks.</p>
+        `
+    }
+];
+
 export default function EmpowermentPage() {
+  const [selectedPost, setSelectedPost] = React.useState<typeof INSIGHT_POSTS[0] | null>(null);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <SiteHeader />
@@ -146,25 +203,25 @@ export default function EmpowermentPage() {
                     </div>
                     <div className="flex-1 w-full">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {[
-                                { title: "How Ogeemo Helps Goals", date: "April 18, 2026", cat: "Growth" },
-                                { title: "Tax Audit Prep Made Easy", date: "April 18, 2026", cat: "Compliance" },
-                                { title: "Maximizing Efficiency", date: "April 18, 2026", cat: "Strategy" },
-                                { title: "Streamlined Operations", date: "April 18, 2026", cat: "Operations" }
-                            ].map((post, idx) => (
-                                <Card key={idx} className="overflow-hidden hover:shadow-md transition-all border-primary/5 bg-card">
-                                    <div className="h-32 bg-muted relative">
+                            {INSIGHT_POSTS.map((post, idx) => (
+                                <Card key={idx} className="overflow-hidden hover:shadow-md transition-all border-primary/5 bg-card flex flex-col">
+                                    <div className="h-32 bg-muted relative shrink-0">
                                         <ImagePlaceholder id={`post-thumb-${idx}`} className="object-cover" />
-                                        <Badge className="absolute top-3 left-3 bg-primary/80 backdrop-blur-sm text-[10px] uppercase font-bold">{post.cat}</Badge>
+                                        <Badge className="absolute top-3 left-3 bg-primary/80 backdrop-blur-sm text-[10px] uppercase font-bold text-white border-0">{post.cat}</Badge>
                                     </div>
-                                    <CardHeader className="p-4">
+                                    <CardHeader className="p-4 flex-1">
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-1">{post.date}</p>
                                         <CardTitle className="text-sm font-bold group-hover:text-primary transition-colors leading-tight line-clamp-2">
                                             {post.title}
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardFooter className="p-4 pt-0">
-                                        <Button variant="link" size="sm" className="p-0 text-xs font-bold text-primary flex items-center gap-1">
+                                    <CardFooter className="p-4 pt-0 mt-auto">
+                                        <Button 
+                                            variant="link" 
+                                            size="sm" 
+                                            className="p-0 text-xs font-bold text-primary flex items-center gap-1 hover:text-primary/80"
+                                            onClick={() => setSelectedPost(post)}
+                                        >
                                             Read More <ArrowRight className="h-3 w-3" />
                                         </Button>
                                     </CardFooter>
@@ -385,6 +442,39 @@ export default function EmpowermentPage() {
       </main>
 
       <SiteFooter />
+
+      {/* Insight Read More Dialog */}
+      <Dialog open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+          {selectedPost && (
+            <>
+              <div className="h-48 w-full relative bg-muted">
+                <ImagePlaceholder id={`post-hero-${selectedPost.id}`} className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6 text-white">
+                  <Badge className="bg-primary hover:bg-primary border-0 w-fit mb-2">{selectedPost.cat}</Badge>
+                  <DialogTitle className="text-2xl font-bold font-headline leading-tight">
+                    {selectedPost.title}
+                  </DialogTitle>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-b bg-muted/20">
+                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{selectedPost.date}</p>
+              </div>
+              <ScrollArea className="max-h-[60vh]">
+                <div 
+                  className="p-6 md:p-8 prose prose-slate dark:prose-invert max-w-none 
+                             prose-p:leading-relaxed prose-p:text-muted-foreground prose-p:mb-6 
+                             last:prose-p:mb-0"
+                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                />
+              </ScrollArea>
+              <div className="p-4 border-t bg-muted/10 flex justify-end">
+                <Button onClick={() => setSelectedPost(null)}>Close Insight</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

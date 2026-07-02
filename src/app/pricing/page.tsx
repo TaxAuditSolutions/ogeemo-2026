@@ -105,6 +105,13 @@ export default function PricingPage() {
                         </ul>
                     </div>
                     <Separator />
+                    <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 text-sm font-medium text-amber-600 dark:text-amber-400 flex items-start gap-3 text-left">
+                        <Zap className="h-5 w-5 shrink-0 mt-0.5" />
+                        <p>
+                            <strong>Founding Member Notice:</strong> This ${MEMBERSHIP_FEE}.00 deal is exclusively available for the first 100 clients! After this milestone is reached, we will review and update the pricing plan for all new members joining the network.
+                        </p>
+                    </div>
+                    <Separator />
                     <div className="bg-muted/50 p-4 rounded-xl border border-dashed text-xs text-muted-foreground italic">
                         "Every member gets the full engine. We scale with your impact, not by nickel-and-diming your features."
                     </div>

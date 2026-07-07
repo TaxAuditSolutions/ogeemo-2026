@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-07-05T16:13:36.468Z",
+  "targetUrl": "http://localhost:9002/dashboard",
+  "workflowInstruction": "You are already authenticated. Find the Analytics tab and navigate to the export reports section. If labels differ, identify the closest equivalent navigation path. Stop after you reach the export reports screen.",
+  "finalUiContext": "URL: http://localhost:9002/welcome\nVisible headings: OGEEMO | Welcome to the Circle.\nVisible actions: Action Manager | Action Chip Magic | Command Centre | AI Dispatch | Record Keeping Credo | Ogeemo Web | Audit Ready | Mentor Mediation | Action Manager Settings | Trash | A-Z Sort | HR Hub | CRM Hub | Inventory | Marketing | Google Apps | Hytexercise | Image Generator | Settings | Image Manager",
+  "actionTrace": "1. open_web_browser (url: http://localhost:9002/login)\n2. click (url: http://localhost:9002/welcome)\n3. click (url: http://localhost:9002/welcome)\n4. click (url: http://localhost:9002/action-manager)\n5. click (url: http://localhost:9002/action-manager)\n6. click (url: http://localhost:9002/master-mind)\n7. wait (url: http://localhost:9002/settings)\n8. keypress (url: http://localhost:9002/settings)\n9. keypress (url: http://localhost:9002/settings)\n10. click (url: http://localhost:9002/settings)\n11. click (url: https://gemini.google.com/app)\n12. back (url: https://gemini.google.com/app)\n13. goto (url: https://gemini.google.com/app)\n14. wait (url: http://localhost:9002/)\n15. wait (url: http://localhost:9002/)\n16. goto (url: http://localhost:9002/)\n17. wait (url: http://localhost:9002/login)",
+  "guide": {
+    "title": "How to Export Reports",
+    "description": "This guide will walk you through the steps to find the analytics section of the application and export your reports.",
+    "steps": [
+      "From the welcome screen, select 'Action Manager'.",
+      "Navigate to the 'Analytics' tab within the Action Manager.",
+      "Locate and click on the 'Export Reports' option to begin your download."
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+    "guideId": "files--link-document-to-contact",
+    "title": "Link a Document to a Contact",
+    "module": "files",
+    "intent": "link-document-to-contact",
+    "targetAudience": "general",
+    "description": "Attach an uploaded document to the correct contact record so evidence and workflow context are searchable and complete.",
+    "prerequisites": [
+        "You have access to both the Files module and Contacts records.",
+        "The document has already been uploaded or is available to upload.",
+        "You know which contact record should own the document link."
+    ],
+    "steps": [
+        "Open the Files module from the main navigation.",
+        "Locate the document to be linked, or upload it if it is not yet in the system.",
+        "Open document details and choose Link, Attach, or Assign to record.",
+        "Search for the target contact by name, email, or contact ID.",
+        "Select the correct contact record and confirm the link action.",
+        "Add document tags, notes, or category fields if your workflow requires them.",
+        "Save the document metadata and return to the contact profile.",
+        "Open the contact record and verify the linked document appears in attachments or evidence history."
+    ],
+    "validations": [
+        "The document appears under the expected contact record attachments.",
+        "Document metadata reflects the correct contact linkage.",
+        "Searching by the contact shows the document in results."
+    ],
+    "commonErrors": [
+        "Wrong contact selected during link operation.",
+        "Document linked but not visible on contact profile.",
+        "Permission rules block linking or viewing linked files."
+    ],
+    "recovery": [
+        "Unlink and relink the document to the correct contact record.",
+        "Refresh the contact page and confirm filters are not hiding attachments.",
+        "Check file/contact permissions and request access update if required."
+    ],
+    "faq": [
+        {
+            "question": "Can one document be linked to multiple contacts?",
+            "answer": "Only if your workflow allows shared evidence; otherwise keep one primary owner to avoid ambiguity."
+        },
+        {
+            "question": "How do I audit document linkage changes?",
+            "answer": "Use document history and contact activity logs to confirm who linked or relinked files and when."
+        }
+    ],
+    "keywords": [
+        "files",
+        "document",
+        "link",
+        "contact",
+        "attachment",
+        "evidence"
+    ],
+    "version": "1.0.2",
+    "generatedAt": "2026-07-06T00:00:00.000Z",
+    "lastVerifiedAt": "2026-07-06T00:00:00.000Z",
+    "source": {
+        "targetUrl": "manual-targeted",
+        "finalUrl": "manual-targeted",
+        "workflowInstruction": "Targeted remediation for important intent link-document-to-contact"
+    },
+    "actionTrace": "manual-remediation-seed"
+}

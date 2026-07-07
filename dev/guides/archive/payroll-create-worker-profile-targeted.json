@@ -1,0 +1,67 @@
+{
+    "guideId": "payroll--create-worker-profile",
+    "title": "Create a Worker Profile for Payroll",
+    "module": "payroll",
+    "intent": "create-worker-profile",
+    "targetAudience": "admin",
+    "description": "Create and validate a worker profile so the worker can be included in payroll runs without missing data or compliance gaps.",
+    "prerequisites": [
+        "You have admin access to worker or payroll settings.",
+        "Required worker identity details are available (name, contact information, classification).",
+        "You know whether the worker is an employee or contractor before profile creation."
+    ],
+    "steps": [
+        "Open the payroll module and navigate to worker management or worker profiles.",
+        "Select Create Worker Profile to start a new worker record.",
+        "Enter core identity details such as legal name, email, and employee or worker number.",
+        "Set worker classification fields, including workerType (employee or contractor) and payType (hourly or salary).",
+        "Enter compensation settings including payRate and any required payroll defaults.",
+        "Add required address and contact fields used for payroll and HR records.",
+        "Review compliance-related fields and confirm required profile elements are complete.",
+        "Save the worker profile and verify the worker appears in the payroll worker list.",
+        "Open payroll preview and confirm the new worker is selectable for the next payroll cycle."
+    ],
+    "validations": [
+        "The new worker appears in worker management with correct classification and pay settings.",
+        "No required-field warnings remain on the worker profile.",
+        "The worker is available in payroll run or preview selection lists."
+    ],
+    "commonErrors": [
+        "Worker profile cannot be saved because a required field is missing.",
+        "Worker is saved but does not appear in payroll run selections.",
+        "Incorrect workerType or payType causes payroll calculation issues."
+    ],
+    "recovery": [
+        "Complete missing required fields and save again.",
+        "Reopen the profile and confirm payroll eligibility fields are set correctly.",
+        "Correct workerType/payType/payRate values, save, and rerun payroll preview."
+    ],
+    "faq": [
+        {
+            "question": "When should I use employee versus contractor workerType?",
+            "answer": "Use the value that matches your legal and payroll classification rules so deductions and reporting are correct."
+        },
+        {
+            "question": "How do I confirm this profile is payroll-ready?",
+            "answer": "Check required profile fields, then verify the worker appears in payroll preview with expected pay settings."
+        }
+    ],
+    "keywords": [
+        "payroll",
+        "worker profile",
+        "create worker",
+        "employee",
+        "contractor",
+        "pay type",
+        "pay rate"
+    ],
+    "version": "1.0.2",
+    "generatedAt": "2026-07-06T00:00:00.000Z",
+    "lastVerifiedAt": "2026-07-06T00:00:00.000Z",
+    "source": {
+        "targetUrl": "manual-targeted",
+        "finalUrl": "manual-targeted",
+        "workflowInstruction": "Targeted remediation guide for failing critical payroll intent"
+    },
+    "actionTrace": "manual-remediation-seed"
+}

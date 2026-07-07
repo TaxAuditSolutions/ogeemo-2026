@@ -1,1 +1,369 @@
 // Redundant source file removed.
+import { onRequest } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
+import { initializeApp, getApps } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Initialize Firebase Admin once.
+if (!getApps().length) {
+    initializeApp();
+}
+
+const db = getFirestore();
+const VECTOR_DIMENSIONS = 768;
+
+const MODULE_HINTS: Record<string, string[]> = {
+    reports: ["report", "reports", "export", "analytics"],
+    payroll: ["payroll", "pay", "salary", "wage", "timesheet"],
+    accounting: ["journal", "ledger", "invoice", "expense", "accounting", "reconciliation"],
+    contacts: ["contact", "client", "customer", "lead", "crm"],
+    files: ["file", "document", "upload", "folder", "evidence"],
+    settings: ["settings", "permission", "role", "admin", "configuration"],
+};
+
+const AUDIENCE_HINTS: Record<string, string[]> = {
+    admin: ["admin", "administrator", "owner"],
+    accountant: ["accountant", "bookkeeper", "finance"],
+    consultant: ["consultant", "advisor"],
+    lawyer: ["lawyer", "legal", "paralegal"],
+    "virtual-assistant": ["assistant", "virtual assistant", "va"],
+};
+
+const CHUNK_TYPE_ORDER: Record<string, number> = {
+    prerequisites: 1,
+    overview: 2,
+    steps: 3,
+    validations: 4,
+    troubleshooting: 5,
+    faq: 6,
+};
+
+function isMissingVectorIndexError(error: unknown): boolean {
+    if (typeof error !== "object" || error === null) {
+        return false;
+    }
+
+    const message = "message" in error && typeof (error as { message?: string }).message === "string"
+        ? (error as { message: string }).message
+        : "";
+
+    const details = "details" in error && typeof (error as { details?: string }).details === "string"
+        ? (error as { details: string }).details
+        : "";
+
+    const combined = `${message}\n${details}`.toLowerCase();
+    return combined.includes("missing vector index configuration");
+}
+
+function toFixedVector(values: unknown): number[] {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+
+    return values
+        .filter((v): v is number => typeof v === "number" && Number.isFinite(v))
+        .slice(0, VECTOR_DIMENSIONS);
+}
+
+function inferHint(text: string, hints: Record<string, string[]>) {
+    const normalized = text.toLowerCase();
+    for (const [label, keywords] of Object.entries(hints)) {
+        if (keywords.some((keyword) => normalized.includes(keyword))) {
+            return label;
+        }
+    }
+    return undefined;
+}
+
+function compareByChunkPriority(
+    a: { chunkType?: string; chunkIndex?: number },
+    b: { chunkType?: string; chunkIndex?: number }
+) {
+    const priorityA = CHUNK_TYPE_ORDER[a.chunkType ?? ""] ?? 999;
+    const priorityB = CHUNK_TYPE_ORDER[b.chunkType ?? ""] ?? 999;
+    if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+    }
+
+    const indexA = typeof a.chunkIndex === "number" ? a.chunkIndex : 999;
+    const indexB = typeof b.chunkIndex === "number" ? b.chunkIndex : 999;
+    return indexA - indexB;
+}
+
+function tokenize(text: string): string[] {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, " ")
+        .split(/\s+/)
+        .filter((token) => token.length > 1);
+}
+
+function scoreDocumentAgainstQuestion(
+    question: string,
+    data: {
+        title?: string;
+        intent?: string;
+        module?: string;
+        keywords?: string[];
+        chunkText?: string;
+        description?: string;
+    }
+): number {
+    const queryTokens = new Set(tokenize(question));
+    if (queryTokens.size === 0) {
+        return 0;
+    }
+
+    const keywordTokens = new Set(tokenize((data.keywords ?? []).join(" ")));
+    const intentTokens = new Set(tokenize(data.intent ?? ""));
+    const titleTokens = new Set(tokenize(data.title ?? ""));
+    const moduleTokens = new Set(tokenize(data.module ?? ""));
+    const chunkTokens = new Set(tokenize(data.chunkText ?? ""));
+    const descriptionTokens = new Set(tokenize(data.description ?? ""));
+
+    let score = 0;
+    for (const token of queryTokens) {
+        if (intentTokens.has(token)) score += 5;
+        if (titleTokens.has(token)) score += 4;
+        if (keywordTokens.has(token)) score += 4;
+        if (moduleTokens.has(token)) score += 2;
+        if (chunkTokens.has(token)) score += 2;
+        if (descriptionTokens.has(token)) score += 1;
+    }
+
+    return score;
+}
+
+function inferIntentFromQuestion(question: string): string | undefined {
+    const normalized = question.toLowerCase();
+
+    const rules: Array<{ intent: string; required: string[] }> = [
+        { intent: "link-document-to-contact", required: ["link", "document", "contact"] },
+        { intent: "recover-missing-document", required: ["recover", "missing", "document"] },
+        { intent: "validate-export", required: ["validate", "export"] },
+        { intent: "correct-payroll-error", required: ["correct", "payroll", "error"] },
+        { intent: "create-worker-profile", required: ["create", "worker", "profile"] },
+        { intent: "convert-lead", required: ["convert", "lead"] },
+        { intent: "merge-duplicates", required: ["merge", "duplicate"] },
+    ];
+
+    for (const rule of rules) {
+        if (rule.required.every((term) => normalized.includes(term))) {
+            return rule.intent;
+        }
+    }
+
+    return undefined;
+}
+
+export const ogeemoAssistant = onRequest(
+    { cors: true, region: "us-central1", secrets: ["GOOGLE_API_KEY"] },
+    async (req, res) => {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).json({ error: "Method not allowed. Use POST." });
+                return;
+            }
+
+            const apiKey = process.env.GOOGLE_API_KEY;
+            if (!apiKey) {
+                logger.error("GOOGLE_API_KEY is missing in environment.");
+                res.status(500).json({ error: "Server misconfiguration." });
+                return;
+            }
+
+            const question = (req.body?.question ?? "").toString().trim();
+            if (!question) {
+                res.status(400).json({ error: "Missing question in request body." });
+                return;
+            }
+
+            const genAI = new GoogleGenerativeAI(apiKey);
+
+            // 1) Embed user question
+            const embeddingModel = genAI.getGenerativeModel({
+                model: "gemini-embedding-001",
+            });
+
+            const embeddingResult = await embeddingModel.embedContent(question);
+            const queryEmbeddingArray = toFixedVector(embeddingResult.embedding.values);
+
+            if (queryEmbeddingArray.length === 0) {
+                logger.error("Embedding model returned empty vector.");
+                res.status(500).json({ error: "Failed to generate embedding." });
+                return;
+            }
+
+            // 2) Firestore vector search with optional metadata hints and fallback
+            const moduleHint = inferHint(question, MODULE_HINTS);
+            const audienceHint = inferHint(question, AUDIENCE_HINTS);
+
+            const runSearch = async (useHints: boolean) => {
+                let queryRef: any = db.collection("help_guides");
+
+                if (useHints && moduleHint) {
+                    queryRef = queryRef.where("module", "==", moduleHint);
+                }
+                if (useHints && audienceHint) {
+                    queryRef = queryRef.where("targetAudience", "==", audienceHint);
+                }
+
+                const vectorQuery = queryRef.findNearest(
+                    "embedding",
+                    FieldValue.vector(queryEmbeddingArray),
+                    { limit: 8, distanceMeasure: "COSINE" }
+                );
+
+                return vectorQuery.get();
+            };
+
+            let snapshot;
+            try {
+                snapshot = await runSearch(true);
+            } catch (error) {
+                if (isMissingVectorIndexError(error)) {
+                    logger.warn("Hinted vector search index missing; falling back to unfiltered vector search.");
+                    snapshot = await runSearch(false);
+                } else {
+                    throw error;
+                }
+            }
+
+            if (snapshot.empty) {
+                snapshot = await runSearch(false);
+            }
+
+            const intentHint = inferIntentFromQuestion(question);
+            if (intentHint) {
+                const intentSnapshot = await db
+                    .collection("help_guides")
+                    .where("intent", "==", intentHint)
+                    .limit(8)
+                    .get();
+
+                if (!intentSnapshot.empty) {
+                    const seen = new Set(snapshot.docs.map((doc: any) => doc.id));
+                    const mergedDocs = [...snapshot.docs];
+                    for (const doc of intentSnapshot.docs) {
+                        if (!seen.has(doc.id)) {
+                            mergedDocs.push(doc);
+                            seen.add(doc.id);
+                        }
+                    }
+
+                    snapshot = {
+                        ...snapshot,
+                        docs: mergedDocs,
+                    } as typeof snapshot;
+                }
+            }
+
+            // 3) Build context from retrieved docs
+            const contextChunks: string[] = [];
+
+            const rankedDocs = [...snapshot.docs]
+                .map((doc) => {
+                    const data = doc.data() as {
+                        title?: string;
+                        intent?: string;
+                        module?: string;
+                        keywords?: string[];
+                        chunkText?: string;
+                        description?: string;
+                        chunkType?: string;
+                        chunkIndex?: number;
+                    };
+
+                    return {
+                        doc,
+                        data,
+                        lexicalScore: scoreDocumentAgainstQuestion(question, data),
+                    };
+                })
+                .sort((a, b) => {
+                    if (b.lexicalScore !== a.lexicalScore) {
+                        return b.lexicalScore - a.lexicalScore;
+                    }
+                    return compareByChunkPriority(a.data, b.data);
+                })
+                .slice(0, 8);
+
+            const orderedDocs = rankedDocs.map((item) => item.doc);
+
+            orderedDocs.forEach((doc, i) => {
+                const data = doc.data() as {
+                    chunkType?: string;
+                    chunkIndex?: number;
+                    chunkText?: string;
+                    module?: string;
+                    intent?: string;
+                    title?: string;
+                    steps?: string[];
+                    targetAudience?: string;
+                    description?: string;
+                };
+
+                const title = data.title ?? "Untitled Guide";
+                const module = data.module ?? "general";
+                const intent = data.intent ?? "general-workflow";
+                const targetAudience = data.targetAudience ?? "General";
+                const description = data.description ?? "";
+                const chunkType = data.chunkType ?? "legacy";
+                const steps = Array.isArray(data.steps) ? data.steps : [];
+                const chunkText = typeof data.chunkText === "string" ? data.chunkText : "";
+
+                const stepText =
+                    steps.length > 0
+                        ? steps.map((s, idx) => `${idx + 1}. ${s}`).join("\n")
+                        : "No explicit steps.";
+
+                const contentBody = chunkText || stepText;
+
+                contextChunks.push(
+                    [
+                        `Guide ${i + 1}: ${title}`,
+                        `Module: ${module}`,
+                        `Intent: ${intent}`,
+                        `Target Audience: ${targetAudience}`,
+                        `Chunk Type: ${chunkType}`,
+                        description ? `Description: ${description}` : "",
+                        "Content:",
+                        contentBody,
+                    ]
+                        .filter(Boolean)
+                        .join("\n")
+                );
+            });
+
+            const context =
+                contextChunks.length > 0
+                    ? contextChunks.join("\n\n---\n\n")
+                    : "No relevant guide context found.";
+
+            // 4) Ask Gemini to answer using only retrieved context
+            const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+            const prompt = [
+                "You are Ogeemo Assistant.",
+                "Answer the user's question using ONLY the provided guide context.",
+                "If the context does not contain enough information, say that clearly and suggest what is missing.",
+                "",
+                "Guide context:",
+                context,
+                "",
+                `User question: ${question}`,
+            ].join("\n");
+
+            const answerResult = await textModel.generateContent(prompt);
+            const answer = answerResult.response.text().trim();
+
+            res.status(200).json({ answer });
+        } catch (error) {
+            logger.error("ogeemoAssistant error", error);
+            res.status(500).json({
+                error: "Internal server error while processing the request.",
+            });
+        }
+    }
+);

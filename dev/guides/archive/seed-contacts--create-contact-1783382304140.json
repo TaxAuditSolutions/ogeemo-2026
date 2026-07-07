@@ -1,0 +1,62 @@
+{
+  "guideId": "contacts--create-contact",
+  "title": "Create and Classify a Contact",
+  "module": "contacts",
+  "intent": "create-contact",
+  "targetAudience": "general",
+  "description": "Create a complete contact record and classify it correctly for CRM, workflow routing, and documentation.",
+  "prerequisites": [
+    "You can access the contacts module.",
+    "You know whether the record is a client, supplier, worker, or lead.",
+    "Required identity and communication details are available."
+  ],
+  "steps": [
+    "Open Contacts and start a new contact record.",
+    "Enter core identity details including name and email.",
+    "Set classification fields such as folder role and status.",
+    "Add phone and address values used by operations.",
+    "Add optional compliance fields if required for this contact type.",
+    "Save and confirm the record appears in the expected list and pipeline stage."
+  ],
+  "validations": [
+    "Contact appears in the correct role bucket.",
+    "Required fields are present and formatted correctly.",
+    "Linked folder or document context exists when required."
+  ],
+  "commonErrors": [
+    "Cannot save due to missing required role field.",
+    "Contact created in wrong pipeline stage.",
+    "Duplicate contact appears after save."
+  ],
+  "recovery": [
+    "Populate required fields and retry save.",
+    "Edit status/folder fields and reclassify record.",
+    "Merge duplicate records using admin-approved process."
+  ],
+  "faq": [
+    {
+      "question": "When should I use workerType fields?",
+      "answer": "Only when the contact represents a worker profile used for payroll or HR operations."
+    },
+    {
+      "question": "Can I add keywords for search?",
+      "answer": "Yes. Add meaningful tags to improve retrieval and list filtering."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "crm",
+    "lead",
+    "client",
+    "classification"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

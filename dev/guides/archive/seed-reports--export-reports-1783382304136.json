@@ -1,0 +1,62 @@
+{
+  "guideId": "reports--export-reports",
+  "title": "Export Reports from Analytics",
+  "module": "reports",
+  "intent": "export-reports",
+  "targetAudience": "general",
+  "description": "Run an analytics report and export it in a shareable format for review or audit workflows.",
+  "prerequisites": [
+    "You are signed in to Ogeemo.",
+    "You have report access permissions.",
+    "The target date range or report filter is known."
+  ],
+  "steps": [
+    "Open the Analytics or Reports section from the main navigation.",
+    "Select the report type you need for the current task.",
+    "Set required filters such as date range, team, or client scope.",
+    "Run or refresh the report and wait for values to load.",
+    "Choose Export and select the required output format.",
+    "Save the exported file to the designated evidence folder."
+  ],
+  "validations": [
+    "The exported file opens without format errors.",
+    "The totals in the export match the on-screen report totals.",
+    "The filename and location follow your evidence conventions."
+  ],
+  "commonErrors": [
+    "Export button is disabled.",
+    "Report values are blank after filters are applied.",
+    "Downloaded file does not include expected columns."
+  ],
+  "recovery": [
+    "Verify you have export permissions for the selected report.",
+    "Reset filters and rerun report with a known valid date range.",
+    "Check report column settings before exporting again."
+  ],
+  "faq": [
+    {
+      "question": "Which format should I use for audit support?",
+      "answer": "Use the format required by your audit process and retain the source report settings in notes."
+    },
+    {
+      "question": "Should I rerun export after data corrections?",
+      "answer": "Yes. Regenerate exports after corrections so evidence aligns with final ledger state."
+    }
+  ],
+  "keywords": [
+    "report",
+    "export",
+    "analytics",
+    "download",
+    "evidence"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

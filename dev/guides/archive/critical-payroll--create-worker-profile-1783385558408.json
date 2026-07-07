@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--create-worker-profile",
+  "title": "Create Worker Profile in Payroll",
+  "module": "payroll",
+  "intent": "create-worker-profile",
+  "targetAudience": "admin",
+  "description": "Complete the create worker profile workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for create worker profile are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the create worker profile entry point in the module workflow.",
+    "Enter or select the required inputs for create worker profile.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Worker Profile completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create worker profile.",
+    "Permission constraints prevent completion of create worker profile.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create worker profile.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create worker profile?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create worker profile is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "create-worker-profile",
+    "admin",
+    "create",
+    "worker",
+    "profile",
+    "create worker profile"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T00:52:38.408Z",
+  "lastVerifiedAt": "2026-07-07T00:52:38.408Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--create-worker-profile"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

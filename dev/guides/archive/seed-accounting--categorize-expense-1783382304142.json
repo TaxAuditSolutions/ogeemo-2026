@@ -1,0 +1,62 @@
+{
+  "guideId": "accounting--categorize-expense",
+  "title": "Categorize Business Expenses",
+  "module": "accounting",
+  "intent": "categorize-expense",
+  "targetAudience": "accountant",
+  "description": "Classify expenses correctly so reports, tax prep, and reconciliation workflows remain accurate.",
+  "prerequisites": [
+    "You have accounting data access.",
+    "Expense details and source documentation are available.",
+    "Category taxonomy is defined for your organization."
+  ],
+  "steps": [
+    "Open the accounting transactions or expenses view.",
+    "Create or open the expense transaction to classify.",
+    "Assign the correct expense category and tax treatment.",
+    "Attach source documentation if required.",
+    "Save transaction and update any related project tags.",
+    "Review categorized totals in summary views."
+  ],
+  "validations": [
+    "Expense appears under the expected category in reports.",
+    "Tax and amount fields are consistent with source documents.",
+    "No uncategorized entries remain for the review period."
+  ],
+  "commonErrors": [
+    "Expense posted under wrong category.",
+    "Tax amount does not align with receipt.",
+    "Duplicate expense record created."
+  ],
+  "recovery": [
+    "Edit transaction category and rerun report checks.",
+    "Correct tax fields and validate totals.",
+    "Void or merge duplicate entries per policy."
+  ],
+  "faq": [
+    {
+      "question": "Can I bulk-categorize expenses?",
+      "answer": "Use bulk tools when available, then run validation checks on sampled entries."
+    },
+    {
+      "question": "How often should categorization be reviewed?",
+      "answer": "Review continuously during the period and again before month-end close."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "expense",
+    "category",
+    "tax",
+    "transaction"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

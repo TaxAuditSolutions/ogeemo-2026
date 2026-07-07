@@ -1,0 +1,62 @@
+{
+  "guideId": "files--upload-document",
+  "title": "Upload Documents to Evidence Folders",
+  "module": "files",
+  "intent": "upload-document",
+  "targetAudience": "general",
+  "description": "Upload and organize supporting documents so records stay audit-ready and searchable.",
+  "prerequisites": [
+    "You have upload permissions.",
+    "The destination folder or contact linkage is identified.",
+    "Files are named according to internal standards."
+  ],
+  "steps": [
+    "Open the file or document manager module.",
+    "Navigate to the target folder for the relevant contact or workflow.",
+    "Select Upload and choose one or more files.",
+    "Apply tags, notes, or categories as needed.",
+    "Link uploaded files to the related contact, task, or record.",
+    "Confirm upload status and file visibility for your team."
+  ],
+  "validations": [
+    "Files appear in the expected folder location.",
+    "Linked contact or record shows attached evidence.",
+    "File names and metadata follow team standards."
+  ],
+  "commonErrors": [
+    "Upload fails due to file size or network issue.",
+    "File appears in wrong folder.",
+    "Team cannot access uploaded document."
+  ],
+  "recovery": [
+    "Retry upload and verify network stability.",
+    "Move file to correct folder and relink to record.",
+    "Adjust permissions or escalate to admin for access updates."
+  ],
+  "faq": [
+    {
+      "question": "Should I overwrite an existing file?",
+      "answer": "Prefer versioned names unless policy requires replacement to preserve audit history."
+    },
+    {
+      "question": "What if the wrong document was uploaded?",
+      "answer": "Remove or archive according to policy, then upload the correct file and relink."
+    }
+  ],
+  "keywords": [
+    "files",
+    "documents",
+    "upload",
+    "evidence",
+    "folders"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

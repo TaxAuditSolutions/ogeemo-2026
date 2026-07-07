@@ -1,0 +1,62 @@
+{
+  "guideId": "knowledge--reingest-guides",
+  "title": "Re-Ingest Guide Corpus for Assistant",
+  "module": "knowledge",
+  "intent": "reingest-guides",
+  "targetAudience": "admin",
+  "description": "Refresh the assistant knowledge base after workflow or documentation changes.",
+  "prerequisites": [
+    "New or updated guide JSON files exist in dev/guides.",
+    "GOOGLE_APPLICATION_CREDENTIALS is set correctly.",
+    "GOOGLE_API_KEY is present in .env.local."
+  ],
+  "steps": [
+    "Open terminal in repository root.",
+    "Run the ingestion command using the configured credentials.",
+    "Review ingestion summary for valid and invalid files.",
+    "Address any validation failures and rerun ingestion.",
+    "Confirm updated chunks are written in help_guides.",
+    "Test assistant responses with representative questions."
+  ],
+  "validations": [
+    "Ingestion summary shows expected chunk and write counts.",
+    "No vector dimension errors appear in logs.",
+    "Assistant responses improve for updated workflow intents."
+  ],
+  "commonErrors": [
+    "Missing GOOGLE_APPLICATION_CREDENTIALS.",
+    "Guide files fail validation due to incomplete fields.",
+    "Assistant still returns missing context after ingestion."
+  ],
+  "recovery": [
+    "Set credentials explicitly and rerun command.",
+    "Update guide JSON to satisfy contract and regenerate.",
+    "Verify retrieval metadata and question phrasing align with new guides."
+  ],
+  "faq": [
+    {
+      "question": "Can ingestion be rerun safely?",
+      "answer": "Yes. Deterministic document IDs allow idempotent upserts for chunk documents."
+    },
+    {
+      "question": "How often should ingestion run?",
+      "answer": "Run after material workflow changes and on a regular maintenance cadence."
+    }
+  ],
+  "keywords": [
+    "ingestion",
+    "guides",
+    "vector",
+    "assistant",
+    "knowledge-base"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

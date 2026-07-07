@@ -1,0 +1,62 @@
+{
+  "guideId": "settings--configure-role-permissions",
+  "title": "Configure Role-Based Permissions",
+  "module": "settings",
+  "intent": "configure-role-permissions",
+  "targetAudience": "admin",
+  "description": "Assign role permissions carefully so users can perform required tasks without over-privileged access.",
+  "prerequisites": [
+    "You have admin access to settings.",
+    "Role requirements are defined by function.",
+    "You understand permission impact on workflow modules."
+  ],
+  "steps": [
+    "Open Settings and go to roles or permissions management.",
+    "Select the role to create or modify.",
+    "Enable required permissions by module and action.",
+    "Remove unnecessary permissions to preserve least privilege.",
+    "Save changes and apply to test user accounts.",
+    "Validate that role can complete required workflows."
+  ],
+  "validations": [
+    "Users with the role can complete expected workflows.",
+    "Users cannot access unauthorized modules or actions.",
+    "Permission changes are logged for audit traceability."
+  ],
+  "commonErrors": [
+    "Role loses access to critical workflow step.",
+    "Permission update not reflected immediately.",
+    "Role has excessive access after edits."
+  ],
+  "recovery": [
+    "Restore known-good permission baseline and retest.",
+    "Refresh session or reauthenticate and test again.",
+    "Revoke unnecessary permissions and document change rationale."
+  ],
+  "faq": [
+    {
+      "question": "How do I test role changes safely?",
+      "answer": "Use a dedicated test account per role before rolling changes into production users."
+    },
+    {
+      "question": "When should roles be reviewed?",
+      "answer": "Review roles during onboarding/offboarding and periodic access audits."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "roles",
+    "permissions",
+    "admin",
+    "security"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

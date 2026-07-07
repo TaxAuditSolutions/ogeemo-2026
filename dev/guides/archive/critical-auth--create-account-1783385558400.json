@@ -1,0 +1,64 @@
+{
+  "guideId": "auth--create-account",
+  "title": "Create Account in Auth",
+  "module": "auth",
+  "intent": "create-account",
+  "targetAudience": "general",
+  "description": "Complete the create account workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for create account are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the create account entry point in the module workflow.",
+    "Enter or select the required inputs for create account.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Account completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create account.",
+    "Permission constraints prevent completion of create account.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create account.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create account?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create account is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "create-account",
+    "general",
+    "onboarding",
+    "create",
+    "account",
+    "create account"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T00:52:38.397Z",
+  "lastVerifiedAt": "2026-07-07T00:52:38.397Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--create-account"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

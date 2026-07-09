@@ -180,12 +180,7 @@ export default function AiDispatchPage() {
         setIsThinking(true);
 
         try {
-            const assistantUrl = process.env.NEXT_PUBLIC_OGEEMO_API_URL;
-            if (!assistantUrl) {
-                throw new Error('NEXT_PUBLIC_OGEEMO_API_URL is not set.');
-            }
-
-            const response = await fetch(assistantUrl, {
+            const response = await fetch('/api/ogeemo-assistant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

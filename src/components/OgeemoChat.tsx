@@ -17,12 +17,7 @@ export default function OgeemoChat() {
             setIsLoading(true);
             setAnswer("");
 
-            const baseUrl = process.env.NEXT_PUBLIC_OGEEMO_API_URL;
-            if (!baseUrl) {
-                throw new Error("NEXT_PUBLIC_OGEEMO_API_URL is not set.");
-            }
-
-            const response = await fetch(baseUrl, {
+            const response = await fetch('/api/ogeemo-assistant', {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

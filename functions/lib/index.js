@@ -20,6 +20,7 @@ const MODULE_HINTS = {
     contacts: ["contact", "client", "customer", "lead", "crm"],
     files: ["file", "document", "upload", "folder", "evidence"],
     settings: ["settings", "permission", "role", "admin", "configuration"],
+    tasks: ["task", "tasks", "action", "chip", "action chip", "quick action"],
 };
 const AUDIENCE_HINTS = {
     admin: ["admin", "administrator", "owner"],
@@ -77,12 +78,85 @@ function compareByChunkPriority(a, b) {
     const indexB = typeof b.chunkIndex === "number" ? b.chunkIndex : 999;
     return indexA - indexB;
 }
+function compareSemverDescending(a, b) {
+    var _a, _b;
+    const parse = (value) => (value !== null && value !== void 0 ? value : "0.0.0")
+        .split(".")
+        .map((part) => Number.parseInt(part, 10))
+        .map((part) => (Number.isFinite(part) ? part : 0));
+    const left = parse(a);
+    const right = parse(b);
+    const maxLength = Math.max(left.length, right.length);
+    for (let index = 0; index < maxLength; index += 1) {
+        const leftPart = (_a = left[index]) !== null && _a !== void 0 ? _a : 0;
+        const rightPart = (_b = right[index]) !== null && _b !== void 0 ? _b : 0;
+        if (leftPart !== rightPart) {
+            return rightPart - leftPart;
+        }
+    }
+    return 0;
+}
+function dedupeToLatestGuideChunks(docs) {
+    var _a, _b;
+    const latestByChunk = new Map();
+    for (const item of docs) {
+        const key = [
+            (_a = item.data.guideId) !== null && _a !== void 0 ? _a : item.doc.id,
+            (_b = item.data.chunkType) !== null && _b !== void 0 ? _b : "legacy",
+            typeof item.data.chunkIndex === "number" ? item.data.chunkIndex : "na",
+        ].join("::");
+        const existing = latestByChunk.get(key);
+        if (!existing) {
+            latestByChunk.set(key, item);
+            continue;
+        }
+        if (compareSemverDescending(item.data.version, existing.data.version) < 0) {
+            latestByChunk.set(key, item);
+        }
+    }
+    return [...latestByChunk.values()];
+}
 function tokenize(text) {
     return text
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, " ")
+        .replace(/[^a-z0-9\s]/g, " ")
         .split(/\s+/)
         .filter((token) => token.length > 1);
+}
+function getQueryPhrases(question) {
+    const normalized = question.toLowerCase();
+    const phrases = [];
+    if (normalized.includes("action chip") || normalized.includes("action-chip")) {
+        phrases.push("action chip");
+    }
+    if (normalized.includes("permission error") || normalized.includes("access denied")) {
+        phrases.push("permission error");
+    }
+    if (normalized.includes("permission") && normalized.includes("denied")) {
+        phrases.push("permission denied");
+    }
+    return phrases;
+}
+function scorePhraseMatch(phrases, data) {
+    var _a, _b, _c, _d;
+    if (phrases.length === 0) {
+        return 0;
+    }
+    const haystack = [
+        (_a = data.title) !== null && _a !== void 0 ? _a : "",
+        (_b = data.intent) !== null && _b !== void 0 ? _b : "",
+        ((_c = data.keywords) !== null && _c !== void 0 ? _c : []).join(" "),
+        (_d = data.chunkText) !== null && _d !== void 0 ? _d : "",
+    ]
+        .join(" ")
+        .toLowerCase();
+    let score = 0;
+    for (const phrase of phrases) {
+        if (haystack.includes(phrase)) {
+            score += 8;
+        }
+    }
+    return score;
 }
 function scoreDocumentAgainstQuestion(question, data) {
     var _a, _b, _c, _d, _e, _f;
@@ -119,10 +193,14 @@ function inferIntentFromQuestion(question) {
         { intent: "link-document-to-contact", required: ["link", "document", "contact"] },
         { intent: "recover-missing-document", required: ["recover", "missing", "document"] },
         { intent: "validate-export", required: ["validate", "export"] },
+        { intent: "reconcile-transactions", required: ["reconcile", "transactions"] },
+        { intent: "reconcile-transactions", required: ["reconcile", "transaction"] },
         { intent: "correct-payroll-error", required: ["correct", "payroll", "error"] },
         { intent: "create-worker-profile", required: ["create", "worker", "profile"] },
         { intent: "convert-lead", required: ["convert", "lead"] },
         { intent: "merge-duplicates", required: ["merge", "duplicate"] },
+        { intent: "fix-action-chip-permission-error", required: ["fix", "action", "chip", "permission", "error"] },
+        { intent: "fix-action-chip-permission-error", required: ["action", "chip", "permission", "denied"] },
     ];
     for (const rule of rules) {
         if (rule.required.every((term) => normalized.includes(term))) {
@@ -132,7 +210,7 @@ function inferIntentFromQuestion(question) {
     return undefined;
 }
 exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-central1", secrets: ["GOOGLE_API_KEY"] }, async (req, res) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     try {
         if (req.method !== "POST") {
             res.status(405).json({ error: "Method not allowed. Use POST." });
@@ -200,8 +278,12 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 .get();
             if (!intentSnapshot.empty) {
                 const seen = new Set(snapshot.docs.map((doc) => doc.id));
-                const mergedDocs = [...snapshot.docs];
+                // Prioritize exact-intent docs first, then fill from vector-nearest docs.
+                const mergedDocs = [...intentSnapshot.docs];
                 for (const doc of intentSnapshot.docs) {
+                    seen.add(doc.id);
+                }
+                for (const doc of snapshot.docs) {
                     if (!seen.has(doc.id)) {
                         mergedDocs.push(doc);
                         seen.add(doc.id);
@@ -211,23 +293,83 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
             }
         }
         // 3) Build context from retrieved docs
-        const contextChunks = [];
-        const rankedDocs = [...snapshot.docs]
+        const queryPhrases = getQueryPhrases(question);
+        const scoredDocs = [...snapshot.docs]
             .map((doc) => {
             const data = doc.data();
             return {
                 doc,
                 data,
+                isExactIntentMatch: typeof data.intent === "string" &&
+                    typeof intentHint === "string" &&
+                    data.intent === intentHint,
                 lexicalScore: scoreDocumentAgainstQuestion(question, data),
+                phraseScore: scorePhraseMatch(queryPhrases, data),
             };
         })
+            .filter((item) => Boolean(item.data.intent || item.data.chunkText || item.data.title));
+        const latestDocs = dedupeToLatestGuideChunks(scoredDocs);
+        const rankedDocs = latestDocs
             .sort((a, b) => {
+            if (a.isExactIntentMatch !== b.isExactIntentMatch) {
+                return a.isExactIntentMatch ? -1 : 1;
+            }
+            if (b.phraseScore !== a.phraseScore) {
+                return b.phraseScore - a.phraseScore;
+            }
             if (b.lexicalScore !== a.lexicalScore) {
                 return b.lexicalScore - a.lexicalScore;
             }
             return compareByChunkPriority(a.data, b.data);
         })
             .slice(0, 8);
+        // If exact intent chunks exist, return a deterministic procedural answer.
+        const exactIntentDocs = rankedDocs
+            .filter((item) => item.isExactIntentMatch)
+            .sort((a, b) => compareByChunkPriority(a.data, b.data));
+        if (exactIntentDocs.length > 0) {
+            const firstData = exactIntentDocs[0].data;
+            const sectionByType = new Map();
+            for (const item of exactIntentDocs) {
+                const type = (_c = item.data.chunkType) !== null && _c !== void 0 ? _c : "legacy";
+                const text = ((_d = item.data.chunkText) !== null && _d !== void 0 ? _d : "").trim();
+                if (!text) {
+                    continue;
+                }
+                if (!sectionByType.has(type)) {
+                    sectionByType.set(type, text);
+                }
+            }
+            const overview = (_e = sectionByType.get("overview")) !== null && _e !== void 0 ? _e : "";
+            const prerequisites = (_f = sectionByType.get("prerequisites")) !== null && _f !== void 0 ? _f : "";
+            const steps = (_g = sectionByType.get("steps")) !== null && _g !== void 0 ? _g : "";
+            const troubleshooting = (_h = sectionByType.get("troubleshooting")) !== null && _h !== void 0 ? _h : "";
+            const validations = (_j = sectionByType.get("validations")) !== null && _j !== void 0 ? _j : "";
+            const answerTitle = (firstData.title && firstData.title.trim().length > 0)
+                ? firstData.title.trim()
+                : (((_k = firstData.intent) !== null && _k !== void 0 ? _k : "workflow")
+                    .split("-")
+                    .filter((part) => part.length > 0)
+                    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(" "));
+            const deterministicAnswer = [
+                `${answerTitle} (${(_l = firstData.module) !== null && _l !== void 0 ? _l : "general"}):`,
+                "",
+                prerequisites ? "Prerequisites:\n" + prerequisites : "",
+                steps ? "Steps:\n" + steps : "",
+                troubleshooting ? "Troubleshooting:\n" + troubleshooting : "",
+                validations ? "Validation:\n" + validations : "",
+                overview ? "Reference:\n" + overview : "",
+            ]
+                .filter(Boolean)
+                .join("\n\n")
+                .trim();
+            if (deterministicAnswer.length > 0) {
+                res.status(200).json({ answer: deterministicAnswer });
+                return;
+            }
+        }
+        const contextChunks = [];
         const orderedDocs = rankedDocs.map((item) => item.doc);
         orderedDocs.forEach((doc, i) => {
             var _a, _b, _c, _d, _e, _f;

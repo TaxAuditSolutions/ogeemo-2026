@@ -21,3 +21,9 @@ admin,settings,configure-role-permissions,admin,critical,verified,copilot-auto-v
 admin,settings,audit-configuration-changes,admin,important,verified,copilot-auto-verify,settings--audit-configuration-changes
 assistant,knowledge,reingest-guides,admin,critical,verified,copilot-auto-verify,knowledge--reingest-guides
 assistant,knowledge,diagnose-assistant-errors,admin,critical,verified,copilot-auto-verify,knowledge--diagnose-assistant-errors
+productivity,tasks,create-action-chip,general,critical,verified,copilot-auto-verify,tasks--create-action-chip
+productivity,tasks,edit-action-chip,general,important,verified,copilot-auto-verify,tasks--edit-action-chip
+productivity,tasks,assign-action-chip,admin,important,verified,copilot-auto-verify,tasks--assign-action-chip
+productivity,tasks,complete-action-chip,general,critical,verified,copilot-auto-verify,tasks--complete-action-chip
+productivity,tasks,troubleshoot-action-chip-not-saving,general,critical,verified,copilot-auto-verify,tasks--troubleshoot-action-chip-not-saving
+productivity,tasks,fix-action-chip-permission-error,admin,important,verified,copilot-auto-verify,tasks--fix-action-chip-permission-error

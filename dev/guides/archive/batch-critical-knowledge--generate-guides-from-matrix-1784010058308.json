@@ -1,0 +1,66 @@
+{
+  "guideId": "knowledge--generate-guides-from-matrix",
+  "title": "Generate Guides From Matrix in Knowledge",
+  "module": "knowledge",
+  "intent": "generate-guides-from-matrix",
+  "targetAudience": "admin",
+  "description": "Complete the generate guides from matrix workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for generate guides from matrix are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the generate guides from matrix entry point in the module workflow.",
+    "Enter or select the required inputs for generate guides from matrix.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Generate Guides From Matrix completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during generate guides from matrix.",
+    "Permission constraints prevent completion of generate guides from matrix.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun generate guides from matrix.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun generate guides from matrix?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm generate guides from matrix is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "generate-guides-from-matrix",
+    "admin",
+    "assistant",
+    "generate",
+    "guides",
+    "from",
+    "matrix",
+    "generate guides from matrix"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.308Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.308Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--generate-guides-from-matrix"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

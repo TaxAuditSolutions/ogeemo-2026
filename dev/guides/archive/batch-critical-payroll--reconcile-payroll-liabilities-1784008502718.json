@@ -1,0 +1,63 @@
+{
+  "guideId": "payroll--reconcile-payroll-liabilities",
+  "title": "Reconcile Payroll Liabilities in Payroll",
+  "module": "payroll",
+  "intent": "reconcile-payroll-liabilities",
+  "targetAudience": "accountant",
+  "description": "Complete the reconcile payroll liabilities workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for reconcile payroll liabilities are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the reconcile payroll liabilities entry point in the module workflow.",
+    "Enter or select the required inputs for reconcile payroll liabilities.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Reconcile Payroll Liabilities completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during reconcile payroll liabilities.",
+    "Permission constraints prevent completion of reconcile payroll liabilities.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun reconcile payroll liabilities.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun reconcile payroll liabilities?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm reconcile payroll liabilities is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "reconcile-payroll-liabilities",
+    "accountant",
+    "reconcile",
+    "liabilities",
+    "reconcile payroll liabilities"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:02.718Z",
+  "lastVerifiedAt": "2026-07-14T05:55:02.718Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--reconcile-payroll-liabilities"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

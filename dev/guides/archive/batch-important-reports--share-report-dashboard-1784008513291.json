@@ -1,0 +1,65 @@
+{
+  "guideId": "reports--share-report-dashboard",
+  "title": "Share Report Dashboard in Reports",
+  "module": "reports",
+  "intent": "share-report-dashboard",
+  "targetAudience": "general",
+  "description": "Complete the share report dashboard workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for share report dashboard are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the share report dashboard entry point in the module workflow.",
+    "Enter or select the required inputs for share report dashboard.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Share Report Dashboard completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during share report dashboard.",
+    "Permission constraints prevent completion of share report dashboard.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun share report dashboard.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun share report dashboard?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm share report dashboard is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "share-report-dashboard",
+    "general",
+    "reporting",
+    "share",
+    "report",
+    "dashboard",
+    "share report dashboard"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.291Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.291Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--share-report-dashboard"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,65 @@
+{
+  "guideId": "calendar--resolve-calendar-sync-error",
+  "title": "Resolve Calendar Sync Error in Calendar",
+  "module": "calendar",
+  "intent": "resolve-calendar-sync-error",
+  "targetAudience": "admin",
+  "description": "Complete the resolve calendar sync error workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for resolve calendar sync error are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the resolve calendar sync error entry point in the module workflow.",
+    "Enter or select the required inputs for resolve calendar sync error.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Calendar Sync Error completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve calendar sync error.",
+    "Permission constraints prevent completion of resolve calendar sync error.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve calendar sync error.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve calendar sync error?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve calendar sync error is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "resolve-calendar-sync-error",
+    "admin",
+    "productivity",
+    "resolve",
+    "sync",
+    "error",
+    "resolve calendar sync error"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:29.166Z",
+  "lastVerifiedAt": "2026-07-14T06:49:29.166Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--resolve-calendar-sync-error"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

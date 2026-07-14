@@ -1,0 +1,64 @@
+{
+  "guideId": "settings--configure-module-access",
+  "title": "Configure Module Access in Settings",
+  "module": "settings",
+  "intent": "configure-module-access",
+  "targetAudience": "admin",
+  "description": "Complete the configure module access workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for configure module access are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the configure module access entry point in the module workflow.",
+    "Enter or select the required inputs for configure module access.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Configure Module Access completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during configure module access.",
+    "Permission constraints prevent completion of configure module access.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun configure module access.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun configure module access?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm configure module access is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "configure-module-access",
+    "admin",
+    "configure",
+    "module",
+    "access",
+    "configure module access"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.299Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.299Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--configure-module-access"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

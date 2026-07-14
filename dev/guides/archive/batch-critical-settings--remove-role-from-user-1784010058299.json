@@ -1,0 +1,65 @@
+{
+  "guideId": "settings--remove-role-from-user",
+  "title": "Remove Role From User in Settings",
+  "module": "settings",
+  "intent": "remove-role-from-user",
+  "targetAudience": "admin",
+  "description": "Complete the remove role from user workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for remove role from user are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the remove role from user entry point in the module workflow.",
+    "Enter or select the required inputs for remove role from user.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Remove Role From User completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during remove role from user.",
+    "Permission constraints prevent completion of remove role from user.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun remove role from user.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun remove role from user?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm remove role from user is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "remove-role-from-user",
+    "admin",
+    "remove",
+    "role",
+    "from",
+    "user",
+    "remove role from user"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.299Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.299Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--remove-role-from-user"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,65 @@
+{
+  "guideId": "reports--export-report-pdf",
+  "title": "Export Report Pdf in Reports",
+  "module": "reports",
+  "intent": "export-report-pdf",
+  "targetAudience": "general",
+  "description": "Complete the export report pdf workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for export report pdf are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the export report pdf entry point in the module workflow.",
+    "Enter or select the required inputs for export report pdf.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Export Report Pdf completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during export report pdf.",
+    "Permission constraints prevent completion of export report pdf.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun export report pdf.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun export report pdf?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm export report pdf is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "export-report-pdf",
+    "general",
+    "reporting",
+    "export",
+    "report",
+    "pdf",
+    "export report pdf"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.294Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.294Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--export-report-pdf"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

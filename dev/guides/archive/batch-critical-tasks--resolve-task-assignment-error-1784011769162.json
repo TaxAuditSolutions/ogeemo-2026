@@ -1,0 +1,66 @@
+{
+  "guideId": "tasks--resolve-task-assignment-error",
+  "title": "Resolve Task Assignment Error in Tasks",
+  "module": "tasks",
+  "intent": "resolve-task-assignment-error",
+  "targetAudience": "admin",
+  "description": "Complete the resolve task assignment error workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for resolve task assignment error are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the resolve task assignment error entry point in the module workflow.",
+    "Enter or select the required inputs for resolve task assignment error.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Task Assignment Error completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve task assignment error.",
+    "Permission constraints prevent completion of resolve task assignment error.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve task assignment error.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve task assignment error?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve task assignment error is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "resolve-task-assignment-error",
+    "admin",
+    "productivity",
+    "resolve",
+    "task",
+    "assignment",
+    "error",
+    "resolve task assignment error"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:29.162Z",
+  "lastVerifiedAt": "2026-07-14T06:49:29.162Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--resolve-task-assignment-error"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

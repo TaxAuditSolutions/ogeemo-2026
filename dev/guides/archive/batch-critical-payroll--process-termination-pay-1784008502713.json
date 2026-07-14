@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--process-termination-pay",
+  "title": "Process Termination Pay in Payroll",
+  "module": "payroll",
+  "intent": "process-termination-pay",
+  "targetAudience": "accountant",
+  "description": "Complete the process termination pay workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for process termination pay are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the process termination pay entry point in the module workflow.",
+    "Enter or select the required inputs for process termination pay.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Process Termination Pay completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during process termination pay.",
+    "Permission constraints prevent completion of process termination pay.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun process termination pay.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun process termination pay?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm process termination pay is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "process-termination-pay",
+    "accountant",
+    "process",
+    "termination",
+    "pay",
+    "process termination pay"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:02.713Z",
+  "lastVerifiedAt": "2026-07-14T05:55:02.713Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--process-termination-pay"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

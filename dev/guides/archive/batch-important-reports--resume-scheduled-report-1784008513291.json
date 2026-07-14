@@ -1,0 +1,65 @@
+{
+  "guideId": "reports--resume-scheduled-report",
+  "title": "Resume Scheduled Report in Reports",
+  "module": "reports",
+  "intent": "resume-scheduled-report",
+  "targetAudience": "admin",
+  "description": "Complete the resume scheduled report workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for resume scheduled report are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the resume scheduled report entry point in the module workflow.",
+    "Enter or select the required inputs for resume scheduled report.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resume Scheduled Report completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resume scheduled report.",
+    "Permission constraints prevent completion of resume scheduled report.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resume scheduled report.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resume scheduled report?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resume scheduled report is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "resume-scheduled-report",
+    "admin",
+    "reporting",
+    "resume",
+    "scheduled",
+    "report",
+    "resume scheduled report"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.291Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.291Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--resume-scheduled-report"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

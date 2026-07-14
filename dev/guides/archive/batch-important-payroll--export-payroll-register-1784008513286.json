@@ -1,0 +1,63 @@
+{
+  "guideId": "payroll--export-payroll-register",
+  "title": "Export Payroll Register in Payroll",
+  "module": "payroll",
+  "intent": "export-payroll-register",
+  "targetAudience": "accountant",
+  "description": "Complete the export payroll register workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for export payroll register are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the export payroll register entry point in the module workflow.",
+    "Enter or select the required inputs for export payroll register.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Export Payroll Register completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during export payroll register.",
+    "Permission constraints prevent completion of export payroll register.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun export payroll register.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun export payroll register?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm export payroll register is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "export-payroll-register",
+    "accountant",
+    "export",
+    "register",
+    "export payroll register"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.286Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.286Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--export-payroll-register"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,64 @@
+{
+  "guideId": "calendar--disconnect-calendar-provider",
+  "title": "Disconnect Calendar Provider in Calendar",
+  "module": "calendar",
+  "intent": "disconnect-calendar-provider",
+  "targetAudience": "admin",
+  "description": "Complete the disconnect calendar provider workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for disconnect calendar provider are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the disconnect calendar provider entry point in the module workflow.",
+    "Enter or select the required inputs for disconnect calendar provider.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Disconnect Calendar Provider completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during disconnect calendar provider.",
+    "Permission constraints prevent completion of disconnect calendar provider.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun disconnect calendar provider.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun disconnect calendar provider?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm disconnect calendar provider is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "disconnect-calendar-provider",
+    "admin",
+    "productivity",
+    "disconnect",
+    "provider",
+    "disconnect calendar provider"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.240Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.240Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--disconnect-calendar-provider"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

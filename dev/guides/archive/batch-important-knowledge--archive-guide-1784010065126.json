@@ -1,0 +1,64 @@
+{
+  "guideId": "knowledge--archive-guide",
+  "title": "Archive Guide in Knowledge",
+  "module": "knowledge",
+  "intent": "archive-guide",
+  "targetAudience": "admin",
+  "description": "Complete the archive guide workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for archive guide are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the archive guide entry point in the module workflow.",
+    "Enter or select the required inputs for archive guide.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Archive Guide completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during archive guide.",
+    "Permission constraints prevent completion of archive guide.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun archive guide.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun archive guide?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm archive guide is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "archive-guide",
+    "admin",
+    "assistant",
+    "archive",
+    "guide",
+    "archive guide"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:21:05.126Z",
+  "lastVerifiedAt": "2026-07-14T06:21:05.126Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--archive-guide"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

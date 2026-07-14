@@ -1,0 +1,66 @@
+{
+  "guideId": "auth--troubleshoot-sso-login-failure",
+  "title": "Troubleshoot Sso Login Failure in Auth",
+  "module": "auth",
+  "intent": "troubleshoot-sso-login-failure",
+  "targetAudience": "admin",
+  "description": "Complete the troubleshoot sso login failure workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for troubleshoot sso login failure are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the troubleshoot sso login failure entry point in the module workflow.",
+    "Enter or select the required inputs for troubleshoot sso login failure.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Troubleshoot Sso Login Failure completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during troubleshoot sso login failure.",
+    "Permission constraints prevent completion of troubleshoot sso login failure.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun troubleshoot sso login failure.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun troubleshoot sso login failure?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm troubleshoot sso login failure is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "troubleshoot-sso-login-failure",
+    "admin",
+    "onboarding",
+    "troubleshoot",
+    "sso",
+    "login",
+    "failure",
+    "troubleshoot sso login failure"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:13.169Z",
+  "lastVerifiedAt": "2026-07-14T04:48:13.169Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--troubleshoot-sso-login-failure"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

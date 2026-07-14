@@ -1,0 +1,65 @@
+{
+  "guideId": "files--unlock-document-after-review",
+  "title": "Unlock Document After Review in Files",
+  "module": "files",
+  "intent": "unlock-document-after-review",
+  "targetAudience": "admin",
+  "description": "Complete the unlock document after review workflow in the Files module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Files module in the current Ogeemo environment.",
+    "Required data inputs for unlock document after review are prepared before starting."
+  ],
+  "steps": [
+    "Open the Files module from the main navigation.",
+    "Locate the unlock document after review entry point in the module workflow.",
+    "Enter or select the required inputs for unlock document after review.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Unlock Document After Review completes without warnings or blockers.",
+    "Resulting records are visible in the expected Files views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during unlock document after review.",
+    "Permission constraints prevent completion of unlock document after review.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun unlock document after review.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun unlock document after review?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm unlock document after review is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "files",
+    "unlock-document-after-review",
+    "admin",
+    "unlock",
+    "document",
+    "after",
+    "review",
+    "unlock document after review"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.306Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.306Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for files--unlock-document-after-review"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

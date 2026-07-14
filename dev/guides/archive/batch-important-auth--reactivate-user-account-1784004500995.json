@@ -1,0 +1,65 @@
+{
+  "guideId": "auth--reactivate-user-account",
+  "title": "Reactivate User Account in Auth",
+  "module": "auth",
+  "intent": "reactivate-user-account",
+  "targetAudience": "admin",
+  "description": "Complete the reactivate user account workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for reactivate user account are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the reactivate user account entry point in the module workflow.",
+    "Enter or select the required inputs for reactivate user account.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Reactivate User Account completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during reactivate user account.",
+    "Permission constraints prevent completion of reactivate user account.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun reactivate user account.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun reactivate user account?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm reactivate user account is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "reactivate-user-account",
+    "admin",
+    "onboarding",
+    "reactivate",
+    "user",
+    "account",
+    "reactivate user account"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:20.995Z",
+  "lastVerifiedAt": "2026-07-14T04:48:20.995Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--reactivate-user-account"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

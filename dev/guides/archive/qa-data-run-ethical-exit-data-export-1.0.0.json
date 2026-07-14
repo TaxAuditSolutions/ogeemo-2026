@@ -1,0 +1,60 @@
+{
+    "guideId": "data--run-ethical-exit-data-export",
+    "title": "Run Ethical Exit Data Export",
+    "module": "data",
+    "intent": "run-ethical-exit-data-export",
+    "targetAudience": "admin",
+    "description": "Export complete business data with transparent, fee-free access following the Ethical Exit principle.",
+    "prerequisites": [
+        "You have admin-level data export permissions.",
+        "You know the required export scope and retention destination.",
+        "A secure storage destination is prepared for exported archives."
+    ],
+    "steps": [
+        "Open data governance or export settings and choose full Ethical Exit export mode.",
+        "Select required datasets, including operational ledger, contact directory, and document history.",
+        "Run a pre-export validation to confirm no permission blockers or missing scopes.",
+        "Start export and monitor completion status for each dataset package.",
+        "Download and store archives in approved secure storage with integrity checks.",
+        "Validate exported files can be opened and reconciled against in-system counts before offboarding."
+    ],
+    "validations": [
+        "All selected datasets are included in the export archive.",
+        "Record counts in exported data match system totals.",
+        "No hidden fees or blocked export paths are encountered."
+    ],
+    "commonErrors": [
+        "Export scope omits key dataset families.",
+        "Archive completes but file integrity validation fails.",
+        "User role lacks permission to initiate full export."
+    ],
+    "recovery": [
+        "Re-run export with full dataset selection and confirm scope checklist.",
+        "Regenerate corrupted archive segments and recompute checksums.",
+        "Temporarily elevate admin permissions for final export execution and audit logging."
+    ],
+    "faq": [
+        {
+            "question": "Can I export everything if I leave the platform?",
+            "answer": "Yes. Ethical Exit supports full export of operational, financial, and document history data."
+        },
+        {
+            "question": "What should I verify before offboarding?",
+            "answer": "Verify completeness, integrity, and readability of exported archives against system counts."
+        }
+    ],
+    "keywords": [
+        "ethical exit",
+        "data export",
+        "ledger export",
+        "document history",
+        "offboarding",
+        "data ownership"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

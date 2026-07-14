@@ -1,0 +1,63 @@
+{
+  "guideId": "accounting--create-bill",
+  "title": "Create Bill in Accounting",
+  "module": "accounting",
+  "intent": "create-bill",
+  "targetAudience": "accountant",
+  "description": "Complete the create bill workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for create bill are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the create bill entry point in the module workflow.",
+    "Enter or select the required inputs for create bill.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Bill completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create bill.",
+    "Permission constraints prevent completion of create bill.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create bill.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create bill?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create bill is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "create-bill",
+    "accountant",
+    "create",
+    "bill",
+    "create bill"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:47.399Z",
+  "lastVerifiedAt": "2026-07-14T05:30:47.399Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--create-bill"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

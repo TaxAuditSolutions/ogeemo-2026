@@ -1,0 +1,60 @@
+{
+    "guideId": "payroll--pay-contractor-via-unified-identity",
+    "title": "Pay a Contractor via Unified Identity",
+    "module": "payroll",
+    "intent": "pay-contractor-via-unified-identity",
+    "targetAudience": "admin",
+    "description": "Pay freelance contractors using one unified profile shared across contacts, payroll, communication, and expense tracking.",
+    "prerequisites": [
+        "You can manage contact records and run payroll.",
+        "Contractor onboarding details are available.",
+        "You have permission to assign contact folders and payroll visibility."
+    ],
+    "steps": [
+        "Create or open the contractor's record in Contact Directory and avoid creating separate duplicate profiles in other systems.",
+        "Assign the contact to the Contractors folder to classify them for payroll and operational workflows.",
+        "Open Run Payroll and verify the contractor appears automatically from the same unified identity.",
+        "Log approved contractor time and applicable expenses against this profile.",
+        "Generate and process contractor payment from payroll, keeping all references tied to the unified identity.",
+        "Confirm the same identity remains usable for communication, payment history, and operational reporting."
+    ],
+    "validations": [
+        "Contractor appears in payroll from the same contact identity.",
+        "Time, expense, and payment records reference one profile ID.",
+        "No duplicate contractor profiles exist across CRM and payroll areas."
+    ],
+    "commonErrors": [
+        "Separate contractor records are created in CRM and payroll.",
+        "Contractor not visible in Run Payroll after profile setup.",
+        "Expenses logged under a different identity than payment record."
+    ],
+    "recovery": [
+        "Merge duplicate contractor profiles and preserve the canonical unified identity.",
+        "Reclassify contractor folder assignment and refresh payroll listing.",
+        "Relink misfiled time/expense entries to the canonical contractor record."
+    ],
+    "faq": [
+        {
+            "question": "Should contractors live in HR or CRM?",
+            "answer": "Use one unified contact identity that serves both operational communication and payroll workflows."
+        },
+        {
+            "question": "Can I track communication and payments under one profile?",
+            "answer": "Yes. Unified Identity keeps email, time, expenses, and payments tethered to the same entity."
+        }
+    ],
+    "keywords": [
+        "unified identity",
+        "contractor payroll",
+        "contact directory",
+        "run payroll",
+        "single profile",
+        "avoid duplicates"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

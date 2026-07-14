@@ -1,0 +1,65 @@
+{
+  "guideId": "auth--manage-session-timeout",
+  "title": "Manage Session Timeout in Auth",
+  "module": "auth",
+  "intent": "manage-session-timeout",
+  "targetAudience": "admin",
+  "description": "Complete the manage session timeout workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for manage session timeout are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the manage session timeout entry point in the module workflow.",
+    "Enter or select the required inputs for manage session timeout.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Manage Session Timeout completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during manage session timeout.",
+    "Permission constraints prevent completion of manage session timeout.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun manage session timeout.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun manage session timeout?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm manage session timeout is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "manage-session-timeout",
+    "admin",
+    "onboarding",
+    "manage",
+    "session",
+    "timeout",
+    "manage session timeout"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:20.995Z",
+  "lastVerifiedAt": "2026-07-14T04:48:20.995Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--manage-session-timeout"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

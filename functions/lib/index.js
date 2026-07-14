@@ -196,7 +196,25 @@ function inferIntentFromQuestion(question) {
         { intent: "reconcile-transactions", required: ["reconcile", "transactions"] },
         { intent: "reconcile-transactions", required: ["reconcile", "transaction"] },
         { intent: "correct-payroll-error", required: ["correct", "payroll", "error"] },
+        { intent: "start-lead-from-email-action-chip", required: ["lead", "email", "action", "chip"] },
+        { intent: "prepare-for-cra-audit", required: ["cra", "audit"] },
+        { intent: "pay-contractor-via-unified-identity", required: ["pay", "contractor", "unified", "identity"] },
+        { intent: "configure-hytexercise-break-routine", required: ["hytexercise", "routine"] },
+        { intent: "capture-idea-during-active-workflow", required: ["capture", "idea", "workflow"] },
+        { intent: "improve-imagen-campaign-output", required: ["imagen", "campaign", "image"] },
+        { intent: "run-ethical-exit-data-export", required: ["ethical", "exit", "export"] },
         { intent: "create-worker-profile", required: ["create", "worker", "profile"] },
+        { intent: "map-sso-roles", required: ["map", "sso", "roles"] },
+        { intent: "update-profile-security-settings", required: ["update", "profile", "security", "settings"] },
+        { intent: "export-contact-list", required: ["export", "contact", "list"] },
+        { intent: "schedule-follow-up-task", required: ["schedule", "follow", "up", "task"] },
+        { intent: "resolve-upload-size-error", required: ["resolve", "upload", "size", "error"] },
+        { intent: "record-customer-payment", required: ["record", "customer", "payment"] },
+        { intent: "record-vendor-payment", required: ["record", "vendor", "payment"] },
+        { intent: "match-bank-feed-transactions", required: ["match", "bank", "feed", "transactions"] },
+        { intent: "match-bank-feed-transactions", required: ["match", "bank", "feed", "transaction"] },
+        { intent: "schedule-bill-payment", required: ["schedule", "bill", "payment"] },
+        { intent: "handle-duplicate-transaction", required: ["handle", "duplicate", "transaction"] },
         { intent: "convert-lead", required: ["convert", "lead"] },
         { intent: "merge-duplicates", required: ["merge", "duplicate"] },
         { intent: "fix-action-chip-permission-error", required: ["fix", "action", "chip", "permission", "error"] },
@@ -210,7 +228,7 @@ function inferIntentFromQuestion(question) {
     return undefined;
 }
 exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-central1", secrets: ["GOOGLE_API_KEY"] }, async (req, res) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     try {
         if (req.method !== "POST") {
             res.status(405).json({ error: "Method not allowed. Use POST." });
@@ -227,6 +245,10 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
             res.status(400).json({ error: "Missing question in request body." });
             return;
         }
+        const requestedMode = ((_d = (_c = req.body) === null || _c === void 0 ? void 0 : _c.mode) !== null && _d !== void 0 ? _d : "").toString().toLowerCase();
+        const responseMode = requestedMode === "verification"
+            ? "verification"
+            : "chat";
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         // 1) Embed user question
         const embeddingModel = genAI.getGenerativeModel({
@@ -270,11 +292,12 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
             snapshot = await runSearch(false);
         }
         const intentHint = inferIntentFromQuestion(question);
+        let intentSnapshot = null;
         if (intentHint) {
-            const intentSnapshot = await db
+            intentSnapshot = await db
                 .collection("help_guides")
                 .where("intent", "==", intentHint)
-                .limit(8)
+                .limit(24)
                 .get();
             if (!intentSnapshot.empty) {
                 const seen = new Set(snapshot.docs.map((doc) => doc.id));
@@ -291,6 +314,10 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 }
                 snapshot = Object.assign(Object.assign({}, snapshot), { docs: mergedDocs });
             }
+        }
+        // Intent-first fallback: when an inferred intent has direct docs, use those docs only.
+        if (intentSnapshot && !intentSnapshot.empty) {
+            snapshot = Object.assign(Object.assign({}, snapshot), { docs: [...intentSnapshot.docs] });
         }
         // 3) Build context from retrieved docs
         const queryPhrases = getQueryPhrases(question);
@@ -327,12 +354,13 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
         const exactIntentDocs = rankedDocs
             .filter((item) => item.isExactIntentMatch)
             .sort((a, b) => compareByChunkPriority(a.data, b.data));
+        let exactIntentStructuredAnswer = "";
         if (exactIntentDocs.length > 0) {
             const firstData = exactIntentDocs[0].data;
             const sectionByType = new Map();
             for (const item of exactIntentDocs) {
-                const type = (_c = item.data.chunkType) !== null && _c !== void 0 ? _c : "legacy";
-                const text = ((_d = item.data.chunkText) !== null && _d !== void 0 ? _d : "").trim();
+                const type = (_e = item.data.chunkType) !== null && _e !== void 0 ? _e : "legacy";
+                const text = ((_f = item.data.chunkText) !== null && _f !== void 0 ? _f : "").trim();
                 if (!text) {
                     continue;
                 }
@@ -340,20 +368,20 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                     sectionByType.set(type, text);
                 }
             }
-            const overview = (_e = sectionByType.get("overview")) !== null && _e !== void 0 ? _e : "";
-            const prerequisites = (_f = sectionByType.get("prerequisites")) !== null && _f !== void 0 ? _f : "";
-            const steps = (_g = sectionByType.get("steps")) !== null && _g !== void 0 ? _g : "";
-            const troubleshooting = (_h = sectionByType.get("troubleshooting")) !== null && _h !== void 0 ? _h : "";
-            const validations = (_j = sectionByType.get("validations")) !== null && _j !== void 0 ? _j : "";
+            const overview = (_g = sectionByType.get("overview")) !== null && _g !== void 0 ? _g : "";
+            const prerequisites = (_h = sectionByType.get("prerequisites")) !== null && _h !== void 0 ? _h : "";
+            const steps = (_j = sectionByType.get("steps")) !== null && _j !== void 0 ? _j : "";
+            const troubleshooting = (_k = sectionByType.get("troubleshooting")) !== null && _k !== void 0 ? _k : "";
+            const validations = (_l = sectionByType.get("validations")) !== null && _l !== void 0 ? _l : "";
             const answerTitle = (firstData.title && firstData.title.trim().length > 0)
                 ? firstData.title.trim()
-                : (((_k = firstData.intent) !== null && _k !== void 0 ? _k : "workflow")
+                : (((_m = firstData.intent) !== null && _m !== void 0 ? _m : "workflow")
                     .split("-")
                     .filter((part) => part.length > 0)
                     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
                     .join(" "));
             const deterministicAnswer = [
-                `${answerTitle} (${(_l = firstData.module) !== null && _l !== void 0 ? _l : "general"}):`,
+                `${answerTitle} (${(_o = firstData.module) !== null && _o !== void 0 ? _o : "general"}):`,
                 "",
                 prerequisites ? "Prerequisites:\n" + prerequisites : "",
                 steps ? "Steps:\n" + steps : "",
@@ -365,8 +393,12 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 .join("\n\n")
                 .trim();
             if (deterministicAnswer.length > 0) {
-                res.status(200).json({ answer: deterministicAnswer });
-                return;
+                if (responseMode === "verification") {
+                    res.status(200).json({ answer: deterministicAnswer });
+                    return;
+                }
+                // Reuse the exact-intent grounded answer as context input for natural chat phrasing.
+                exactIntentStructuredAnswer = deterministicAnswer;
             }
         }
         const contextChunks = [];
@@ -399,21 +431,39 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 .filter(Boolean)
                 .join("\n"));
         });
-        const context = contextChunks.length > 0
-            ? contextChunks.join("\n\n---\n\n")
-            : "No relevant guide context found.";
+        const context = exactIntentStructuredAnswer.length > 0
+            ? exactIntentStructuredAnswer
+            : (contextChunks.length > 0
+                ? contextChunks.join("\n\n---\n\n")
+                : "No relevant guide context found.");
         // 4) Ask Gemini to answer using only retrieved context
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const prompt = [
-            "You are Ogeemo Assistant.",
-            "Answer the user's question using ONLY the provided guide context.",
-            "If the context does not contain enough information, say that clearly and suggest what is missing.",
-            "",
-            "Guide context:",
-            context,
-            "",
-            `User question: ${question}`,
-        ].join("\n");
+        const prompt = responseMode === "verification"
+            ? [
+                "You are Ogeemo Assistant.",
+                "Answer the user's question using ONLY the provided guide context.",
+                "Provide clear procedural guidance with numbered steps when possible.",
+                "If the context does not contain enough information, say that clearly and suggest what is missing.",
+                "",
+                "Guide context:",
+                context,
+                "",
+                `User question: ${question}`,
+            ].join("\n")
+            : [
+                "You are Ogeemo Assistant.",
+                "Answer the user's question using ONLY the provided guide context.",
+                "Use a natural, conversational tone suitable for chat.",
+                "Start with a short direct answer sentence, then provide practical next steps.",
+                "Do not use rigid headings like 'Prerequisites', 'Validation', or 'Reference' unless the user explicitly asks for checklist format.",
+                "Keep the response concise but actionable.",
+                "If context is insufficient, say what is missing in plain language.",
+                "",
+                "Guide context:",
+                context,
+                "",
+                `User question: ${question}`,
+            ].join("\n");
         const answerResult = await textModel.generateContent(prompt);
         const answer = answerResult.response.text().trim();
         res.status(200).json({ answer });

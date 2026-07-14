@@ -1,0 +1,60 @@
+{
+    "guideId": "wellness--configure-hytexercise-break-routine",
+    "title": "Configure Hytexercise Wellness Break Routine",
+    "module": "wellness",
+    "intent": "configure-hytexercise-break-routine",
+    "targetAudience": "general",
+    "description": "Configure Hytexercise to prompt regular desk-break exercise routines and track completion consistency.",
+    "prerequisites": [
+        "You can access the Hytexercise Wellness Manager.",
+        "Notifications and timer prompts are enabled for your profile.",
+        "You have access to My Progress dashboard."
+    ],
+    "steps": [
+        "Open Hytexercise Wellness Manager settings.",
+        "Enable the routine scheduler and set recurrence to your preferred interval, such as every 60 minutes.",
+        "Select a short routine package, such as a 5-minute chair sequence.",
+        "Save settings and confirm the popup appears at the next scheduled interval.",
+        "Complete the guided routine when prompted and mark completion honestly.",
+        "Review My Progress to track Completed vs Skipped trends and adjust schedule for consistency."
+    ],
+    "validations": [
+        "Timer prompts appear at configured intervals.",
+        "Routine completion events are recorded in My Progress.",
+        "Completed vs Skipped metrics update after each prompt cycle."
+    ],
+    "commonErrors": [
+        "Prompts do not appear at the expected time.",
+        "Routine is configured but progress metrics do not update.",
+        "Users skip routines because interval is too frequent or disruptive."
+    ],
+    "recovery": [
+        "Re-enable notifications and timer permissions, then test next trigger.",
+        "Save routine configuration again and verify dashboard refresh behavior.",
+        "Adjust interval or routine length to a sustainable cadence and monitor adherence."
+    ],
+    "faq": [
+        {
+            "question": "What interval should I start with?",
+            "answer": "A 60-minute trigger is a practical default for desk-intensive work and can be tuned later."
+        },
+        {
+            "question": "How do I measure whether the routine is working?",
+            "answer": "Use My Progress completion trends and reduce skipped sessions over time."
+        }
+    ],
+    "keywords": [
+        "hytexercise",
+        "wellness manager",
+        "desk break",
+        "chair exercises",
+        "my progress",
+        "completed vs skipped"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

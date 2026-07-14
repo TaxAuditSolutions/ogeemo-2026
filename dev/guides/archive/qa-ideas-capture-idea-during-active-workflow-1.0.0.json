@@ -1,0 +1,60 @@
+{
+    "guideId": "ideas--capture-idea-during-active-workflow",
+    "title": "Capture an Idea Without Breaking Current Workflow",
+    "module": "ideas",
+    "intent": "capture-idea-during-active-workflow",
+    "targetAudience": "general",
+    "description": "Capture strategic ideas instantly in Idea Board while preserving focus on in-progress operational tasks.",
+    "prerequisites": [
+        "You can access Idea Board.",
+        "You are signed into your current workspace session.",
+        "Idea tags/categories are available for classification."
+    ],
+    "steps": [
+        "Open Idea Board from your current workspace without abandoning the active operational task.",
+        "Create a new idea entry with a concise title and one-paragraph context.",
+        "Add tags for theme, urgency, and strategic area so the idea is easy to retrieve later.",
+        "Save the idea and return immediately to your in-progress workflow, such as payroll or task execution.",
+        "During Master Mind or strategy review sessions, filter by tags and pull the idea into discussion.",
+        "Promote selected ideas into actionable project pipelines when ready for execution."
+    ],
+    "validations": [
+        "The idea is saved and searchable by tags.",
+        "Current operational workflow remains uninterrupted after capture.",
+        "The idea can be retrieved and promoted in strategic planning sessions."
+    ],
+    "commonErrors": [
+        "Idea is saved without tags and later becomes hard to find.",
+        "User loses context of active workflow while capturing idea.",
+        "Idea never gets reviewed or promoted into execution planning."
+    ],
+    "recovery": [
+        "Edit idea metadata to add meaningful tags and ownership.",
+        "Use quick-capture template to minimize interruption time.",
+        "Set recurring strategy review to triage and promote backlog ideas."
+    ],
+    "faq": [
+        {
+            "question": "Should I fully plan an idea when it appears?",
+            "answer": "No. Capture quickly with enough context, then refine during dedicated strategy sessions."
+        },
+        {
+            "question": "How do ideas become action?",
+            "answer": "Tag, review in Master Mind sessions, then convert selected ideas into project pipeline items."
+        }
+    ],
+    "keywords": [
+        "idea board",
+        "quick capture",
+        "strategy backlog",
+        "master mind",
+        "project forge",
+        "workflow continuity"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

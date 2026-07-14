@@ -1,0 +1,65 @@
+{
+  "guideId": "files--scan-document-for-ocr",
+  "title": "Scan Document For Ocr in Files",
+  "module": "files",
+  "intent": "scan-document-for-ocr",
+  "targetAudience": "general",
+  "description": "Complete the scan document for ocr workflow in the Files module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Files module in the current Ogeemo environment.",
+    "Required data inputs for scan document for ocr are prepared before starting."
+  ],
+  "steps": [
+    "Open the Files module from the main navigation.",
+    "Locate the scan document for ocr entry point in the module workflow.",
+    "Enter or select the required inputs for scan document for ocr.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Scan Document For Ocr completes without warnings or blockers.",
+    "Resulting records are visible in the expected Files views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during scan document for ocr.",
+    "Permission constraints prevent completion of scan document for ocr.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun scan document for ocr.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun scan document for ocr?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm scan document for ocr is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "files",
+    "scan-document-for-ocr",
+    "general",
+    "scan",
+    "document",
+    "for",
+    "ocr",
+    "scan document for ocr"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.309Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.309Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for files--scan-document-for-ocr"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

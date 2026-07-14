@@ -1,0 +1,64 @@
+{
+  "guideId": "accounting--prepare-profit-loss",
+  "title": "Prepare Profit Loss in Accounting",
+  "module": "accounting",
+  "intent": "prepare-profit-loss",
+  "targetAudience": "accountant",
+  "description": "Complete the prepare profit loss workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for prepare profit loss are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the prepare profit loss entry point in the module workflow.",
+    "Enter or select the required inputs for prepare profit loss.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Prepare Profit Loss completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during prepare profit loss.",
+    "Permission constraints prevent completion of prepare profit loss.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun prepare profit loss.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun prepare profit loss?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm prepare profit loss is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "prepare-profit-loss",
+    "accountant",
+    "prepare",
+    "profit",
+    "loss",
+    "prepare profit loss"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.312Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.312Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--prepare-profit-loss"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

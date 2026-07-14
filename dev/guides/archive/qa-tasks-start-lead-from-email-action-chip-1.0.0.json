@@ -1,0 +1,60 @@
+{
+    "guideId": "tasks--start-lead-from-email-action-chip",
+    "title": "Start Lead Work from Email Using an Action Chip",
+    "module": "tasks",
+    "intent": "start-lead-from-email-action-chip",
+    "targetAudience": "general",
+    "description": "Convert a new lead email into a unified operational workflow without creating siloed records by starting with an Action Chip.",
+    "prerequisites": [
+        "You can access Email Hub, Contacts, and Tasks modules.",
+        "The inbound lead email is visible in Email Hub.",
+        "You have permission to create Action Chips and linked records."
+    ],
+    "steps": [
+        "Open Email Hub and select the lead email you want to process.",
+        "Create an Action Chip directly from that email instead of creating records in separate tools.",
+        "Confirm the chip creates or links a Unified Identity in Contact Hub for the lead.",
+        "Use the same Action Chip context to generate needed follow-on items such as a quote, time log, or Kanban task.",
+        "Keep all updates on the same chip-linked workflow so every operational event stays tethered to the lead identity.",
+        "Review the lead timeline and verify the chain of custody links email, contact identity, tasks, and financial outputs."
+    ],
+    "validations": [
+        "The lead has one Unified Identity record, not duplicate siloed records.",
+        "Generated quote, tasks, or time entries are visibly linked to the originating Action Chip.",
+        "Audit trail shows source email through to downstream operational actions."
+    ],
+    "commonErrors": [
+        "A separate CRM/contact record is created outside the Action Chip flow.",
+        "Downstream task or quote is created but not linked to the originating lead chip.",
+        "Duplicate identities appear for the same lead email."
+    ],
+    "recovery": [
+        "Merge duplicate lead identities into a single Unified Identity.",
+        "Relink orphaned quote/task/time entries to the source Action Chip.",
+        "Restart from Email Hub for future leads so linkage is automatic from step one."
+    ],
+    "faq": [
+        {
+            "question": "Why should I start from Email Hub instead of creating a separate CRM record first?",
+            "answer": "Starting from Email Hub with an Action Chip preserves a single connected record lineage and avoids siloed data."
+        },
+        {
+            "question": "Can I still create quotes and tasks from this flow?",
+            "answer": "Yes. You can generate quotes, time logs, and Kanban tasks from the same Action Chip while preserving linkage."
+        }
+    ],
+    "keywords": [
+        "action chip",
+        "email hub",
+        "unified identity",
+        "lead workflow",
+        "chain of custody",
+        "no silos"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

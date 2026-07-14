@@ -1,0 +1,66 @@
+{
+  "guideId": "contacts--validate-contact-import-errors",
+  "title": "Validate Contact Import Errors in Contacts",
+  "module": "contacts",
+  "intent": "validate-contact-import-errors",
+  "targetAudience": "admin",
+  "description": "Complete the validate contact import errors workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for validate contact import errors are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the validate contact import errors entry point in the module workflow.",
+    "Enter or select the required inputs for validate contact import errors.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Validate Contact Import Errors completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during validate contact import errors.",
+    "Permission constraints prevent completion of validate contact import errors.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun validate contact import errors.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun validate contact import errors?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm validate contact import errors is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "validate-contact-import-errors",
+    "admin",
+    "crm",
+    "validate",
+    "contact",
+    "import",
+    "errors",
+    "validate contact import errors"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:13.171Z",
+  "lastVerifiedAt": "2026-07-14T04:48:13.171Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--validate-contact-import-errors"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

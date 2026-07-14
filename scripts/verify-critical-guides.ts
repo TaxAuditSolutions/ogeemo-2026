@@ -160,7 +160,7 @@ async function askAssistant(apiUrl: string, question: string): Promise<string> {
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, mode: "verification" }),
     });
 
     let json: any = null;

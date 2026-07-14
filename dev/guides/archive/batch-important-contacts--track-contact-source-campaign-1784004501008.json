@@ -1,0 +1,66 @@
+{
+  "guideId": "contacts--track-contact-source-campaign",
+  "title": "Track Contact Source Campaign in Contacts",
+  "module": "contacts",
+  "intent": "track-contact-source-campaign",
+  "targetAudience": "consultant",
+  "description": "Complete the track contact source campaign workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for track contact source campaign are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the track contact source campaign entry point in the module workflow.",
+    "Enter or select the required inputs for track contact source campaign.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Track Contact Source Campaign completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during track contact source campaign.",
+    "Permission constraints prevent completion of track contact source campaign.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun track contact source campaign.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun track contact source campaign?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm track contact source campaign is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "track-contact-source-campaign",
+    "consultant",
+    "crm",
+    "track",
+    "contact",
+    "source",
+    "campaign",
+    "track contact source campaign"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:21.008Z",
+  "lastVerifiedAt": "2026-07-14T04:48:21.008Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--track-contact-source-campaign"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

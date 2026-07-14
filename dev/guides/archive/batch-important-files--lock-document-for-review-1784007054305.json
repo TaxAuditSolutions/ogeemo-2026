@@ -1,0 +1,65 @@
+{
+  "guideId": "files--lock-document-for-review",
+  "title": "Lock Document For Review in Files",
+  "module": "files",
+  "intent": "lock-document-for-review",
+  "targetAudience": "admin",
+  "description": "Complete the lock document for review workflow in the Files module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Files module in the current Ogeemo environment.",
+    "Required data inputs for lock document for review are prepared before starting."
+  ],
+  "steps": [
+    "Open the Files module from the main navigation.",
+    "Locate the lock document for review entry point in the module workflow.",
+    "Enter or select the required inputs for lock document for review.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Lock Document For Review completes without warnings or blockers.",
+    "Resulting records are visible in the expected Files views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during lock document for review.",
+    "Permission constraints prevent completion of lock document for review.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun lock document for review.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun lock document for review?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm lock document for review is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "files",
+    "lock-document-for-review",
+    "admin",
+    "lock",
+    "document",
+    "for",
+    "review",
+    "lock document for review"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.305Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.305Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for files--lock-document-for-review"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

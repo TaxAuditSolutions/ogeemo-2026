@@ -1,0 +1,65 @@
+{
+  "guideId": "auth--unlock-locked-account",
+  "title": "Unlock Locked Account in Auth",
+  "module": "auth",
+  "intent": "unlock-locked-account",
+  "targetAudience": "admin",
+  "description": "Complete the unlock locked account workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for unlock locked account are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the unlock locked account entry point in the module workflow.",
+    "Enter or select the required inputs for unlock locked account.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Unlock Locked Account completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during unlock locked account.",
+    "Permission constraints prevent completion of unlock locked account.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun unlock locked account.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun unlock locked account?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm unlock locked account is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "unlock-locked-account",
+    "admin",
+    "onboarding",
+    "unlock",
+    "locked",
+    "account",
+    "unlock locked account"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:13.164Z",
+  "lastVerifiedAt": "2026-07-14T04:48:13.164Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--unlock-locked-account"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

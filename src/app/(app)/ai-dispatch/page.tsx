@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +51,26 @@ interface Message {
     role: 'user' | 'model';
     content: string;
 }
+
+const markdownComponents = {
+    p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 leading-6 last:mb-0">{children}</p>,
+    ul: ({ children }: { children?: React.ReactNode }) => <ul className="mb-4 mt-1 list-disc pl-6 space-y-2">{children}</ul>,
+    ol: ({ children }: { children?: React.ReactNode }) => <ol className="mb-4 mt-1 list-decimal pl-6 space-y-2">{children}</ol>,
+    li: ({ children }: { children?: React.ReactNode }) => <li className="pl-1 leading-6">{children}</li>,
+    h1: ({ children }: { children?: React.ReactNode }) => <h1 className="mb-3 mt-2 text-base font-bold">{children}</h1>,
+    h2: ({ children }: { children?: React.ReactNode }) => <h2 className="mb-3 mt-2 text-[15px] font-semibold">{children}</h2>,
+    h3: ({ children }: { children?: React.ReactNode }) => <h3 className="mb-2 mt-2 text-sm font-semibold">{children}</h3>,
+    strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-foreground">{children}</strong>,
+    a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+        <a href={href} target="_blank" rel="noreferrer" className="font-medium text-primary underline underline-offset-4">
+            {children}
+        </a>
+    ),
+    code: ({ children }: { children?: React.ReactNode }) => <code className="rounded bg-muted px-1.5 py-0.5 text-[0.9em]">{children}</code>,
+    pre: ({ children }: { children?: React.ReactNode }) => <pre className="mb-4 overflow-x-auto rounded-md bg-muted p-3 text-xs">{children}</pre>,
+    blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="mb-4 border-l-2 border-border pl-3 italic">{children}</blockquote>,
+    hr: () => <hr className="my-4 border-border" />,
+};
 
 const MaterializedContactCard = ({ contact, onLaunch }: { contact: Contact, onLaunch: (id: string) => void }) => {
     return (
@@ -242,7 +264,7 @@ export default function AiDispatchPage() {
                 {/* Chat History Area */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto space-y-6 pr-4 scrollbar-hide pt-4"
+                    className="flex-1 overflow-y-auto space-y-5 pr-4 scrollbar-hide pt-4"
                 >
                     {messages.length === 0 && !isThinking ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
@@ -257,14 +279,30 @@ export default function AiDispatchPage() {
                     ) : (
                         <>
                             {messages.map((msg, idx) => (
-                                <div key={idx} className={cn("flex gap-4 max-w-[85%]", msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto")}>
+                                <div
+                                    key={idx}
+                                    className={cn(
+                                        "flex w-full gap-4 animate-in fade-in-0 slide-in-from-bottom-1 duration-200",
+                                        msg.role === 'user' ? "justify-end" : "justify-start"
+                                    )}
+                                >
                                     <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm", msg.role === 'user' ? "bg-primary text-white" : "bg-card border")}>
                                         {msg.role === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4 text-primary" />}
                                     </div>
-                                    <div className={cn("p-4 rounded-2xl text-sm leading-relaxed shadow-sm", msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border rounded-tl-none")}>
-                                        {msg.content.includes('[[LAUNCH_REGISTRY:') ? (
+                                    <div
+                                        className={cn(
+                                            msg.role === 'user'
+                                                ? "max-w-[78%] p-4 rounded-2xl rounded-tr-none text-sm leading-relaxed shadow-sm bg-primary text-primary-foreground"
+                                                : "max-w-[92%] rounded-2xl rounded-tl-none p-0 text-[15px] leading-relaxed bg-transparent border-0 shadow-none"
+                                        )}
+                                    >
+                                        {msg.role === 'model' && msg.content.includes('[[LAUNCH_REGISTRY:') ? (
                                             <>
-                                                {msg.content.split('[[LAUNCH_REGISTRY:')[0]}
+                                                <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                        {msg.content.split('[[LAUNCH_REGISTRY:')[0]}
+                                                    </ReactMarkdown>
+                                                </div>
                                                 {(() => {
                                                     const idMatches = Array.from(msg.content.matchAll(/\[\[LAUNCH_REGISTRY:(.*?)\]\]/g));
                                                     return idMatches.map((match, i) => {
@@ -296,12 +334,24 @@ export default function AiDispatchPage() {
                                                         );
                                                     });
                                                 })()}
-                                                <div className="mt-2 opacity-70 italic text-[10px]">
-                                                    {msg.content.split(']]').slice(-1)[0] || ""}
-                                                </div>
+                                                {msg.content.split(']]').slice(-1)[0].trim().length > 0 ? (
+                                                    <div className="mt-2 opacity-80 text-xs">
+                                                        <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                                {msg.content.split(']]').slice(-1)[0]}
+                                                            </ReactMarkdown>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
                                             </>
+                                        ) : msg.role === 'model' ? (
+                                            <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                            </div>
                                         ) : (
-                                            msg.content
+                                            <div className="whitespace-pre-wrap">{msg.content}</div>
                                         )}
                                     </div>
                                 </div>

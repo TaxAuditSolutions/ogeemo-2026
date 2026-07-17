@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function OgeemoChat() {
     const [query, setQuery] = useState("");
@@ -42,7 +44,7 @@ export default function OgeemoChat() {
     }
 
     return (
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
+        <div style={{ maxWidth: 820, margin: "0 auto", padding: "1rem" }}>
             <h2>Ogeemo Assistant</h2>
 
             <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.5rem" }}>
@@ -59,16 +61,25 @@ export default function OgeemoChat() {
             </form>
 
             <div
+                className="transition-all duration-200"
                 style={{
                     marginTop: "1rem",
-                    padding: "1rem",
-                    border: "1px solid #ddd",
+                    padding: "1.25rem",
+                    border: "1px solid #e5e7eb",
                     borderRadius: 8,
                     minHeight: 80,
-                    whiteSpace: "pre-wrap",
+                    background: "#fcfcfd",
                 }}
             >
-                {answer || "Your answer will appear here."}
+                {answer ? (
+                    <div className="prose prose-sm max-w-none prose-p:mb-3 prose-p:last:mb-0 prose-p:leading-6 prose-ul:my-4 prose-ol:my-4 prose-ul:space-y-2 prose-ol:space-y-2 prose-li:leading-6 prose-li:my-1 prose-strong:text-foreground prose-code:text-foreground">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {answer}
+                        </ReactMarkdown>
+                    </div>
+                ) : (
+                    "Your answer will appear here."
+                )}
             </div>
         </div>
     );
